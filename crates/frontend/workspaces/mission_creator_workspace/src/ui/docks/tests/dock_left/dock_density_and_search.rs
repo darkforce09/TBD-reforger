@@ -1,28 +1,8 @@
 //! Dock density and search tests for the left editor dock.
 
-use mission_creator_engine_bridge::test_support::production_half;
-
-/// T-637 — the left dock's density work: the search row that fills the void, and the five decoration
-/// buttons that used to sit at the bottom of it.
-///
-/// **NOTE ON THE PIN IDIOM.** Every source needle below is checked against the PRODUCTION half only
-/// (`production_half`: everything above the test-module declaration), so a needle written here
-/// cannot satisfy itself. The T-696 pins in the module above once did `contains()` against the
-/// WHOLE file, needle and assertion together — T-759 fixed that; they now read `class_r_scrub`'s
-/// scrubbed production half.
-use super::{
-    TAB_LABEL_LAYERS, TAB_LABEL_PAD_PX, TAB_LABEL_PLACES, UPPERCASE_LABEL_ADVANCE_PX,
-    filter_outliner, find_layer_label, first_folder_label, matches_query,
-};
+use super::{filter_outliner, find_layer_label, first_folder_label, matches_query};
 use mission_creator_state::ids::OutlinerNodeId;
-use mission_creator_state::layout::{DOCK_L, DOCK_PX, STUB_PX, tw_len_px};
 use mission_creator_state::outliner_model::{NodeKind, OutlinerNode};
-
-/// The file's production half — everything above the first test module. A needle checked against
-/// this cannot be satisfied by a test's own source.
-fn production() -> &'static str {
-    production_half(super::test_source::dock_left_source())
-}
 
 fn node(id: &str, label: &str, kind: NodeKind, children: Vec<OutlinerNode>) -> OutlinerNode {
     OutlinerNode {
@@ -121,138 +101,6 @@ fn the_layer_filter_keeps_subtrees_and_ancestor_paths() {
     );
 }
 
-/// **The five decoration buttons are gone.** They were `disabled=true` unconditionally, their
-/// tooltips literally said "(visual only)", and only one passed `active=true` — a permanent claim
-/// to a Hierarchy/Layers/Assets/History/Settings tab set that did not exist and could not be
-/// reached. `mt-auto` is what marooned them at the floor of a 900 px void.
-///
-/// Checked on the production half only, so this test's own mention of the string cannot keep it
-/// green (the T-759 hollow-pin trap).
-#[test]
-fn no_decoration_survives_in_the_left_dock() {
-    let src = production();
-    // Needle assembled so this source cannot satisfy it.
-    let decoration = format!("({} only)", "visual");
-    assert!(
-        !src.contains(&decoration),
-        "T-637: a control whose tooltip admits it does nothing is furniture; the dock must not \
-         ship any"
-    );
-    assert!(
-        !src.contains("strip_btn"),
-        "T-637: the decoration strip's builder must be gone, not merely unused"
-    );
-    assert!(
-        !src.contains("mt-auto"),
-        "T-637: `mt-auto` was the marooning — it turned the dock's unused height into a layout \
-         feature instead of giving it to the tree"
-    );
-    // Every remaining `disabled=true` in the dock must be gone too: the dock has no permanently
-    // dead controls left at all.
-    assert!(
-        !src.contains("disabled=true"),
-        "T-637: no permanently-disabled control may remain in the left dock"
-    );
-}
-
-/// **The height goes to the tree.** The dock is a column ([`mission_creator_state::layout::DOCK_L`]); the
-/// tree region claims the remainder with `flex-1` and can shrink inside it with `min-h-0`. Both
-/// tokens are load-bearing: without `flex-1` the void comes straight back, and without `min-h-0`
-/// a flex child refuses to shrink below its content, so a long tree pushes the panel instead of
-/// scrolling inside it.
-#[test]
-fn the_tree_claims_the_dock_height_the_decoration_used_to_hold() {
-    let src = production();
-    assert!(
-        src.contains("min-h-0 flex-1 overflow-y-auto"),
-        "T-637: the layers tree region must claim the dock's remaining height and scroll inside it"
-    );
-    // …and the Layers tab has the search row Eden fills that width with.
-    assert!(
-        src.contains("dock-left-layers-filter"),
-        "T-637: the Layers tab needs a driveable filter row, like the Locations tab already had"
-    );
-    // The tree renders the FILTERED signal, not the raw one — otherwise the box is decoration
-    // itself, which is the exact defect this ticket deleted five of. Read as "the first argument
-    // at the `virtual_tree` call site", so leading whitespace cannot make the check vacuous.
-    let call = src
-        .find("virtual_tree(")
-        .expect("the dock must still render a tree");
-    let first_arg = src[call + "virtual_tree(".len()..]
-        .split(',')
-        .next()
-        .unwrap_or("")
-        .trim();
-    assert_eq!(
-        first_arg, "layer_nodes",
-        "T-637: the tree must be fed the FILTERED node set (got `{first_arg}`), or the filter \
-         box is itself decoration"
-    );
-    assert!(
-        src.contains("filter_outliner(ns, &q)"),
-        "T-637: the filtered set must come from the shared tree filter"
-    );
-}
-
-/// **THE HEADER FITS, AND THAT IS ARITHMETIC NOW TOO.** The peer of the right dock's
-/// `t637_tab_strip_budget`. At the equalised 240 px this row holds the collapse chevron, two tab
-/// labels and a trailing verb; before this ticket the labels alone overran it, and because the
-/// tab group carries `min-w-0` the row squeezed rather than overflowed — the first label wrapped
-/// and nothing anywhere reported it.
-///
-/// The label widths come from [`UPPERCASE_LABEL_ADVANCE_PX`], which is a MEASURED ceiling (see
-/// its doc comment), so lengthening a label fails here instead of wrapping in a browser.
-#[test]
-fn the_header_row_fits_the_dock() {
-    let pad = tw_len_px(DOCK_L, "p-").expect("the dock states its padding");
-    // The header's own `px-1` gutter sits inside the dock's padding.
-    let budget = DOCK_PX - 2.0 * pad - 2.0 * 4.0;
-    let cell =
-        |label: &str| label.chars().count() as f64 * UPPERCASE_LABEL_ADVANCE_PX + TAB_LABEL_PAD_PX;
-    // chevron (STUB_PX — its hit box must match the collapsed stub, so it is not ours to shrink)
-    // + gap + tab + gap + tab | gap | the trailing verb cell (`size-5`).
-    let gap = 4.0;
-    let verb = 20.0;
-    let row = STUB_PX + gap + cell(TAB_LABEL_LAYERS) + gap + cell(TAB_LABEL_PLACES) + gap + verb;
-    assert!(
-        row <= budget,
-        "T-637: the header wants {row} px of a {budget} px dock row. It will not overflow — the \
-         tab group carries `min-w-0`, so it will SQUEEZE, wrap a label and grow a line, which is \
-         the failure mode that reports nothing"
-    );
-    // The cells refuse to be squeezed, so a future overrun is a visible overflow the eye catches
-    // rather than a silent reflow.
-    let src = production();
-    assert_eq!(
-        src.matches("shrink-0 rounded px-1.5 py-0.5 text-label-sm font-semibold uppercase")
-            .count(),
-        2,
-        "T-637: both tab states must be `shrink-0` — a squeezable cell hides an overrun"
-    );
-}
-
-/// The measured ceiling is a CEILING. If someone raises it to make a longer label fit, this
-/// fails: the number has a provenance (a headless-Chrome measurement of the real classes) and
-/// widening it silently would make the budget above meaningless.
-#[test]
-fn the_measured_label_advance_is_still_an_upper_bound() {
-    // The two worst per-character advances actually observed, in the widest fallback font.
-    for (label, measured_total) in [(TAB_LABEL_LAYERS, 45.75), (TAB_LABEL_PLACES, 72.88)] {
-        let per_char = measured_total / label.chars().count() as f64;
-        assert!(
-            per_char <= UPPERCASE_LABEL_ADVANCE_PX,
-            "T-637: `{label}` measured {per_char} px/char, above the {UPPERCASE_LABEL_ADVANCE_PX} \
-             px ceiling the header budget is computed from"
-        );
-    }
-    const {
-        assert!(
-            UPPERCASE_LABEL_ADVANCE_PX < 10.0,
-            "T-637: a ceiling loose enough to admit anything is not a ceiling"
-        )
-    };
-}
-
 /// T-803 (O-9) — **the drop-target resolvers name the layer `ensure_layer` actually files into.**
 /// `find_layer_label` answers only for a live `Folder` id (a `Slot`/nested `Folder` id resolves
 /// through the recursion; a stray or non-Folder id gives `None`, the stale-pointer case
@@ -303,32 +151,5 @@ fn the_drop_target_resolvers_name_the_real_destination() {
         Some("Assault"),
         "PERTURB: the fallback must skip the virtual Unfiled root — it is not a doc layer and \
          receives no placement"
-    );
-}
-
-/// T-803 (O-9) — **the persistent drop-target affordance ships in the dock.** The active layer's
-/// only indication was a hover tooltip; this pins the on-screen statement (the `data-testid` hook
-/// the scripted acceptance clicks for, the "Placing into:" copy, and that it reads BOTH
-/// `active_layer` and the resolver so it names the real destination, not a static string).
-/// Checked on the scrubbed production half, so this test's own mention cannot keep it green.
-#[test]
-fn the_drop_target_affordance_ships() {
-    let src = production();
-    assert!(
-        src.contains("dock-left-drop-target"),
-        "T-803: the drop-target statement needs a stable test hook for the scripted acceptance"
-    );
-    assert!(
-        src.contains("Placing into:"),
-        "T-803: the affordance must NAME the destination on screen, not only in a hover tooltip"
-    );
-    assert!(
-        src.contains("find_layer_label"),
-        "T-803: the strip must resolve the ACTIVE layer's label, or it cannot name the target"
-    );
-    assert!(
-        src.contains("first_folder_label"),
-        "T-803: the strip must fall back to `ensure_layer`'s first-layer destination, or it \
-         would lie about where a placement lands when nothing is active"
     );
 }

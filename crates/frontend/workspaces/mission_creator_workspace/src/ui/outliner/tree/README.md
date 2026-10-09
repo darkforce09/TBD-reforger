@@ -59,12 +59,9 @@ window blur or unmounting the tree cancels them at once.
   `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/`, which read the stats, the
   scroller and the guide toggles.
 - Rules: the tests in `crates/frontend/workspaces/mission_creator_workspace/src/ui/outliner/tests/tree/` hold
-  these: every row class states the one height `ROW_H` reads back
-  (`every_row_recipe_states_the_one_height_and_row_h_reads_it_back`); every drag arm builds a set,
-  and an unselected row drags alone (`every_drag_arm_builds_a_set_and_every_drop_consumes_one`,
-  `an_unselected_anchor_drags_alone`); a row's affordance and its click agree
-  (`the_affordance_and_the_click_cannot_disagree_over_any_row_kind`); `TREE_PRODUCTION_SOURCE` in
-  the module root lists every file here for the source checks, so a new file joins that list.
+  these: a folder click selects its direct slots, or with a modifier its whole subtree, hidden
+  layers included; an unselected row drags alone (`an_unselected_anchor_drags_alone`); a row's
+  affordance and its click agree (`the_affordance_and_the_click_cannot_disagree_over_any_row_kind`).
 
 ## Related documentation
 

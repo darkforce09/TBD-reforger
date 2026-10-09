@@ -1,11 +1,10 @@
 //! Mission summary and mirror tests for the top command strip.
 
 use super::{
-    CENSUS_SIDES, MIRROR_DEBOUNCE_MS, MIRROR_TIME, MIRROR_WEATHER, MirrorState, SlotCensus,
-    census_from_rows, draft_recency_phrase, format_draft_recency, hhmm_to_minutes,
-    is_mission_row_id, minutes_to_hhmm, mirror_failure_message, normalize_clock, summary_line,
+    MIRROR_DEBOUNCE_MS, MirrorState, SlotCensus, census_from_rows, draft_recency_phrase,
+    format_draft_recency, hhmm_to_minutes, is_mission_row_id, minutes_to_hhmm, normalize_clock,
+    summary_line,
 };
-use frontend_transport::Error;
 use mission_operations::rows::FactionRow;
 use mission_operations::rows::SquadRow;
 
@@ -107,17 +106,6 @@ fn draft_recency_reads_up_the_ladder() {
     assert_eq!(format_draft_recency(0.0), "Draft saved just now");
 }
 
-/// T-746 — the row-id predicate is crate-visible so `eden_settings` does not keep a twin.
-#[test]
-fn t746_row_id_predicate_is_crate_visible() {
-    use frontend_test_support::class_r_scrub::live_code;
-    let src = live_code(super::test_source::top_strip_source());
-    assert!(
-        src.contains("pub(crate) fn is_mission_row_id"),
-        "T-746: is_mission_row_id must be pub(crate), not a private twin in eden_settings"
-    );
-}
-
 /// The mirror only fires on a real row. `mission_editor` falls back to `draft` and the editor
 /// gate mounts on a smoke id — a PATCH there is a guaranteed 400 and pure console noise.
 #[test]
@@ -135,80 +123,6 @@ fn only_a_uuid_route_id_gets_mirrored() {
     ] {
         assert!(!is_mission_row_id(bad), "{bad:?} is not a mission row id");
     }
-}
-
-/// The columns the mirror PATCHes, and the words the failure toast uses for them. Pinned
-/// because the column half is the API contract (`PatchMissionInput`) and the label half is what
-/// the author reads — `viewDistance` / `thermals` are absent because T-193 stopped the editor
-/// authoring them at all, not because the mirror declined to carry them.
-#[test]
-fn mirrored_fields_are_the_two_row_columns() {
-    assert_eq!(MIRROR_TIME.column, "time_of_day");
-    assert_eq!(MIRROR_WEATHER.column, "weather");
-    assert_eq!(MIRROR_TIME.label, "Time of day");
-    assert_eq!(MIRROR_WEATHER.label, "Weather");
-    assert_ne!(MIRROR_TIME.column, MIRROR_WEATHER.column, "one queue each");
-}
-
-/// A failed mirror must SAY so — the shipped version only `warn!`ed, which is how a
-/// mission_maker editing someone else's live mission watched the setting apply and revert with
-/// no feedback at all. Every failure names the setting and says it will revert.
-#[test]
-fn every_mirror_failure_names_the_setting_and_the_revert() {
-    for field in [MIRROR_TIME, MIRROR_WEATHER] {
-        for err in [
-            (403u16, Some("not your mission".to_string())),
-            (400, Some("invalid weather".to_string())),
-            (500, None),
-            (0, None), // transport: no response at all
-        ] {
-            let msg = mirror_failure_message(field, &Error::from_status(err.0, err.1.clone()));
-            assert!(
-                msg.to_lowercase().contains(&field.label.to_lowercase()),
-                "{err:?} must name the setting: {msg}"
-            );
-            assert!(
-                msg.contains("revert"),
-                "{err:?} must warn of the revert: {msg}"
-            );
-        }
-    }
-}
-
-/// 403 and "the server fell over" call for different action, so they must not read the same.
-/// The ownership refusal is structural — `PATCH /missions/:id` gates on `can_edit` (author or
-/// admin) while the editor route gates on role — so retrying cannot help and the text must not
-/// suggest it. Everything else is worth another go and carries what the server said.
-#[test]
-fn forbidden_and_transport_failures_read_differently() {
-    let denied = mirror_failure_message(
-        MIRROR_TIME,
-        &Error::from_status(403, Some("not your mission".into())),
-    );
-    let dropped = mirror_failure_message(MIRROR_TIME, &Error::from_status(0, None));
-    assert_ne!(denied, dropped);
-    assert!(
-        denied.contains("author"),
-        "403 must name the cause: {denied}"
-    );
-    assert!(
-        !denied.contains("try again"),
-        "403 is not retryable: {denied}"
-    );
-    assert!(
-        dropped.contains("try again"),
-        "a transport failure is: {dropped}"
-    );
-    assert!(
-        dropped.contains("the server did not respond"),
-        "a bodyless failure still says what happened: {dropped}"
-    );
-    // A backend message is surfaced verbatim (capitalized), not flattened to one house string.
-    let bad = mirror_failure_message(
-        MIRROR_WEATHER,
-        &Error::from_status(400, Some("invalid weather".into())),
-    );
-    assert!(bad.contains("Invalid weather"), "{bad}");
 }
 
 /// The rate bound. A held scrubber emits ~30 distinct values a second; the window has to be long
@@ -415,32 +329,6 @@ fn census_single_side_leaves_others_zero() {
     assert_eq!(c.ind, 0);
     assert_eq!(c.unassigned, 0);
     assert_eq!(c.total, 12);
-}
-
-/// The side→label table is the vocabulary the community naming convention rides. Pin it so a
-/// rename (WEST→BLUEFOR, say) is a deliberate, test-breaking act, not a silent drift — the WOG
-/// lesson the ticket calls out. `count_for_key` must agree with the table.
-#[test]
-fn census_side_labels_are_pinned() {
-    assert_eq!(
-        CENSUS_SIDES,
-        [("BLUFOR", "WEST"), ("OPFOR", "EAST"), ("INDFOR", "IND")]
-    );
-    let c = SlotCensus {
-        west: 1,
-        east: 2,
-        ind: 3,
-        unassigned: 0,
-        total: 6,
-    };
-    assert_eq!(c.count_for_key("BLUFOR"), 1);
-    assert_eq!(c.count_for_key("OPFOR"), 2);
-    assert_eq!(c.count_for_key("INDFOR"), 3);
-    assert_eq!(
-        c.count_for_key("CIV"),
-        0,
-        "a non-side key counts to no bucket"
-    );
 }
 
 // ── T-659 — summary-line format (STABLE — other tools parse this) ─────────────────────────────

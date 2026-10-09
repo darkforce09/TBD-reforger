@@ -89,20 +89,14 @@ nonzero; both render in a hidden element of the menu row.
   `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/tests/top_strip/`; the outliner smoke test in
   `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/outliner_palette.rs`, which
   opens the ORBAT manager from its button.
-- Rules: that tests folder holds these: the menu bar renders the shared Arrange list in order,
-  and a menu click and a chord share one invoker
-  (`the_menu_bar_renders_the_shared_list_in_order` and
-  `the_menu_click_and_the_chord_share_one_invoker` in `arrange_actions.rs`); a burst of values
+- Rules: that tests folder holds these: the menu bar renders the shared Arrange list in order
+  (`the_menu_bar_renders_the_shared_list_in_order` in `arrange_actions.rs`); a burst of values
   becomes one request, and a second cannot start while one is in flight
   (`a_burst_collapses_to_the_settled_value` and
   `a_second_patch_cannot_start_while_one_is_in_flight` in `mission_summary_and_mirror.rs`);
   the summary line only ever appends its suffixes, in order
-  (`summary_suffixes_are_append_only_and_ordered`); Escape yields to the modal stack
-  (`top_command_strip_escape_yields_when_modal_stack_consumed_escape` in `escape_modal_stack.rs`);
-  the weather options are the wire enum's values, in order
-  (`the_weather_options_are_the_wire_enum` in `form_controls.rs`); `test_source.rs` there
-  reassembles the strip's production files, fragments expanded, for the source checks, so a new
-  file here joins its list.
+  (`summary_suffixes_are_append_only_and_ordered`); Escape yields to the modal stack; the weather
+  options are the wire enum's values, in order.
 
 ## Related documentation
 

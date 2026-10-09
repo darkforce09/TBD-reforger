@@ -5,7 +5,7 @@ use super::*;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 /// A mission column and the label used in mirror error messages.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) struct MirroredField {
     pub(super) column: &'static str,
     pub(super) label: &'static str,
@@ -15,7 +15,7 @@ pub(super) struct MirroredField {
 /// enum and the words the author reads then have ONE definition in this file instead of markup that
 /// drifts. Values are the schema's snake_case weather enum — the same strings `MIRROR_WEATHER`
 /// mirrors onto the `missions` row, so the picker and the PATCH cannot disagree by construction.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const WEATHER_OPTIONS: &[(&str, &str)] = &[
     ("clear", "Clear"),
     ("overcast", "Overcast"),
@@ -24,13 +24,13 @@ pub(super) const WEATHER_OPTIONS: &[(&str, &str)] = &[
 ];
 
 /// Mission time column mirrored from the time scrubber.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const MIRROR_TIME: MirroredField = MirroredField {
     column: "time_of_day",
     label: "Time of day",
 };
 /// Mission weather column mirrored from the weather picker.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const MIRROR_WEATHER: MirroredField = MirroredField {
     column: "weather",
     label: "Weather",
@@ -49,7 +49,7 @@ pub(super) const MIRROR_DEBOUNCE_MS: i32 = 400;
 /// Describe a failed mission-row mirror write. Permission failures require
 /// ownership; transport failures can be retried. Both warn that hydration
 /// restores the row value.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn mirror_failure_message(
     field: MirroredField,
     err: &frontend_transport::Error,

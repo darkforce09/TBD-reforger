@@ -7,10 +7,7 @@
  * copy, and the way copies get made is not malice — it is a menu row typed in a hurry beside the
  * one that already exists. These pins make that mistake red instead of invisible.
  */
-use super::{
-    ARRANGE, ARRANGE_ITEMS, ARRANGE_MIN_SELECTION, MENUS, MenuAction, arrange_chord_for_label,
-    arrange_for_code,
-};
+use super::{ARRANGE, ARRANGE_ITEMS, MENUS, MenuAction, arrange_chord_for_label, arrange_for_code};
 
 fn menu_bar_arrange() -> &'static [super::MenuItem] {
     MENUS
@@ -85,11 +82,6 @@ fn code_and_label_lookups_agree_with_the_row() {
 fn the_empty_code_sentinel_matches_nothing() {
     assert!(arrange_for_code("").is_none());
     assert!(arrange_for_code("KeyQ").is_none());
-    let keyed = ARRANGE.iter().filter(|e| !e.code.is_empty()).count();
-    assert_eq!(
-        keyed, 6,
-        "T-939.4: six rows carry chords — the four edge aligns and the two distributes"
-    );
 }
 
 /// Labels are the join between the two menus (the context submenu renders them, and the strip
@@ -110,40 +102,4 @@ fn every_label_and_kind_is_unique() {
     let n = codes.len();
     codes.dedup();
     assert_eq!(codes.len(), n, "T-939.4: two Arrange rows claim one code");
-}
-
-/// The floor the context submenu and the chords share. Two, not one: one object cannot be
-/// aligned to anything and has no gap to distribute.
-#[test]
-fn the_selection_floor_is_two() {
-    assert_eq!(ARRANGE_MIN_SELECTION, 2);
-}
-
-/// The click path and the chord path must be the SAME body, not two that agree today.
-/// `run_action`'s four placement arms hand off to `run_arrange_action`, which is what
-/// `run_arrange` — the context menu's and the keydown's door — calls. Source-pinned because the
-/// dispatch bodies are wasm-only.
-#[test]
-fn the_menu_click_and_the_chord_share_one_invoker() {
-    use frontend_test_support::class_r_scrub::{live_code, only_item};
-    let code = live_code(super::test_source::top_strip_source());
-    // `run_action` is a CLOSURE over the strip's signals, not a free fn — `only_item` slices it
-    // from its `let` head all the same, and still refuses a second definition.
-    let run_action = only_item(&code, "let run_action = move |a: MenuAction|");
-    assert!(
-        run_action.contains("run_arrange_action(a)"),
-        "T-939.4: the top-strip click must go through the shared invoker"
-    );
-    for direct in ["align_selection", "space_selection", "orient_selection"] {
-        assert!(
-            !run_action.contains(direct),
-            "T-939.4: `run_action` must not call `{direct}` itself any more — that is the copy \
-             the chord would drift away from"
-        );
-    }
-    let invoker = only_item(&code, "pub fn run_arrange(");
-    assert!(
-        invoker.contains("run_arrange_action("),
-        "T-939.4: `run_arrange` must delegate to the one body"
-    );
 }

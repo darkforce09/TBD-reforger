@@ -45,15 +45,11 @@ text.
   `MaterialIcon` from `frontend_ui`.
 - Used by: `crates/frontend/workspaces/mission_creator_workspace/src/mission_editor.rs`, which mounts
   `ModeToolbar`, `StatusBar` and `MapGridRefs`;
-  the grid reference test in
-  `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/tests/toolbelt/exporter_grid_reference.rs`; the tests in
-  `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/tests/toolbelt/`.
-- Rules: that folder's tests hold these: the toolbar holds no read-out
-  (`mode_toolbar_holds_no_readouts_and_status_bar_holds_them` in `status_bar.rs`); the ruler
-  read-out writes nothing to the document (`readout_is_display_only_no_doc_writes`); the scale bar
-  and "SCL" agree (`the_bar_and_the_number_describe_the_same_scale`); the grid labels stay in the
-  map pane (`grid_refs_are_clipped_to_the_map_pane_not_the_viewport`); `source.rs` there lists
-  every file here for the source checks, so a new file joins that list.
+  the tests in `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/tests/toolbelt/`,
+  among them the grid reference check in `live_grid_labels.rs`.
+- Rules: the toolbar holds no read-out; the ruler read-out writes nothing to the document; the
+  scale bar and "SCL" agree (`the_bar_and_the_number_describe_the_same_scale`); the grid labels
+  stay in the map pane (`grid_refs_are_clipped_to_the_map_pane_not_the_viewport`).
 
 ## Related documentation
 

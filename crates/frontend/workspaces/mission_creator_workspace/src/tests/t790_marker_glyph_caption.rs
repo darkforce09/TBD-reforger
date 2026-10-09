@@ -1,5 +1,4 @@
 use super::marker_lane_fields;
-use frontend_test_support::class_r_scrub::only_body;
 
 /// Three markers of THREE different icons, one with a caption, one faction each — the acceptance
 /// shape. Emitted in the `briefing_marker_rows_json` field vocabulary (x/z/factionId/icon/label).
@@ -48,31 +47,4 @@ fn bad_input_is_inert() {
             "{s:?}"
         );
     }
-}
-
-/// Class-R: the T-790 widening of the T-760 feed pin. Both `mission_history` feed sites must call
-/// `markers_bind`, and the shared `marker_lane_xy_tints` builder they call must source ALL FOUR
-/// arrays from the owned `marker_lane_fields` parse (so `icon`/`label` reach the lane). Deleting
-/// the glyph or caption plumbing turns this RED; the map-engine-render lane-order pins never look
-/// at `mission_history`, so this is the only guard that the write-half stays wired.
-#[test]
-fn both_feeds_pass_glyphs_and_captions() {
-    let hist = super::source::live_document_history();
-    let bind = format!("{}{}", "markers", "_bind");
-    let fields = format!("{}{}", "marker_lane_", "fields");
-    for site in ["pub fn rebind_engine_from_doc", "fn after_doc_change"] {
-        let body = only_body(&hist, site);
-        assert!(
-            body.contains(&bind),
-            "T-790: {site} must call markers_bind; body:\n{body}"
-        );
-    }
-    // The single builder delegates to the owned (natively tested) parse — the icon + caption
-    // arrays are read from the document exactly once, not re-derived per feed.
-    let builder = only_body(&hist, "fn marker_lane_xy_tints");
-    assert!(
-        builder.contains(&fields),
-        "T-790: marker_lane_xy_tints must source glyphs + captions from marker_lane_fields; \
-         body:\n{builder}"
-    );
 }

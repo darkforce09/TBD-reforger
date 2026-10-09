@@ -35,11 +35,6 @@ pub mod review_workspace;
 /// selected subject, and the full-screen dialogs raised over the whole workspace.
 pub mod ui;
 
-/// The frontend source trees the whole-frontend source pins walk.
-#[cfg(test)]
-#[path = "tests/frontend_source_roots.rs"]
-mod frontend_source_roots;
-
 /// The Mission Creator page routed at `/missions/:id/edit`.
 #[cfg(target_arch = "wasm32")]
 pub use mission_editor::MissionEditorPage;

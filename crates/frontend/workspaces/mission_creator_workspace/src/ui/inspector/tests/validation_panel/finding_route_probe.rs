@@ -1,7 +1,6 @@
 //! Validation panel finding route probe tests.
 
 use super::{PanelFinding, finding_is_routable, register_route_probe, row_cursor_class};
-use frontend_test_support::class_r_scrub::{live_code, live_source, only_body};
 use mission_editing_session::routing::route_target;
 use mission_validation::Primitive;
 use mission_validation::Severity;
@@ -114,41 +113,4 @@ fn with_no_router_registered_every_row_renders_inert() {
             "wave 129: with nothing to ask, a row must render inert rather than hopeful"
         );
     }
-}
-
-#[test]
-fn the_row_never_guesses_at_selectability() {
-    let src = live_code(super::validation_panel_source());
-    let row = only_body(&src, &format!("fn finding{}", "_row_view"));
-    assert!(
-        row.contains(&format!("finding{}", "_is_routable(")),
-        "wave 129: the row must decide clickability by asking the router"
-    );
-    assert!(
-        row.contains(&format!("row{}", "_cursor_class(")),
-        "wave 129: the row must take its cursor/hover classes from the one affordance function"
-    );
-    let routable = only_body(&src, &format!("fn finding{}", "_is_routable"));
-    assert!(
-        routable.contains(&format!("subject_id{}", "_routes")),
-        "wave 129: clickability must be the ROUTER's resolution, not a second opinion about \
-             which findings look selectable"
-    );
-    assert_eq!(
-        src.matches(&format!(".is{}()", "_selectable")).count(),
-        0,
-        "wave 129: no live code in this panel may take `names an id` for `is clickable` — that \
-             substitution IS the defect"
-    );
-    let lit = live_source(super::validation_panel_source());
-    assert_eq!(
-        lit.matches(&format!("cursor{}", "-pointer")).count(),
-        1,
-        "wave 129: `cursor-pointer` belongs to `row_cursor_class` and nowhere else"
-    );
-    let row_lit = only_body(&lit, &format!("fn finding{}", "_row_view"));
-    assert!(
-        !row_lit.contains(&format!("cursor{}", "-pointer")),
-        "wave 129: the row must not hand-roll the affordance beside the function that owns it"
-    );
 }

@@ -3,7 +3,7 @@
 The [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s floating "Controls —
 keyboard shortcuts" card and the catalog of every editor key binding it lists. The parent module,
 `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/help_modal.rs`, declares both modules,
-re-exports their public items and mounts the keymap census and its tests.
+re-exports their public items.
 
 ## Contents
 
@@ -27,12 +27,9 @@ menu"), each row carrying its `KeyboardEvent` codes in `data-codes`.
   `cn` and `MaterialIcon` from `frontend_ui`.
 - Used by: the top strip in `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/top_strip/`
   (`view.rs` for the shown state, `view/overlays.rs` for the mount), through the parent's
-  re-exports; the help tests in `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/help_modal/`.
+  re-exports.
 - Rules: every key code that a window-level editor listener binds has a `SHORTCUTS` row, and no row
-  names a code nothing binds (`every_binding_has_a_help_entry` and
-  `no_help_entry_invents_a_binding` in
-  `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/help_modal/shortcut_coverage.rs`, which
-  reads the bindings through the keymap census beside it).
+  names a code nothing binds.
 
 ## Related documentation
 

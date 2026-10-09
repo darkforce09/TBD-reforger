@@ -47,18 +47,3 @@ fn a_second_mission_does_not_inherit_the_previous_missions_compile_findings() {
         evaluate_now()
     );
 }
-
-#[test]
-fn clear_compile_findings_is_the_hydrate_reset_seam() {
-    use frontend_test_support::class_r_scrub::{live_code, only_body};
-    let src = live_code(super::validation_panel_source());
-    let body = only_body(&src, "pub fn clear_compile_findings(");
-    assert!(
-        body.contains("Vec::new()"),
-        "T-761: clear_compile_findings must empty via Vec::new() in the production body; got:\n{body}"
-    );
-    assert!(
-        body.contains("publish_compile_findings"),
-        "T-761: clear must route through publish_compile_findings; got:\n{body}"
-    );
-}

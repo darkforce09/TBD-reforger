@@ -31,6 +31,4 @@ build renders nothing.
 - Used by: the parent module, which re-exports `audio_emitters_panel`; the Mission Settings dialog
   (`crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/settings_modal/mission_dialog.rs`), which mounts it
   after the weather timeline.
-- Rules: placement reuses the marker gesture instead of a gesture of its own
-  (`place_on_map_reuses_the_marker_gesture` in
-  `crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/tests/audio_emitters/emitter_authoring.rs`).
+- Rules: placement reuses the marker gesture instead of a gesture of its own.

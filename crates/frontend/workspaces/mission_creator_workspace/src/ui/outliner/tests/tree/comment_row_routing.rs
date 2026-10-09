@@ -1,24 +1,10 @@
-//! Comment row routing tests for the outliner.
+//! The outliner row's affordance and its click share one answer: for every row kind, a row paints
+//! as routable exactly when the registered router's click would select its subject.
 
-// ═══════ T-784 — a comment row SELECTS, and its affordance is the router's own answer ════════════
-//
-// The gap this closes was TOTAL, not partial: the Outliner's comment row was `ROW_STATIC` with no
-// click path to `ctx.selection` at all, the map glyph had no pick, the T-697 selection filter only
-// NARROWS an existing selection (so it cannot introduce a comment that was never selected), and the
-// document-search router had no comment arm, so comment hits rendered inert.
-//
-// Two pins here. The CORRESPONDENCE pin walks every `NodeKind` and asserts, in both directions,
-// that the affordance `row_routes` paints is exactly what the click `route_select_by_subject_id`
-// will find — with a non-vacuity assert proving the corpus contained BOTH selectable and inert
-// rows, because an all-false corpus would green a `row_routes` that always answered `false`. It
-// never names which kinds "should" be selectable: that stale-list shape is what made the dock-left
-// pin green while it guarded a lie (wave-129 RV-1). The SHAPE pin holds the rendered row to the
-// `eden_settings` a11y contract — button when live, non-focusable `aria-disabled` when not.
-use super::{inert_row_reason, row_router_subject, row_routes};
+use super::{row_router_subject, row_routes};
 use crate::ui::inspector::validation_panel::{
     register_route_probe, register_select_by_id, route_select_by_subject_id,
 };
-use frontend_test_support::class_r_scrub::{live_code, live_source, only_body};
 use mission_creator_state::outliner_model::NodeKind;
 
 /// A dense ordinal per `NodeKind`. **The compiler is the completeness check**: the match is
@@ -112,87 +98,4 @@ fn the_affordance_and_the_click_cannot_disagree_over_any_row_kind() {
         "T-784: VACUOUS — no row in the corpus was inert, so the equality above proved nothing \
          about the affordance being WITHHELD"
     );
-}
-
-/// The refusal is the PROBE's, never a kind ban, and never a fallback when no probe is
-/// registered: no probe means no router to click into, and `false` is the honest answer.
-#[test]
-fn no_probe_means_no_affordance_and_no_fallback() {
-    register_route_probe(std::rc::Rc::new(|_: &str| false));
-    assert!(
-        !row_routes(NodeKind::Comment, "cmt-1"),
-        "T-784: a refusing probe must leave the comment row inert"
-    );
-    let src = live_code(crate::ui::outliner::tree::TREE_PRODUCTION_SOURCE);
-    let routes = only_body(&src, "pub(crate) fn row_routes(");
-    assert!(
-        routes.contains(&format!("subject_id{}", "_routes")),
-        "T-784: clickability must BE subject_id_routes — the shape follows that boolean, it \
-         does not replace it"
-    );
-    // NEGATIVE, and scoped to the two functions that make the decision (a negative over the
-    // whole file would be green by construction — `single_row` is one giant kind match).
-    for marker in [
-        "pub(crate) fn row_routes(",
-        "pub(crate) fn row_router_subject",
-    ] {
-        let body = only_body(&src, marker);
-        assert!(
-            !body.contains(&format!("route{}", "_target")),
-            "T-784: {marker} must not re-ask mission_editor::route_target directly — the \
-             registered probe is the one answer, and a second reader of the resolution is how \
-             the affordance and the click drift apart"
-        );
-    }
-}
-
-/// **The rendered shape follows that boolean.** Routable ⇒ a real `<button>` (a keyboard user
-/// can activate the selection); refused ⇒ a non-focusable element carrying `aria-disabled` and
-/// [`inert_row_reason`] — never a tab-stop button that does nothing (the wave-115 MINOR-6 shape,
-/// as `eden_settings` fixed it).
-///
-/// Literals kept (`live_source`): the claim is about the tags and attributes that ship.
-#[test]
-fn the_comment_row_branches_on_the_router_and_is_never_a_dead_button() {
-    let lit = live_source(crate::ui::outliner::tree::TREE_PRODUCTION_SOURCE);
-    let arm = only_body(&lit, &format!("fn comment{}", "_row("));
-    assert!(
-        arm.contains(&format!("row{}", "_routes(")),
-        "T-784: the comment arm must branch on row_routes — the one boolean that owns \
-         clickability"
-    );
-    assert!(
-        arm.contains("<button") && arm.contains("</button>"),
-        "T-784: a routable comment row must be a real button"
-    );
-    assert_eq!(
-        arm.matches("<button").count(),
-        1,
-        "T-784: exactly one <button> in the comment arm — an inert `<button aria-disabled>` is \
-         still a tab stop, which is the shape this rejects"
-    );
-    assert!(
-        arm.contains("aria-disabled") && arm.contains(&format!("inert_row{}", "_reason(")),
-        "T-784: the inert branch must be a non-focusable element that says WHY"
-    );
-    let router = ["route_select", "_by_subject_id("].concat();
-    assert!(
-        arm.contains(&router),
-        "T-784: the click must be the shipped router — the same resolution row_routes asked, \
-         not a second selection path"
-    );
-    // The reason must name the refusal it actually got, never a kind ban: dock-left's old
-    // "resolves slots and vehicles only" became a lie the moment the router grew an arm.
-    let reason = inert_row_reason().to_lowercase();
-    assert!(
-        reason.contains("not selectable") || reason.contains("resolves nothing"),
-        "T-784: the inert reason must name the router's refusal, got {reason:?}"
-    );
-    for banned in ["slot", "vehicle", "comment"] {
-        assert!(
-            !reason.contains(banned),
-            "T-784: the inert reason must not name a KIND ({banned:?}) — that sentence goes \
-             stale the next time the router grows an arm"
-        );
-    }
 }

@@ -37,10 +37,10 @@ browser build; the native `compositions_panel` draws nothing.
 - Used by: the Compositions tab of `DockRight` in
   `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/dock_right/shell/layout.rs`; the tests in
   `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/tests/dock_right/`.
-- Rules: that folder's `compositions.rs` holds these: the tab is wired to the engine's library
-  (`compositions_tab_is_wired_not_stubbed`); a capture keeps comments and each entity's authored
-  elevation (`a_composition_captures_comments_and_authored_elevation`); arming uses the editor's
-  shared pending-placement state (`composition_arm_rides_the_shared_pending_machine`).
+- Rules: the Compositions tab maps to its own sub-mode
+  (`compositions_tab_maps_to_its_own_submode` in that folder's `compositions.rs`); a capture keeps
+  comments and each entity's authored elevation; arming uses the editor's shared
+  pending-placement state.
 
 ## Related documentation
 

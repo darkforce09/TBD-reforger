@@ -4,7 +4,7 @@
 use super::*;
 
 /// Fixed crew stations before vehicle cargo seats.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const FIXED_SEATS: &[(&str, &str)] = &[
     ("driver", "Driver"),
     ("gunner", "Gunner"),
@@ -12,11 +12,11 @@ pub(super) const FIXED_SEATS: &[(&str, &str)] = &[
 ];
 
 /// Cargo seat count used without a declared vehicle capacity.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const DEFAULT_CARGO_SEATS: usize = 4;
 
 /// Builds ordered fixed and cargo seat labels.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn seat_model(n_cargo: usize) -> Vec<(String, String)> {
     FIXED_SEATS
         .iter()
@@ -26,7 +26,7 @@ pub(super) fn seat_model(n_cargo: usize) -> Vec<(String, String)> {
 }
 
 /// Registry kinds available for vehicle cargo selection.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const VEHICLE_CARGO_KINDS: &[&str] = &[
     "magazine",
     "ammo",

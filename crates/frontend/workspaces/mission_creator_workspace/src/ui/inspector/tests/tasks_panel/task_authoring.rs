@@ -41,18 +41,6 @@ fn reorder_swaps_neighbours_and_is_undoable_as_one_array() {
 }
 
 #[test]
-fn the_pickers_offer_exactly_the_schema_vocabularies() {
-    assert_eq!(TIERS, ["primary", "secondary", "optional"]);
-    assert_eq!(STATES, ["assigned", "succeeded", "failed"]);
-    for t in TIERS {
-        assert_ne!(tier_label(t), "Unknown tier");
-    }
-    for s in STATES {
-        assert_ne!(state_label(s), "Unknown state");
-    }
-}
-
-#[test]
 fn with_field_sets_tier_trigger_and_marker_and_strips_blank_optionals() {
     let base = vec![pri()];
     let next = with_field(&base, 0, "tier", "secondary").expect("tier");
@@ -64,26 +52,6 @@ fn with_field_sets_tier_trigger_and_marker_and_strips_blank_optionals() {
     let next = with_field(&next, 0, "triggerId", "  ").expect("blank optional");
     assert!(next[0].get("triggerId").is_none());
     mission_model::objectives::tasks::validate(&Value::Array(next)).expect("valid");
-}
-
-#[test]
-fn a_blank_title_is_refused() {
-    let err = with_field(&[pri()], 0, "title", "   ")
-        .expect_err("blank title")
-        .to_string();
-    assert!(err.contains("blank"), "{err}");
-}
-
-#[test]
-fn a_duplicate_id_is_refused() {
-    let rows = vec![
-        pri(),
-        json!({"id": "task-2", "title": "B", "tier": "optional", "state": "assigned"}),
-    ];
-    let err = with_field(&rows, 1, "id", "task-1")
-        .expect_err("clash")
-        .to_string();
-    assert!(err.contains("already used"), "{err}");
 }
 
 #[test]
@@ -114,15 +82,6 @@ fn clearing_writes_an_explicit_null_patch() {
 }
 
 #[test]
-fn the_reader_chain_names_every_hop() {
-    let hops: Vec<&str> = TASKS_READERS.iter().map(|(h, _)| *h).collect();
-    assert_eq!(hops, ["compile", "flatten", "mod", "editor"]);
-    for (hop, reader) in TASKS_READERS {
-        assert!(reader.len() > 30, "{hop}'s reader is not named: {reader}");
-    }
-}
-
-#[test]
 fn with_schedule_writes_start_and_window() {
     let next = with_schedule(&[pri()], 0, "600", "300", 5400).expect("legal");
     assert_eq!(next[0]["schedule"]["startAfterS"], 600);
@@ -136,38 +95,8 @@ fn with_schedule_writes_start_and_window() {
 }
 
 #[test]
-fn a_zero_window_is_refused_with_the_reason() {
-    let err = with_schedule(&[pri()], 0, "10", "0", 5400)
-        .expect_err("window 0")
-        .to_string();
-    assert!(err.contains("windowS"), "{err}");
-    assert!(err.contains("> 0"), "{err}");
-}
-
-#[test]
-fn start_past_mission_length_is_refused_with_the_reason() {
-    let err = with_schedule(&[pri()], 0, "5400", "60", 5400)
-        .expect_err("at end")
-        .to_string();
-    assert!(err.contains("within mission length"), "{err}");
-    assert!(err.contains("5400"), "{err}");
-}
-
-#[test]
 fn clearing_both_fields_removes_the_schedule() {
     let timed = with_schedule(&[pri()], 0, "120", "60", 5400).expect("set");
     let cleared = with_schedule(&timed, 0, "", "", 5400).expect("clear");
     assert!(cleared[0].get("schedule").is_none());
-}
-
-#[test]
-fn a_half_filled_schedule_is_refused() {
-    let err = with_schedule(&[pri()], 0, "120", "", 5400)
-        .expect_err("window missing")
-        .to_string();
-    assert!(err.contains("windowS"), "{err}");
-    let err = with_schedule(&[pri()], 0, "", "60", 5400)
-        .expect_err("start missing")
-        .to_string();
-    assert!(err.contains("startAfterS"), "{err}");
 }

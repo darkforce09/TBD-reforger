@@ -61,12 +61,10 @@ the same way.
   smoke test in
   `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/outliner_palette.rs`, which
   opens the Factions tab by its `aria-label`.
-- Rules: that tests folder holds these: the strip fits the 240 px dock and every glyph tab keeps
-  its name (`the_tab_strip_fits_the_dock` and `every_glyph_tab_keeps_its_name` in
-  `tab_strip_budget.rs`); the hook selects the zone and shows its tab, and the Zones index is
-  stated once (`the_hook_selects_the_zone_and_shows_it` and `the_zones_tab_index_is_stated_once` in
-  `zone_selection_seam.rs`); an older mount's cleanup leaves a newer hook in place
-  (`an_older_owners_cleanup_does_not_clobber_a_newer_registration` in `zone_hook_lifecycle.rs`).
+- Rules: the strip fits the 240 px dock and every glyph tab keeps its name; the routed zone click
+  reaches the mounted Zones panel and reports nothing selected when none is mounted
+  (`the_route_reports_honestly_and_delivers_the_id` in that tests folder's
+  `zone_selection_seam.rs`); an older mount's cleanup leaves a newer hook in place.
 
 ## Related documentation
 

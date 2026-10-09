@@ -41,14 +41,9 @@ and "Save", which calls the shell's `save_now`.
 - Used by: `TopCommandStrip` in
   `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/top_strip/view.rs`, the only place that
   expands the three macros.
-- Rules: the three macros take the same 34 named arguments, and
-  `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/tests/top_strip/test_source.rs` expands them
-  by substituting those names, so a renamed argument changes there too; "Save Version" is the one
-  primary action and both exports sit behind the one "Export" trigger
-  (`exactly_one_action_is_primary` and `the_exports_live_behind_one_secondary_trigger` in that
-  folder's `menu_row_layout.rs`); the dialog focuses its version field and keeps Tab inside it
-  (`version_input_takes_focus_on_open` and `traps_tab_within_the_dialog_subtree` in
-  `save_version_dialog.rs`).
+- Rules: the three macros take the same 34 named arguments; "Save Version" is the one primary
+  action and both exports sit behind the one "Export" trigger; the dialog focuses its version field
+  and keeps Tab inside it.
 
 ## Related documentation
 

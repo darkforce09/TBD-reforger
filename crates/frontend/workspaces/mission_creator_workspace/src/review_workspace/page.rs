@@ -39,7 +39,7 @@ enum WorkspaceRead {
 }
 
 /// What a refused workspace read is told, by the status the backend answered.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn workspace_failure_sentence(failure: &frontend_transport::Error) -> String {
     match failure.status() {
         401 => "Your session has ended — sign in again to open the review workspace.".to_string(),

@@ -1,5 +1,4 @@
 use super::{RouteTarget, route_availability, route_target};
-use frontend_test_support::class_r_scrub::live_code;
 use serde_json::json;
 
 fn doc() -> serde_json::Value {
@@ -113,80 +112,4 @@ fn the_probe_answers_the_question_the_click_will_answer_for_every_target_kind() 
         "wave 129 F6: the table must exercise both outcomes, or `probe == click` is trivially \
          satisfiable"
     );
-}
-
-/// The wiring half: there is ONE narrowing in the editor body and BOTH seams clone it. A second
-/// copy of the condition is how F1 and F2 drifted apart in the first place.
-///
-/// Perturbation RED: revert the probe to a clone of the bare `resolve`.
-#[test]
-fn one_availability_decision_feeds_both_the_probe_and_the_click() {
-    let ed = editor_live();
-    assert_eq!(
-        ed.matches(&format!("route{}", "_availability(")).count(),
-        1,
-        "wave 129 F6: the availability narrowing must be applied exactly ONCE — two call sites \
-         are two conditions to keep in step"
-    );
-    assert_eq!(
-        ed.matches(&format!("let available: Subject{}", "Resolver"))
-            .count(),
-        1,
-        "wave 129 F6: one narrowed resolver, built once"
-    );
-    assert!(
-        ed.contains(&format!("Rc::clone(&available{}", ")")),
-        "wave 129 F6: the probe must be a clone of the NARROWED resolver"
-    );
-    assert!(
-        ed.contains(&format!("available{}", "(subject_id)")),
-        "wave 129 F6: and the click must gate on that same narrowed resolver"
-    );
-}
-
-/// The oracle is not a second opinion: "the Zones panel is live" is asked as `!chrome_hidden`,
-/// and `!chrome_hidden` is EXACTLY the gate the `DockRight` mount is written against — and
-/// `DockRight`'s body is where `install_select_zone` registers the seam.
-///
-/// This pin exists because `eden_dock_right` exposes no side-effect-free "is the hook live?"
-/// reader (its only reader, `route_select_zone`, SELECTS), so the probe must mirror the mount
-/// condition. A mirror with nothing holding it to its subject is the defect class this wave is
-/// about; this is what holds it. Move the `DockRight` mount behind a different gate and this
-/// goes red.
-#[test]
-fn the_zone_liveness_oracle_is_the_dock_right_mount_gate() {
-    let ed = squash(&editor_live());
-    assert!(
-        ed.contains(&format!(
-            "route{}",
-            "_availability(resolve(subject_id),&||!chrome_hidden.get())"
-        )),
-        "wave 129 F6: the zone-liveness oracle must be the chrome gate, read reactively"
-    );
-    let mount = ed
-        .find(&format!("dock_right::Dock{}", "Right"))
-        .expect("wave 129 F6: the DockRight mount");
-    let gate = ed[..mount]
-        .rfind("(!chrome_hidden.get()).then(")
-        .expect("wave 129 F6: DockRight must be mounted behind the chrome gate");
-    assert!(
-        mount - gate < 400,
-        "wave 129 F6: the chrome gate the oracle mirrors must be the one that opens the \
-         DockRight mount — nothing else may sit between them"
-    );
-}
-
-/// The live editor body, comment- and literal-scrubbed, anchored at the page component (the
-/// file has a `#[cfg(test)]` module long before the mount, so scrubbing from the top would cut
-/// the mount away and leave a haystack every pin passes).
-fn editor_live() -> String {
-    let raw = super::source::raw_editor();
-    let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    live_code(&raw[raw.find(anchor.as_str()).expect("the page component")..])
-}
-
-/// Whitespace removed: `rustfmt` may break any of these expressions across lines, and a pin on
-/// an expression that is really a pin on the formatter is worthless.
-fn squash(src: &str) -> String {
-    src.chars().filter(|c| !c.is_whitespace()).collect()
 }

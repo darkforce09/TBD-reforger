@@ -58,12 +58,10 @@ Enter) act only while it is the topmost surface of `frontend_ui::modal_stack`.
   `crates/frontend/workspaces/mission_creator_engine_bridge/src/input/pointer_gestures/context_menu.rs`, through the
   registered opener; the
   tests in `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/tests/context_menu/`.
-- Rules: that folder's tests hold these: the enabled rows are exactly the shipped features
-  (`enabled_rows_are_exactly_the_shipping_features` in `menu_model.rs`); the formations are the
-  schema's enum in order (`the_formation_submenu_uses_the_schema_vocabulary_verbatim`); every
+- Rules: that folder's tests hold these: the formations are the schema's enum in order
+  (`the_formation_submenu_uses_the_schema_vocabulary_verbatim` in `menu_model.rs`); every
   disabled row has a tooltip (`every_disabled_row_in_both_takes_has_a_nonempty_title`); Escape
-  defers to the modal stack (`context_menu_gates_escape_on_modal_stack`); `source.rs` there lists
-  every file here for the source checks, so a new file joins that list.
+  defers to the modal stack.
 
 ## Related documentation
 

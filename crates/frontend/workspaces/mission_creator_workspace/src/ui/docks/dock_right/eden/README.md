@@ -37,13 +37,9 @@ empty ("No modpack is configured, so the … is empty. Set a current modpack, th
   the module root `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/dock_right.rs` re-exports the
   public items for the tests in
   `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/tests/dock_right/`.
-- Rules: the chip row is exactly the three sides and Objects, with no civilian chip
-  (`eden_side_chips_labels_no_civ`); the Objects chip never changes the side
-  (`objects_chip_enables_mode_without_clobbering_side`); "Custom" shows under Groups alone
-  (`custom_chip_only_under_groups`), all three in that folder's `palette_chips.rs`; every asset
-  search box carries the hint, which hides while its catalog has failed
-  (`every_asset_search_box_advertises_the_grammar` and
-  `grammar_hint_hides_while_the_tree_is_failed` in `favourites_and_recent_placements.rs`).
+- Rules: the chip row is exactly the three sides and Objects, with no civilian chip; the Objects
+  chip never changes the side; "Custom" shows under Groups alone; every asset search box carries
+  the hint, which hides while its catalog has failed.
 
 ## Related documentation
 

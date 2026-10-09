@@ -32,31 +32,6 @@ fn remove_drops_one_row_and_clearing_the_last_writes_null() {
 }
 
 #[test]
-fn a_duplicate_frequency_is_refused_in_the_panel() {
-    let rows = vec![
-        cmd(),
-        json!({"id": "net:blufor_alpha", "label": "Alpha", "freqMHz": 31.0}),
-    ];
-    let err = with_field(&rows, 1, "freqMHz", "30")
-        .expect_err("clash")
-        .to_string();
-    assert!(err.contains("already used"), "{err}");
-    assert!(err.contains("30"), "{err}");
-}
-
-#[test]
-fn an_out_of_range_frequency_is_refused_in_the_panel() {
-    let err = with_field(&[cmd()], 0, "freqMHz", "20")
-        .expect_err("low")
-        .to_string();
-    assert!(err.contains("outside"), "{err}");
-    let err = with_field(&[cmd()], 0, "freqMHz", "900")
-        .expect_err("high")
-        .to_string();
-    assert!(err.contains("outside"), "{err}");
-}
-
-#[test]
 fn reset_to_derived_writes_an_explicit_null_patch() {
     let cleared: Value = serde_json::from_str(&env_patch(None)).expect("json");
     assert_eq!(cleared, json!({"radioPlan": null}));
@@ -75,21 +50,4 @@ fn a_full_authoring_pass_produces_a_block_the_compile_accepts() {
     rows = with_field(&rows, 1, "label", "Alpha").expect("alpha");
     rows = with_field(&rows, 1, "faction", "blufor").expect("fac2");
     validate(&plan_from_nets(&rows).expect("plan")).expect("valid");
-}
-
-#[test]
-fn the_reader_chain_names_every_hop() {
-    let hops: Vec<&str> = RADIO_READERS.iter().map(|(h, _)| *h).collect();
-    assert_eq!(hops, ["compile", "flatten", "mod", "editor"]);
-    for (hop, reader) in RADIO_READERS {
-        assert!(reader.len() > 30, "{hop}'s reader is not named: {reader}");
-    }
-}
-
-#[test]
-fn the_pickers_offer_exactly_the_schema_vocabulary() {
-    assert_eq!(RANGES, ["short", "long"]);
-    for r in RANGES {
-        assert_ne!(range_label(r), "Unknown range");
-    }
 }

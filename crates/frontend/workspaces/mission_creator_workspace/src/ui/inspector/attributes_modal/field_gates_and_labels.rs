@@ -111,7 +111,7 @@ impl Gate {
 }
 
 /// Maps coordinate labels to distinct axis colors.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn axis_chip_class(label: &str) -> Option<&'static str> {
     match label {
         "X" => Some("bg-red-500"),
@@ -162,7 +162,7 @@ pub(super) fn field_label(label: &'static str, gate: Gate) -> impl IntoView {
 
 /// Counts editable slots and names excluded vehicles in the selection.
 #[must_use]
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn attrs_multi_subtitle(slot_n: usize, selection_n: usize) -> String {
     let base = format!("{slot_n} slots selected · multi-edit");
     if selection_n > slot_n {

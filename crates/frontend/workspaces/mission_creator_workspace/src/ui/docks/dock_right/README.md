@@ -79,12 +79,8 @@ registers both at mount, and each cleanup removes only its own registration.
   `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/tests/dock_right/`; the outliner smoke test
   in `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/outliner_palette.rs`, which
   drives the Factions tab and drags a leaf onto the map.
-- Rules: the dock's source checks read the production files listed in
-  `DOCK_RIGHT_PRODUCTION_SOURCE` in
-  `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/tests/dock_right/mod.rs`, so a new production
-  file here joins that list; a mount hook's cleanup never removes a newer registration
-  (`an_older_owners_cleanup_does_not_clobber_a_newer_registration` in that folder's
-  `zone_hook_lifecycle.rs`); the tab strip fits the 240 px dock (`the_tab_strip_fits_the_dock`).
+- Rules: a mount hook's cleanup never removes a newer registration; the tab strip fits the 240 px
+  dock.
 
 ## Related documentation
 

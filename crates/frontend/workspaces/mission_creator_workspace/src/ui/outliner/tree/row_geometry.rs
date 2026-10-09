@@ -6,20 +6,14 @@ use super::*;
 // All tree rows share a 16 px border-box height. The selected row's top border fits inside
 // that height, so virtual spacers remain aligned with both idle and selected rows.
 
-/// the geometry EVERY tree row shares, and the single place the 16 px pitch is stated.
-/// `h-4` is [`ROW_H`]; `items-center` centres the 16 px chevron/glyph cells inside it.
-#[cfg(test)]
-pub(crate) const ROW_GEOM: &str =
-    "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm";
-
-/// A tree row's shared recipe (idle): [`ROW_GEOM`] + [`frontend_ui::tokens::HOVER_FILL`]. Depth
+/// A tree row's shared recipe (idle): the shared 16 px row geometry + [`frontend_ui::tokens::HOVER_FILL`]. Depth
 /// renders as leading guide-line spans (see `guide_spans`).
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) const ROW: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface";
-/// A tree row's SELECTED/active recipe: [`ROW_GEOM`] + [`mission_creator_state::layout::TOGGLED_PLATE`] (the
+/// A tree row's SELECTED/active recipe: the shared 16 px row geometry + [`mission_creator_state::layout::TOGGLED_PLATE`] (the
 /// lighter primary plate PLUS the 1px dark top border that makes it distinct-by-construction from a
 /// hovered [`ROW`]). The border is inside the `h-4` box, so this row is not a pixel taller than [`ROW`].
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) const ROW_ACTIVE: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm bg-primary/20 text-primary border-t border-background/60";
 /// a FOLDER row that is the **active drop target** (the layer the next placement /
 /// comment lands in, `editor_ops::active_layer`). This is a DIFFERENT STATE from selection and must
@@ -32,31 +26,31 @@ pub(crate) const ROW_ACTIVE: &str = "relative flex h-4 w-full items-center gap-1
 /// `my_location` chip (see the Folder row view) rides this state as the non-colour half of the cue.
 /// `t803_drop_target_reads_differently` pins the two folder sites onto this const and the
 /// class-distinctness (neither string contains the other's distinguishing token).
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) const ROW_DROP_TARGET: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm bg-tertiary/15 text-tertiary ring-1 ring-inset ring-tertiary/50";
 /// the palette-leaf variant of [`ROW`]: adds `cursor-grab` (→ `cursor-grabbing` while
 /// pressed) so hovering a placeable role advertises the drag affordance. Folders keep `cursor-pointer`
 /// and outliner slots keep the plain [`ROW`] default (only palette leaves are drag-to-place). Same
 /// [`frontend_ui::tokens::HOVER_FILL`] as [`ROW`].
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) const PALETTE_LEAF: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface cursor-grab active:cursor-grabbing";
-/// the non-interactive row kinds (Squad / Comment headers): [`ROW_GEOM`] at the muted rest
+/// the non-interactive row kinds (Squad / Comment headers): the shared 16 px row geometry at the muted rest
 /// weight. They are `<div>`s, not buttons, but they occupy the same 16 px pitch — a group header that
 /// was a different height from its children is what made the tree read as ragged.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) const ROW_STATIC: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm text-on-surface-variant";
-/// the "Unfiled" pseudo-root's row: [`ROW_GEOM`] at the faintest weight (it is a virtual
+/// the "Unfiled" pseudo-root's row: the shared 16 px row geometry at the faintest weight (it is a virtual
 /// bucket, not a doc layer).
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) const ROW_UNFILED: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm text-outline";
-/// an ORBAT faction header: [`ROW_GEOM`] plus the small-caps treatment that marks a section.
-#[cfg(any(test, target_arch = "wasm32"))]
+/// an ORBAT faction header: the shared 16 px row geometry plus the small-caps treatment that marks a section.
+#[cfg(target_arch = "wasm32")]
 pub(crate) const ROW_FACTION: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant";
 /// the ORBAT squad-leader badge, sized for the dense row. `ui::badge_class` is the page-level
 /// pill (`px-2 py-0.5` ⇒ 22 px with its border) and it burst out of a 16 px row; this is the same
 /// primary tint at `h-3` with `leading-none`, so the badge sits INSIDE the row instead of setting its
 /// height.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) const ROW_BADGE: &str = "inline-flex h-3 shrink-0 items-center rounded border border-primary/30 bg-primary/10 px-1 text-label-sm leading-none text-primary";
 
 /// Hierarchy guide lines — continuous YouTube spines ( A3/A4; supersedes  L-hooks).
@@ -204,7 +198,7 @@ pub(crate) fn chevron_or_spacer(
 }
 
 /// The 16 px row height used by window spacers and shared row classes.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const ROW_H: f64 = 16.0;
 /// Height used before the live scroller is measured and in native rendering.
 #[cfg(target_arch = "wasm32")]

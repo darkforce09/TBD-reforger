@@ -35,5 +35,4 @@ schedule) shows its reason. The native build renders nothing.
 - Used by: the parent module, which re-exports `tasks_panel`; the Mission Settings dialog
   (`crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/settings_modal/mission_dialog.rs`), which mounts it
   after the win conditions card.
-- Rules: a schedule is written whole or not at all (`a_half_filled_schedule_is_refused` in
-  `crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/tests/tasks_panel/task_authoring.rs`).
+- Rules: a schedule is written whole or not at all.

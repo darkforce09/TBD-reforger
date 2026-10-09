@@ -1,15 +1,5 @@
 //! Mission summary for the top command strip.
 
-/// The three Eden sides, in header order, paired with the schema faction `key` each derives from.
-///
-/// The `key` half is the value `factionsById[..].key` holds (`asset_catalog` `EDEN_SIDES`, and the
-/// `orbat_add_squad` guard on `editor_ops.rs:4249`); the `label` half is the milsim-facing word the
-/// header shows. WOG's 94%-consistent community naming convention grew out of exactly this label
-/// vocabulary, so the labels are part of the stable format the summary line pins below.
-#[cfg(test)]
-pub(super) const CENSUS_SIDES: [(&str, &str); 3] =
-    [("BLUFOR", "WEST"), ("OPFOR", "EAST"), ("INDFOR", "IND")];
-
 /// A per-side slot tally plus the unassigned remainder — the census the header badge renders.
 ///
 /// `west` / `east` / `ind` are the BLUFOR / OPFOR / INDFOR slot counts; `unassigned` is every slot
@@ -29,20 +19,6 @@ pub struct SlotCensus {
     pub unassigned: usize,
     /// Every slot.
     pub total: usize,
-}
-
-impl SlotCensus {
-    /// The per-side count for a schema faction `key`, or 0 for a key that is not one of the three
-    /// Eden sides (which is what makes such a slot land in `unassigned`, not in a side bucket).
-    #[cfg(test)]
-    pub(super) fn count_for_key(&self, key: &str) -> usize {
-        match key {
-            "BLUFOR" => self.west,
-            "OPFOR" => self.east,
-            "INDFOR" => self.ind,
-            _ => 0,
-        }
-    }
 }
 
 /// Derive the per-side census PURELY from the ORBAT rows — the header's single source of truth.

@@ -3,7 +3,7 @@
 use super::*;
 
 /// Close-button hit area for the floating hint card.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const HINT_CLOSE_BTN: &str = "shrink-0 rounded p-1.5 text-on-surface";
 thread_local! {
     static HINT_SHOWN: Cell<bool> = const { Cell::new(false) };

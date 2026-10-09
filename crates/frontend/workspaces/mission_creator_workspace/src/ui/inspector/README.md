@@ -102,10 +102,9 @@ handlers, and each view has a native stand-in that renders nothing.
   - an environment key written on its own has a reader in `env`'s tables
     (`keys_nothing_reads_are_not_authored` and `every_carried_key_names_its_reader` in
     `tests/env/environment_flow_contract.rs`);
-  - every block panel clears its key with an explicit `null` and names each reader of the key
-    (each block's `null`-patch test and its `the_reader_chain_names_every_hop`);
+  - every block panel clears its key with an explicit `null` (each block's `null`-patch test);
   - the Attributes dialog registers with `core::ui::modal_stack` and answers Escape only while
-    topmost (`tests/attributes_modal/modal_escape_stack.rs`).
+    topmost.
 
 ## Related documentation
 

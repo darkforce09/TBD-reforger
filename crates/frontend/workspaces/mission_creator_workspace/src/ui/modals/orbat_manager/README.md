@@ -65,9 +65,9 @@ and writes it with `PUT /api/v1/factions/{id}`; "Save as" creates a faction from
   `orbat_manager_overlay_derives_z_from_the_modal_stack` in
   `crates/frontend/foundation/frontend_ui/src/tests/ui.rs`, which reads `dialog.rs`.
 - Rules: applying a template changes nothing unless the confirmation is accepted
-  (`apply_cancel_noop`), and Escape closes the dialog only while it is the topmost modal
-  (`orbat_manager_gates_escape_on_modal_stack`), both in
-  `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/orbat_manager/roster_and_virtualization.rs`;
+  (`apply_cancel_noop` in
+  `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/orbat_manager/roster_and_virtualization.rs`),
+  and Escape closes the dialog only while it is the topmost modal;
   no source file here or in the parent module holds the text "Standardization", "IFAK" or
   "Grenade Complement" in any letter case (`cargo xtask verify editor-orbat-coherency`); the
   dialog's overlay z-index comes from `modal_stack::z_class`

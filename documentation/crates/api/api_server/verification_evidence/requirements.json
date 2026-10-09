@@ -944,7 +944,6 @@
         "crates/frontend/workspaces/mission_creator_workspace/src/review_workspace/README.md",
         "crates/frontend/workspaces/mission_creator_workspace/src/review_workspace/tests/review_workspace.rs",
         "crates/frontend/workspaces/mission_creator_workspace/src/mission_editor/canvas_mount/review_restore.rs",
-        "crates/frontend/workspaces/mission_creator_workspace/src/tests/review_mode/read_only_review.rs",
         "crates/frontend/foundation/frontend_api_dtos/src/mission_reviews.rs",
         "crates/frontend/foundation/frontend_api_dtos/src/tests/r_api_mission_reviews.rs",
         "crates/api/api_server/tests/mission_review_binding.rs"

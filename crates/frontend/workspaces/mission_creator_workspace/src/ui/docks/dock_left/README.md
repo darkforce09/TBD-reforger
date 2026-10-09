@@ -79,17 +79,10 @@ view and selection state: none of them edits the document or adds an undo step.
   - the bookmark key keeps its `tbd-` namespace and its version stamp, and a stored blob is
     cleaned on load (`bookmarks_key_is_namespaced_and_versioned` and
     `migrate_bookmarks_drops_junk_rows` in `bookmarks_places_and_tabs.rs`);
-  - bookmark and fly-to code never reaches the undo history
-    (`bookmarks_and_fly_to_are_not_document_edits`), and neither does a selection chip
-    (`narrowing_the_selection_is_not_undoable` in that folder's `document_search.rs`);
-  - a hit is a button exactly when the router would select it
-    (`a_hit_row_is_a_live_affordance_iff_the_click_would_select`), and the document index covers
-    every collection an author can place into (`the_index_covers_every_placeable_collection`),
-    both in the same test file;
-  - the tab header fits the 240 px dock (`the_header_row_fits_the_dock` in
-    `dock_density_and_search.rs`);
-  - `test_source.rs` there reassembles the dock's production files, fragments expanded, for the
-    source checks, so a new file here joins its list.
+  - the selection filter offers only proper subsets of the selection
+    (`the_selection_filter_offers_only_proper_subsets` in `document_search.rs`);
+  - bookmark, fly-to and selection-chip code never reaches the undo history, a hit is a button
+    exactly when the router would select it, and the tab header fits the 240 px dock.
 
 ## Related documentation
 

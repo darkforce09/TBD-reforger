@@ -64,11 +64,10 @@ unchanged rows, and a row whose owner can be selected selects it through the val
   `crates/frontend/workspaces/mission_creator_workspace/src/mission_editor.rs` mounts; the smoke test
   `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/cur.rs`, which finds the dialog
   by its "Mission Settings" heading.
-- Rules: all three dialogs answer Escape only while topmost
-  (`settings_dialogs_gate_escape_on_modal_stack`), a row load that races a patch never applies
-  (`a_get_that_races_a_patch_cannot_apply`), and the All Settings list edits nothing
-  (`the_aggregated_view_is_not_a_second_editing_surface`), all in
-  `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/`.
+- Rules: all three dialogs answer Escape only while topmost, a row load that races a patch never
+  applies (`a_get_that_races_a_patch_cannot_apply` in
+  `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/mission_shape_flight.rs`),
+  and the All Settings list edits nothing.
 
 ## Related documentation
 

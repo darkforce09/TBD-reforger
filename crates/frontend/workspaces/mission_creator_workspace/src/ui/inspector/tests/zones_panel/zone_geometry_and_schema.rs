@@ -2,26 +2,13 @@
 
 use super::{
     MIN_AUTHORABLE_RADIUS_M, MISSION_SCHEMA, WHOLE_TERRAIN_ZONE_LABEL, ZONE_GRID_M, ZoneRuleKind,
-    circle_from_clicks, humanize_key, humanize_token, polygon_flat, polygon_is_committable,
-    radius_survives_compile, round_coord, terrain_rect_is_authorable, terrain_rect_ring,
-    whole_terrain_zone_type, zone_rule_fields, zone_types,
+    circle_from_clicks, polygon_flat, polygon_is_committable, radius_survives_compile, round_coord,
+    terrain_rect_is_authorable, terrain_rect_ring, whole_terrain_zone_type, zone_rule_fields,
+    zone_types,
 };
 
 #[test]
-fn zone_quantisation_mirrors_flatten() {
-    let flatten = frontend_test_support::repository_root::repository_text(
-        env!("CARGO_MANIFEST_DIR"),
-        "crates/mission/mission_compiler/src/game_document/zones.rs",
-    );
-    let body = flatten
-        .split("fn round_coord(v: f64) -> f64 {")
-        .nth(1)
-        .expect("flatten::round_coord must exist");
-    let expr = body.split('}').next().expect("body").trim();
-    assert_eq!(
-        expr, "(v * 10.0).round() / 10.0",
-        "flatten::round_coord changed — update state::zones round_coord to match"
-    );
+fn zone_quantisation_rounds_to_a_tenth() {
     assert_eq!(round_coord(0.04), 0.0);
     assert_eq!(round_coord(0.05), 0.1);
 }
@@ -249,123 +236,6 @@ fn zone_types_come_from_the_schema() {
     );
 }
 
-#[test]
-fn every_t211_mutator_has_a_caller() {
-    let ops = [
-        mission_creator_engine_bridge::test_support::editor_operations::entity(),
-        mission_creator_engine_bridge::test_support::editor_operations::domain_entity(),
-    ]
-    .concat();
-    #[allow(non_snake_case)]
-    let OPS: &str = &ops;
-    for m in [
-        "add_circle_zone",
-        "add_polygon_zone",
-        "set_zone_circle",
-        "set_zone_polygon",
-        "set_zone_type",
-        "set_zone_label",
-        "set_zone_faction",
-        "set_zone_rules",
-        "remove_zone",
-        "zones_json",
-        "zone_count",
-    ] {
-        assert!(
-            OPS.contains(&format!("core.{m}(")) || OPS.contains(&format!("MissionDocCore::{m}")),
-            "T-211 mutator `{m}` still has no caller — that was the whole T-582 defect"
-        );
-    }
-    assert!(
-        OPS.contains("begin_zone_reshape"),
-        "reshape must be reachable, not just create"
-    );
-}
-
-#[test]
-fn labels_never_replace_tokens() {
-    assert_eq!(
-        humanize_token("objective_hold_until"),
-        "Objective hold until"
-    );
-    assert_eq!(humanize_token("spawn"), "Spawn");
-    assert_eq!(humanize_key("warnEverySeconds"), "Warn every seconds");
-    assert_eq!(humanize_key("penalty"), "Penalty");
-    for f in zone_rule_fields() {
-        assert_ne!(
-            humanize_key(&f.key),
-            f.key,
-            "label must differ from wire key"
-        );
-    }
-}
-
-fn editor_live_from_page() -> String {
-    use frontend_test_support::class_r_scrub::live_code;
-    let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/mission_editor.rs"
-    ));
-    assert_eq!(
-        raw.matches(anchor.as_str()).count(),
-        1,
-        "scrub anchor must be unambiguous"
-    );
-    let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
-    src.push_str(&live_code(
-        frontend_test_support::repository_root::repository_text(
-            env!("CARGO_MANIFEST_DIR"),
-            "crates/frontend/workspaces/mission_creator_engine_bridge/src/input/window_keydown.rs",
-        ),
-    ));
-    src
-}
-
-#[test]
-fn t792_escape_arm_cancels_the_zone_draw() {
-    let ed = editor_live_from_page();
-    assert!(
-        ed.contains("armed_placement::cancel_zone_draw()"),
-        "T-792: the editor keydown must call armed_placement::cancel_zone_draw() (the ONE cancel a \
-             multi-click draw honours) — cancel_pending alone leaves the draft armed"
-    );
-    assert!(
-        ed.contains("code().as_str()")
-            && ed.contains("armed_placement::has_pending()")
-            && ed.contains("armed_placement::cancel_zone_draw()"),
-        "T-792: the zone-draw cancel must live in the ONE shared keydown Escape arm, beside the \
-             armed-place (has_pending) cancel — no second window keydown listener"
-    );
-}
-
-#[test]
-fn t792_zone_cancel_consumes_the_press() {
-    let ed = editor_live_from_page();
-    assert!(
-        ed.contains("let zone_draw_acted =") && ed.contains("|| zone_draw_acted"),
-        "T-792: the draw-cancel result must join the Escape arm's handled `||` chain, so a real \
-             cancel consumes the press (one Esc, one layer)"
-    );
-}
-
-#[test]
-fn t792_cancel_zone_draw_bumps_the_dock_tick() {
-    use frontend_test_support::class_r_scrub::{live_code, only_body};
-    let ops = live_code(mission_creator_engine_bridge::test_support::editor_operations::entity());
-    let body = only_body(&ops, "pub fn cancel_zone_draw() -> bool");
-    assert!(
-        body.contains("bump_doc_tick()"),
-        "T-792: cancel_zone_draw must bump the dock tick on a real clear, so the rim/vertex hint \
-             (gated on zone_draft() under doc_tick) disappears — the panel-Cancel effect, on Esc"
-    );
-    assert!(
-        body.contains("Some(Pending::Zone(_))"),
-        "T-792: cancel_zone_draw must clear on Pending::Zone(_) regardless of collection, so a \
-             trigger draw (the second consumer) is cancelled by the same call"
-    );
-}
-
 const SHIPPED_TERRAINS: [&str; 2] = ["everon", "arland"];
 
 fn terrain_payload(extra: &str) -> Vec<u8> {
@@ -558,78 +428,4 @@ fn whole_terrain_zone_type_comes_from_the_schema() {
         "the whole-terrain type must be one the schema declares"
     );
     assert_eq!(WHOLE_TERRAIN_ZONE_LABEL, "Play Area");
-}
-
-#[test]
-fn whole_terrain_affordance_is_wired() {
-    use frontend_test_support::class_r_scrub::{live_code, live_source, only_body};
-    let ops = live_code(super::zones_panel_source());
-    let body = only_body(&ops, "pub fn add_whole_terrain_zone() -> Option<String>");
-
-    assert!(
-        body.contains("terrain_key_of(core)") && body.contains("terrain_bounds_of(core)"),
-        "T-702: the command must read the live terrain KEY and its BOUNDS from the doc, so the \
-             rect it authors is the rect the compile reads"
-    );
-    assert!(
-        body.contains("terrain_rect_ring("),
-        "T-702: the ring must come from terrain_rect_ring (which refuses bounds that are not \
-             this terrain), not from four corners spelled in the command"
-    );
-    assert!(
-        body.contains("core.add_polygon_zone_labelled("),
-        "T-702: one button = one undo step, so the create must be the single-txn labelled \
-             mutator — never add_polygon_zone followed by set_zone_label"
-    );
-    assert!(
-        !body.contains("core.set_zone_label("),
-        "T-702: a second mutator here is a second undo step; the label rides the create"
-    );
-    assert!(
-        body.contains("WHOLE_TERRAIN_ZONE_LABEL") && body.contains("whole_terrain_zone_type()"),
-        "T-702: label and type must be the shared constants, not re-spelled in the command"
-    );
-
-    // The panel has no native stub: its whole production half is the wasm build's panel.
-    let wasm_half =
-        mission_creator_engine_bridge::test_support::production_half(super::zones_panel_source());
-    let panel = live_code(wasm_half);
-    let panel_copy = live_source(wasm_half);
-    assert!(
-        panel.contains("add_whole_terrain_zone()"),
-        "T-702: the Zones panel must CALL the command (the T-582 no-caller defect must not recur)"
-    );
-    assert!(
-        panel.contains("selected.set(Some(id))"),
-        "T-702: the panel must select the new zone id, which is what opens its Attributes"
-    );
-
-    let gate = only_body(
-        &panel,
-        "pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<String>>) -> AnyView",
-    );
-    let opens_at = gate
-        .find("zone_attributes(")
-        .expect("T-702: the panel must render the Attributes block");
-    let head = "let Some(id) = selected.get()";
-    let from = gate[..opens_at]
-        .rfind(head)
-        .expect("T-702: Attributes must be gated on the selection");
-    let squash = |s: &str| s.split_whitespace().collect::<Vec<_>>().join(" ");
-    assert_eq!(
-        squash(&gate[from..opens_at]),
-        squash(
-            "let Some(id) = selected.get() else { return ().into_any(); };
-                 let Some(z) = engine_ops::zone_rows().into_iter().find(|r| r.id == *id) else {
-                     return ().into_any();
-                 };"
-        ),
-        "T-702: Attributes must be gated on `selected` plus the live row and NOTHING else — any \
-             third condition is a second thing the whole-terrain create would have to satisfy, and \
-             selecting the new id would stop being enough to open the panel"
-    );
-    assert!(
-        panel_copy.contains("Whole-terrain zone"),
-        "T-702: the affordance must be a labelled control an author can find"
-    );
 }

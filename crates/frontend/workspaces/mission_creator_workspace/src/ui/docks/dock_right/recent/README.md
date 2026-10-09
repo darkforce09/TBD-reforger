@@ -36,10 +36,9 @@ dock mounted it does nothing, since the placement has already committed.
   `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/orbat_manager/tree_rows.rs`; the tests in
   `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/tests/dock_right/`.
 - Rules: the list is head-first, deduplicated by asset id and capped
-  (`recently_placed_is_head_first_deduped_and_capped`); the dock installs the recorder together
-  with its cleanup, and both off-dock placements call `record_placed`
-  (`off_dock_placements_feed_recently_placed_through_the_recorder_seam`), both in that folder's
-  `favourites_and_recent_placements.rs`.
+  (`recently_placed_is_head_first_deduped_and_capped` in that folder's
+  `favourites_and_recent_placements.rs`); the dock installs the recorder together with its
+  cleanup, and both off-dock placements call `record_placed`.
 
 ## Related documentation
 

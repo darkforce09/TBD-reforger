@@ -47,24 +47,6 @@ pub struct DocHit {
 /// mounting them would cost more than the search does.
 pub const MAX_DOC_HITS: usize = 200;
 
-/// glyph is 1 em square.
-#[cfg(test)]
-pub(super) const HIT_ICON_PX: f64 = 14.0;
-/// Horizontal gap between a hit icon and label.
-#[cfg(test)]
-pub(super) const HIT_GAP_PX: f64 = 4.0;
-/// Horizontal padding reserved by a search result row.
-#[cfg(test)]
-pub(super) const HIT_ROW_PAD_PX: f64 = 8.0;
-/// is 15 px; overlay scrollbars take 0. Budget for the classic one — the pin must not pass only on
-/// the machine whose scrollbars happen to be free.
-#[cfg(test)]
-pub(super) const LIST_SCROLLBAR_PX: f64 = 15.0;
-/// this the row degrades into an ellipsis with a badge beside it, which is furniture: it would name
-/// nothing the author could recognise, and a search result that cannot be read is not a result.
-#[cfg(test)]
-pub(super) const HIT_MIN_LABEL_PX: f64 = 80.0;
-
 ///
 /// `text` is the string being searched, `class_name` the row's Enfusion class (what `class:`
 /// matches), `group` its faction (what `mod:` matches, and what a plain query matches as a

@@ -234,7 +234,7 @@ pub(crate) fn row_routes(kind: NodeKind, id: &str) -> bool {
 /// dock-left row's old "resolves slots and vehicles only" sentence became a lie the moment the
 /// router grew an arm, and this one cannot.
 #[must_use]
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn inert_row_reason() -> &'static str {
     "Not selectable right now — the editor's click-to-select router resolves nothing for this row"
 }

@@ -45,8 +45,8 @@ held to the document's 0.1 m grid (`ZONE_GRID_M`): a circle radius must survive 
   `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/`, through `zones_panel`.
 - Rules: zone types and rule controls come from the schema, never from a list in the code
   (`zone_types_come_from_the_schema`, `zone_rule_fields_cover_the_whole_vocabulary`), and the
-  panel rounds coordinates exactly as the compiler does (`zone_quantisation_mirrors_flatten`), all
-  in `crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/tests/zones_panel/zone_geometry_and_schema.rs`.
+  panel rounds coordinates to a tenth of a metre, as the compiler does, both in
+  `crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/tests/zones_panel/zone_geometry_and_schema.rs`.
 
 ## Related documentation
 

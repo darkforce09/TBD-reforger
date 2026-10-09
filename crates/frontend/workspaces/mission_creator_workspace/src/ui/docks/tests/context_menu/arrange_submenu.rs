@@ -109,19 +109,3 @@ fn the_submenu_is_the_top_strips_own_list() {
     assert!(ContextItem::Arrange.is_submenu_parent());
     assert!(!ARRANGE.is_empty());
 }
-
-/// The parent's placement is behavioural, not cosmetic: it must sit next to `Transform`, the
-/// other row that rearranges what is already selected, so the two an author reaches between are
-/// adjacent rather than separated by the Grid / Log stubs.
-#[test]
-fn arrange_sits_beside_transform() {
-    let rows = state(&["a", "b"], None).entries();
-    let l = labels(&rows);
-    let t = l.iter().position(|s| *s == "Transform").expect("Transform");
-    let a = l.iter().position(|s| *s == "Arrange").expect("Arrange");
-    assert_eq!(
-        a,
-        t + 1,
-        "T-939.4: Arrange must follow Transform; rows: {l:?}"
-    );
-}

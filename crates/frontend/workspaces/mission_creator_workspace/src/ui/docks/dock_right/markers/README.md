@@ -50,9 +50,8 @@ nothing.
   `only_schema_aliases_are_authorable`); the picker has one row per glyph
   (`picker_has_one_row_per_canonical_icon`, which also checks each canonical slug folds to a
   distinct glyph), and the canonical slug table is sized by `unit_symbology`'s `MARKER_GLYPH_COUNT`,
-  so a glyph set of another size fails to compile; marker writes go to
-  the side's briefing, never to a root marker map
-  (`marker_writes_go_to_the_briefing_not_the_root_map`).
+  so a glyph set of another size fails to compile; marker writes go to the side's briefing, never
+  to a root marker map.
 
 ## Related documentation
 

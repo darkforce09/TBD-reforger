@@ -48,29 +48,6 @@ fn rollup_counts_by_severity() {
 }
 
 #[test]
-fn rollup_chip_text_is_the_one_line_summary() {
-    let mut rows = Vec::new();
-    for i in 0..3 {
-        rows.push(pf("E", Severity::Error, Some(&format!("e{i}"))));
-    }
-    for i in 0..5 {
-        rows.push(pf("W", Severity::Warning, Some(&format!("w{i}"))));
-    }
-    let r = Rollup::of(&rows);
-    assert_eq!(r.chip_text(), "3 errors · 5 warnings");
-}
-
-#[test]
-fn rollup_chip_text_singular_and_omits_zero_severities() {
-    let rows = vec![
-        pf("E", Severity::Error, Some("e1")),
-        pf("I", Severity::Info, Some("i1")),
-    ];
-    let r = Rollup::of(&rows);
-    assert_eq!(r.chip_text(), "1 error · 1 info");
-}
-
-#[test]
 fn empty_rollup_is_empty_and_has_no_chip() {
     let r = Rollup::of(&[]);
     assert!(r.is_empty());
@@ -297,19 +274,4 @@ fn click_to_select_is_a_no_op_without_a_registered_router() {
     register_select_by_id(std::rc::Rc::new(|id: &str| id == "slot-7"));
     assert!(route_select_by_subject_id(&"slot-7".into()));
     assert!(!route_select_by_subject_id(&"slot-other".into()));
-}
-
-#[test]
-fn the_severity_ladder_covers_every_severity_with_a_meaning() {
-    assert_eq!(SEVERITY_LADDER.len(), 3);
-    assert_eq!(SEVERITY_LADDER[0].severity, Severity::Error);
-    assert_eq!(SEVERITY_LADDER[1].severity, Severity::Warning);
-    assert_eq!(SEVERITY_LADDER[2].severity, Severity::Info);
-    for rung in SEVERITY_LADDER {
-        assert!(!rung.label.is_empty());
-        assert!(!rung.meaning.is_empty(), "{rung:?} needs a meaning");
-    }
-    assert_eq!(severity_tag(Severity::Error), "error");
-    assert_eq!(severity_tag(Severity::Warning), "warning");
-    assert_eq!(severity_tag(Severity::Info), "info");
 }

@@ -105,10 +105,9 @@ web-sys = { workspace = true, features = [
 ] }
 
 [dev-dependencies]
-# The repository-root finder, the captured API responses behind `golden!`, the source scrubber
-# and the source shards the source pins read.
+# The captured API responses behind `golden!`.
 frontend_test_support = { workspace = true }
-# The production half of a source file and the live entity operation sources.
+# The boot progress percentage the page's tests call.
 mission_creator_engine_bridge = { workspace = true, features = ["test_fixtures"] }
 # The satellite container reader the canvas mount's level choice is tested against.
 satellite_imagery = { workspace = true }

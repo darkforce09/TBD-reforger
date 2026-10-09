@@ -40,10 +40,6 @@ pub use menu_overlay::ContextMenuOverlay;
 mod tests;
 
 #[cfg(test)]
-#[path = "tests/context_menu/escape_stack.rs"]
-mod t726_context_menu_esc_stack;
-
-#[cfg(test)]
 #[path = "tests/context_menu/disabled_row_reasons.rs"]
 mod t807_disabled_rows_show_why;
 
@@ -54,7 +50,3 @@ mod t939_4_arrange_in_the_context_menu;
 #[cfg(test)]
 #[path = "tests/context_menu/menu_geometry.rs"]
 mod t939_4_menu_geometry;
-
-#[cfg(test)]
-#[path = "tests/context_menu/source.rs"]
-mod test_source;

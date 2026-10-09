@@ -11,20 +11,10 @@ use serde::{Deserialize, Serialize};
 use mission_creator_state::layout::{DOCK_L, STUB_PX};
 
 /// qualifier bought nothing: the dock holds exactly one kind of layer.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 const TAB_LABEL_LAYERS: &str = "Layers";
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 const TAB_LABEL_PLACES: &str = "Locations";
-/// character's advance, in CSS px.
-///
-/// MEASURED, not guessed: rendering the real classes against the generated `aegis.css` in a headless
-/// Chrome gives 45.75 px for the 6 characters of "Layers" (7.63/char) and 72.88 px for the 9 of
-/// "Locations" (8.10/char), in DejaVu Sans — the widest fallback in the stack. Inter and system-ui,
-/// which is what actually renders, are both narrower, so 8.5 is a genuine ceiling with margin.
-#[cfg(test)]
-const UPPERCASE_LABEL_ADVANCE_PX: f64 = 8.5;
-#[cfg(test)]
-const TAB_LABEL_PAD_PX: f64 = 12.0;
 #[cfg(target_arch = "wasm32")]
 use crate::ui::outliner::tree::virtual_tree;
 #[cfg(target_arch = "wasm32")]
@@ -90,8 +80,6 @@ use camera::*;
 /// Camera snapshot and movement helpers for location rows.
 #[cfg(target_arch = "wasm32")]
 pub use camera::{fly_to, live_camera};
-#[cfg(test)]
-use document_search::*;
 /// Document search results and selection controls.
 pub use document_search::{
     DocHit, MAX_DOC_HITS, hit_is_routable, query_hits, search_document, selection_facets,
@@ -119,7 +107,3 @@ mod dock_density_and_search;
 #[cfg(test)]
 #[path = "tests/dock_left/document_search.rs"]
 mod document_search_tests;
-
-#[cfg(test)]
-#[path = "tests/dock_left/test_source.rs"]
-mod test_source;

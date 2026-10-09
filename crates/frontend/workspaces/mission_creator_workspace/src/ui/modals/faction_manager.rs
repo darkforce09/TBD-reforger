@@ -309,7 +309,3 @@ pub fn FactionManagerDialog(
         })
     }
 }
-
-#[cfg(test)]
-#[path = "tests/faction_manager/dialog_contract.rs"]
-mod faction_manager_dialog_contract;

@@ -55,11 +55,11 @@ tab of `crates/frontend/workspaces/mission_creator_arsenal/src/` for the id the 
   picker's tree and search; `editor_context::close_attributes` in the bridge; `MaterialIcon` and the
   `RegistryItem` DTO from the foundation crates.
 - Used by: the parent module only.
-- Rules: a field writes only a new finite value (`should_commit_writes_only_a_new_finite_value` in
+- Rules: a field writes only a new finite value, and a Transform commit carries the typed Z into
+  the document (`should_commit_writes_only_a_new_finite_value` and
+  `a_transform_commit_carries_z_into_the_document` in
   `crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/tests/attributes_modal/numeric_field_input.rs`);
-  the faction and squad pickers move the whole selection in one undo group
-  (`the_picker_commits_the_whole_selection_in_one_undo_group` in
-  `batch_faction_and_squad_reassignment.rs` beside it).
+  the faction and squad pickers move the whole selection in one undo group.
 
 ## Related documentation
 

@@ -12,13 +12,13 @@ shortcut catalog.
 crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/
 ├── faction_manager.rs  `FactionManagerDialog`: create, edit and delete the faction library's templates
 ├── help_modal/         the controls hint card and the shortcut catalog
-├── help_modal.rs       the help module tree; re-exports the hint and the catalog; mounts the census
+├── help_modal.rs       the help module tree; re-exports the hint and the catalog
 ├── mod.rs              the module tree
 ├── orbat_manager/      the ORBAT Manager: side tree, slot inspector, faction templates
 ├── orbat_manager.rs    the ORBAT Manager module tree; re-exports the dialog and the template helpers
 ├── settings_modal/     the Mission Settings dialog, the All Settings list, the Editor Preferences
 ├── settings_modal.rs   the settings module tree; re-exports the dialog and catalog; inner openers
-└── tests/              unit tests for the four dialogs and the keymap census
+└── tests/              unit tests for the settings dialogs and the ORBAT Manager
 ```
 
 ## How it works
@@ -47,8 +47,7 @@ after the "Delete this faction?" confirmation.
 The Mission Settings dialog with its two inner dialogs, the ORBAT Manager and the Faction Manager
 register with `core::ui::modal_stack` and answer Escape only while topmost, so stacked dialogs
 close in order; the ORBAT Manager also takes its overlay z-index from the stack. A dialog that
-binds a key listens on the window, and the keymap census under `tests/help_modal/keymap_census/`
-checks every such editor binding against the others and against the shortcut catalog.
+binds a key listens on the window.
 
 ## Public surface
 
@@ -82,11 +81,8 @@ checks every such editor binding against the others and against the shortcut cat
     `orbat_manager.rs` and every source file in `orbat_manager/` for banned interface text;
   - the test `orbat_manager_overlay_derives_z_from_the_modal_stack` in
     `crates/frontend/foundation/frontend_ui/src/tests/ui.rs`, which reads `orbat_manager/dialog.rs`.
-- Rules: a dialog stacked over another answers Escape only while topmost
-  (`settings_dialogs_gate_escape_on_modal_stack` in `tests/dialog_escape_stack.rs`,
-  `faction_manager_gates_escape_on_modal_stack` in `tests/faction_manager/dialog_contract.rs`);
-  every key a window-level editor listener binds has a catalog row
-  (`every_binding_has_a_help_entry` in `tests/help_modal/shortcut_coverage.rs`).
+- Rules: a dialog stacked over another answers Escape only while topmost; every key a
+  window-level editor listener binds has a catalog row.
 
 ## Related documentation
 

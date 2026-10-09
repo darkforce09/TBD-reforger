@@ -58,19 +58,14 @@ sink signal ──> top strip chip (Rollup) ──opens──> findings_dropdown
     `canvas_mount/boot_tasks.rs` and `canvas_mount/review_restore.rs`, which register the hooks
     and clear the compile findings;
   - the export in `crates/frontend/workspaces/mission_creator_session/src/document_commands/imp/exports.rs`,
-    which publishes compile findings through the registered publisher
-    (`compile_findings_publication.rs` in
-    `crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/tests/validation_panel/` holds the path);
+    which publishes compile findings through the registered publisher;
   - the top strip in `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/top_strip/`, for the chip
     and the dropdown; the left dock, the outliner rows and the All Settings dialog, which select
     subjects through `route_select_by_subject_id` and `subject_id_routes`.
 - Rules: the seam mechanism is defined once in the crate, and an older owner's cleanup never clears
-  a newer registration (`the_seam_mechanism_is_defined_exactly_once_in_the_crate` and
-  `an_older_owners_cleanup_does_not_clobber_a_newer_registration` in
-  `crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/tests/validation_panel/registration_lifecycle.rs`);
-  a finding row is clickable exactly when the router resolves its subject
-  (`a_finding_row_is_clickable_iff_the_router_resolves_its_subject` in `finding_route_probe.rs`
-  beside it).
+  a newer registration; a finding row is clickable exactly when the router resolves its subject
+  (`a_finding_row_is_clickable_iff_the_router_resolves_its_subject` in
+  `crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/tests/validation_panel/finding_route_probe.rs`).
 
 ## Related documentation
 

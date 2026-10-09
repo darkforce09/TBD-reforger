@@ -21,11 +21,11 @@ use frontend_ui::utc_timestamp::utc_label;
 use leptos::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use mission_review_record::artifact_provenance_view::diagnostics_list;
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 use mission_review_record::review_wording::short_digest;
 
 /// The banner's headline: which artifact the workspace shows, and from which version.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn review_workspace_title(artifact_digest: &str, semver: &str) -> String {
     format!(
         "Review workspace of artifact {}, version {semver}",
@@ -34,13 +34,13 @@ pub(crate) fn review_workspace_title(artifact_digest: &str, semver: &str) -> Str
 }
 
 /// What the workspace does with an edit.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) const NOTHING_IS_SAVED: &str = "Read-only: nothing here is saved — no draft, no \
                                            version, no submission, no mission settings. Edits stay \
                                            in this tab and are discarded when it closes.";
 
 /// The findings summary line.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn findings_summary(count: usize) -> String {
     match count {
         0 => "The compile reported no findings".to_string(),

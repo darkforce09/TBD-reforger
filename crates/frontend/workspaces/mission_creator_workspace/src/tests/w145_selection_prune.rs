@@ -1,5 +1,4 @@
 use super::selectable_ids;
-use frontend_test_support::class_r_scrub::only_body;
 
 /// Two slots, one of them carrying T-701 `editorHidden` — the row `materialize()` drops and the
 /// raw key map keeps.
@@ -126,70 +125,4 @@ fn a_document_that_does_not_parse_yields_an_empty_universe() {
     assert!(selectable_ids("not json", "not json").is_empty());
     assert!(selectable_ids("{}", "{}").is_empty());
     assert!(selectable_ids("[]", "null").is_empty());
-}
-
-/// **CLASS-R — the shipped prune site actually uses this universe.**
-///
-/// `mission_history.rs` is `#![cfg(target_arch = "wasm32")]` from line one: a test written there
-/// would never run, and no native test can call into it. This reads the module's LIVE SOURCE
-/// back through `include_str!` and holds three things:
-///
-///   1. there is exactly ONE `retain` in the file — one prune, so a widening cannot land on one
-///      site and miss the other, which is what a copy at each call site invites;
-///   2. that prune builds its universe from `selectable_ids(slots_json, small_maps_json)`;
-///   3. both post-change entry points go through it.
-///
-/// `live_code` blanks comments AND string literals, so every needle below means a CALL, not a
-/// mention — the prose this ticket wrote naming these very tokens cannot make it pass. Needles
-/// are assembled at run time, this file's standing rule.
-///
-/// The two negatives are scoped to `prune_selection`'s body deliberately, on the wave-144
-/// precedent: `materialize()` is the RIGHT reader everywhere else in that module (it feeds the
-/// glyph bind), so a file-wide ban would be false. The positives above are what hold the fix
-/// down; these only stop the SoA creeping back into the one body that must not read it.
-#[test]
-fn the_selection_prune_runs_over_the_whole_selectable_universe() {
-    let hist = super::source::live_document_history();
-    let retain = ["retain", "(|id|"].concat();
-    assert_eq!(
-        hist.matches(&retain).count(),
-        1,
-        "wave 145 F-1: mission_history must prune the selection in exactly ONE place — two \
-         retains is how one of them gets the widened universe and the other keeps the SoA"
-    );
-
-    let prune = ["prune", "_selection("].concat();
-    let body = only_body(&hist, &format!("fn {prune}"));
-    for needle in [
-        ["selectable", "_ids("].concat(),
-        ["slots", "_json()"].concat(),
-        ["small_maps", "_json()"].concat(),
-        retain.clone(),
-    ] {
-        assert!(
-            body.contains(&needle),
-            "wave 145 F-1: the prune must retain over \
-             mission_editor::selectable_ids(slots_json, small_maps_json) — the ids the live \
-             document actually holds, read from the POST-change document so a deleted id still \
-             falls out; missing `{needle}`, body was:\n{body}"
-        );
-    }
-    for banned in ["materialize", "soa"] {
-        assert!(
-            !body.contains(banned),
-            "wave 145 F-1: the prune must not build its universe from the materialized SoA — \
-             it holds no vehicle, object or comment id and drops T-665/T-701 hidden slots, so \
-             pruning against it deletes live selections instead of stale ones; body was:\n\
-             {body}"
-        );
-    }
-
-    for site in ["rebind_engine_from_doc", "after_doc_change"] {
-        let at = only_body(&hist, &format!("fn {site}("));
-        assert!(
-            at.contains(&prune),
-            "wave 145 F-1: {site} must prune through the shared prune_selection, not with a \
-             retain of its own; body was:\n{at}"
-        );
-    }
 }

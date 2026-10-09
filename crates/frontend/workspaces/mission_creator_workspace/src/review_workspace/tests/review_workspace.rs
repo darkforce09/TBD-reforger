@@ -1,61 +1,23 @@
-//! The review workspace's words, held against the captured workspace, and the wiring that makes the
-//! editor it mounts read-only.
+//! The review workspace opens the editor on exactly the reviewed version, and review mode withholds
+//! every write of the mission while it is open.
 
-use super::banner::{NOTHING_IS_SAVED, findings_summary, review_workspace_title};
-use super::page::workspace_failure_sentence;
 use frontend_api_dtos::ReviewWorkspace;
-use frontend_test_support::class_r_scrub::{live_code, only_body};
 use frontend_test_support::fixtures::golden;
-use frontend_transport::Error;
+use mission_creator_session::tab_lock::{self, SaveDecision, Stamp, TabRole};
 use mission_creator_state::review_mode::{self, ReviewedVersion};
 
-fn workspace() -> &'static str {
-    golden!(
+fn workspace() -> ReviewWorkspace {
+    serde_json::from_str(golden!(
         "GET__missions__00000000-0000-4000-c000-000000000004__artifacts__00000000-0000-4000-f000-000000000004__workspace.json"
-    )
-}
-
-/// The banner names the artifact by its short digest and the version it compiled from.
-#[test]
-fn the_banner_names_the_artifact_and_its_version() {
-    let workspace: ReviewWorkspace = serde_json::from_str(workspace()).unwrap();
-    assert_eq!(
-        review_workspace_title(
-            &workspace.artifact.artifact_digest,
-            &workspace.version.semver
-        ),
-        "Review workspace of artifact bcfb3b1c4109, version 0.4.0"
-    );
-    assert!(NOTHING_IS_SAVED.contains("nothing here is saved"));
-    assert_eq!(findings_summary(0), "The compile reported no findings");
-    assert_eq!(findings_summary(1), "The compile reported 1 finding");
-    assert_eq!(findings_summary(3), "The compile reported 3 findings");
-}
-
-/// A refused read says who may open a workspace, or that there is nothing to open.
-#[test]
-fn a_refused_workspace_says_why() {
-    let refused = |status: u16, message: Option<&str>| {
-        workspace_failure_sentence(&Error::from_status(status, message.map(str::to_string)))
-    };
-    assert!(refused(403, None).contains("author and administrators"));
-    assert!(refused(404, Some("mission not found")).contains("no such artifact"));
-    assert!(refused(401, None).contains("sign in again"));
-    assert_eq!(
-        refused(
-            500,
-            Some("the reviewed version no longer matches its artifact")
-        ),
-        "The reviewed version no longer matches its artifact"
-    );
-    assert_eq!(refused(0, None), "The review workspace could not be opened");
+    ))
+    .unwrap()
 }
 
 /// The reviewed version the editor opens on is exactly the captured workspace's: its artifact, its
 /// version and its authored payload, stamped with the row fields the artifact's compile read.
 #[test]
 fn the_editor_opens_on_the_reviewed_version() {
-    let workspace: ReviewWorkspace = serde_json::from_str(workspace()).unwrap();
+    let workspace = workspace();
     let reviewed = ReviewedVersion::from_workspace(&workspace);
     assert_eq!(reviewed.mission_id, "00000000-0000-4000-c000-000000000004");
     assert_eq!(
@@ -75,38 +37,47 @@ fn the_editor_opens_on_the_reviewed_version() {
     assert!(row.briefing.is_empty(), "the blurb is not a compile input");
 }
 
-/// The route opens review mode before it mounts the editor and closes it when it goes away, so the
-/// editor's boot always finds the reviewed version and the next Mission Creator authors again.
+/// An elected writer tab whose own stamp is on the record writes its draft straight through; the
+/// moment a review of the mission opens, the same tab writes nothing — the gate the draft writer
+/// consults before it encodes refuses, so no draft record is written — and closing the review
+/// restores the write.
 #[test]
-fn the_route_opens_review_mode_around_the_editor() {
-    let src = live_code(include_str!("../page.rs"));
-    let inner = only_body(&src, "fn ReviewWorkspaceInner()");
-    assert!(inner.contains("on_cleanup(review_mode::close)"));
-    let open = inner
-        .find("review_mode::open(ReviewedVersion::from_workspace(")
-        .expect("the route opens review mode");
-    let mount = inner
-        .find("<MissionEditorPage")
-        .expect("the route mounts the editor");
-    assert!(
-        open < mount,
-        "review mode must be open before the editor mounts"
-    );
-    assert!(inner.contains("load_review_workspace(store, &mission_id, &artifact_id)"));
-}
+fn an_open_review_withholds_the_draft_write_an_elected_writer_would_make() {
+    review_mode::close();
+    let me = "tab-review-test";
+    let own_record = Stamp {
+        tab: me.to_string(),
+        at: 1.0,
+    };
+    let draft_write_lands = || {
+        tab_lock::may_write()
+            && tab_lock::decide_save(tab_lock::role(), Some(&own_record), me) != SaveDecision::Defer
+    };
 
-/// While a review is open no mount writes the mission; closing it restores authoring.
-#[test]
-fn review_mode_withholds_every_write_while_open() {
-    let workspace: ReviewWorkspace = serde_json::from_str(workspace()).unwrap();
-    review_mode::close();
-    assert!(review_mode::writes_mission());
-    review_mode::open(ReviewedVersion::from_workspace(&workspace));
-    assert!(review_mode::is_open());
+    assert_eq!(tab_lock::role(), TabRole::Writer);
+    assert!(
+        draft_write_lands(),
+        "an authoring writer tab saves its draft"
+    );
+
+    let reviewed = ReviewedVersion::from_workspace(&workspace());
+    let mission_id = mission_model::ids::MissionId::new(reviewed.mission_id.as_str());
+    review_mode::open(reviewed);
+    assert!(
+        review_mode::reviewed_for(&mission_id).is_some(),
+        "the editor mount of the reviewed mission shows the reviewed version"
+    );
+    assert_eq!(
+        tab_lock::role(),
+        TabRole::Writer,
+        "the election is unchanged"
+    );
     assert!(!review_mode::writes_mission());
-    assert!(!mission_creator_session::tab_lock::may_write());
-    assert!(review_mode::saves_nothing_message().contains("version 0.4.0, saves nothing"));
+    assert!(
+        !draft_write_lands(),
+        "a review writes no draft record, whatever the writer election says"
+    );
+
     review_mode::close();
-    assert!(review_mode::writes_mission());
-    assert!(mission_creator_session::tab_lock::may_write());
+    assert!(draft_write_lands(), "closing the review restores authoring");
 }

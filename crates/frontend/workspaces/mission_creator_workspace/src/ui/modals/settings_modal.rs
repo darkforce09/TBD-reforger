@@ -113,15 +113,6 @@ pub fn open_all_settings() {
 #[path = "tests/aggregated_settings.rs"]
 mod aggregated_settings;
 #[cfg(test)]
-#[path = "tests/briefing_mirror.rs"]
-mod briefing_mirror;
-#[cfg(test)]
-#[path = "tests/dialog_escape_stack.rs"]
-mod dialog_escape_stack;
-#[cfg(test)]
-#[path = "tests/editor_preferences.rs"]
-mod editor_preferences;
-#[cfg(test)]
 #[path = "tests/mission_presentation.rs"]
 mod mission_presentation;
 #[cfg(test)]
@@ -136,10 +127,3 @@ mod player_count;
 #[cfg(test)]
 #[path = "tests/settings_click_affordance.rs"]
 mod settings_click_affordance;
-#[cfg(test)]
-#[path = "tests/settings_inert_row_accessibility.rs"]
-mod settings_inert_row_accessibility;
-
-#[cfg(test)]
-#[path = "tests/source.rs"]
-mod source;

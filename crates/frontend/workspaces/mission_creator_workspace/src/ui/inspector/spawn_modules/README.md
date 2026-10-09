@@ -31,6 +31,4 @@ The native build renders nothing.
 - Used by: the parent module, which re-exports `spawn_modules_panel`; the Mission Settings dialog,
   which renders it after the win conditions card
   (`crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/settings_modal/mission_dialog.rs`).
-- Rules: a module placed both by position and by zone is refused in the panel
-  (`both_position_and_zone_are_refused_in_the_panel` in
-  `crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/tests/spawn_modules/spawn_module_authoring.rs`).
+- Rules: a module placed both by position and by zone is refused in the panel.

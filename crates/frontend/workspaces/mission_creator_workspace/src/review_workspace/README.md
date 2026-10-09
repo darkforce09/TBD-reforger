@@ -11,7 +11,7 @@ crates/frontend/workspaces/mission_creator_workspace/src/review_workspace/
 ├── banner.rs  the persistent banner: artifact and version, read-only notice, compile findings
 ├── mod.rs     the module tree; re-exports `ReviewWorkspacePage`
 ├── page.rs    the route component: the workspace read, review mode and the mounted editor
-└── tests/     unit tests for the banner, the refusal sentences and review mode's hold on writes
+└── tests/     unit tests for the reviewed version the editor opens on and review mode's hold on writes
 ```
 
 ## How it works
@@ -74,11 +74,9 @@ Links to this route come from the review record's history and from the
 - Used by: the route in `crates/frontend/shell/frontend_application/src/app_routes.rs`; `review_workspace_href` in the
   review record (`crates/frontend/features/mission_review_record/src/`) and in the
   approvals drawer (`crates/frontend/pages/administration_pages/src/approvals/`) links here.
-- Rules: the editor mounts only after the workspace read, inside review mode
-  (`the_route_opens_review_mode_around_the_editor` and `the_editor_opens_on_the_reviewed_version`
-  in `tests/review_workspace.rs`); review mode withholds every write
-  (`review_mode_withholds_every_write_while_open`); a refused read says why
-  (`a_refused_workspace_says_why`).
+- Rules: the editor opens on exactly the reviewed version (`the_editor_opens_on_the_reviewed_version`
+  in `tests/review_workspace.rs`); review mode withholds the draft write an elected writer tab
+  would make (`an_open_review_withholds_the_draft_write_an_elected_writer_would_make`).
 
 ## Related documentation
 

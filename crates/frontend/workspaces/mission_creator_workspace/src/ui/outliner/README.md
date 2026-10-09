@@ -13,7 +13,7 @@ through which rows are refiled and reparented.
 crates/frontend/workspaces/mission_creator_workspace/src/ui/outliner/
 ├── drag.rs        `DragSet`, the drag latch, `plan_drop`, the grouped drops onto a folder or squad
 ├── mod.rs         the module tree
-├── tests/         unit tests for the drag planner and the tree rendering
+├── tests/         unit tests for the drag planner, the drag sets, the folder selection and row routing
 ├── tree/          the windowed tree, the per-kind rows, the folder controls and the drag sets
 └── tree.rs        the tree's module root; re-exports the renderer and the shared row helpers
 ```
@@ -75,9 +75,8 @@ to the top level through the map engine's single-folder latch.
   - a drop onto a folder moves the whole set or nothing, and one member can refuse it
     (`plan_drop_returns_every_dragged_id_not_just_the_anchor` and
     `a_non_anchor_member_can_refuse_the_whole_drop` in `tests/drag/drag_set_drop_planning.rs`);
-  - every drag arm builds a set and every folder or squad drop consumes one
-    (`every_drag_arm_builds_a_set_and_every_drop_consumes_one` in
-    `tests/tree/multi_entity_drag_and_drop.rs`).
+  - a drag carries the selection in tree order with whole subtrees, and an unselected row drags
+    alone (`an_unselected_anchor_drags_alone` in `tests/tree/multi_entity_drag_and_drop.rs`).
 
 ## Related documentation
 

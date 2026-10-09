@@ -47,9 +47,8 @@ the native `triggers_panel` draws nothing.
   `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/dock_right/shell/layout.rs`; the tests in
   `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/tests/dock_right/`.
 - Rules: a trigger draws through the zone draw tool with its target flag, never a second draw
-  machine (`trigger_draw_is_second_consumer_of_the_zone_tool`); the owner line is a
-  pointer-events-none SVG from the pure projection (`owner_line_uses_the_selection_overlay_idiom`),
-  both in that folder's `triggers_and_owner_links.rs`.
+  machine; the owner line is a pointer-events-none SVG from the pure projection
+  (`project_owner_line_maps_both_endpoints` in that folder's `triggers_and_owner_links.rs`).
 
 ## Related documentation
 

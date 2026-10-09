@@ -40,12 +40,9 @@ which arm a press calls, because a vehicle leaf that armed a character placement
 - Used by: the Factions and Vehicles tabs in
   `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/dock_right/shell/`; the tests in
   `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/tests/dock_right/`.
-- Rules: a vehicle leaf arms the vehicle placement and an object leaf the object placement
-  (`vehicles_tab_places_instead_of_promising` and
-  `objects_chip_enables_mode_without_clobbering_side` in `palette_chips.rs` there); the Factions
-  tab draws the merged tree filtered by the side chips, and its leaf press both arms and records
-  the placement (`factions_tab_draws_the_merged_tree` and
-  `a_merged_leaf_press_feeds_recently_placed` in `favourites_and_recent_placements.rs`).
+- Rules: a vehicle leaf arms the vehicle placement and an object leaf the object placement; the
+  Factions tab draws the merged tree filtered by the side chips, and its leaf press both arms and
+  records the placement.
 
 ## Related documentation
 

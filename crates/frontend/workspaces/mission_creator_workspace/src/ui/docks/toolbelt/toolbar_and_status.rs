@@ -7,14 +7,14 @@ use super::*;
 const MODEBAR: &str = "pointer-events-auto rounded-xl border border-white/10 bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl flex items-center gap-1 px-1.5 py-1.5";
 
 /// Tailwind classes for the full width bottom status bar.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const STATUSBAR: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl flex h-9 w-full items-center gap-3 border-t border-white/10 px-3";
 
 #[cfg(target_arch = "wasm32")]
 const TOOL_BASE: &str = "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-label-md";
 
 /// Formats a coordinate for the compact status readout.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn fmt_coord(v: Option<f64>) -> String {
     match v {
         Some(n) => format!("{n:>9.3}"),
@@ -23,7 +23,7 @@ pub(super) fn fmt_coord(v: Option<f64>) -> String {
 }
 
 /// Formats a coordinate with Eden-style precision.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn fmt_coord_eden(v: Option<f64>) -> String {
     match v {
         Some(_) => format!("{} m", fmt_coord(v)),

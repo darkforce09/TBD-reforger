@@ -93,13 +93,8 @@ native test build compiles all five surfaces.
     through the DOM.
 - Rules:
   - a surface's tests live in `tests/<surface>/`, mounted from its module root with `#[path]`;
-  - each surface's source checks read its production files through one list in its tests folder
-    (`tests/context_menu/source.rs`, `tests/dock_left/test_source.rs`, `tests/dock_right/mod.rs`,
-    `tests/toolbelt/source.rs`, `tests/top_strip/test_source.rs`), so a new production file joins
-    that list;
   - the two side docks share the 240 px width and the 24 px stub, and their tab headers fit that
-    width (`the_header_row_fits_the_dock` in `tests/dock_left/dock_density_and_search.rs`,
-    `the_tab_strip_fits_the_dock` in `tests/dock_right/tab_strip_budget.rs`).
+    width.
 
 ## Related documentation
 

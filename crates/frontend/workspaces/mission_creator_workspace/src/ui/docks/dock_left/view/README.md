@@ -24,14 +24,9 @@ crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/dock_left/view
   `mission_editing_commands::hosted_commands`.
 - Used by: `DockLeft` in `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/dock_left/view.rs`, the
   only place that expands either macro.
-- Rules: both macros take the same 28 named arguments, and
-  `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/tests/dock_left/test_source.rs` expands them
-  by substituting those names, so a renamed argument changes there too; the tree renders the
-  filtered `layer_nodes`, never the raw nodes, and the "Placing into:" strip names the layer
-  `find_layer_label` or `first_folder_label` resolves
-  (`the_tree_claims_the_dock_height_the_decoration_used_to_hold` and
-  `the_drop_target_affordance_ships` in
-  `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/tests/dock_left/dock_density_and_search.rs`).
+- Rules: both macros take the same 28 named arguments; the tree renders the filtered
+  `layer_nodes`, never the raw nodes, and the "Placing into:" strip names the layer
+  `find_layer_label` or `first_folder_label` resolves.
 
 ## Related documentation
 

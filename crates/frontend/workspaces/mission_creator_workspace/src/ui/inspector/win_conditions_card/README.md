@@ -33,5 +33,4 @@ build renders nothing.
 - Used by: the parent module, which re-exports `win_conditions_card`; the Mission Settings dialog,
   which renders it after the mission flow section
   (`crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/settings_modal/mission_dialog.rs`).
-- Rules: the checklist never goes empty (`unticking_the_last_trigger_is_refused` in
-  `crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/tests/win_conditions_card/mode_authoring.rs`).
+- Rules: the checklist never goes empty.

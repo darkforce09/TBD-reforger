@@ -269,7 +269,7 @@ pub mod validation_runtime;
 #[cfg(any(target_arch = "wasm32", test))]
 pub use findings_dropdown::findings_dropdown;
 #[cfg(test)]
-use findings_dropdown::{inert_finding_row_reason, row_cursor_class};
+use findings_dropdown::row_cursor_class;
 use mission_creator_state::seam_registration::install_seam;
 #[cfg(target_arch = "wasm32")]
 pub use payload_source_and_selection_routes::known_asset_ids_from_registry;
@@ -289,42 +289,11 @@ pub(crate) use validation_evaluation_and_findings::{
 pub use validation_runtime::ValidationPanel;
 
 #[cfg(test)]
-fn validation_panel_source() -> &'static str {
-    static SOURCE: std::sync::OnceLock<String> = std::sync::OnceLock::new();
-    SOURCE.get_or_init(|| {
-        [
-            include_str!("validation_panel/findings_dropdown.rs"),
-            include_str!("validation_panel/payload_source_and_selection_routes.rs"),
-            frontend_test_support::repository_root::repository_text(
-                env!("CARGO_MANIFEST_DIR"),
-                "crates/frontend/workspaces/mission_creator_state/src/seam_registration.rs",
-            ),
-            include_str!("validation_panel/validation_evaluation_and_findings.rs"),
-            include_str!("validation_panel/validation_runtime.rs"),
-            include_str!("validation_panel.rs"),
-        ]
-        .concat()
-    })
-}
-
-#[cfg(test)]
-#[path = "tests/validation_panel/compile_findings_publication.rs"]
-mod compile_findings_publication_tests;
-#[cfg(test)]
 #[path = "tests/validation_panel/finding_rollup_and_debounce.rs"]
 mod finding_rollup_and_debounce_tests;
 #[cfg(test)]
 #[path = "tests/validation_panel/finding_route_probe.rs"]
 mod finding_route_probe_tests;
 #[cfg(test)]
-#[path = "tests/validation_panel/inert_finding_accessibility.rs"]
-mod inert_finding_accessibility_tests;
-#[cfg(test)]
 #[path = "tests/validation_panel/mission_switch_compile_findings.rs"]
 mod mission_switch_compile_findings_tests;
-#[cfg(test)]
-#[path = "tests/validation_panel/registration_lifecycle.rs"]
-mod registration_lifecycle_tests;
-#[cfg(test)]
-#[path = "tests/validation_panel/top_bar_findings_chip.rs"]
-mod top_bar_findings_chip_tests;

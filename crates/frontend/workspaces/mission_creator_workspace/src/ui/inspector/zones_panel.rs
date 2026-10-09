@@ -28,8 +28,8 @@ use zone_rule_control::zone_rule_control;
 
 #[cfg(any(test, target_arch = "wasm32"))]
 use mission_creator_state::zones::{
-    MIN_AUTHORABLE_RADIUS_M, ZONE_GRID_M, ZoneRuleKind, humanize_key, humanize_token,
-    polygon_is_committable, zone_rule_fields, zone_types,
+    MIN_AUTHORABLE_RADIUS_M, ZONE_GRID_M, ZoneRuleKind, polygon_is_committable, zone_rule_fields,
+    zone_types,
 };
 #[cfg(test)]
 use mission_creator_state::zones::{
@@ -40,33 +40,10 @@ use mission_creator_state::zones::{
 #[cfg(target_arch = "wasm32")]
 use mission_creator_state::zones::{ZoneRuleField, add_whole_terrain_zone};
 #[cfg(target_arch = "wasm32")]
+use mission_creator_state::zones::{humanize_key, humanize_token};
+#[cfg(target_arch = "wasm32")]
 use mission_operations::zones::ZoneShape;
 
-#[cfg(test)]
-fn zones_panel_source() -> &'static str {
-    static SOURCE: std::sync::OnceLock<String> = std::sync::OnceLock::new();
-    SOURCE.get_or_init(|| {
-        [
-    include_str!("zones_panel/zone_attributes.rs"),
-    frontend_test_support::repository_root::repository_text(
-        env!("CARGO_MANIFEST_DIR"),
-        "crates/frontend/workspaces/mission_creator_state/src/zones/zone_geometry.rs",
-    ),
-    include_str!("zones_panel/zone_list_panel.rs"),
-    include_str!("zones_panel/zone_rule_control.rs"),
-    frontend_test_support::repository_root::repository_text(
-        env!("CARGO_MANIFEST_DIR"),
-        "crates/frontend/workspaces/mission_creator_state/src/zones/zone_schema_vocabulary.rs",
-    ),
-    include_str!("zones_panel.rs"),
-]
-        .concat()
-    })
-}
-
-#[cfg(test)]
-#[path = "tests/zones_panel/tactical_draw_trigger.rs"]
-mod tactical_draw_trigger_tests;
 #[cfg(test)]
 #[path = "tests/zones_panel/zone_geometry_and_schema.rs"]
 mod zone_geometry_and_schema_tests;

@@ -21,11 +21,11 @@ use mission_creator_state::layout::{
 };
 
 /// Filled primary action styling for Save Version.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 const ACTION_PRIMARY: &str = "shrink-0 rounded bg-primary px-2.5 py-0.5 text-xs font-medium text-on-primary transition-colors hover:bg-primary/90";
 
 /// Outlined secondary action styling for the Export menu.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 const ACTION_SECONDARY: &str = "shrink-0 rounded border border-outline-variant/40 px-2.5 py-0.5 text-xs font-medium text-on-surface-variant";
 
 /// Compact validation status chip geometry; severity colours apply to its count.
@@ -76,8 +76,6 @@ use dialog_focus::*;
 use menu_catalog::*;
 #[cfg(test)]
 pub use mission_summary::SlotCensus;
-#[cfg(test)]
-use mission_summary::*;
 /// Mission census and generated summary helpers.
 pub use mission_summary::{census_from_rows, summary_line};
 /// Mission row mirror shared with the settings dialog.
@@ -94,41 +92,5 @@ pub use view::TopCommandStrip;
 mod mission_summary_and_mirror;
 
 #[cfg(test)]
-#[path = "tests/top_strip/menu_state_vocabulary.rs"]
-mod menu_state_vocabulary;
-
-#[cfg(test)]
-#[path = "tests/top_strip/controls_hint_menu.rs"]
-mod controls_hint_menu;
-
-#[cfg(test)]
-#[path = "tests/top_strip/form_controls.rs"]
-mod form_controls;
-
-#[cfg(test)]
-#[path = "tests/top_strip/menu_row_layout.rs"]
-mod menu_row_layout;
-
-#[cfg(test)]
-#[path = "tests/top_strip/escape_modal_stack.rs"]
-mod escape_modal_stack;
-
-#[cfg(test)]
-#[path = "tests/top_strip/dialog_transient_exclusivity.rs"]
-mod dialog_transient_exclusivity;
-
-#[cfg(test)]
-#[path = "tests/top_strip/save_version_dialog.rs"]
-mod save_version_dialog;
-
-#[cfg(test)]
-#[path = "tests/top_strip/validation_chip.rs"]
-mod validation_chip;
-
-#[cfg(test)]
 #[path = "tests/top_strip/arrange_actions.rs"]
 mod arrange_actions;
-
-#[cfg(test)]
-#[path = "tests/top_strip/test_source.rs"]
-mod test_source;

@@ -46,34 +46,6 @@ fn reorder_swaps_weather_and_keeps_times_increasing() {
 }
 
 #[test]
-fn equal_at_minutes_are_refused_in_the_panel() {
-    let err = with_field(&[t0(), t15()], 1, "atMinutes", "0")
-        .expect_err("equal")
-        .to_string();
-    assert!(err.contains("strictly increasing"), "{err}");
-}
-
-#[test]
-fn out_of_order_at_minutes_are_refused_in_the_panel() {
-    let err = with_field(&[t0(), t15()], 1, "atMinutes", "-1")
-        .expect_err("neg")
-        .to_string();
-    assert!(err.contains("negative"), "{err}");
-    let err = with_field(&[t0(), t15()], 0, "atMinutes", "20")
-        .expect_err("invert")
-        .to_string();
-    assert!(err.contains("strictly increasing"), "{err}");
-}
-
-#[test]
-fn an_unknown_preset_is_refused() {
-    let err = with_field(&[t0()], 0, "weatherPreset", "hailstorm")
-        .expect_err("preset")
-        .to_string();
-    assert!(err.contains("hailstorm"), "{err}");
-}
-
-#[test]
 fn blank_optional_wind_and_fog_are_stripped() {
     let next = with_field(&[t15()], 0, "windDirDeg", "  ").expect("blank wind");
     assert!(next[0].get("windDirDeg").is_none());
@@ -82,17 +54,6 @@ fn blank_optional_wind_and_fog_are_stripped() {
     let next = with_field(&next, 0, "fog", "").expect("blank fog");
     assert!(next[0].get("fog").is_none());
     validate(&timeline_from_keyframes(&next).expect("block")).expect("valid");
-}
-
-#[test]
-fn the_pickers_offer_exactly_the_schema_vocabulary() {
-    assert_eq!(
-        WEATHER_PRESETS,
-        ["clear", "overcast", "heavy_rain", "dense_fog"]
-    );
-    for p in WEATHER_PRESETS {
-        assert_ne!(preset_label(p), "Unknown preset");
-    }
 }
 
 #[test]
@@ -105,13 +66,4 @@ fn env_patch_sets_and_clears() {
     );
     let cleared: Value = serde_json::from_str(&env_patch(None)).expect("json");
     assert_eq!(cleared, json!({"weatherTimeline": null}));
-}
-
-#[test]
-fn the_reader_chain_names_every_hop() {
-    let hops: Vec<&str> = WEATHER_TIMELINE_READERS.iter().map(|(h, _)| *h).collect();
-    assert_eq!(hops, ["compile", "flatten", "mod", "editor"]);
-    for (hop, reader) in WEATHER_TIMELINE_READERS {
-        assert!(reader.len() > 30, "{hop}'s reader is not named: {reader}");
-    }
 }

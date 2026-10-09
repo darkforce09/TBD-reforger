@@ -71,13 +71,9 @@ use favourites::*;
 use palette::*;
 #[cfg(any(test, target_arch = "wasm32"))]
 use recent::*;
-#[cfg(test)]
-use shell::*;
 
 #[cfg(target_arch = "wasm32")]
 pub(crate) use compositions::compositions_panel;
-#[cfg(test)]
-pub(crate) use eden::SEARCH_GRAMMAR_HINT;
 pub use eden::{
     EDEN_CUSTOM_CHIP, EDEN_SIDE_CHIPS, EdenChip, EdenSubmode, SEARCH_PLACEHOLDER_GRAMMAR,
     apply_eden_chip, custom_chip_visible, eden_chip_selected,
@@ -99,24 +95,28 @@ pub use palette::PaletteKind;
 pub use recent::RecentPlaced;
 #[cfg(target_arch = "wasm32")]
 pub use shell::DockRight;
+#[cfg(test)]
+pub(crate) use shell::register_select_zone;
 #[cfg(any(test, target_arch = "wasm32"))]
 pub(crate) use shell::route_select_zone;
-#[cfg(test)]
-pub(crate) use shell::{ZONES_TAB, install_select_zone, register_select_zone};
 #[cfg(target_arch = "wasm32")]
 pub(crate) use triggers::triggers_panel;
 #[cfg(test)]
-#[path = "tests/dock_right/mod.rs"]
-mod tests;
+#[path = "tests/dock_right/compositions.rs"]
+mod compositions_tests;
 
 #[cfg(test)]
-#[path = "tests/dock_right/tab_strip_budget.rs"]
-mod t637_tab_strip_budget;
+#[path = "tests/dock_right/favourites_and_recent_placements.rs"]
+mod favourites_and_recent_placements_tests;
+
+#[cfg(test)]
+#[path = "tests/dock_right/marker_icons_and_briefing.rs"]
+mod marker_icons_and_briefing_tests;
+
+#[cfg(test)]
+#[path = "tests/dock_right/triggers_and_owner_links.rs"]
+mod triggers_and_owner_links_tests;
 
 #[cfg(test)]
 #[path = "tests/dock_right/zone_selection_seam.rs"]
 mod t754_zone_selection_seam;
-
-#[cfg(test)]
-#[path = "tests/dock_right/zone_hook_lifecycle.rs"]
-mod f2_zone_hook_lifecycle;

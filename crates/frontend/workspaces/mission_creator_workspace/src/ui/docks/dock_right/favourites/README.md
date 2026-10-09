@@ -46,9 +46,7 @@ keeps, and a press on either list arms the same placement a palette leaf would
 - Rules: the storage key keeps its `tbd-` namespace and its version, and a stored blob is
   deduplicated and capped (`favourites_key_is_namespaced_and_versioned` and
   `favourites_blob_is_deduped_and_capped` in `favourites_and_recent_placements.rs` there); a stale
-  favourite is kept and marked, never dropped (`stale_favourite_is_kept_and_marked_not_dropped`);
-  `arm_favourite_place` moves its payload rather than cloning it, so the palette's own arm stays
-  distinct for the source checks (`favourites_place_arm_stays_clone_free` in `palette_chips.rs`).
+  favourite is kept and marked, never dropped (`stale_favourite_is_kept_and_marked_not_dropped`).
 
 ## Related documentation
 

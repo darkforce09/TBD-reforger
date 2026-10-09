@@ -51,10 +51,10 @@ use mission_creator_engine_bridge::bridge::boot::BootPhase;
 use mission_creator_engine_bridge::bridge::boot::boot_progress;
 #[cfg(target_arch = "wasm32")]
 use mission_creator_engine_bridge::bridge::boot::hand_over;
+#[cfg(target_arch = "wasm32")]
+use mission_creator_engine_bridge::bridge::viewport::mark_registry_fetch_failed;
 #[cfg(any(test, target_arch = "wasm32"))]
-use mission_creator_engine_bridge::bridge::viewport::{
-    mark_registry_fetch_failed, registry_session,
-};
+use mission_creator_engine_bridge::bridge::viewport::registry_session;
 #[cfg(target_arch = "wasm32")]
 use mission_creator_engine_bridge::bridge::viewport::{
     register_editor_cam, register_self_checks, register_slot_stats, start_raf,
@@ -446,5 +446,5 @@ pub fn MissionEditorPage() -> impl IntoView {
 }
 
 #[cfg(test)]
-#[path = "tests/mission_editor/mod.rs"]
+#[path = "tests/mod.rs"]
 mod tests;

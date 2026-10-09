@@ -2,9 +2,13 @@
 
 #[cfg(target_arch = "wasm32")]
 use super::*;
+#[cfg(all(test, not(target_arch = "wasm32")))]
+use leptos::prelude::{GetValue, StoredValue};
+#[cfg(all(test, not(target_arch = "wasm32")))]
+use mission_editing_commands::hosted_commands as engine_ops;
 
 /// Updates one or several selected slot positions through the engine.
-#[cfg(target_arch = "wasm32")]
+#[cfg(any(test, target_arch = "wasm32"))]
 pub(super) fn commit_position(
     targets: StoredValue<Vec<String>>,
     x: Option<f64>,

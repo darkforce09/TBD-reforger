@@ -155,7 +155,7 @@ pub fn custom_chip_visible(submode: EdenSubmode) -> bool {
 pub const SEARCH_PLACEHOLDER_GRAMMAR: &str = " — class: mod: * /re/";
 
 /// The worked-example line under every asset-browser search box.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) const SEARCH_GRAMMAR_HINT: &str =
     "class:Character_US · mod:ArmaReforger · *Rifleman · /^us (mg|ar)$/";
 

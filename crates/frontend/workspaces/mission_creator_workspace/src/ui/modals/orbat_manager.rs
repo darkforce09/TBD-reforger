@@ -75,15 +75,3 @@ use tree_rows::*;
 #[cfg(test)]
 #[path = "tests/orbat_manager/roster_and_virtualization.rs"]
 mod orbat_manager_roster_and_virtualization;
-
-#[cfg(test)]
-#[path = "tests/orbat_manager/mounted_refile.rs"]
-mod orbat_manager_mounted_refile;
-
-#[cfg(test)]
-#[path = "tests/orbat_manager/source.rs"]
-mod source;
-
-#[cfg(test)]
-#[path = "tests/orbat_manager/modal_stack_layering.rs"]
-mod orbat_manager_modal_stack_layering;

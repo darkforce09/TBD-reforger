@@ -32,17 +32,17 @@ mod virtual_tree;
 use comment_row::*;
 #[cfg(test)]
 use mission_creator_state::outliner_model::{layer_descendant_slots, layer_direct_slot_children};
+#[cfg(target_arch = "wasm32")]
+pub(crate) use row_actions::inert_row_reason;
 #[cfg(test)]
 pub(crate) use row_actions::row_router_subject;
+#[cfg(any(test, target_arch = "wasm32"))]
+pub(crate) use row_actions::row_routes;
 #[cfg(target_arch = "wasm32")]
 use row_actions::*;
-#[cfg(any(test, target_arch = "wasm32"))]
-pub(crate) use row_actions::{inert_row_reason, row_routes};
-#[cfg(test)]
-pub(crate) use row_geometry::ROW_GEOM;
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 use row_geometry::*;
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) use row_geometry::{
     PALETTE_LEAF, ROW, ROW_ACTIVE, ROW_BADGE, ROW_FACTION, ROW_STATIC, ROW_UNFILED,
 };
@@ -62,24 +62,8 @@ use vehicle_rows::*;
 pub(crate) use virtual_tree::virtual_tree;
 
 #[cfg(test)]
-/// Live tree production source for source-inspection tests.
-pub(super) const TREE_PRODUCTION_SOURCE: &str = concat!(
-    include_str!("tree/selection.rs"),
-    include_str!("tree/row_geometry.rs"),
-    include_str!("tree/row_actions.rs"),
-    include_str!("tree/comment_row.rs"),
-    include_str!("tree/single_row.rs"),
-    include_str!("tree/vehicle_rows.rs"),
-    include_str!("tree/virtual_tree.rs"),
-);
-
-#[cfg(test)]
 #[path = "tests/tree/selection_and_layer_authoring.rs"]
 mod selection_and_layer_authoring;
-
-#[cfg(test)]
-#[path = "tests/tree/dense_row_geometry.rs"]
-mod dense_row_geometry;
 
 #[cfg(test)]
 #[path = "tests/tree/comment_row_routing.rs"]

@@ -59,21 +59,21 @@ pub(super) fn is_acceptable_thumbnail_url(raw: &str) -> bool {
 }
 
 /// Explains the library briefing field.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const BRIEFING_NOTE: &str = "The library blurb — what the mission browser, the dossier and the \
                              approval queue show before anyone joins, and what an exported mission \
                              carries. It is not the in-game briefing screen: that is written per \
                              faction, on the faction.";
 
 /// Explains the thumbnail link field.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const THUMBNAIL_URL_NOTE: &str = "An absolute http:// or https:// link to an image — the picture the \
                                   mission library card shows. There is no upload here: the mission \
                                   row stores a link, so host the image and paste its address. Clear \
                                   the box to remove the picture.";
 
 /// Explains a locally rejected thumbnail link.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const THUMBNAIL_REJECTED_NOTE: &str = "That is not an absolute http:// or https:// link, so it was \
                                        not saved. A site path like /uploads/x.png is not enough — \
                                        the mission row needs the whole address.";
@@ -84,7 +84,7 @@ pub(super) const PRESENTATION_UNAVAILABLE_NOTE: &str = "The mission row has not 
      that has never been saved to the library has no row yet.";
 
 /// Formats a failed presentation update.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn presentation_failure_message(
     field: PresentationField,
     err: &frontend_transport::Error,

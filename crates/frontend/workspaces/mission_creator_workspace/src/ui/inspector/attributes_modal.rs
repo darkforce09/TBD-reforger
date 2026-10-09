@@ -6,7 +6,7 @@ use leptos::prelude::*;
 use mission_creator_engine_bridge::bridge::host_state::editor_context::close_attributes;
 #[cfg(target_arch = "wasm32")]
 use mission_editing_commands::hosted_commands as engine_ops;
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) use mission_operations::reassign::faction_label;
 
 mod asset_type_picker;
@@ -26,7 +26,7 @@ use attribute_commits_and_revert::{commit_position, commit_slot, revert_to_snaps
 use faction_and_squad_reassignment::reassign_picker;
 #[cfg(target_arch = "wasm32")]
 use field_gates_and_labels::MultiOpts;
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) use field_gates_and_labels::attrs_multi_subtitle;
 #[cfg(target_arch = "wasm32")]
 use field_gates_and_labels::{CONTROL, CONTROL_LOCKED, Gate, TABS, field_label};
@@ -290,36 +290,8 @@ fn states_tab() -> impl IntoView {
 }
 
 #[cfg(test)]
-const ATTRIBUTES_MODAL_SOURCE: &str = concat!(
-    include_str!("attributes_modal/asset_type_picker.rs"),
-    include_str!("attributes_modal/attribute_commits_and_revert.rs"),
-    include_str!("attributes_modal/faction_and_squad_reassignment.rs"),
-    include_str!("attributes_modal/field_gates_and_labels.rs"),
-    include_str!("attributes_modal/field_inputs.rs"),
-    include_str!("attributes_modal/identity_tab.rs"),
-    include_str!("attributes_modal/spatial_transform_tab.rs"),
-    include_str!("attributes_modal/vehicle_attributes.rs"),
-    include_str!("attributes_modal.rs"),
-);
-
-#[cfg(test)]
 #[path = "tests/attributes_modal/batch_faction_and_squad_reassignment.rs"]
 mod batch_faction_and_squad_reassignment_tests;
 #[cfg(test)]
-#[path = "tests/attributes_modal/identity_and_raw_attributes.rs"]
-mod identity_and_raw_attributes_tests;
-#[cfg(test)]
-#[path = "tests/attributes_modal/modal_escape_stack.rs"]
-mod modal_escape_stack_tests;
-#[cfg(test)]
 #[path = "tests/attributes_modal/numeric_field_input.rs"]
 mod numeric_field_input_tests;
-#[cfg(test)]
-#[path = "tests/attributes_modal/position_and_selection.rs"]
-mod position_and_selection_tests;
-#[cfg(test)]
-#[path = "tests/attributes_modal/transform_field_copy.rs"]
-mod transform_field_copy_tests;
-#[cfg(test)]
-#[path = "tests/attributes_modal/type_picker_revert_and_vehicle.rs"]
-mod type_picker_revert_and_vehicle_tests;

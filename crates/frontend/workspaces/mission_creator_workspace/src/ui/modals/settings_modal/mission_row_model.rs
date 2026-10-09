@@ -57,19 +57,19 @@ impl PlayerCount {
 }
 
 /// Explains the derived player count.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const SLOTS_PLACED_NOTE: &str = "Counted from the slots placed in this mission — nobody types it. \
                                  A slot is a seat, not a player: this is what the mission contains, \
                                  not how many people your server will hold.";
 
 /// Explains which player figure the editor displays.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const PLAYER_COUNT_RULING_NOTE: &str = "These two do not match. The editor goes by the slots placed — that is what this mission \
      actually contains. Max players was chosen once, in the create dialog, and nothing has compared \
      it to the mission since. Neither is enforced here.";
 
 /// Explains the declared capacity value.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const MAX_PLAYERS_KEPT_NOTE: &str = "Declared once, when the mission was created. It is shown because the compiled mission and the \
      library card still carry this figure — not because anything here counts it.";
 
@@ -79,7 +79,7 @@ pub(super) const SHAPE_UNAVAILABLE_NOTE: &str = "The mission row has not loaded,
      been saved to the library has no row yet.";
 
 /// Formats a failed game mode update.
-#[cfg(any(test, target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn game_mode_failure_message(err: &frontend_transport::Error) -> String {
     if err.status() == 403 {
         return "Game mode was not saved — you are not this mission's author. It has been put back \
