@@ -106,7 +106,7 @@ cargo xtask mk leptos    # the app on 127.0.0.1:3000; stays in the foreground, i
 - Used by: the members' browsers and the game servers at run time; the xtask commands that build,
   test, check and deploy the products.
 - Rules: the products share data only over the API and through the schemas in `contracts/`; no
-  member depends on an application, and the crate tiers law and its firewalls hold every edge
+  member depends on an application, and the external-crate firewalls hold
   (`cargo xtask verify crate-tiers`).
 
 ## Related documentation

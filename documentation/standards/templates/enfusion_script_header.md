@@ -3,8 +3,8 @@
 # Template: Enfusion script header
 
 **When to use:** the opening block of every Enfusion script (`.c`) under `mod/`, and the
-banners and tags that follow it through the file. `cargo xtask verify enfusion-comments` checks
-every rule below as ECM-1 to ECM-9; `--path` narrows it to one folder or file under `mod`.
+banners and tags that follow it through the file. The rules below are recommended style; no gate
+checks them.
 
 ## Skeleton
 
@@ -80,5 +80,3 @@ class TBD_TaskHud
 
 - [Documentation standards](/documentation/standards/documentation_standards.md) — the
   in-code documentation rules this card applies to Enfusion scripts.
-- [Mod script checks](/tools/checks/mod_script_checks/src/README.md) — the
-  `enfusion-comments` gate that enforces the card.

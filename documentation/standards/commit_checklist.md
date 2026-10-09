@@ -2,9 +2,9 @@
 
 # Commit checklist
 
-What every commit that changes code carries, for people and AI agents alike. Documentation ships
-in the same commit as the code it describes, whichever agent or person writes that code; a commit
-never leaves the documentation stale.
+What every commit that changes code carries, for people and AI agents alike. The pre-commit
+checks are formatting, clippy and the tests of the crates you touched. Keep the documentation
+truthful when you change a folder's surface; that is advice, not a gate.
 
 ## Before you start
 
@@ -20,14 +20,14 @@ working context.
 | the [API](/documentation/glossary/a_to_f.md#api) | the [API overview](/documentation/crates/api/api_server/api_overview.md) and the code in `crates/api/api_server/` |
 | where a new file goes | [Where does X go?](/documentation/standards/where_does_x_go.md) |
 | comments and cross-boundary tags | [Documentation standards](/documentation/standards/documentation_standards.md) |
-| code rules and their gates | [Coding standards](/documentation/standards/coding_standards/README.md) |
+| code rules | [Coding standards](/documentation/standards/coding_standards/README.md) |
 | ticket ids in commits and files | [Ticket identifiers](/documentation/standards/ticket_identifiers.md) |
 
-## Same-commit updates
+## Related updates
 
-| What changed | Update in the same commit |
+| What changed | Also update |
 |---|---|
-| a ticket shipped | `cargo xtask ticket ship <id>` (it runs `ticket sync`), then after the commit `cargo xtask ticket stamp-sha <id> <sha>`; the feature doc's Open work |
+| a ticket shipped | the ticket's status and the feature doc's Open work; `cargo xtask ticket ship <id>` and `cargo xtask ticket stamp-sha <id> <sha>` are optional bookkeeping |
 | a program's active slice | `cargo xtask ticket advance-slice <id>` |
 | a route added or removed | `crates/frontend/shell/frontend_application/src/app_routes.rs` and `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the route table of the [frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md); the page's feature doc and README |
 | a page's visible surface | the page's feature doc and its code folder's README |
@@ -36,7 +36,7 @@ working context.
 | a cross-boundary type or handler | its `@contract`, `@route` or `@authority` tag, per the documentation standards |
 | a schema | the definition in `contracts/definitions/`, its fixture, and the regenerated types (`cargo xtask ci schema-codegen`) |
 | the Mission Creator | [decisions](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md), the [feature inventory](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md) or the [Eden gap analysis](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_gap_analysis.md), as the change touches them |
-| a code folder's files | its README's Contents, which `cargo xtask verify readme-coverage` checks |
+| a code folder's surface | its README, when the README describes what changed |
 | work put off | the ticket's status set to `deferred` (`cargo xtask ticket set-status <id> deferred`); never `shipped` before it is verified |
 | documentation only | a commit of its own |
 
@@ -60,35 +60,28 @@ Markdown never goes under a `docs` folder in `crates/`, `mod/`, `tools/`, `contr
 
 ## Verify before committing
 
-Run what the change touches, from the repository root:
+From the repository root:
 
 ```bash
-cargo xtask mk ci-local-leptos
+cargo xtask mk rust-fmt
+cargo xtask mk rust-clippy
+cargo test -p <crate>
 ```
 
-Expected: formatting, clippy for `wasm32`, the app's tests and a release build pass (for the app).
+Expected: formatting and clippy pass, and the tests of every crate the change touches pass. For
+the API's integration tests run `cargo xtask db test-it` (needs `cargo xtask db up`).
 
-```bash
-cargo xtask db test-it
-```
+Everything else is on demand: `cargo xtask mk ci-local-leptos` for a frontend release build,
+`cargo xtask mk leptos-gates` for a risky Mission Creator runtime change,
+`cargo xtask ticket check` after editing tickets, and `cargo xtask verify link-check --path <folder>`
+after moving documentation. The
+[Testing and CI](/documentation/runbooks/testing_and_ci.md) runbook lists the gates and where
+they run.
 
-Expected: the API's tests pass against a new database (for the API or the database; needs
-`cargo xtask db up`).
-
-```bash
-cargo xtask ticket check --strict
-```
-
-Expected: `check OK` (for tickets, specs, plans or documents under `documentation/`).
-
-```bash
-cargo xtask verify link-check --with-untracked --path <folder>
-```
-
-Expected: exit 0 (for documentation; `readme-coverage` and `markdown-placement` take the same
-flags). The whole gate is `cargo xtask ci ci-local`; the
-[Testing and CI](/documentation/runbooks/testing_and_ci.md) runbook lists every gate and where
-it runs.
+What to test follows the pre-alpha test policy (CLAUDE.md law 11): core logic (math, file and
+wire formats, CRDT merge and undo, auth and permissions, mission compile and validation, data
+integrity, destructive-operation guards); never source text, prose, CSS classes, constants,
+`Debug`/`Display` output or file layout.
 
 ## Commit conventions
 
@@ -96,8 +89,8 @@ it runs.
   `slice/<id>` branches that `cargo xtask platform slice-worktree` and the
   [wave](/documentation/glossary/n_to_z.md#wave) tooling create, merge and delete themselves.
 - Subject: `type(scope): summary`, with the type one of `feat`, `fix`, `refactor`, `test`, `docs`
-  or `chore`. A commit that lands a ticket names its id in the subject: `ticket stamp-sha` and the
-  token estimator read ticket ids from commit subjects, as
+  or `chore`. A commit that lands a ticket names its id in the subject: the optional
+  `ticket stamp-sha` and the token estimator read ticket ids from commit subjects, as
   [Ticket identifiers](/documentation/standards/ticket_identifiers.md#in-commit-subjects)
   describes.
 - A commit written with an AI agent ends with a `Co-Authored-By:` trailer.

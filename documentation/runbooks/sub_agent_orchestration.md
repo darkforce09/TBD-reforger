@@ -5,7 +5,7 @@
 The standard working method for any non-trivial task in the repository. One orchestrating session
 researches, asks the operator, writes a plan that holds a shared brief and one prompt per agent,
 launches implementing sub-agents as soon as their inputs exist, routes every finding they report,
-and runs the gates, the perturbation proofs and the live walkthrough itself. Each agent works on a
+and runs the gates and the live walkthrough itself. Each agent works on a
 file-disjoint slice in a whole context of its own, so the orchestrating session stays lean enough
 to carry a cross-crate milestone to the end. API v2 milestone B, planned as thirty agents in eight
 waves, is the worked example.
@@ -18,8 +18,8 @@ explorers (parallel, read-only) ─▶ planning agent ─▶ operator question r
                amend a later prompt │ message the running agent
                follow-up agent <ID>b │ closing-fix batch G<n>
    ─▶ gate between waves ─▶ closing-fix batches
-   ─▶ final sweep, perturbation proofs, live walkthrough
-   ─▶ records agent ─▶ commit when the operator asks ─▶ ship and stamp tickets
+   ─▶ final sweep, live walkthrough
+   ─▶ records agent ─▶ commit when the operator asks ─▶ (optional) ship and stamp tickets
 ```
 
 ## When to use it
@@ -42,7 +42,7 @@ The roles:
 | Role | Does | Never does |
 |---|---|---|
 | operator | answers the question rounds, approves the plan, runs what needs a person (a [Workbench](/documentation/glossary/n_to_z.md#workbench) restart, a dialog), decides every criterion, asks for the commit | — |
-| [orchestrator](/documentation/glossary/n_to_z.md#orchestrator) | researches through agents, plans, launches, reviews, routes findings, runs gates, perturbation proofs and the walkthrough, keeps the records | implements a slice; loosens a criterion; commits unasked |
+| [orchestrator](/documentation/glossary/n_to_z.md#orchestrator) | researches through agents, plans, launches, reviews, routes findings, runs gates and the walkthrough, keeps the records | implements a slice; loosens a criterion; commits unasked |
 | explorer agent | reads and reports conclusions with file and line citations | edits |
 | planning agent | drafts the plan from the explorer reports and the task | edits the repository |
 | implementing agent | builds, tests and documents the files its prompt owns | edits a file outside its list without saying so; runs full suites |
@@ -96,7 +96,7 @@ The roles:
    | Prompt template and roster | one prompt per agent with an S, M or L budget, grouped into waves |
    | Waves and gates | which agents run together, and the gate after each wave |
    | Verification and register spec | each new requirement, its check command, case pattern and marker |
-   | Orchestrator runbook | this procedure made concrete: baselines, gates, walkthrough, perturbations |
+   | Orchestrator runbook | this procedure made concrete: baselines, gates, walkthrough |
    | Risks | what may break the plan, and what happens then |
 
    Expected: a plan an agent with no other context can execute.
@@ -151,7 +151,7 @@ The roles:
 ### Phase 4: handling reports
 
 10. Review every report against the tree: `git diff --stat`, then the changed files, then a
-    spot-check of one claim (a count in a log, a perturbation). Check the foreign snapshot is
+    spot-check of one claim (a count in a log). Check the foreign snapshot is
     intact:
 
     ```bash
@@ -160,8 +160,8 @@ The roles:
 
     Expected: no output; the diff matches the report's file list.
 
-11. Append one execution record row: what the agent delivered, its counts and logs, its
-    perturbations, and the orchestrator's decision on each finding.
+11. Append one execution record row: what the agent delivered, its counts and logs, and the
+    orchestrator's decision on each finding.
 
 12. Route each finding ([routing table](#routing-a-finding)); triage it first as FIX, NOTE or CLOSE.
 
@@ -181,9 +181,9 @@ The roles:
 16. Run the closing-fix batches near the end: each `closing_fixes*.md` list becomes one agent,
     `G1`, `G2` and on.
 
-17. Run your own perturbation proofs (next to the ones each agent reports): save the target file's
-    hash, plant one deliberate defect, run the narrowest check, record which cases go red, restore
-    the file and prove it byte-equal:
+17. Optionally, when a green looks too easy, spot-check one new check by perturbation: save the
+    target file's hash, plant one deliberate defect, run the narrowest check, record which cases go
+    red, restore the file and prove it byte-equal. This is a judgment call, not a required proof:
 
     ```bash
     sha256sum -c <scratchpad>/perturb/<name>.sha256
@@ -192,9 +192,10 @@ The roles:
     Expected: `<file>: OK`. A perturbation the session's permission classifier refuses to you is
     given to an agent with the same instructions.
 
-18. Run the final sweep: every gate of the plan in one pass, then the full lanes
-    (`cargo xtask ci ci-local`, `cargo xtask mk leptos-gates`, `cargo xtask db test-it`,
-    `cargo xtask ci verify-documentation`), each into its own log. Before a large run, check the
+18. Run the final sweep: `cargo xtask mk rust-fmt`, `cargo xtask mk rust-clippy` and the tests of
+    every crate the program touched, plus `cargo xtask db test-it` when the API changed, each into
+    its own log. `cargo xtask mk leptos-gates` runs only for a risky Mission Creator runtime change;
+    no documentation gate is required. Before a large run, check the
     free disk and prune rebuildable caches (incremental folders, stale test binaries).
 
 19. Walk the feature live in a browser, as a user would. Rebuild the single-page app first, since a
@@ -242,14 +243,12 @@ parts.
   reformats it. Lock files are never hand-edited; each manifest hunk has one owner.
 - Keep every crate compiling at each save point: write complete files first, add the `mod` line
   last.
-- The file-size and documentation laws: production files at or under 500 lines, tests at or under
-  1000, sibling test files only, module headers, symbol docs, the `@route` and `@contract` tags,
-  present-tense comments without ticket ids, glossary terms, and the README of every folder whose
-  contents change.
+- The file-size and documentation guidance: production files around 500 lines, tests around
+  1000, sibling test files, present-tense comments without ticket ids, glossary terms, and a
+  truthful README for every folder whose surface changes. Tests follow the pre-alpha test policy
+  (`CLAUDE.md` law 11).
 - Tests are never weakened, skipped, ignored, deleted or given a looser tolerance; missing
   infrastructure is a failure with its cause, never a pass. New suites run twice before the report.
-- A [perturbation proof](/documentation/glossary/n_to_z.md#perturbation-proof) for every new
-  check: deliberate defect, run, red cases recorded, restore, `sha256sum` equal to the saved copy.
 - One build, test or gate per shell call, each to its own log `<scratchpad>/logs/<ID>-<step>.log`,
   read through a `grep` of the result lines; anything longer than 30 seconds runs in the
   background and is waited on, not polled.
@@ -288,7 +287,6 @@ the same order.
   edited, formatted or staged.
 - Shared registration files (own lines only, re-read before each edit): <list>.
 - <compile-at-every-save-point, file-size and documentation laws, migrations, test rules>
-- Perturbation proof for every new check: copy saved in <scratchpad>/perturb/, restored sha256-equal.
 - One command per shell call, output to <scratchpad>/logs/<ID>-<step>.log.
 - Formatting: <the formatter and its edition per crate>; never on a file that declares modules.
 - Before reporting: sha256sum -c <scratchpad>/foreign_baseline.sha256 --quiet; git status --short;
@@ -303,8 +301,7 @@ the same order.
 
 ## Report format (≤ 250 words)
 1 files created or changed; 2 commands, exit codes, counts, log paths; 3 tests added per prefix;
-4 perturbations (defect, red cases, restored); 5 findings (id, file:line, class, action);
-6 not run or deviations, with the reason.
+4 findings (id, file:line, class, action); 5 not run or deviations, with the reason.
 ```
 
 An agent prompt is one role line, the pointer to the brief, the body and the budget line. The
@@ -369,15 +366,14 @@ A FIX then takes the narrowest of four routes:
 
 ## Verify
 
-The program is closed when the final sweep is green in its logs, every perturbation was red and
-restored, the walkthrough passed online and with the API stopped, and:
+The program is closed when the final sweep is green in its logs and the walkthrough passed online
+and with the API stopped:
 
 ```bash
-cargo xtask ci verify-documentation
+cargo xtask mk rust-clippy
 ```
 
-Expected: all three documentation gates pass over the committed tree; the execution record ends
-with the commit row, and `cargo xtask ticket check` prints `check OK` after shipping.
+Expected: exit 0; the execution record ends with the commit row.
 
 ## Troubleshooting
 

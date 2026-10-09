@@ -36,16 +36,16 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
    - **Present-Tense, Context-Free Invariants (Universal)**:
      Comments and docstrings must describe strictly what the code does *now* and *why* (invariants, mathematical models, engine/hardware constraints, failure modes). Never document historical transitions (no "rewritten from X", "fixed in Y"), ticket references in source comments, or references to retired codebases (no "mirrors old TS file"). Commit history owns history.
    - **Rust Code Standards (`rustdoc` — `crates/`, `tools/`)**:
-     - **Module Headers (`//!`)**: Non-trivial modules must carry a 4-point architectural contract header:
+     - **Module Headers (`//!`)** (recommended style): Non-trivial modules should carry a 4-point architectural contract header:
        - `**Role:**` Primary responsibility of this module in the subsystem.
        - `**Position:**` Boundary layer and data flow context (what feeds it, who consumes it).
        - `**Signals & state:**` Mutable state, reactive signals, or thread ownership (or "none; pure functions").
        - `**Invariants:**` Non-negotiable structural guarantees and mathematical boundaries.
      - **Symbol Docs (`///`)**: Public types, functions, methods, and enums must use standard markdown docstrings with validated intra-doc links (e.g. `[`crate::path::Type`]`).
-     - **Cross-Boundary Tags**:
-       - Axum HTTP handlers MUST declare `/// @route <METHOD> <path>` (machine-checked by `cargo xtask verify route-tags`).
-       - Schema-projecting DTOs and models MUST declare `//! @contract <schema>#<pointer>` (machine-checked by `cargo xtask schema citations`).
-   - **Enfusion Mod Standards (`Doxygen` — `mod/`)** (banners, headers, member docs and tags machine-checked by `cargo xtask verify enfusion-comments` over the pinned mod Scripts roots):
+     - **Cross-Boundary Tags** (recommended style, not machine-checked):
+       - Axum HTTP handlers should declare `/// @route <METHOD> <path>`.
+       - Schema-projecting DTOs and models should declare `//! @contract <schema>#<pointer>`.
+   - **Enfusion Mod Standards (`Doxygen` — `mod/`)** (recommended style for banners, headers, member docs and tags; not machine-checked):
      - **Class & Method Banners**: `//!` single-line banners describing class purpose and method contracts.
      - **Field & Enum Members**: `//!<` trailing doc comments documenting units, default values, and JSON key bindings.
      - **File/Plugin Headers**: `/** ... */` multi-line block headers for top-level scripts and Workbench plugins.
@@ -60,11 +60,17 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
    - Backend Rust models (`crates/api/api_<domain>/src/models/`) are the snake_case API source of truth.
    - Contract types are generated from `contracts/definitions/*.json` via `cargo xtask ci schema-codegen`.
    - Frontend DTOs (`crates/frontend/foundation/frontend_api_dtos/src/`) mirror models with strict R-api golden test parity.
-10. **Documentation Ships With the Code**:
-    - Documentation lands in the same commit as the code it describes, whichever agent writes that code: the comments of the code it alters, the README.md of every folder whose contents, surface, commands or boundaries change, and the feature docs whose behaviour changes.
+10. **Keep Documentation Truthful**:
+    - When you change a folder's surface, commands or boundaries, update its README.md and the feature docs whose behaviour changed, and keep the comments of the code you alter current. This is advice, not a commit gate.
     - [documentation/README.md](/documentation/README.md) is the documentation entry (map and authority ladder); [documentation/standards/](/documentation/standards/README.md) holds the documentation, README and coding standards and the templates.
     - Terms follow the [glossary](/documentation/glossary/README.md): the editor is the **Mission Creator**; the authored document is a **mission** (never "scenario" in prose; code identifiers stay quoted as spelled); Enfusion's world plus game-mode config is the **mission header**; an **event** is a scheduled session record; **operations** is its domain.
-    - Before committing, run the three documentation gates over what changed (§3).
+11. **Pre-alpha Test Policy**:
+    - Test core logic only: math and geometry, file and wire formats, CRDT merge and undo, auth and permissions, mission compile and validation, data integrity, and guards on destructive operations.
+    - Never write tests that pin source text, prose or wording, CSS classes, constants, file layout, or `Debug`/`Display` output.
+    - The API keeps one integration test binary per domain, each provisioning its database once.
+    - No failpoint suites and no property-evidence suites.
+    - Slow suites (headless browser gates, mod world boot) run nightly or on demand, never on every commit.
+    - Before committing: `cargo xtask mk rust-fmt`, `cargo xtask mk rust-clippy`, and the tests of the crates you touched.
 
 ---
 
@@ -181,11 +187,9 @@ crates/                                  <-- Product crates grouped by category 
 ├── api/                                 <-- The API's crates (the product's only sqlx and axum); infrastructure < kernel < domains < workers < the server
 │   ├── api_identifiers/                 <-- Infrastructure: serde- and sqlx-transparent typed ids of every table key, Discord snowflake, game runtime key
 │   ├── api_foundation/                  <-- Infrastructure: handler error envelope, JSON wire formats, text policies, request parameters
-│   ├── api_failpoints/                  <-- Infrastructure: `fail_point!`; in test builds the failpoint catalogue and arming registry
 │   ├── api_configuration/               <-- Infrastructure: environment configuration read at boot, trusted proxies, process shutdown signal
 │   ├── api_database/                    <-- Infrastructure: Postgres pool, embedded migrations/, development seeds/, SQLSTATE predicates
 │   ├── api_http_layer/                  <-- Infrastructure: access tokens, middleware and extractors, rate limiters, metrics and health, realtime hub
-│   ├── api_property_evidence/           <-- Infrastructure (dev-only): the run recorder of the API's property tests
 │   ├── api_mission_vocabulary/          <-- Kernel: terrain and game mode enums several domains name
 │   ├── api_audit_log/                   <-- Kernel: audit severity, best-effort and transactional audit appends
 │   ├── api_equipment_datasets/          <-- Kernel: equipment dataset imports, SQLite navigation index, generation-pinned reads
@@ -376,18 +380,16 @@ cargo xtask db down            # Stop local Postgres container (keeps volume)
 cargo xtask db repair-migration-checksum [--version N]  # Repoint the checksums of comments-only edits to applied migrations
 
 # Quality Gates & Testing
-cargo xtask ci ci-local        # Replay full CI check suite locally
+cargo xtask mk rust-fmt        # Format check (pre-commit)
+cargo xtask mk rust-clippy     # Clippy with warnings denied (pre-commit)
+cargo xtask ci ci-local        # Replay the CI check suite locally
 cargo xtask mk ci-local-leptos # Frontend checks: fmt, clippy wasm32, test, trunk release build
-cargo xtask mk leptos-gates    # Full headless Chrome CDP editor gates (runs gate doctor first)
 cargo xtask db test-it         # Rust backend integration tests (requires db up)
 cargo xtask mod compile        # Compile check Enfusion mod scripts
-cargo xtask verify enfusion-comments  # Enfusion comment card (headers, banners, @authority/@rpc/@replicated, @route/@contract) over the pinned mod Scripts roots
 
-# Documentation Gates (add --path <folder> to narrow)
-cargo xtask ci verify-documentation    # All three over the committed tree (a ci-local step; ci.yml language-gates runs them)
-cargo xtask verify readme-coverage     # Every README.md Contents block matches its folder's tracked children
-cargo xtask verify link-check          # Links, anchors, backticked paths and cited commands resolve
-cargo xtask verify markdown-placement  # No Markdown but README.md in code trees; live docs at or under 500 lines
+# On demand / nightly (not pre-commit)
+cargo xtask mk leptos-gates    # Full headless Chrome CDP editor gates (runs gate doctor first)
+cargo xtask verify link-check  # Links, anchors, backticked paths and cited commands resolve (add --path <folder> to narrow)
 
 # Ticket Registry
 cargo xtask ticket check       # Validate ticket registry structure

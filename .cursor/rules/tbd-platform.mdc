@@ -22,17 +22,16 @@ alwaysApply: true
   `developer_tools`, the pinned enfusion-mcp npm package) · `contracts/` · `assets/`; the
   [workspace layout](/documentation/architecture/workspace_layout.md) describes the whole tree.
   Where a new file goes: [Where does X go?](/documentation/standards/where_does_x_go.md).
-- **Documentation ships with its code.** A change updates, in the same commit, the comments of the
-  code it alters, the README.md of every folder whose contents, surface, commands or boundaries it
-  changes, and the feature docs whose behaviour it changes — whichever agent or person writes the
-  code. Documentation lives in `documentation/` (entry:
+- **Keep documentation truthful.** When a change alters a folder's surface, commands or
+  boundaries, update its README.md and the feature docs whose behaviour changed, and keep the
+  comments of the code you alter current; this is advice, not a commit gate. Documentation lives
+  in `documentation/` (entry:
   [documentation/README.md](/documentation/README.md)); its rules are in
   [documentation/standards/](/documentation/standards/README.md): the
   [documentation standards](/documentation/standards/documentation_standards.md), the
   [README standard](/documentation/standards/readme_standard.md) and the
   [commit checklist](/documentation/standards/commit_checklist.md). The code trees hold no
-  Markdown but README.md files (`cargo xtask verify markdown-placement`, run by
-  `cargo xtask ci verify-documentation`), so no application grows a documentation tree. Mission Creator documentation lives under
+  Markdown but README.md files, so no application grows a documentation tree. Mission Creator documentation lives under
   [documentation/crates/frontend/workspaces/mission_creator_workspace/](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md).
 - **Tickets.** One `.ai/tickets/T-<id>.toml` file per ticket, parent and child alike, beside the
   `.ai/tickets/ROOT` marker; the [ticket registry README](/.ai/tickets/README.md) lists the folder

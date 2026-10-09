@@ -11,6 +11,10 @@ gate (`cargo xtask mk leptos-gates`) then hangs for minutes on a cryptic browser
 failing fast, and a routine ticket becomes a reverse-engineering session. This binds **every**
 agent, whatever product runs it, and every person.
 
+These rules govern the gates that exist; they never require adding a gate or a test per change.
+What to test follows the pre-alpha test policy (`CLAUDE.md` law 11), and slow suites (browser
+gates, mod world boot) run nightly or on demand, not before every commit.
+
 ## Rules
 
 1. **Reproducible and pinned.** A gate's external tools (browser, toolchain, database image) are
@@ -20,17 +24,16 @@ agent, whatever product runs it, and every person.
    [`rust-toolchain.toml`](/rust-toolchain.toml), validated by `gate doctor`. Bump a pin
    **deliberately, in the same commit** as the thing it pins.
 2. **Fail fast, never hang.** A gate that would wedge fails in seconds with an **actionable
-   message** (what is wrong and how to diagnose it), not a multi-minute timeout. A new browser or
-   GPU gate gets a preflight like `gate doctor`, which `cargo xtask mk leptos-gates` runs before
-   its suites.
+   message** (what is wrong and how to diagnose it), not a multi-minute timeout. The editor gate
+   has a preflight, `gate doctor`, which `cargo xtask mk leptos-gates` runs before its suites.
 3. **A gate that cannot run is a P0 infrastructure bug — fix the harness or the environment.** It
    is **never** a silent skip, a "commit anyway" or a "document as deferred" (see
    [`no-silent-deferrals.mdc`](/.cursor/rules/no-silent-deferrals.mdc)). If you are truly blocked
    (no GPU, missing secrets, Workbench down): STOP and ASK.
-4. **A new GPU or browser gate gets CI or a scheduled lane.** Do not leave a gate local forever:
-   infrastructure regressions are caught by machines, not discovered mid-ticket. The editor gate's
-   lane is [`.github/workflows/editor-gates.yml`](/.github/workflows/editor-gates.yml), nightly and
-   on demand.
+4. **Slow gates run on a schedule, not per commit.** GPU and browser gates belong in a nightly or
+   on-demand lane, never in the pre-commit path. The editor gate's lane is
+   [`.github/workflows/editor-gates.yml`](/.github/workflows/editor-gates.yml), nightly and on
+   demand.
 5. **When a gate breaks the environment, write it down.** Add or extend an entry in
    [`documentation/known_bugs/`](/documentation/known_bugs/README.md) and, for the editor
    gate, the [Editor gates](/documentation/runbooks/editor_gates.md) runbook, so the next person

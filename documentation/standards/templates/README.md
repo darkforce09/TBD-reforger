@@ -48,17 +48,15 @@ Steps, Verify, Troubleshooting, Related; a decisions entry runs Context, Decisio
 Supersedes under a dated heading; a known bug runs Status, Symptom, Cause, Workaround, Fix, Related
 tickets under its number; a glossary entry gives the term, its definition, `In code:` and `See:`.
 
-The skeletons and samples sit in fences, so no gate reads them as documents: `readme-coverage`
-judges only files named README.md, and `link-check` reads neither links nor backticked paths inside
-a fence, though it does check every `cargo xtask` command a fence cites. A writer picks the kind or
-the document type, copies the skeleton, fills every placeholder from the code, and runs the gates
-the standard names.
+The skeletons and samples sit in fences, so the on-demand `link-check` reads neither their links
+nor their backticked paths, though it does check every `cargo xtask` command a fence cites. A
+writer picks the kind or the document type, copies the skeleton and fills every placeholder from
+the code.
 
 ## Code
 
-- [Documentation gates](/tools/checks/documentation_checks/src/README.md) — the
-  `readme-coverage`, `markdown-placement` and `link-check` gates that check every README and
-  document these templates shape.
+- [Documentation gates](/tools/checks/documentation_checks/src/README.md) — the on-demand
+  `link-check` over the READMEs and documents these templates shape.
 
 ## Boundaries
 

@@ -83,8 +83,7 @@ crates and the app are in the [crate boundary rules](/documentation/standards/cr
 | a recorded defect | `documentation/known_bugs/` |
 | a term | the file of its first letter in `documentation/glossary/`, with a line in its index |
 
-`cargo xtask verify markdown-placement` holds the documentation layout: it refuses any Markdown
-in a code tree other than a README (a `tests`, `generated`, `Generated` or dot-prefixed folder
-excepted) and any live document under `documentation/` over 500 lines. `ci-local` (through
-`cargo xtask ci verify-documentation`) and the `language-gates` job of `ci.yml` run it. The
+By convention a code tree holds no Markdown other than a README (a `tests`, `generated`,
+`Generated` or dot-prefixed folder excepted), and a live document under `documentation/` stays
+around 500 lines. The
 [documentation standards](/documentation/standards/documentation_standards.md) hold the rest.

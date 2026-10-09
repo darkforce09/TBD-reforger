@@ -8,6 +8,10 @@ alwaysApply: true
 **Default: finish it.** When the operator asks for a complete outcome ("port the whole page", "do
 the whole plan"), **ship the whole outcome**. Do not invent deferrals. This is `CLAUDE.md` law 1.
 
+"The whole outcome" is the operator's ask, not extra ceremony: it never requires adding a new
+gate, a perturbation proof or a test per change. Tests follow the pre-alpha test policy
+(`CLAUDE.md` law 11).
+
 ## The only legal deferral
 
 The operator **explicitly** says, in this conversation (or in a quoted earlier message they

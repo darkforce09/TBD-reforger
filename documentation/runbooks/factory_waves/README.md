@@ -16,7 +16,7 @@ operator-defined and binding. Read them before dispatching any slice agent.
 documentation/runbooks/factory_waves/
 ├── adversarial_verifier_brief.md   the verifier's brief, the severity table and triage
 ├── cold_start_and_preflight.md     starting a session: services, reclaim, preflight, status
-├── known_traps.md                  the signature defect, the perturbation habit, and every trap
+├── known_traps.md                  the signature defect, the perturbation spot-check, and every trap
 ├── running_a_wave.md               one wave end to end: worktrees, gates, land, ship, close
 ├── slice_agent_brief.md            the slice brief, the report schema and the reject conditions
 └── wave_planning.md                the wave lock, `owns`, collisions, width and numbering
@@ -43,8 +43,10 @@ gives each ticket a whole context of its own. The rules every wave follows:
 2. **Concurrency is file-disjointness, computed, never guessed.** `cargo xtask slice-collisions`
    packs tickets whose `owns` lists do not overlap, up to the wave's width
    ([Wave planning](/documentation/runbooks/factory_waves/wave_planning.md)).
-3. **Tiered gates.** A slice pays the cheap slice gate in its worktree; the full wave gate runs
-   once on merged `main`. `cargo xtask ci ci-local` is not a wave step.
+3. **Light gates.** A slice runs check, fmt and the tests of the crates it changed in its
+   worktree; the wave gate on merged `main` stays as small. Neither requires the browser gates,
+   the documentation gates or a perturbation proof, and `cargo xtask ci ci-local` is not a wave
+   step.
 4. **Land only reported, gate-green slices.** `land` merges each slice whose tree is committed
    and clean and whose gate verdict receipt matches its tip; the orchestrator waits until every
    agent of the wave has reported, because a clean tree does not mean a finished agent.
@@ -52,8 +54,8 @@ gives each ticket a whole context of its own. The rules every wave follows:
    are triaged by table: BLOCKERs are fixed in the wave, everything else is filed `deferred`.
 6. **Push after every landing.** `land` ends with `platform wave push`, so work is never trapped
    on one machine.
-7. **Agents never ship.** They implement, prove by perturbation, gate and report; the
-   orchestrator ships, stamps, repacks, records the verifier and closes the wave.
+7. **Agents never ship.** They implement, gate and report; the orchestrator ships (the ticket
+   `ship` and `stamp-sha` verbs are optional), repacks, records the verifier and closes the wave.
 8. **Agents leave their tree clean** and put throwaway probes in `/tmp`, never in the source tree.
 9. **Every agent runs on the operator's chosen model tier**, never downgraded to get past a rate
    limit, an overload, latency or cost. The verifier runs on a different strong model from the
@@ -71,15 +73,14 @@ itself: `cargo xtask platform slice-worktree -- new <id>` creates `slice/<id>` f
 `cargo xtask mod wave` uses the same names for the [mod](/documentation/glossary/g_to_m.md#mod)
 program. No agent and no orchestrator creates a branch by hand, and there are no pull requests.
 
-**Editor pre-close.** A [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) wave runs
-`cargo xtask mk leptos-gates` after its wave gate passes and before it closes. The wave gate
-deliberately runs no browser, so that command is the only automated run of the editor smokes,
-the rect guards among them; adding a browser smoke to `platform wave gate` is not the fix for a
-skipped pre-close. [Editor gates](/documentation/runbooks/editor_gates.md) covers the command.
+**Editor smokes.** The wave gate runs no browser. `cargo xtask mk leptos-gates` runs nightly or
+on demand; run it before closing a [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)
+wave only when the wave made a risky editor runtime change.
+[Editor gates](/documentation/runbooks/editor_gates.md) covers the command.
 
 **Known traps.** The recurring defect is a tool reporting success over an input it never
-examined, and the habit that catches it is perturbation: break the guarded code, watch the check
-go red, restore, touch the file, watch it go green.
+examined; when a green looks too easy, break the guarded code once and watch the check go red.
+That is a judgment call, not a required proof.
 [Known traps](/documentation/runbooks/factory_waves/known_traps.md) lists every trap that has
 cost the factory time, from the shared cargo cache to `rg` existing only inside agent shells.
 

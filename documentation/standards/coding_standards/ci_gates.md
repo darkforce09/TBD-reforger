@@ -2,30 +2,32 @@
 
 # CI gates
 
-Rules CI-1 and CI-2, the rules about the CI configuration itself, the `verify-coding-standards`
-task that bundles four of the code gates, the `verify-workspace-laws` task that bundles the five
-workspace laws (WS-1 to WS-5), and the `verify-documentation` task that bundles the three
-documentation gates. Code comments and help strings that cite "§0.3" or
-"§11" point here. Where every gate runs (the local replay, each GitHub job, the
-[wave](/documentation/glossary/n_to_z.md#wave) gate) is the gate matrix of
+Rules CI-1 and CI-2, the rules about the CI configuration itself, and the workspace laws
+(WS-1 to WS-5). Code comments and help strings that cite "§0.3" or "§11" point here. Where every
+gate runs is the gate matrix of
 [Testing and CI](/documentation/runbooks/testing_and_ci.md#gate-matrix); this page does not
 repeat it.
+
+The repository is pre-alpha: CI runs formatting, clippy, the tests, the schema checks and a few
+cheap structural laws (crate anatomy, the crate firewalls, Tailwind sources, the language bans).
+Slow suites (headless browser gates, mod world boot) run nightly or on demand. What to test
+follows the pre-alpha test policy, `CLAUDE.md` law 11.
 
 ## Rules
 
 - **CI-2 (Debuggability) — `ci.yml` gates every push and pull request to `main`.**
-  `.github/workflows/ci.yml` runs on every push and pull request to `main` with no path filter,
-  unlike `contracts.yml` and `schema.yml`, which run only when their paths change. Its jobs:
+  `.github/workflows/ci.yml` runs on every push and pull request to `main` with no path filter.
+  Its jobs:
 
   | Job | Runs | Rules |
   |---|---|---|
-  | `api` | `cargo xtask mk rust-fmt`, `mk rust-clippy`, `mk rust-build`, then `ci api-test` (the API's `cargo test`) against a Postgres 18 service | FMT-1, GO-2, GO-8, GO-9, TEST-1 |
+  | `api` | `cargo xtask mk rust-fmt`, `mk rust-clippy`, then `ci api-test` (the API's `cargo test`) against a Postgres 18 service | FMT-1, GO-2, GO-8, TEST-1 |
   | `wasm-ci` | `cargo xtask mk wasm-ci`: clippy with `-D warnings` for `wasm32` over every crate the workspace marks `targets = "wasm32"` outside the frontend family | FMT-1 |
-  | `frontend` | `cargo xtask mk ci-local-leptos`: format, clippy with `-D warnings` for `wasm32` and natively, tests, release Trunk build, over the frontend family (every `crates/frontend` crate, the single-page app and the offline service worker among them) | TEST-2, TS-6 |
-  | `schema` | `cargo xtask ci ci-local-schema`: generated types current, schema validation, `@contract` citations | TEST-3, ENF-3, ENF-4 |
+  | `frontend` | `cargo xtask mk ci-local-leptos`: format, clippy with `-D warnings` for `wasm32` and natively, tests, release Trunk build, over the frontend family | TEST-2, TS-6 |
+  | `schema` | `cargo xtask ci ci-local-schema`: generated types current, schema validation | TEST-3, ENF-4 |
   | `editorconfig` | `cargo xtask ci verify-editorconfig` | FMT-2 |
-  | `language-gates` | `verify no-python`, `no-node`, `file-length`, `enfusion-comments`, `no-shell`, `ci-shell`, `crate-tiers`, `crate-anatomy`, `test-file-reachability`, `frontend-layering`, `tailwind-sources`, `ticket check --strict`, then `verify readme-coverage`, `link-check`, `markdown-placement` | LANG-1, LANG-2, LANG-3, SIZE-3, WS-1 to WS-5 |
-  | `mod-gates-hosted` | `mod world-boot --selftest`, `verify staging-compose-paths`, `mission-rest-size-limits`, `ci-schema-parity` | none |
+  | `workspace-members` | one `cargo test --workspace` run over the members no other job covers | TEST-2 |
+  | `language-gates` | `verify tailwind-sources`, `crate-anatomy`, `crate-tiers`, one language-ban step (`no-node`, `no-python`, `no-shell`), and `file-length` as a warning | LANG-1, LANG-2, LANG-3, WS-1, WS-2, WS-5 |
 
   `cargo xtask ci ci-local` replays the same gates locally, with the integration tests run by
   `cargo xtask ci rust-test-it` against the local database. Gate: CI-BLOCK, the workflow itself.
@@ -33,33 +35,18 @@ repeat it.
   the Go lint job, so that every lint finding in the tree fails, not only the new ones. Status:
   retired with the Go backend; clippy has no such switch, and every job lints the whole crate.
 
-## verify-coding-standards
+## On-demand checks
 
-`cargo xtask ci verify-coding-standards` runs four gates in order and stops at the first failure:
-
-1. `cargo xtask verify file-length`: SIZE-3.
-2. `cargo xtask verify enfusion-comments`: the Enfusion comment card (rules ECM-1 to ECM-9 of the
-   [comment gate README](/tools/checks/mod_script_checks/src/enfusion_comments/README.md),
-   sections 6 and 7 of the
-   [documentation standards](/documentation/standards/documentation_standards.md#6-enfusion-comments))
-   over the pinned mod Scripts roots, today `mod/tbd-framework/Scripts` and
-   `mod/tbd-emcp/Scripts`.
-3. `cargo xtask verify no-select-star`: no `SELECT *` or `RETURNING *` in the API's SQL, outside
-   the two tables with no nullable column; the
-   [database verifications README](/tools/commands/database_operations/src/database_checks/README.md) has the
-   rule. It has no rule code.
-4. `cargo xtask verify route-tags`: GO-7.
-
-`ci-local` runs the task as one step. On GitHub, only `file-length` and `enfusion-comments` run
-(in `language-gates`); the `SELECT *` and route-tag gates run in `ci-local` and, for `route-tags`,
-the wave and slice gates, but in no workflow.
+These commands stay available but block no push: `cargo xtask verify file-length` (SIZE-3, warns),
+`no-select-star`, `test-file-reachability` (WS-3), `frontend-layering` (WS-4), `link-check`, and
+the browser and mod world-boot gates, which run nightly or on demand.
 
 ## verify-workspace-laws
 
-`cargo xtask ci verify-workspace-laws` runs the five workspace laws of the
-[crate boundary rules](/documentation/standards/crate_boundary_rules.md#5-the-workspace-laws) in
-order and stops at the first failure; `ci-local` runs it right after `verify-ci-shell`, and the
-`language-gates` job of `ci.yml` runs the five commands as separate steps. The laws live in
+The workspace laws of the
+[crate boundary rules](/documentation/standards/crate_boundary_rules.md#5-the-workspace-laws)
+are WS-1 to WS-5. WS-1, WS-2 and WS-5 run in `ci-local` and the `language-gates` job of `ci.yml`;
+WS-3 and WS-4 run on demand. The laws live in
 `tools/foundation/repository_laws/src/workspace_laws/`
 ([README](/tools/foundation/repository_laws/src/workspace_laws/README.md)); xtask passes
 in every path that moves with the tree. Each law prints `<LAW>: PASS`, or `FAIL` with exit 1 on a
@@ -70,18 +57,13 @@ note.
 
 ### WS-1 crate tiers
 
-`cargo xtask verify crate-tiers` judges rules 1 to 7 of the crate-tier law: every `Cargo.toml`
-in the checkout (outside hidden folders, test trees, fixtures and build output) is a workspace
-member; each judged member declares `category`, `tier` and `targets`, and every member outside the
-judged set is one of the two tool binaries; a judged member sits at its category plus
-its name and declares the tier its dependencies give it (0 with no judged dependency, otherwise 1
-plus the highest); edges point strictly down and follow the category matrix; a wasm-only crate is
-reached from a crate for every platform only through a `cfg(target_arch = "wasm32")` table; the
-external-crate firewalls hold (wgpu, the browser crates, sqlx and axum, leptos, the dependency
-closure of xtask, map nouns in graphics, browser words in mission editing, `#[wasm_bindgen]`
-exports); and no member depends on an application package, in any table. The
-[crate boundary rules](/documentation/standards/crate_boundary_rules.md#52-crate-tiers-cargo-xtask-verify-crate-tiers)
-state each rule, the matrix and the firewalls in full.
+`cargo xtask verify crate-tiers` enforces two things: no member depends on an application package
+(`api_server`, `frontend_application`, `offline_service_worker`, `game_server_host_agent`,
+`ticketboard_desktop`), in any table; and the external-crate firewalls hold (`wgpu`, `sqlx`,
+`axum`, `leptos` and the browser crates stay in the crates the
+[crate boundary rules](/documentation/standards/crate_boundary_rules.md#54-the-firewalls) name,
+and the dependency closure of xtask holds no tokio, axum, reqwest, resvg or image). The tier
+numbers and the category matrix are layering guidance; the gate does not judge every edge.
 
 ### WS-2 crate anatomy
 
@@ -126,7 +108,7 @@ never compiles, so its tests never run while the tree looks covered.
   table; the app's table maps `main.rs`, `app_routes.rs`, `shell/` and `tests/` onto the shell,
   and every app source must sit under a row.
 
-The law is hard at zero: every edge, production or test, normal or dev, fails it.
+The law runs on demand and is not a CI gate.
 
 ### WS-5 Tailwind sources
 
@@ -138,21 +120,11 @@ name, and a stale line that names no leptos member (an ancestor or wildcard glob
 findings. Trunk's `[watch]` list in `crates/frontend/shell/frontend_application/Trunk.toml` covers `crates/frontend`, so a
 change in any frontend crate rebuilds the bundle.
 
-## verify-documentation
-
-`cargo xtask ci verify-documentation` runs the three documentation gates over the committed files,
-in order, and stops at the first failure: `cargo xtask verify readme-coverage` (every folder's
-README.md and its Contents block), `cargo xtask verify link-check` (links, backticked paths and
-cited commands) and `cargo xtask verify markdown-placement` (no Markdown but README.md in a code
-tree, live documents at or under 500 lines). `ci-local` runs the task as one step, and the
-`language-gates` job of `ci.yml` runs the three commands as separate steps. The
-[documentation gates README](/tools/checks/documentation_checks/src/README.md) holds the
-rules.
-
 ## Adding a rule
 
-A new rule gets the next free number of its family, a pillar, one gate and a line in the rule
-index of the [README](/documentation/standards/coding_standards/README.md). The gate is wired
-into `cargo xtask ci ci-local` and into a GitHub job: a gate that only a local replay runs blocks no
-push. A rule no tool can check is stated as unenforced, and only an
+A new rule gets the next free number of its family, a pillar and a line in the rule index of the
+[README](/documentation/standards/coding_standards/README.md). Most rules are conventions
+reviewers hold; add a gate only when a silent break would reach production, and prefer an
+on-demand check over a CI gate while the project is pre-alpha. A rule no tool checks is stated as
+unenforced, and only an
 [Enfusion](/documentation/glossary/a_to_f.md#enfusion) runtime rule may be MANUAL.

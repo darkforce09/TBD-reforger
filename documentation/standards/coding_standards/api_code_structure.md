@@ -75,16 +75,12 @@ clippy and `cargo fmt` stand in for the Go-era rules GO-2 to GO-8 and FMT-1 toge
   [http_router.rs](/crates/api/api_server/src/router.rs) merges under `/api/v1`. The
   check runs in both directions: every `/// @route METHOD PATH` tag names a route registered on
   that method for that handler, and every registered route carries a matching tag, keyed on
-  method, path and handler function. Gate: CI-SCRIPT, `cargo xtask verify route-tags`, run by
-  `cargo xtask ci verify-coding-standards` and by the platform
-  [wave](/documentation/glossary/n_to_z.md#wave) gate and slice gate.
+  method, path and handler function. Status: live, unenforced (recommended style); review holds
+  it.
 
 GO-7 is the one GO rule clippy and `cargo fmt` cannot see: `@route` lives in a doc comment, clippy
-does not read doc comments and `cargo fmt` only reflows them. A tag that names a route which does
-not exist, or a route whose handler has no tag, compiles cleanly; only the route-tag gate turns it
-red. The gate's guards and exit codes are in the
-[architecture verifications README](/tools/checks/repository_checks/src/architecture/README.md#route-tags);
-the tag grammar is in the [documentation standards](/documentation/standards/documentation_standards.md).
+does not read doc comments and `cargo fmt` only reflows them, so a stale tag compiles cleanly. The
+tag grammar is in the [documentation standards](/documentation/standards/documentation_standards.md).
 
 ## Forbidden
 

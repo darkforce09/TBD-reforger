@@ -26,7 +26,7 @@ expensive tier. The expensive tier is for hard analysis and for coding when dele
 | Plan review, critique, tickets, specs, plans, documentation passes | in the Cursor chat (modes A and B below) |
 | Application code for a ticket | through the ticket tooling — `cargo xtask ticket run`, or `cargo xtask platform slice-run <id>` for one ticket — with any AI coding agent, or in the chat when the operator says so (mode C) |
 | Application code in the platform factory | slice agents the orchestrator dispatches into `slice/<id>` worktrees (mode F) |
-| Documentation of changed code | the agent or person who changes the code, in the same commit ([commit checklist](/documentation/standards/commit_checklist.md)) |
+| Documentation of changed code | the agent or person who changes the code, when its surface changes ([commit checklist](/documentation/standards/commit_checklist.md)) |
 
 **Executor gate:** act on a ticket only when its `executor` is `claude-code` (any AI coding agent)
 or `documentation` (a ticket, spec or documentation pass). `workbench`, `human` or `ci` — **stop
@@ -88,8 +88,9 @@ to 5.
 **Default response:** code runs through the ticket tooling. Say `cargo xtask ticket run` (after
 `--dry-run`), or print the prompt with `cargo xtask ticket prompt <id>`. Do not patch application
 sources (`crates/`, the API server and the single-page app among them, and `mod/`) in this chat unless
-the operator **clearly** says so: *"Cursor, you write the code"*. When the operator does, the code,
-its tests and its documentation land together in one commit.
+the operator **clearly** says so: *"Cursor, you write the code"*. When the operator does, the code
+lands with the core-logic tests the pre-alpha test policy asks for (`CLAUDE.md` law 11) and the
+documentation it affects.
 
 ### Mode F — Platform factory
 
@@ -132,7 +133,7 @@ and the operator has not explicitly authorized code in this chat → **STOP**.
 6. Operator: approval ("ok", "set it up", "write the ticket") → mode B
 7. Cursor: ONE ticket + spec + plan (+ handoff when needed), marked ready; ticket check --strict
 8. Operator: cargo xtask ticket run (after --dry-run), or the prompt from cargo xtask ticket prompt
-9. The coding agent: code, tests and the documentation they change, in one commit
+9. The coding agent: code, its core-logic tests (CLAUDE.md law 11) and the documentation it affects
 ```
 
 ## Codebase audit and tech debt

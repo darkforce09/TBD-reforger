@@ -11,14 +11,14 @@ the website's engines. Developers and AI agents read the matching standard befor
 
 ```text
 documentation/standards/
-├── coding_standards/           code rules by topic, each with a stable rule id and the gate that holds it
-├── commit_checklist.md         what a commit that changes code carries and verifies before it lands
+├── coding_standards/           code rules by topic, each with a stable rule id and its gate, if any
+├── commit_checklist.md         the pre-commit checks (fmt, clippy, touched tests) and related updates
 ├── crate_boundary_rules.md     crate-level laws between the graphics, streaming, rendering, mission and editing crates and the applications
 ├── documentation_standards.md  comment rules, cross-boundary tags, the documentation tree and lifecycle
-├── readme_standard.md          README sections, kinds and the Contents block the gate checks
+├── readme_standard.md          README sections, kinds and the Contents block
 ├── templates/                  copyable skeletons for every README kind and document type
 ├── ticket_identifiers.md       ticket id grammar, ticket, spec and plan paths, ids in commits and docs
-└── where_does_x_go.md          the home of each kind of file, and the gate that enforces it
+└── where_does_x_go.md          the home of each kind of file
 ```
 
 ## How it works
@@ -36,16 +36,16 @@ Each standard owns one question, and the others link it rather than restate it:
 | How is a ticket id formed and cited? | [ticket identifiers](/documentation/standards/ticket_identifiers.md) |
 | How does an agent session run a multi-file or multi-crate task with sub-agents? | the standard working method, the [sub-agent orchestration](/documentation/runbooks/sub_agent_orchestration.md) runbook |
 
-`CLAUDE.md` states the repository-wide laws in brief; a standard holds the detail and names the
-`cargo xtask verify` gate or test that enforces each rule it states, and a rule with no gate is a
-convention reviewers hold. A new standard is added here only when it answers a question none of
+`CLAUDE.md` states the repository-wide laws in brief; a standard holds the detail. Most rules are
+conventions reviewers hold; a standard names the gate only for the few rules one enforces (crate
+anatomy, the crate firewalls, Tailwind sources). A new standard is added here only when it answers a question none of
 these answers; a rule that fits an existing standard goes into it.
 
 ## Code
 
 - [Verification gates](/tools/checks/) — the `cargo xtask verify` checks the
-  standards cite: file length, README coverage, link check, markdown placement, route tags,
-  contract citations and the crate tiers law with its firewalls.
+  standards cite: crate anatomy, the crate firewalls, Tailwind sources, and the on-demand link
+  check and file-length warning.
 - [CI task list](/tools/commands/ci_task_catalog/src/) — the `ci-local` steps that run those gates.
 - [Graphics crates](/crates/graphics/), [streaming crates](/crates/streaming/),
   [map rendering crates](/crates/map_rendering/) and [frontend](/crates/frontend/shell/frontend_application/) — the crates the
@@ -66,13 +66,12 @@ these answers; a rule that fits an existing standard goes into it.
   `tools/checks/repository_checks/src/language_bans/shell_scripts.rs`,
   `.github/workflows/ci.yml`, `.github/workflows/contracts.yml`, `.editorconfig`); the Cursor rule
   `.cursor/rules/tbd-platform.mdc`; the runbooks and the entry README.
-- Rules: each standard names the gate that holds each enforced rule; a standard stays at or under
-  500 lines and splits into a folder with a README index when longer, as `coding_standards/` does
-  (`cargo xtask verify markdown-placement`); a section number a gate or CI file cites keeps its
-  number, or the citing code changes in the same commit.
+- Rules: each standard names the gate that holds each enforced rule; a standard stays around 500
+  lines and splits into a folder with a README index when longer, as `coding_standards/` does; a
+  section number a gate or CI file cites keeps its number, or the citing code changes with it.
 
 ## Related documentation
 
 - [Documentation entry](/documentation/README.md) — the map of the documentation tree.
 - [Testing and CI](/documentation/runbooks/testing_and_ci.md) — running the gates the
-  standards name before a push.
+  standards name.

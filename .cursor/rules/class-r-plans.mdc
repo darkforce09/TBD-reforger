@@ -142,9 +142,9 @@ Omit only if the artifact is Mode A critique-only (still include evidence for ev
 2. **Verified constants** — pin / value / evidence
 3. **LOD / camera matrix** — if any render counters (else N/A one-liner with why)
 4. **Must-ship matrix** — every fold/spec lane; close conditions
-5. **Headless CDP matrix** — smoke name, path/query, exact asserts, suite membership, false-green notes
+5. **Headless CDP matrix** — only for a risky Mission Creator runtime change: smoke name, path/query, exact asserts, suite membership, false-green notes (else N/A one-liner)
 6. **Infra prerequisites** — e.g. Range/206 on gate serve before sat preview CI
-7. **Ship checklist** — the ticket's own `verify` lines (`cargo xtask ticket get <id> verify`), the checks the [commit checklist](/documentation/standards/commit_checklist.md) lists for what the change touches (`cargo xtask mk leptos-gates` for the editor, `cargo xtask ci ci-local` for the whole suite), a verify log with the pasted JSON and pins, the documentation the change touches in the same commit, `cargo xtask ticket ship <id>`, the commit, `cargo xtask ticket stamp-sha <id> <sha>`, push, CI watch
+7. **Ship checklist** — the [commit checklist](/documentation/standards/commit_checklist.md) checks: `cargo xtask mk rust-fmt`, `cargo xtask mk rust-clippy` and the tests of the touched crates; `cargo xtask mk leptos-gates` only for a risky Mission Creator runtime change; then the commit and push. Tests follow the pre-alpha test policy (`CLAUDE.md` law 11). `cargo xtask ticket ship <id>` and `ticket stamp-sha` are optional
 8. **Explicit not-in-plan** — only legal outs (ticket IDs / quoted deferrals)
 9. **WIP / dirty tree** — if checkout already half-done, first execute step restores buildability
 

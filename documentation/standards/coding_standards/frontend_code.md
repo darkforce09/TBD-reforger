@@ -55,9 +55,9 @@ states its Rust form and whether anything checks it. Where the app's files go is
   `mission_creator_state` < `mission_creator_engine_bridge` < `mission_creator_session` <
   `mission_creator_arsenal` < `mission_creator_workspace`); `frontend_test_support` is only a
   dev-dependency. No frontend crate names `wgpu`: the GPU is reached only through
-  `map_renderer`, `paper_doll_renderer` and `gpu_frame`'s frame pump. Gate: CI-SCRIPT,
-  `cargo xtask verify frontend-layering` for the layer and crate orders (any edge fails) and the
-  wgpu firewall of `cargo xtask verify crate-tiers` for the crate wall
+  `map_renderer`, `paper_doll_renderer` and `gpu_frame`'s frame pump. Gate: CI-SCRIPT, the wgpu
+  firewall of `cargo xtask verify crate-tiers` for the crate wall; the layer and crate orders are
+  checked on demand by `cargo xtask verify frontend-layering`
   ([Crate boundary rules](/documentation/standards/crate_boundary_rules.md)).
 
 ## Errors and logging

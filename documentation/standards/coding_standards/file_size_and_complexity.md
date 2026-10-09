@@ -3,26 +3,22 @@
 # File size and complexity
 
 Rules SIZE-1, SIZE-2, SIZE-3 and COMP-1: how large a source file and a function may grow. SIZE-3
-is the live, gated rule; CLAUDE.md law 7 states the same ceilings. The gate's walk and exit codes
+is strong guidance, not a CI hard gate; CLAUDE.md law 7 states the same limits. The gate's walk and exit codes
 are in the [file length and Node ban README](/tools/checks/repository_checks/src/language_bans/node_and_file_limits/README.md).
 
 ## Rules
 
-- **SIZE-3 (Scalability) — A production source file holds at most 500 lines and a test file at
-  most 1000, with no exemption.** Lines are raw lines, comments and blank lines included. A file
-  is a test file when a component of its path is `tests` or its name ends in `_tests.rs` or
-  `_tests.c`. A file over its limit prints one `SIZE-3:` line and fails the gate; the fix is to
-  decompose it by responsibility. Gate: CI-SCRIPT, `cargo xtask verify file-length`, run by
-  `cargo xtask ci verify-coding-standards` in `ci-local` and by the `language-gates` job of
-  `.github/workflows/ci.yml`. The limits are `SIZE_3_PRODUCTION_MAX_LINES` and
+- **SIZE-3 (Scalability) — A production source file stays around 500 lines and a test file
+  around 1000.** Lines are raw lines, comments and blank lines included. A file is a test file
+  when a component of its path is `tests` or its name ends in `_tests.rs` or `_tests.c`. When a
+  file grows past its limit, split it by responsibility. `cargo xtask verify file-length` reports
+  long files as warnings; it is not a CI hard gate. The limits are `SIZE_3_PRODUCTION_MAX_LINES` and
   `SIZE_3_TEST_MAX_LINES` in
   [node_and_file_limits.rs](/tools/checks/repository_checks/src/language_bans/node_and_file_limits.rs).
-- **SIZE-2 (Scalability) — File-level exemptions.** Retired. No allowlist file exists, none may be
-  created, and the gate reads none: a planted exemption file does not exempt anything
-  (`size3_has_zero_exemptions_even_if_allowlist_is_attempted` and `allowlist_file_must_not_exist`
-  in `tools/checks/repository_checks/src/language_bans/tests/node_free_tests.rs`).
-- **SIZE-1 (Scalability) — A soft warning at 600 lines.** Retired; SIZE-3's hard limit replaces
-  it. Some code comments still describe a large file as "a SIZE-1 file"; read that as a file near
+- **SIZE-2 (Scalability) — File-level exemptions.** Retired: with SIZE-3 a warning, no exemption
+  file is needed.
+- **SIZE-1 (Scalability) — A soft warning at 600 lines.** Retired; SIZE-3's 500-line warning
+  replaces it. Some code comments still describe a large file as "a SIZE-1 file"; read that as a file near
   the SIZE-3 limit.
 - **COMP-1 (Readability) — A function has at most 15 independent paths.** A function past that is
   split into named helpers; the only escape is a per-function opt-out with the reason beside it.
@@ -44,12 +40,10 @@ files included, since it reads the working tree, and prints
 | `mod/tbd-framework/Scripts` | the shipping game mod's EnfScript |
 | `mod/tbd-emcp/Scripts` | the Enfusion MCP bridge's Workbench handlers |
 
-A pinned root or an explicit member folder that is missing, an unreadable file or a walk that
-finds no source file is a check that did not run (exit 2 or 1), never a pass. Generated Rust is
-not excluded: the contract types under `crates/contracts/contract_schema_types/src/generated/` are
-held to the same limit.
+Generated Rust is not excluded: the contract types under
+`crates/contracts/contract_schema_types/src/generated/` are reported like any other file.
 
-Outside the walk, and so unenforced by this gate:
+Outside the walk:
 
 - The addon scripts of `mod/tbd-export`, until they are pinned.
   `MOD_SCRIPT_ROOTS` in
@@ -62,11 +56,4 @@ Outside the walk, and so unenforced by this gate:
 - Rust files outside every member folder: none exist. The URL case table the API and the
   single-page app share is `crates/foundation/http_url_guard/src/cases.rs`, a module of a member
   crate, so the walk covers it.
-- Markdown. Live documents under `documentation/` have their own 500-line limit, checked by
-  `cargo xtask verify markdown-placement`.
-
-The app's `src/` tree has a second 500-line check in its own tests,
-`frontend_production_files_meet_the_documentation_standard` in
-`crates/frontend/shell/frontend_application/src/tests/doc_audit/mod.rs`. That audit has no allowlist and no
-exemption path: it judges every production file, and a file that breaks a rule is fixed, never
-listed.
+- Markdown. Live documents under `documentation/` follow their own 500-line guidance.

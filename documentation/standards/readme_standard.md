@@ -3,8 +3,8 @@
 # README standard
 
 Every folder in the code trees and in `documentation/` carries a README.md built the same way: a
-fixed core of sections, the sections its kind adds, and a Contents block that a gate checks against
-the folder. The README tells developers and AI agents what a folder holds, how it works and where
+fixed core of sections, the sections its kind adds, and a Contents block that describes the
+folder. The README tells developers and AI agents what a folder holds, how it works and where
 it stops, and links the documents that go deeper.
 
 ## Which folders carry a README
@@ -19,7 +19,7 @@ it is tracked. The exempt folders are:
 - a folder whose name begins with `.` (tool configuration);
 - the pending-merge area, `pending_merge/` directly under the documentation root;
 - the retired top-level folders (`docs`, whose documents live under `documentation/`, and `apps`,
-  whose mod lives under `mod/`), which must hold nothing (markdown-placement judges them).
+  whose mod lives under `mod/`), which must hold nothing.
 
 An exempt folder needs no README, and a README.md inside one is neither required nor checked; the
 parent's Contents block describes the exempt folder in one line. The repository root's README.md
@@ -49,8 +49,8 @@ no status line.
    - `Used by:` everything outside the folder that uses it, found with `git grep` (callers, routes,
      tools); `nothing` when nothing does.
    - `Rules:` the invariants particular to this folder that a change must keep (layering,
-     placement, generated files, limits), each with the test or gate that holds it wherever one
-     does; repository-wide laws are not restated.
+     placement, generated files, limits), each with the test that holds it wherever one does;
+     repository-wide laws are not restated.
 
    A bullet may run over several lines and may hold a nested list.
 7. **`## Related documentation`.** Repository-root links to the documents that go deeper into this
@@ -63,10 +63,9 @@ every README of a kind has the same headings.
 
 ## The Contents block
 
-`cargo xtask verify readme-coverage` reads the Contents block and checks it against the folder. The
-grammar below is stated exactly as the gate's own
-[README](/tools/checks/documentation_checks/src/README.md#the-contents-grammar) states it,
-and the gate's code is the final word.
+The Contents block is guidance for readers, not a gate: keep it a useful map of the folder's
+notable children. It need not list every file exactly; a file added or renamed without a README
+edit is not a defect. The grammar below keeps blocks readable the same way.
 
 The Contents block is the first fenced code block whose info string is exactly `text` and that opens
 after the `## Contents` heading and before the next `## ` heading. A heading or fence inside another
@@ -104,7 +103,7 @@ root line, a missing heading at line 1, and every other violation at the line it
 
 ### Writing the block
 
-The gate checks the grammar; these conventions keep every block readable the same way.
+These conventions keep every block readable the same way.
 
 - Draw the tree: `├── ` before each entry and `└── ` before the last. Entries run in name order,
   and the roles line up in one column. Name order is case-insensitive: it compares the lowercased
@@ -118,7 +117,7 @@ The gate checks the grammar; these conventions keep every block readable the sam
 - A homogeneous collection gets one glob line, such as `*.sql` in a migrations folder. A child must
   never match both a glob and a name, since each child matches exactly one entry.
 - A folder that holds only its README.md has a block with the root line alone.
-- Keep diagrams and other `text` blocks out of the Contents section: the gate reads the first one
+- Keep diagrams and other `text` blocks out of the Contents section: readers take the first one
   after the heading as the tree.
 
 ```text
@@ -269,13 +268,13 @@ configures or runs by hand, such as a crate's `rustfmt.toml`, needs only its Con
   text. Its feature doc holds the flows, rules and reasons, what each call means server-side,
   design, open work and decisions, and links the README's Routes, Data and States instead of
   repeating them.
-- **Same commit.** A code change updates, in the same commit, the README of every folder whose
-  Contents line, surface, commands or boundaries it changes.
+- **Keep it truthful.** When a change alters a folder's surface, commands or boundaries, update its
+  README; this is advice, not a commit gate.
 - **Frozen trees.** The README indexes inside `documentation/tickets/` and
   `documentation/archive/` are live documents (`**Status:** live`, updated as files land),
-  although the trees they index are frozen. `link-check` and `markdown-placement` judge everything
-  under those two trees as frozen, with no path, command or size check, so the writer checks an
-  index's backticked paths, commands and length by hand.
+  although the trees they index are frozen. `link-check` judges everything under those two trees
+  as frozen, with no path or command check, so the writer checks an index's backticked paths and
+  commands by hand.
 - **Diagrams.** ASCII, in `text` blocks, placed in How it works or a kind section.
 - **Names.** Code identifiers go in backticks exactly as spelled; everything else is plain words.
 - **Hosts and paths.** No IP address of a host, and no personal absolute path. The deploy host is
@@ -296,33 +295,16 @@ configures or runs by hand, such as a crate's `rustfmt.toml`, needs only its Con
    Where the folder is two kinds, add the second kind's sections.
 4. Rewriting an existing README, carry every fact that is still true, and drop boilerplate, bare
    file lists, history and every claim the code contradicts.
-5. Run the gates over the folder.
+5. Optionally run `cargo xtask verify link-check --path <folder>` when the README moves or cites
+   many paths.
 
-## Gates
+## Checks
 
-Three gates check documentation. Each takes a repeatable `--path <dir>` that limits it to part of the
-repository, and exits 0 when every judged item held, 1 when at least one broke a rule, and 2 when a
-check could not run. The [documentation gates README](/tools/checks/documentation_checks/src/README.md)
-specifies every rule.
-
-| Gate | What it checks |
-|---|---|
-| `cargo xtask verify readme-coverage` | every folder in the README span has a tracked README.md, and every README.md in the span passes the Contents grammar |
-| `cargo xtask verify markdown-placement` | the code trees hold no Markdown besides README.md (outside `tests`, `generated`, `Generated` and dot-folders), the retired top-level folders hold no file, and every live document under `documentation/` stays within 500 lines, apart from the exemptions the gates README lists |
-| `cargo xtask verify link-check` | every link in every README and documentation file reaches a tracked target, anchors and line ranges included; in live documents, every backticked repository path exists and every cited `cargo xtask` command exists in the command tree, fenced blocks included |
-
-The Contents check is the only structural rule a gate enforces. The section order, the kind
-sections and the writing rules are held by the writers and reviewers who apply this standard.
-`cargo xtask verify readme-coverage` is the one README checker: a crate's own tests check its module
-layout, never the contents of its READMEs.
-
-Before committing a README change, run the gates over the folders it touches:
+No gate checks README structure or Contents blocks; writers and reviewers hold this standard.
+`cargo xtask verify link-check` runs on demand: it takes a repeatable `--path <dir>` and checks
+that every link reaches a tracked target and, in live documents, that every backticked repository
+path and every cited `cargo xtask` command exists.
 
 ```bash
-cargo xtask verify readme-coverage --path <folder>
 cargo xtask verify link-check --path <folder>
-cargo xtask verify markdown-placement
 ```
-
-Writers check new, uncommitted files with `--with-untracked` before handing over; the committed
-view, without the flag, is what CI judges.

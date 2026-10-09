@@ -59,9 +59,9 @@ may take this", whichever product runs it. Do **not** mass-edit tickets to anoth
   slice agent. Its own edits are bookkeeping: ticket files through the `cargo xtask ticket` verbs,
   `.ai/tickets/wave.lock` only through `cargo xtask wave repack` (never by hand), and
   documentation.
-- **Agents never ship.** Slice agents implement, prove by perturbation, gate and report. The
-  orchestrator owns every status change (`cargo xtask ticket ship`, `ticket stamp-sha`), every
-  merge (`cargo xtask platform wave land`) and every push.
+- **Agents never ship.** Slice agents implement, run fmt, clippy and the touched crates' tests,
+  and report. The orchestrator owns every status change (the optional `cargo xtask ticket ship`
+  and `ticket stamp-sha`), every merge (`cargo xtask platform wave land`) and every push.
 
 ## Model routing in factory mode
 

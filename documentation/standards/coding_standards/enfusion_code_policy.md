@@ -22,13 +22,9 @@ and are not restated here.
   replication side, such as `if (RplSession.Mode() == RplMode.Client) return;`, carries a comment
   of the form `// Authority only — <reason>`. Gate: MANUAL, for the same reason as ENF-1.
 - **ENF-3 (Readability) — Networked-code tags resolve.** Every `@contract` citation in a `.c`
-  file names a schema definition that exists. Gate: CI-SCRIPT, `cargo xtask ci verify-citations`
-  (`cargo xtask schema citations`), which reads the code files, `.c` and `.rs` among them, under
-  the top-level folder of every workspace member (today `crates/` and `tools/`) and under
-  `mod/`.
-  `cargo xtask verify enfusion-comments` (ECM-5 and ECM-6) requires the `@authority`, `@rpc`,
-  `@replicated`, `@route` and `@contract` tags where they belong over the pinned mod Scripts
-  roots, today `mod/tbd-framework/Scripts` and `mod/tbd-emcp/Scripts`.
+  file names a schema definition that exists, and the `@authority`, `@rpc`, `@replicated`,
+  `@route` and `@contract` tags sit where they belong. Status: live, unenforced (recommended
+  style); review holds it.
 - **ENF-4 (Usability) — A JSON document the mod parses has a golden sample that validates.** The
   ten samples in `contracts/fixtures/enfusion_samples/` cover the parts of the [mission](/documentation/glossary/g_to_m.md#mission) schema
   the mod's DTO classes read; the schema gate validates each against its definition, and a sample
@@ -38,19 +34,16 @@ and are not restated here.
   [samples README](/contracts/fixtures/enfusion_samples/README.md) describes the folder.
 
 ENF-1 and ENF-2 are the only MANUAL rules in these standards, and they stay the only ones: a new
-rule names an automated gate or is stated as unenforced.
+rule names an automated check or is stated as unenforced.
 
 ## Checking mod code
 
 No gate of `cargo xtask ci ci-local` compiles EnfScript: the API's tests and the app build never
-compile a `.c` file. Its `verify-coding-standards` step does read the pinned mod Scripts roots,
-today `mod/tbd-framework/Scripts` and `mod/tbd-emcp/Scripts`, through
-`cargo xtask verify file-length` and
-`cargo xtask verify enfusion-comments`. A mod change is checked by `cargo xtask mod compile` (the
-compile gate, which also probes whether an engine API exists), those two gates, the mod wave gate,
-and a pass in Workbench or on a dedicated server for the MANUAL rules. The procedure is in
+compile a `.c` file. A mod change is checked by `cargo xtask mod compile` (the compile gate, which
+also probes whether an engine API exists) and a pass in Workbench or on a dedicated server for the
+MANUAL rules; the mod world boot runs nightly or on demand. The procedure is in
 [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md).
 
-`cargo xtask verify file-length` holds the `.c` files of the pinned mod Scripts roots to the
-500-line ceiling of CLAUDE.md law 7; the scripts of the addons not yet pinned stay unenforced (see
+`cargo xtask verify file-length` warns about `.c` files of the pinned mod Scripts roots past the
+500-line guidance of CLAUDE.md law 7 (see
 [File size and complexity](/documentation/standards/coding_standards/file_size_and_complexity.md)).

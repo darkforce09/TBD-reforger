@@ -18,7 +18,7 @@ alwaysApply: false
 Application code for a ticket runs through the ticket tooling — `cargo xtask ticket run`, or
 `cargo xtask platform slice-run <id>` for one ticket — with any AI coding agent, on `main` (see
 [Taking a ticket from idea to shipped](/documentation/runbooks/ticket_run_pipeline.md)). The
-agent that writes the code updates the documentation it changes in the same commit.
+agent that writes the code keeps the documentation it affects truthful.
 
 ## Allowed without extra permission
 
@@ -43,5 +43,5 @@ agent that writes the code updates the documentation it changes in the same comm
 ## Documentation is not application code
 
 Documents under `documentation/`, README.md files and the ticket files are edited in mode B
-without this permission. When the operator does authorize code in the chat, that code's
-documentation changes land in the same commit as the code.
+without this permission. When the operator does authorize code in the chat, keep that code's
+documentation truthful.

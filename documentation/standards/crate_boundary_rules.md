@@ -4,9 +4,12 @@
 
 The crate-level laws of the workspace: which crate may name which, where state lives, how the
 map renderer hands frames to the GPU crates, and which law holds each wall. The walls are crate
-boundaries: the crate-tier law (`cargo xtask verify crate-tiers`) checks every dependency edge
-against its category matrix and its firewalls, and four sibling workspace laws hold the shape of
-each crate, its test files, the frontend's layers and the stylesheet's sources. The code is the
+boundaries. While the project is pre-alpha, CI enforces only three of them: no member depends on
+an application crate and the external-crate firewalls hold (`cargo xtask verify crate-tiers`),
+every library crate keeps its anatomy (`cargo xtask verify crate-anatomy`), and every leptos crate
+reaches the stylesheet (`cargo xtask verify tailwind-sources`). The tiers, the category matrix,
+test-file reachability and frontend layering are layering guidance: follow them, and check them on
+demand. The code is the
 final word: the laws live in `tools/foundation/repository_laws/src/workspace_laws/`, and
 [section 5](#5-the-workspace-laws) states each rule as that code enforces it, with the file that
 enforces it.
@@ -197,10 +200,10 @@ app `frontend_application`, whose start function `start_app` is its one JavaScri
 
 ## 5. The workspace laws
 
-Five laws judge the members of the root `Cargo.toml`. `cargo xtask ci verify-workspace-laws` runs
-them in this order and stops at the first failure, and each is also its own `cargo xtask verify`
-command: crate tiers, crate anatomy, test-file reachability, frontend layering and Tailwind
-sources. Each prints `<LAW>: PASS`, or `FAIL` with exit 1 on a finding and exit 2 when an input
+Five laws judge the members of the root `Cargo.toml`, each its own `cargo xtask verify` command:
+crate tiers, crate anatomy, test-file reachability, frontend layering and Tailwind sources. Crate
+tiers (trimmed to its application and firewall rules), crate anatomy and Tailwind sources run in
+CI; test-file reachability and frontend layering run on demand. Each prints `<LAW>: PASS`, or `FAIL` with exit 1 on a finding and exit 2 when an input
 could not be read; a missing input never passes. The paths and names that move with the tree (the
 application packages, the frontend layer tables and crate orders, the stylesheet) are constants of
 `tools/checks/repository_checks/src/architecture/workspace_law_locations.rs`, which xtask passes
@@ -225,8 +228,8 @@ rule 1 or rule 2, never exempt.
 
 ### 5.2 Crate tiers (`cargo xtask verify crate-tiers`)
 
-`tools/foundation/repository_laws/src/workspace_laws/crate_tiers.rs` judges seven rules over the
-`CrateTierConfiguration` xtask passes (`CRATE_TIERS`: the application packages):
+The gate enforces rule 6 (firewalls) and rule 7 (applications). Rules 1 to 5 describe the
+intended layout and are guidance, not a CI gate:
 
 1. **Membership.** Every `Cargo.toml` in the checkout (outside hidden folders, folders named
    `tests`, `fixtures`, `test_fixtures`, `target` and `node_modules`, and build folders named
@@ -437,7 +440,8 @@ The tool crates keep a direction of their own, pinned by
 | Every leptos crate's classes reach the stylesheet | Tailwind sources | `tailwind_sources.rs` |
 | The frame path stays damage-driven | source pins | `crates/map_rendering/map_renderer/src/tests/damage_discipline.rs` |
 
-Every law runs in `cargo xtask ci ci-local` and in CI; a law whose input is missing fails rather
+Crate tiers rules 6 and 7, crate anatomy and Tailwind sources run in `cargo xtask ci ci-local` and
+in CI; the other rows are guidance, checked on demand. A law whose input is missing fails rather
 than passes.
 
 ## 6. Known gaps and open work

@@ -3,7 +3,7 @@
 # Documentation standards
 
 How this repository documents its code and writes its documents: the comment rules for Rust and
-EnfScript, the cross-boundary tags and the checks that hold them, and the layout, naming and
+EnfScript, the cross-boundary tags, and the layout, naming and
 lifecycle of the documentation tree. It details law 8 of [CLAUDE.md](/CLAUDE.md) with a real
 example of each rule. README.md files follow the
 [README standard](/documentation/standards/readme_standard.md), which this document links rather
@@ -77,16 +77,16 @@ loadout export (`loadout-export.schema.json`), takes `@contract` alone.
 
 ### 3.1 Grammar
 
-Each tag is required on the code its row names; sections 5 to 7 give its exact form with a real
-example, and section 10 the checks.
+Each tag is recommended style on the code its row names; sections 5 to 7 give its exact form with
+a real example. No gate checks them; review does.
 
-| Tag | Written on | Checked by |
-|---|---|---|
-| `@route <METHOD> <path>` | every Axum handler; every EnfScript REST call site | `cargo xtask verify route-tags` (Rust side, both directions); `cargo xtask verify enfusion-comments` (EnfScript call sites, ECM-6) |
-| `@contract <schema>#<pointer>[ (<sub-path>)][ partial]` | every type that projects a schema definition: Rust models and DTOs, hand-written EnfScript DTOs | `cargo xtask schema citations`: every citation resolves; `cargo xtask verify enfusion-comments`: present on every EnfScript `*Struct` (ECM-6); the API's `contract_parity_mod_wire` suite: every tagged EnfScript class matches the node it cites |
-| `@authority server\|client\|owner` | every EnfScript method whose correctness depends on where it runs | `cargo xtask verify enfusion-comments` (ECM-5) |
-| `@rpc <Reliable\|Unreliable> <Server\|Owner\|Broadcast>` | directly above every `[RplRpc]` | `cargo xtask verify enfusion-comments` (ECM-5) |
-| `@replicated <prop>` | directly above every `[RplProp]` | `cargo xtask verify enfusion-comments` (ECM-5) |
+| Tag | Written on |
+|---|---|
+| `@route <METHOD> <path>` | every Axum handler; every EnfScript REST call site |
+| `@contract <schema>#<pointer>[ (<sub-path>)][ partial]` | every type that projects a schema definition: Rust models and DTOs, hand-written EnfScript DTOs |
+| `@authority server\|client\|owner` | every EnfScript method whose correctness depends on where it runs |
+| `@rpc <Reliable\|Unreliable> <Server\|Owner\|Broadcast>` | directly above every `[RplRpc]` |
+| `@replicated <prop>` | directly above every `[RplProp]` |
 
 ## 4. Comments in all code
 
@@ -120,7 +120,7 @@ invariant that follows from it
 
 These rules cover every Rust crate of the workspace, under `crates/` and `tools/`.
 
-**Module header.** A non-trivial module opens with a `//!` summary line and the four-point
+**Module header** (recommended style, not gated). A non-trivial module opens with a `//!` summary line and the four-point
 contract: `**Role:**` (its responsibility), `**Position:**` (its boundary layer, what feeds it and
 who consumes it), `**Signals & state:**` (mutable state, reactive signals and thread ownership, or
 none) and `**Invariants:**` (the guarantees a change must keep). From
@@ -180,12 +180,9 @@ Two optional parts follow, in this order and each after one space:
 - `partial` declares a projection that reads a subset of the cited object, so it need not carry
   every property the object requires; without it, the type carries every required property.
 
-The grammar is closed: a tag of any other shape is an error. `cargo xtask schema citations`
-resolves the schema and pointer of every tag, and the API's `contract_parity_mod_wire` suite reads
-the whole tag on the mod scripts, parsed by
-`crates/api/api_server/tests/enfscript_source_support/contract_tag.rs`: every field name and `//!<`
-JSON key binding of a tagged class must be a property of the cited node, and a class without
-`partial` must carry every required one. A module of such types carries the tag in its `//!`
+The grammar is closed: write no tag of any other shape. Every field name and `//!<` JSON key
+binding of a tagged class should be a property of the cited node, and a class without `partial`
+should carry every required one. A module of such types carries the tag in its `//!`
 header (`crates/api/api_missions/src/models/registry.rs:4`); a single type in its `///`
 comment (`crates/api/api_administration/src/models/audit_stream.rs:19-21`):
 
@@ -257,13 +254,8 @@ EnfScript caller. From
 on the method that posts the telemetry queue's head entry, one tag per route it may call:
 ``//! @route POST /api/v1/ingest/match-results``.
 
-**Gate.** `cargo xtask verify enfusion-comments` checks the rules of this section and section 7
-(rules ECM-1 to ECM-9, specified in the
-[comment gate README](/tools/checks/mod_script_checks/src/enfusion_comments/README.md))
-over the pinned mod Scripts roots, today `mod/tbd-framework/Scripts` and
-`mod/tbd-emcp/Scripts`; `--path` narrows it to
-any folder or file under `mod/`. `cargo xtask ci verify-coding-standards` and the CI
-language-gates job run it without `--path`.
+The rules of this section and section 7 are recommended style for the mod Scripts roots
+(`mod/tbd-framework/Scripts`, `mod/tbd-emcp/Scripts`); no gate checks them.
 
 ## 7. Network authority
 
@@ -275,9 +267,8 @@ In a replicated game, which machine runs a method is part of its contract.
   attribute and repeats its channel and receiver.
 - `//! @replicated <prop>` sits directly above every `[RplProp]` field, naming who owns the value
   and the `onRplName` hook clients react in, when the attribute names one.
-- `cargo xtask verify enfusion-comments` (ECM-5) requires the three tags: `@authority` on every
-  method whose body calls `Rpc(` or asks where it runs, `@rpc` matching the attribute it sits
-  above, and `@replicated` above every `[RplProp]`.
+- In practice: `@authority` on every method whose body calls `Rpc(` or asks where it runs, `@rpc`
+  matching the attribute it sits above, and `@replicated` above every `[RplProp]`.
 - A server gate, `if (TBD_Authority.IsClient())`, carries a
   `// Authority only -- <reason>` comment above it, as at
   `mod/tbd-framework/Scripts/Game/TBD/Session/Admin/SCR_PlayerController.c:24`.
@@ -370,10 +361,8 @@ documentation/
 Documents live under `documentation/`, the single documentation root. The code trees (every
 top-level folder but `documentation/` and the retired `docs`, read from git's listing so a new one
 is judged at once) hold no Markdown besides README.md files, except below
-a `tests`, `generated`, `Generated` or dot-folder, which `cargo xtask verify markdown-placement` enforces; the
-repository root keeps its own README.md and `CLAUDE.md`. `cargo xtask ci verify-documentation`, a
-`ci-local` step, and the `language-gates` job of `ci.yml` run it with readme-coverage and
-link-check, so no application grows a documentation tree of its own.
+a `tests`, `generated`, `Generated` or dot-folder; the repository root keeps its own README.md and
+`CLAUDE.md`. This is a convention, so no application grows a documentation tree of its own.
 
 ### 8.3 Names, status lines, size and links
 
@@ -428,8 +417,8 @@ link-check, so no application grows a documentation tree of its own.
   feature doc. The ticket templates live in `.ai/tickets/`.
 - **Frozen and archived.** A frozen record (a closed ticket's spec or plan) and an archived
   document (history under `documentation/archive/<topic>/`) are never reworded; only their
-  links change. `link-check` judges only the links in both trees and `markdown-placement` exempts
-  them from the size limit; their README indexes stay live and list the files as they land.
+  links change. `link-check` judges only the links in both trees, and the size guidance does not
+  apply to them; their README indexes stay live and list the files as they land.
 - **Known bugs.** `documentation/known_bugs/` is the live registry, one file per bug in the
   [known bug format](/documentation/standards/templates/known_bug.md); a resolved bug stays
   with its status set to resolved.
@@ -437,44 +426,23 @@ link-check, so no application grows a documentation tree of its own.
   [standards/templates/](/documentation/standards/templates/README.md): the README kinds, the
   feature doc, the runbook, the decisions entry, the known bug and the glossary entry.
 
-## 10. Gates and the same-commit rule
+## 10. Keeping documentation current
 
-Documentation ships in the same commit as the code it describes, whoever writes that code: a
-change updates the comments of the code it alters, the README of every folder whose contents,
-surface, commands or boundaries it changes, and the feature docs whose behaviour it changes.
+Documentation is advice, not a commit gate: when a change alters a folder's surface, commands or
+boundaries, update its README and the feature docs whose behaviour changed, and keep the comments
+of the code it alters current. No gate checks the comment rules or the cross-boundary tags; review
+holds them.
 
-Two checks hold the cross-boundary tags of section 3. `cargo xtask verify route-tags` compares
-every Rust `@route` tag with the routes the API registers, in both directions, and
-`cargo xtask schema citations` resolves every `@contract` citation against
-`contracts/definitions/`. On the mod scripts, the API test binary `contract_parity_mod_wire`
-(run by `cargo xtask db test-it`) also holds each tag's sub-path and `partial` marker against the
-fields of the class it sits on. `cargo xtask ci verify-coding-standards` and
-`cargo xtask ci verify-citations` run them, and `cargo xtask ci ci-local` runs both. The citation
-check reads `.c`, `.go`, `.js`, `.mjs`, `.rs`, `.ts` and `.tsx` files under `crates/`, `mod/`
-and `tools/`, never Markdown, and prints that scope on every run; when the printed scope and this
-section disagree, the printed scope is right. A third check, `cargo xtask verify enfusion-comments`,
-holds the EnfScript tags and the Enfusion comment rules of sections 6 and 7 over the pinned mod
-Scripts roots, and `cargo xtask ci verify-coding-standards` runs it too. Review holds the other
-comment rules, apart from the prose tests section 4 names.
-
-Three gates check the documents, specified in the
-[documentation gates README](/tools/checks/documentation_checks/src/README.md):
-`cargo xtask verify readme-coverage` (every folder in the README span has a README.md whose
-Contents block matches the folder), `cargo xtask verify markdown-placement` (the code trees hold no
-Markdown besides README.md, and live documents stay within 500 lines) and
-`cargo xtask verify link-check` (links, anchors, backticked paths and cited commands resolve).
-
-Before committing a documentation change, run the gates over the folders it touches:
+`cargo xtask verify link-check` (links, anchors, backticked paths and cited commands resolve) runs
+on demand, for example after moving documents:
 
 ```bash
-cargo xtask verify readme-coverage --path <folder>
 cargo xtask verify link-check --path <folder>
-cargo xtask verify markdown-placement
 ```
 
 ### 10.1 Prose citations
 
-The citation check reads code, never documents, so a citation in prose is held by convention.
+A citation in prose is held by convention.
 
 - Cite a symbol by name together with its file path: `TBD_SpawnManager.ClaimSlot` survives an edit
   above it, and a line number does not. A `:line` suffix may follow the path as a pointer into the
