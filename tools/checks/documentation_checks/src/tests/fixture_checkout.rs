@@ -1,22 +1,16 @@
-//! A throwaway checkout on disk for the documentation gate tests.
+//! A throwaway checkout on disk for the link check gate tests.
 //!
-//! Tracked files are written and listed; untracked files are only written; a listed-only path is
-//! in the listing but absent from the disk. The gates judge the listing, never the disk walk, so
-//! the three kinds cover every way the two can disagree. [`FixtureCheckout::tree`] builds the
-//! listing directly; [`FixtureCheckout::listed_by_git`] makes the checkout a git repository and
-//! runs the real listing, so git's own ignore rules decide which untracked files it sees.
+//! Tracked files are written and listed; a listed-only path is in the listing but absent from the
+//! disk. The gate judges the listing, never the disk walk, so the two kinds cover both ways the
+//! two can disagree. [`FixtureCheckout::tree`] builds the listing directly.
 
 use std::path::{Path, PathBuf};
 
-use process_runner::Run;
-use verification_core::{NotRun, Verdict};
+use verification_core::Verdict;
 
 use crate::gate_run::GateRun;
 use crate::tracked_tree::TrackedTree;
 use crate::{GateRequest, UntrackedFiles};
-
-/// Variables that would point git at another repository or index than the fixture's own.
-const GIT_LOCATION_VARIABLES: [&str; 3] = ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"];
 
 /// A temporary checkout root plus the listing a `git ls-files` there would print.
 pub(super) struct FixtureCheckout {
@@ -39,14 +33,12 @@ impl FixtureCheckout {
 
     /// Write `path` and list it as tracked.
     pub(super) fn tracked(&mut self, path: &str, text: &str) -> &mut FixtureCheckout {
-        self.write(path, text);
+        let full = self.root.join(path);
+        if let Some(folder) = full.parent() {
+            std::fs::create_dir_all(folder).expect("create a fixture folder");
+        }
+        std::fs::write(&full, text).expect("write a fixture file");
         self.listing.push(path.to_string());
-        self
-    }
-
-    /// Write `path` without listing it.
-    pub(super) fn untracked(&mut self, path: &str, text: &str) -> &mut FixtureCheckout {
-        self.write(path, text);
         self
     }
 
@@ -61,42 +53,9 @@ impl FixtureCheckout {
         TrackedTree::from_listing(&self.listing.join("\0"))
     }
 
-    /// The tree a gate run lists: the checkout becomes a git repository whose index holds the
-    /// tracked paths, then the real listing runs. Every tracked path must exist on disk, since
-    /// `git add` records what the disk holds.
-    pub(super) fn listed_by_git(&self, untracked: UntrackedFiles) -> Result<TrackedTree, NotRun> {
-        self.git(&["init", "--quiet"]);
-        let mut add = vec!["add", "--"];
-        add.extend(self.listing.iter().map(String::as_str));
-        self.git(&add);
-        TrackedTree::load(&self.root, untracked)
-    }
-
     /// The checkout root.
     pub(super) fn root(&self) -> &Path {
         &self.root
-    }
-
-    fn write(&self, path: &str, text: &str) {
-        let full = self.root.join(path);
-        if let Some(folder) = full.parent() {
-            std::fs::create_dir_all(folder).expect("create a fixture folder");
-        }
-        std::fs::write(&full, text).expect("write a fixture file");
-    }
-
-    /// Run git in the checkout, never in the repository or index the environment names.
-    fn git(&self, arguments: &[&str]) {
-        let command = GIT_LOCATION_VARIABLES.iter().fold(
-            Run::new("git").args(arguments).cwd(&self.root),
-            |run, variable| run.env_remove(*variable),
-        );
-        let output = command.output().expect("git runs in the fixture checkout");
-        assert_eq!(
-            output.code, 0,
-            "git {arguments:?} failed: {}",
-            output.stderr
-        );
     }
 }
 
@@ -112,18 +71,6 @@ pub(super) fn request(scope: &[&str], untracked: UntrackedFiles) -> GateRequest 
         paths: scope.iter().map(ToString::to_string).collect(),
         untracked,
     }
-}
-
-/// A README whose Contents block is `root` followed by `entries`, between an H1 and a closing
-/// section, the shape the README standard asks for.
-pub(super) fn readme_with_contents(root: &str, entries: &[&str]) -> String {
-    let mut block = vec![root];
-    block.extend_from_slice(entries);
-    format!(
-        "# Fixture\n\nWhat the folder holds.\n\n## Contents\n\n```text\n{}\n```\n\n## Boundaries\n\n\
-         - Depends on: nothing.\n",
-        block.join("\n")
-    )
 }
 
 /// The rendered text of every verdict of `run` that did not hold, in order.

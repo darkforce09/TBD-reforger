@@ -9,8 +9,7 @@
 //! **Signals & state:** none; constants.
 //! **Invariants:** every path is repository-relative or (in a layer table) crate-relative; a crate
 //! order and the application list name packages, each the name of its folder and each a workspace
-//! member (an absent one is a finding of its law). The crate-tier law's stray-manifest sweep reads
-//! the whole checkout, so it takes no folder from here.
+//! member (an absent one is a finding of its law).
 
 use repository_laws::workspace_laws::crate_tiers::CrateTierConfiguration;
 use repository_laws::workspace_laws::frontend_layering::crate_edges::{
@@ -23,7 +22,7 @@ use repository_laws::workspace_laws::frontend_layering::{
 
 /// The application packages: the binaries the platform deploys or runs — the API server, the
 /// single-page app and its offline service worker, the game server host agent and the ticketboard
-/// desktop viewer. No member depends on one, in any table (rule 7 of the crate-tier law).
+/// desktop viewer. No member depends on one, in any table (the crate-tier law).
 pub(crate) const APPLICATION_PACKAGES: &[&str] = &[
     "api_server",
     "frontend_application",

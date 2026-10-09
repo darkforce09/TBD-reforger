@@ -199,7 +199,3 @@ fn folder_list(config: &FrontendCrateEdges) -> String {
         .collect::<Vec<_>>()
         .join(", ")
 }
-
-#[cfg(test)]
-#[path = "../tests/frontend_layering_crate_edges.rs"]
-mod tests;

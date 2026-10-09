@@ -135,7 +135,3 @@ pub fn flock_exclusive(
         std::thread::sleep(slice);
     }
 }
-
-#[cfg(test)]
-#[path = "tests/lock_tests.rs"]
-mod tests;

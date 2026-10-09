@@ -10,8 +10,7 @@ owns it.
 tools/xtask/src/cli/
 ├── command_vocabulary.rs  the command tree, recipe names and task names the documentation link check judges citations against
 ├── dispatch.rs            `run`: preprocess the arguments, parse them, route each group to its handler
-├── mod.rs                 the `Cli` parser and the `TopCmd` enum of every top-level command
-└── tests/                 parse tests of the documentation gate arguments and `mcp wb-logs --file`, and the link check over this tree
+└── mod.rs                 the `Cli` parser and the `TopCmd` enum of every top-level command
 ```
 
 ## How it works

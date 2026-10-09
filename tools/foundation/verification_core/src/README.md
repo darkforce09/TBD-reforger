@@ -17,7 +17,7 @@ tools/foundation/verification_core/src/
 ├── prelude.rs  the verdict vocabulary, `Pattern`, `Report`, the lock and the `gate` and `scan` modules for glob import
 ├── report.rs   `Report`: accumulates verdicts, prints failures as they land, and yields the exit code
 ├── scan.rs     `walk_files`, `matching_lines` and `Hit`: a sorted tree walk and the lines that match
-├── tests/      unit tests for every module, one file each
+├── tests/      unit tests of the gate, pattern, report, scan and verdict modules
 └── verdict.rs  `Verdict`, `NotRun`, `Finding` and `Kind`: the three outcomes and their rendering
 ```
 

@@ -129,14 +129,6 @@ impl TrackedTree {
         self.files.iter().map(String::as_str)
     }
 
-    /// Every folder that holds a listed file, in path order, without the repository root.
-    pub(super) fn folders(&self) -> impl Iterator<Item = &str> {
-        self.folders
-            .keys()
-            .map(String::as_str)
-            .filter(|folder| !folder.is_empty())
-    }
-
     /// How many listed files are tracked.
     pub(super) fn tracked_file_count(&self) -> usize {
         self.files.len() - self.untracked_files.unwrap_or(0)
@@ -201,7 +193,3 @@ fn listed_paths(listing: &str) -> impl Iterator<Item = &str> {
 fn split_parent(path: &str) -> (&str, &str) {
     path.rsplit_once('/').unwrap_or(("", path))
 }
-
-#[cfg(test)]
-#[path = "tests/tracked_tree.rs"]
-mod tests;

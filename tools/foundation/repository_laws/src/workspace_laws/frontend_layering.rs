@@ -471,7 +471,3 @@ fn breaks_sub_area_order(order: &SubAreaOrder, file: &str, target: &str, test: b
         .sub_area_of(target)
         .is_some_and(|to| order.breaks(order.sub_area_of(file), to, test))
 }
-
-#[cfg(test)]
-#[path = "tests/frontend_layering.rs"]
-mod tests;

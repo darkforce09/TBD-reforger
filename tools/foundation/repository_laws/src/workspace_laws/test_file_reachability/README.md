@@ -36,7 +36,6 @@ compares equal to the file it names.
 - Depends on: `super::super::rust_module_references` (the comment and string blanking) and
   `regex`.
 - Used by: `super::reachable_files`, which walks each member's module tree from its targets'
-  root files; its tests in
-  `tools/foundation/repository_laws/src/workspace_laws/tests/test_file_reachability_module_declarations.rs`.
+  root files.
 - Rules: the reader knows no crate, member or folder name; a file a declaration names but the
   checkout lacks is simply not loaded.

@@ -41,8 +41,7 @@ No feature and no environment variable.
 
 ## Public surface
 
-- The modules `file_length`, `sibling_test_placement`, `exemption_mechanisms`,
-  `test_only_features`, `source_roots`, `cargo_manifest`, `workspace_members` and
+- The modules `file_length`, `source_roots`, `cargo_manifest`, `workspace_members` and
   `workspace_laws`; `Error` and `Result` at the crate root; `prelude` with each law's entry point.
   The [source README](/tools/foundation/repository_laws/src/README.md) lists their items.
 
@@ -50,12 +49,11 @@ No feature and no environment variable.
 
 - Depends on: `verification_core` (the `NotRun` vocabulary, the scans and the patterns), `regex`
   and `thiserror`.
-- Used by: `xtask` (`verify file-length`, the five workspace-law verbs,
-  and the tooling tests that read the workspace members) and `api_server` as a dev-dependency
-  (`crates/api/api_server/tests/engineering_laws.rs`).
+- Used by: `xtask` (`verify file-length` and the five workspace-law verbs, through
+  `repository_checks`), the tool crates that read the workspace members, and `api_server` as a
+  dev-dependency (its manifest reader).
 - Rules: tier 1 of `tools/foundation`, depending only on `verification_core` among the workspace
-  crates (`foundation_crates_depend_only_on_lower_foundation_crates` in
-  `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`; `cargo xtask verify crate-tiers`).
+  crates.
 
 ## Related documentation
 

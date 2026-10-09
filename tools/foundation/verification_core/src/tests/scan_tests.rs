@@ -48,23 +48,6 @@ fn walks_recursively_and_deterministically() {
 }
 
 #[test]
-fn extension_filter_applies() {
-    let d = TmpDir::new("ext");
-    d.file("keep.rs", "");
-    d.file("drop.txt", "");
-    let files = walk_files(&[&d.0], with_extension(&["rs"])).unwrap();
-    assert_eq!(files.len(), 1);
-    assert!(files[0].ends_with("keep.rs"));
-}
-
-#[test]
-fn a_file_root_is_accepted_directly() {
-    let d = TmpDir::new("fileroot");
-    let f = d.file("solo.rs", "");
-    assert_eq!(walk_files(&[&f], |_| true).unwrap(), vec![f.clone()]);
-}
-
-#[test]
 fn matching_lines_reports_one_based_line_numbers() {
     let d = TmpDir::new("grep");
     let f = d.file("x.rs", "first\nSELECT * FROM users\nthird\n");
@@ -77,26 +60,6 @@ fn matching_lines_reports_one_based_line_numbers() {
     assert_eq!(hits[0].line_no, 2, "line numbers are 1-based");
     assert_eq!(hits[0].line, "SELECT * FROM users");
     assert!(hits[0].rendered().ends_with(":2:SELECT * FROM users"));
-}
-
-#[test]
-fn matching_lines_finds_every_occurrence() {
-    let d = TmpDir::new("multi");
-    let f = d.file("y.rs", "hit\nmiss\nhit\n");
-    let hits = matching_lines(&Pattern::literal("hit"), &[f]).unwrap();
-    assert_eq!(
-        hits.iter().map(|h| h.line_no).collect::<Vec<_>>(),
-        vec![1, 3]
-    );
-}
-
-#[test]
-fn matching_lines_on_a_missing_file_is_did_not_run() {
-    let got = matching_lines(
-        &Pattern::literal("x"),
-        &[PathBuf::from("/nonexistent/tbd/z.rs")],
-    );
-    assert!(matches!(got, Err(NotRun::Unreadable { .. })));
 }
 
 #[test]

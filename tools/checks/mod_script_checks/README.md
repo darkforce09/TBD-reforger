@@ -1,9 +1,7 @@
 # Mod script checks
 
 The `mod_script_checks` crate: the checks over the [EnfScript](/documentation/glossary/a_to_f.md#enfscript)
-sources and `.layout` files of the [mod](/documentation/glossary/g_to_m.md#mod) — the in-code
-documentation card over the pinned script roots, the source pins that stop false comments and the
-mission size bypass from returning, the UI layout gate, and the two
+sources and `.layout` files of the [mod](/documentation/glossary/g_to_m.md#mod) — the UI layout gate and the two
 [Workbench](/documentation/glossary/n_to_z.md#workbench) spawn runs. The `cargo xtask verify` and
 `cargo xtask mod` verbs print their reports and exit with their codes.
 
@@ -31,7 +29,7 @@ Run these from the repository root:
 
 ```bash
 cargo test -p mod_script_checks           # every check over fixtures and this checkout
-cargo xtask verify enfusion-comments      # the comment card over the pinned script roots
+cargo xtask verify ui-layouts             # the layout structure gate
 cargo xtask mod spawn-determinism --selftest  # the spawn-determinism normaliser, offline
 ```
 
@@ -42,16 +40,14 @@ No feature. The spawn runs read `ENFUSION_WORKBENCH_PORT` (5775 by default), `TB
 
 ## Public surface
 
-- The modules `enfusion_comments`, `mission_rest_size_limits`, `player_identity_comments`,
-  `results_reporter_identity_comments`, `destroy_target_diagnostics`, `ui_layouts`,
-  `spawn_determinism` and `spawn_verification`; `Error` and `Result` at the crate root; `prelude`
-  with the six `verify` entries.
+- The modules `ui_layouts`, `spawn_determinism` and `spawn_verification`; `Error` and `Result`
+  at the crate root; `prelude` with the `verify ui-layouts` entry.
 
 ## Boundaries
 
 - Depends on: `verification_core`, `process_runner`, `content_digest`, `repository_layout`,
-  `regex` and `thiserror`; `tool_test_support` in tests.
-- Used by: `xtask` (`cargo xtask verify` for the six checks, `cargo xtask mod spawn-determinism`
+  `regex` and `thiserror`.
+- Used by: `xtask` (`cargo xtask verify ui-layouts`, `cargo xtask mod spawn-determinism`
   and `spawn-verify`, and the `ci` task table).
 - Rules: tier 2 of `tools/checks` (`cargo xtask verify crate-tiers`); the crate anatomy
   (`cargo xtask verify crate-anatomy`).
@@ -59,7 +55,5 @@ No feature. The spawn runs read `ENFUSION_WORKBENCH_PORT` (5775 by default), `TB
 ## Related documentation
 
 - [Check crates](/tools/checks/README.md) — the category this crate belongs to.
-- [Enfusion script header](/documentation/standards/templates/enfusion_script_header.md) — the
-  comment card `verify enfusion-comments` holds.
 - [Spawn determinism](/documentation/runbooks/spawn_determinism.md) — running the Workbench spawn
   checks.

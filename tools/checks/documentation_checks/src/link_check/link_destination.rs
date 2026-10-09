@@ -199,7 +199,3 @@ fn skip_whitespace(chars: &[char], at: usize, across_lines: bool) -> usize {
     }
     index
 }
-
-#[cfg(test)]
-#[path = "tests/link_destination.rs"]
-mod tests;

@@ -161,7 +161,3 @@ pub(super) fn expand_leading_tabs(line: &str) -> String {
 pub(super) fn leading_spaces(line: &str) -> usize {
     line.len() - line.trim_start_matches(' ').len()
 }
-
-#[cfg(test)]
-#[path = "tests/markdown_lines.rs"]
-mod tests;

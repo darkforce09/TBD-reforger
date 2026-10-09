@@ -1,7 +1,5 @@
-# The Enfusion mod script checks as libraries: the comment card over the pinned script roots, the
-# identity-comment, destroy-target and mission REST size gates, the UI layout checks, and the
-# Workbench-driven spawn determinism and spawn verification runs. The xtask binary and its task
-# table run each check and print its verdict.
+# The Enfusion mod script checks as libraries: the UI layout checks and the Workbench-driven spawn
+# determinism and spawn verification runs. The xtask binary runs each check and prints its verdict.
 [package]
 name = "mod_script_checks"
 version = "0.1.0"
@@ -9,7 +7,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
-description = "The Enfusion mod script checks: comment card, identity comments, layouts, spawn runs"
+description = "The Enfusion mod script checks: UI layouts and Workbench spawn runs"
 
 [package.metadata.layout]
 category = "tools/checks"
@@ -24,10 +22,6 @@ repository_layout = { workspace = true }
 repository_root = { workspace = true }
 thiserror = { workspace = true }
 verification_core = { workspace = true }
-
-[dev-dependencies]
-# The test checkout root and the environment lock.
-tool_test_support = { workspace = true }
 
 [lints]
 workspace = true

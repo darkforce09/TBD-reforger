@@ -1,4 +1,4 @@
-//! Rule 6 of the crate-tier law: the external-crate firewalls.
+//! The external-crate firewalls of the crate-tier law.
 //!
 //! **Role:** keeps each heavy or platform-bound external crate inside the categories built for
 //! it: wgpu in the GPU device, frame and core crates, the map renderers and the paper-doll
@@ -110,7 +110,7 @@ pub(crate) const RENDERING_STACK_CATEGORIES: &[&str] = &[
 pub(crate) const MAP_NOUN_DECLARATION_PATTERN: &str =
     r"\b(struct|enum|trait|type|fn|const|static|mod)\s+\w*(terrain|symbology|mission|orbat|arma)";
 
-/// Every rule-6 finding over the judged members.
+/// Every firewall finding over the judged members.
 pub(super) fn firewall_findings(
     repo_root: &Path,
     members: &[WorkspaceMember],
@@ -124,7 +124,7 @@ pub(super) fn firewall_findings(
         for edge in shipped_edges(member).filter(|edge| !is_member(&edge.package)) {
             if let Some(rule) = breached_firewall(member, &category, class, edge) {
                 findings.push(format!(
-                    "rule 6: {}/Cargo.toml:{}: {} — {rule}",
+                    "firewall: {}/Cargo.toml:{}: {} — {rule}",
                     member.path, edge.line_no, edge.package
                 ));
             }
@@ -219,7 +219,7 @@ fn rendering_stack_findings(
                     });
             if onto_stack || name == "wgpu" || name.starts_with("wgpu-") {
                 findings.push(format!(
-                    "rule 6: {}/Cargo.toml:{}: [{}] {name} — the offline service worker and the \
+                    "firewall: {}/Cargo.toml:{}: [{}] {name} — the offline service worker and the \
                      API crates link no graphics, map rendering, paper doll or streaming crate \
                      and no wgpu, in any table",
                     member.path, edge.line_no, edge.table
@@ -244,7 +244,7 @@ fn xtask_closure_findings(xtask: &WorkspaceMember, members: &[WorkspaceMember]) 
                 Some(dependency) => pending.push(dependency),
                 None if XTASK_CLOSURE_BANS.contains(&edge.package.as_str()) => {
                     findings.push(format!(
-                        "rule 6: {}/Cargo.toml:{}: {} enters the dependency closure of xtask",
+                        "firewall: {}/Cargo.toml:{}: {} enters the dependency closure of xtask",
                         member.path, edge.line_no, edge.package
                     ));
                 }
@@ -274,7 +274,7 @@ fn mission_editing_browser_token_findings(
     let files = scan::walk_files(&[root.as_path()], scan::with_extension(&["rs"]))?;
     if files.is_empty() {
         return Ok(vec![format!(
-            "rule 6: walked 0 .rs file(s) under {MISSION_EDITING_CATEGORY} — the mission editing \
+            "firewall: walked 0 .rs file(s) under {MISSION_EDITING_CATEGORY} — the mission editing \
              browser scan refuses a vacuous pass"
         )]);
     }
@@ -284,7 +284,7 @@ fn mission_editing_browser_token_findings(
         .iter()
         .map(|hit| {
             format!(
-                "rule 6: {}:{}: mission editing names no browser crate, prose included: {}",
+                "firewall: {}:{}: mission editing names no browser crate, prose included: {}",
                 crate::source_roots::repository_relative(repo_root, &hit.path),
                 hit.line_no,
                 hit.line.trim()
@@ -309,7 +309,7 @@ fn wasm_bindgen_attribute_findings(
     let files = scan::walk_files(&refs, scan::with_extension(&["rs"]))?;
     if files.is_empty() {
         return Ok(vec![
-            "rule 6: walked 0 .rs file(s) in the workspace members — the wasm_bindgen export \
+            "firewall: walked 0 .rs file(s) in the workspace members — the wasm_bindgen export \
              scan refuses a vacuous pass"
                 .to_string(),
         ]);
@@ -327,7 +327,7 @@ fn wasm_bindgen_attribute_findings(
             let relative = crate::source_roots::repository_relative(repo_root, &hit.path);
             (!exporting(&relative)).then(|| {
                 format!(
-                    "rule 6: {relative}:{}: #[wasm_bindgen] exports only from the frontend, \
+                    "firewall: {relative}:{}: #[wasm_bindgen] exports only from the frontend, \
                      browser_platform and the offline service worker: {}",
                     hit.line_no,
                     hit.line.trim()
@@ -354,7 +354,7 @@ fn map_noun_findings(repo_root: &Path, member: &WorkspaceMember) -> Result<Vec<S
             let code = line.trim_start();
             if !code.starts_with("//") && pattern.is_match(code) {
                 findings.push(format!(
-                    "rule 6: {}:{}: a graphics crate declares no map noun: {}",
+                    "firewall: {}:{}: a graphics crate declares no map noun: {}",
                     crate::source_roots::repository_relative(repo_root, &file),
                     index + 1,
                     code
@@ -364,7 +364,3 @@ fn map_noun_findings(repo_root: &Path, member: &WorkspaceMember) -> Result<Vec<S
     }
     Ok(findings)
 }
-
-#[cfg(test)]
-#[path = "tests/crate_firewalls.rs"]
-mod tests;

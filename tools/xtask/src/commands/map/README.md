@@ -141,8 +141,7 @@ holds for each command, except on `export-terrain`, which takes `--help` as an a
   never writes an index over a missing or empty pyramid, and what it writes validates against
   `map-tile-index.schema.json`
   (`tools/map_assets/world_export_pipeline/src/tests/map_tile_index/tests.rs`); this folder holds
-  no command logic, and xtask depends only on tool crates and the checkout-root finder
-  (`tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`), so the raster
+  no command logic, and xtask depends only on tool crates and the checkout-root finder, so the raster
   work stays in the `map` binary, outside xtask's dependency closure.
 
 ## Related documentation

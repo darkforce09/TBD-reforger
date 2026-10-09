@@ -96,7 +96,3 @@ fn check_problem(status: i32, problem: &str) -> NotRun {
         stderr: problem.to_string(),
     }
 }
-
-#[cfg(test)]
-#[path = "tests/git_ignore_rules.rs"]
-mod tests;

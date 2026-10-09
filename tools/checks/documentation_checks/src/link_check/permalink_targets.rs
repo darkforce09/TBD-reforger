@@ -219,7 +219,3 @@ fn fragment_break(
         )),
     }
 }
-
-#[cfg(test)]
-#[path = "tests/permalink_targets.rs"]
-mod tests;

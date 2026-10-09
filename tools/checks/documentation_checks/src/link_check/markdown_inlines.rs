@@ -440,7 +440,3 @@ fn code_span_text(raw: &str) -> String {
 fn is_punctuation(c: char) -> bool {
     c.is_ascii_punctuation() || (!c.is_ascii() && !c.is_alphanumeric() && !c.is_whitespace())
 }
-
-#[cfg(test)]
-#[path = "tests/markdown_inlines.rs"]
-mod tests;

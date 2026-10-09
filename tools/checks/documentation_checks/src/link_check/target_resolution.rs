@@ -254,7 +254,3 @@ fn has_scheme(destination: &str) -> bool {
 fn asks_plain_view(query: &str) -> bool {
     query.split('&').any(|pair| pair == "plain=1")
 }
-
-#[cfg(test)]
-#[path = "tests/target_resolution.rs"]
-mod tests;

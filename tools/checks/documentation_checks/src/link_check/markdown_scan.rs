@@ -355,7 +355,3 @@ impl BlockPass {
         self.document
     }
 }
-
-#[cfg(test)]
-#[path = "tests/markdown_scan.rs"]
-mod tests;

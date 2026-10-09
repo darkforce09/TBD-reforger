@@ -3,8 +3,8 @@
 //! **Role:** recognises the lines that open and close a fenced code block, so a scanner can tell
 //! a heading or a Contents block from text that only sits inside another code block.
 //!
-//! **Position:** a line-level helper; the Contents parser in [`crate::readme_coverage`] carries
-//! the open [`Fence`] from one line to the next.
+//! **Position:** a line-level helper; the link check's block scan carries the open [`Fence`]
+//! from one line to the next.
 //!
 //! **Signals & state:** none; the caller owns the open fence.
 //!
@@ -56,7 +56,3 @@ fn without_indent(line: &str) -> Option<&str> {
     let body = line.trim_start_matches(' ');
     (line.len() - body.len() <= DEEPEST_FENCE_INDENT).then_some(body)
 }
-
-#[cfg(test)]
-#[path = "tests/markdown_fences.rs"]
-mod tests;

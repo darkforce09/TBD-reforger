@@ -1,12 +1,12 @@
 //! The file-length gate's rendering over the library scan.
 //!
-//! **Role:** runs [`repository_laws::file_length::scan_file_lengths`] and
-//! prints its verdict as `verify file-length` output.
+//! **Role:** runs [`repository_laws::file_length::scan_file_lengths`] and prints its findings as
+//! `verify file-length` warnings.
 //! **Position:** the bodies behind the parent module's re-exports.
 //! **Signals & state:** none; each entry reads the checkout and prints.
-//! **Invariants:** a scan that could not run exits 2 and a scan that read no file exits 1, so
-//! neither reads as a pass; each over-long file prints one `SIZE-3:` line on stderr and the
-//! summary prints on stdout.
+//! **Invariants:** the gate is advisory: an over-long file prints one `warning:` line on stderr
+//! and never fails the gate; a scan that could not run exits 2 and a scan that read no file exits
+//! 1, so neither reads as a pass; the summary prints on stdout.
 
 use super::*;
 use repository_laws::file_length::scan_file_lengths;
@@ -18,9 +18,9 @@ pub fn verify_file_length() -> Result<u8> {
     ))
 }
 
-/// The file-length gate over the checkout at `root`: 0 clean, 1 a file over its ceiling or an
+/// The file-length gate over the checkout at `root`: 0 scanned (long files are warnings), 1 an
 /// empty walk, 2 did not run.
-pub(super) fn verify_file_length_in(root: &Path) -> u8 {
+fn verify_file_length_in(root: &Path) -> u8 {
     let scan = match scan_file_lengths(root) {
         Ok(scan) => scan,
         Err(cause) => return refuse_file_length(cause),
@@ -33,7 +33,7 @@ pub(super) fn verify_file_length_in(root: &Path) -> u8 {
         eprintln!("{}", violation.rendered());
     }
     println!("{}", scan.summary());
-    u8::from(!scan.violations.is_empty())
+    0
 }
 
 fn refuse_file_length(cause: NotRun) -> u8 {

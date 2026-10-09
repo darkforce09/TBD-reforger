@@ -35,6 +35,5 @@ names that no member carries.
 - Depends on: `super` (the layer order, `SubAreaOrder`, `LayeringEdge`) and
   `crate::workspace_members`.
 - Used by: `super::frontend_layering_outcome`, which prints its findings after the in-crate
-  mode's; its tests in
-  `tools/foundation/repository_laws/src/workspace_laws/tests/frontend_layering_crate_edges.rs`.
+  mode's.
 - Rules: the mode knows no crate or folder name; xtask passes every one of them.

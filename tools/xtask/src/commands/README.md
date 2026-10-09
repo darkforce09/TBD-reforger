@@ -66,6 +66,4 @@ README gives its commands, flags and exit codes.
   `.claude/settings.json`.
 - Rules: a group's parsing stays in its own `cli.rs` and its routing in its `dispatch.rs`;
   ticket persistence, wave-lock compilation and engine-backed map work stay in their libraries,
-  never copied here; unit tests live in each folder's `tests/`, wired by `#[path]`
-  (`tooling_test_modules_live_in_separate_files` in
-  `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`).
+  never copied here; unit tests live in each folder's `tests/`, wired by `#[path]`.

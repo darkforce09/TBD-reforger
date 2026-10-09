@@ -53,15 +53,10 @@ limits, test placement, prose) are tests of the `repository_checks` crate
   `tool_test_support` (the environment and working-directory locks, the test checkout root); clap, serde and the other crates in
   `tools/xtask/Cargo.toml`.
 - Used by: `tools/xtask/Cargo.toml`, whose one `[[bin]]` is `src/main.rs`.
-- Rules (tests in `tools/checks/repository_checks/src/tests/`):
+- Rules:
   - xtask and `developer_tools` are binary-only packages whose workspace dependencies are tool
-    crates at `tools/<category>/<name>` alone (the checkout root comes through `repository_layout`); neither depends on the other, and no member depends on either
-    (`tooling_dependency_direction_is_enforced`);
-  - no tokio, axum, reqwest, resvg or image enters xtask's dependency closure (rule 6 of
+    crates at `tools/<category>/<name>` alone (the checkout root comes through
+    `repository_layout`); neither depends on the other, and no member depends on either;
+  - no tokio, axum, reqwest, resvg or image enters xtask's dependency closure (a firewall of
     `cargo xtask verify crate-tiers`);
-  - a production file stays under 500 lines, `main.rs` under 150 and a separate test file under
-    1000 (`tooling_source_files_stay_below_their_structural_limits`), and no test module is inline
-    (`tooling_test_modules_live_in_separate_files`);
-  - comments, help text and documents under `tools/` carry no ticket ids, retired spellings,
-    script file names, history words or names of Rust files that do not exist, and no production
-    file names a private-network address (`tools/checks/repository_checks/src/tests/tooling_prose_rules.rs`).
+  - no test module is inline.

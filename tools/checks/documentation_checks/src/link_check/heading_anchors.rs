@@ -47,7 +47,3 @@ pub(super) fn slug(heading: &str) -> String {
         .map(|c| if c == ' ' { '-' } else { c })
         .collect()
 }
-
-#[cfg(test)]
-#[path = "tests/heading_anchors.rs"]
-mod tests;

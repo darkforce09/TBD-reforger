@@ -78,9 +78,7 @@ error exits 2.
     which repack;
   - the [orchestrator](/documentation/glossary/n_to_z.md#orchestrator) and people planning a wave.
 - Rules: the lock has one writer, `wave repack`, and `slice-collisions --repack` calls that same
-  writer; the compilation and packing stay in `ticket_wave_lock`, and `mod.rs` must delegate to it
-  (`ticket_implementations_have_one_owner` in
-  `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`).
+  writer; the compilation and packing stay in `ticket_wave_lock`, and `mod.rs` delegates to it.
 
 ## Related documentation
 

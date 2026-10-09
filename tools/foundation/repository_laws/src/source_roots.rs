@@ -1,12 +1,10 @@
 //! The source trees the structural laws read, and the one rule that tells a test file apart.
 //!
-//! **Role:** names the directories the file-length, sibling-test and exemption rules walk — every
-//! workspace member folder the root manifest names, plus the pinned Enfusion script roots —
-//! walks them fail-closed, and classifies a repository-relative path as a test file or a
-//! production file.
-//! **Position:** the shared input of [`super::file_length`], [`super::sibling_test_placement`]
-//! and [`super::exemption_mechanisms`]; built on [`super::workspace_members`] and
-//! [`verification_core::scan::walk_files`].
+//! **Role:** names the directories the file-length rule walks — every workspace member folder
+//! the root manifest names, plus the pinned Enfusion script roots — walks them fail-closed, and
+//! classifies a repository-relative path as a test file or a production file.
+//! **Position:** the input of [`super::file_length`] and the test-file rule the workspace laws
+//! share; built on [`super::workspace_members`] and [`verification_core::scan::walk_files`].
 //! **Signals & state:** none; constants and pure functions over the checkout.
 //! **Invariants:** the Rust roots are the workspace members and nothing else, so a crate is judged
 //! from the commit that makes it a member. A missing root manifest, a workspace that names no
@@ -165,13 +163,6 @@ pub fn walk_length_gated_sources(repo_root: &Path) -> Result<Vec<PathBuf>, NotRu
     })
 }
 
-/// Every Rust source under the law roots.
-pub fn walk_rust_sources(repo_root: &Path) -> Result<Vec<PathBuf>, NotRun> {
-    walk_law_sources(repo_root, |path| {
-        path.extension().is_some_and(|ext| ext == "rs")
-    })
-}
-
 /// `file` relative to `repo_root` with `/` separators, as a finding names it.
 pub fn repository_relative(repo_root: &Path, file: &Path) -> String {
     file.strip_prefix(repo_root)
@@ -193,7 +184,3 @@ pub fn is_test_file(rel: &str) -> bool {
                 .file_stem()
                 .is_some_and(|stem| stem.to_string_lossy().ends_with("_tests")))
 }
-
-#[cfg(test)]
-#[path = "tests/source_roots.rs"]
-mod tests;

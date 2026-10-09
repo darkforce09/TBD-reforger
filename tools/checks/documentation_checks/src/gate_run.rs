@@ -2,13 +2,12 @@
 //!
 //! **Role:** the operator's [`GateRequest`]; [`GateRun`], which carries one gate's header,
 //! verdicts and totals to [`verification_core::Report`]; [`prepare`], which lists the tree and
-//! resolves the `--path` scope or stops the run; the per-rule [`Tally`]; and the small helpers
-//! every gate uses ([`scope_line`], [`judged_nothing`], [`read_tracked`]).
+//! resolves the `--path` scope or stops the run; and the small helpers the gate
+//! uses ([`scope_line`], [`judged_nothing`], [`read_tracked`]).
 //!
-//! **Position:** under the three gates of this crate: [`crate::readme_coverage`],
-//! [`crate::markdown_placement`] and [`crate::link_check`] each build a [`GateRun`] from
-//! [`prepare`]'s tree and scope and print it. The tree comes from [`crate::tracked_tree`], the
-//! scope from [`crate::gate_scope`].
+//! **Position:** under [`crate::link_check`], which builds a [`GateRun`] from [`prepare`]'s
+//! tree and scope and prints it. The tree comes from [`crate::tracked_tree`], the scope from
+//! [`crate::gate_scope`].
 //!
 //! **Signals & state:** none held; a run lists the files once, judges them, prints its verdicts
 //! and returns its exit status.
@@ -111,29 +110,6 @@ impl GateRun {
             0 => 0,
             1 => 1,
             _ => 2,
-        }
-    }
-}
-
-/// Running counts for one rule of a gate.
-#[derive(Debug, Default)]
-pub(crate) struct Tally {
-    /// Items the rule judged.
-    pub(crate) judged: usize,
-    /// Judged items that broke the rule.
-    pub(crate) failed: usize,
-    /// Judged items that could not be read.
-    pub(crate) unread: usize,
-}
-
-impl Tally {
-    /// Count one judged item by its verdict.
-    pub(crate) fn count(&mut self, verdict: &Verdict) {
-        self.judged += 1;
-        match verdict {
-            Verdict::Held => {}
-            Verdict::Failed(_) => self.failed += 1,
-            Verdict::DidNotRun(..) => self.unread += 1,
         }
     }
 }

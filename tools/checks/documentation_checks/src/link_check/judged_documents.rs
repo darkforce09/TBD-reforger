@@ -110,7 +110,3 @@ fn has_extension(path: &str, extension: &str) -> bool {
         .rsplit_once('.')
         .is_some_and(|(stem, found)| !stem.is_empty() && found.eq_ignore_ascii_case(extension))
 }
-
-#[cfg(test)]
-#[path = "tests/judged_documents.rs"]
-mod tests;

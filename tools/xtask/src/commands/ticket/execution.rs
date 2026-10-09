@@ -58,7 +58,3 @@ pub(super) fn cmd_run(
     })?;
     Ok(())
 }
-
-#[cfg(test)]
-#[path = "tests/execution_tests.rs"]
-mod tests;

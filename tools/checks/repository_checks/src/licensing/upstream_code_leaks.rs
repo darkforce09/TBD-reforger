@@ -158,8 +158,4 @@ mod verify_crf_leak;
 pub use verify_crf_leak::verify_crf_leak;
 
 #[cfg(test)]
-use asset_guid_reuse::{asset_dirs, guids_under};
-#[cfg(test)]
-use vanilla_pak_probe::present_in_paks;
-#[cfg(test)]
-use verify_crf_leak::{grep_visible, numbered, pattern, run};
+use verify_crf_leak::run;

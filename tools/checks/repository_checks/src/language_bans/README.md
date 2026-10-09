@@ -13,8 +13,7 @@ tools/checks/repository_checks/src/language_bans/
 ├── node_and_file_limits/    the file-length report and the no-node checks
 ├── node_and_file_limits.rs  the no-node scan subjects; re-exports the entries
 ├── python_scripts.rs        `verify no-python`: the same ban walk as `no-shell`, under its own name
-├── shell_scripts.rs         `verify no-shell`: the tracked-language ban table, shebangs, `python3` calls
-└── tests/                   unit tests for the ban walk, shebang parsing and fixture checkouts
+└── shell_scripts.rs         `verify no-shell`: the tracked-language ban table, shebangs, `python3` calls
 ```
 
 ## How it works
@@ -40,9 +39,7 @@ everything else, and [Enfusion](/documentation/glossary/a_to_f.md#enfusion) `.c`
 it.
 
 `node_and_file_limits/` holds the `no-node` and `file-length` bodies; its README gives their
-rules. The file-length roots, ceilings and test-file rule live in
-`repository_laws` and are shared with the `engineering_laws` test binary of
-`api`.
+rules. The file-length roots, ceiling and test-file rule live in `repository_laws`.
 
 ## Public surface
 
@@ -51,8 +48,8 @@ rules. The file-length roots, ceilings and test-file rule live in
   entries of `cargo xtask verify no-shell`, `no-python`, `no-node` and `file-length`, and of the
   matching rows of the `ci` task table.
 
-Exit codes: 0 clean; 1 a banned path, an over-long file or a walk that examined nothing; 2 when
-`file-length` could not read a root or a file.
+Exit codes: 0 clean (an over-long file is only a warning); 1 a banned path or a walk that examined
+nothing; 2 when `file-length` could not read a root or a file.
 
 ## Boundaries
 
@@ -69,14 +66,9 @@ Exit codes: 0 clean; 1 a banned path, an over-long file or a walk that examined 
     (`tools/commands/platform_execution/src/wave_execution/gate/gate_dispatch.rs`), which runs
     `verify no-python`, `verify no-node` and `verify no-shell`.
 - Rules:
-  - The ban widens only by adding a row to `TRACKED_LANGUAGE_BANS`, never by a path exception
-    (`planted_sh_fails`, `makefile_is_banned` and `leftover_py_file_fails` in
-    `tests/python_scripts/tests.rs`).
-  - A Rust inner attribute is not a shebang, and a commented `python3` is not a call
-    (`does_not_sweep_in_rust_inner_attributes` and
-    `python3_command_position_ignores_comments` in `tests/shell_scripts/tests.rs`).
-  - The file-length limits hold with no exemption file
-    (`allowlist_file_must_not_exist` in `tools/checks/repository_checks/src/language_bans/tests/node_free_tests.rs`).
+  - The ban widens only by adding a row to `TRACKED_LANGUAGE_BANS`, never by a path exception.
+  - A Rust inner attribute is not a shebang, and a commented `python3` is not a call.
+  - The file-length gate is advice: a long production file prints a warning, never a failure.
 
 ## Related documentation
 

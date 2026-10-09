@@ -124,8 +124,8 @@ subcommand prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
     (`flatten_in_place_refuses_lossy_loadout_drop` and `flatten_stdout_refuses_lossy_loadout_drop`
     in `tools/commands/schema_tooling/src/tests/mission_flattening.rs`), and never overwrites a `schemaVersion` the file already
     has (`flatten_in_place_preserves_schema_version_1_0`).
-  - The `schema-validate` gate set is defined once, in the `ci` task table, and `list-gates`,
-    the wave gate and `cargo xtask verify ci-schema-parity` read it from there.
+  - The `schema-validate` gate set is defined once, in the `ci` task table, and `list-gates`
+    and the wave gate read it from there.
 
 ## Related documentation
 

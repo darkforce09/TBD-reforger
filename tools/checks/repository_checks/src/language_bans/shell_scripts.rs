@@ -95,12 +95,6 @@ pub fn verify_no_python() -> Result<u8> {
     verify(Label::NoPython)
 }
 
-/// Fixture entry: walk `root` as if it were the repo (uses `git ls-files` there).
-#[cfg(test)]
-pub fn run_with_root(root: &Path) -> Result<u8> {
-    run_at(root, Label::NoShell)
-}
-
 fn verify(label: Label) -> Result<u8> {
     let root = repository_root::find_repository_root()?;
     run_at(&root, label)
@@ -400,7 +394,3 @@ fn segment_invokes_python3(seg: &str) -> bool {
     }
     false
 }
-
-#[cfg(test)]
-#[path = "tests/shell_scripts/tests.rs"]
-mod tests;

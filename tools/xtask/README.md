@@ -104,14 +104,9 @@ The crate has no features and reads no configuration file of its own. What it re
     finder comes through `repository_layout`), neither depends on the other, and no member depends on either; a
     `tools/foundation` crate depends only on lower `tools/foundation` crates and `repository_root`,
     and a `tools/tickets` crate only on `tools/foundation` crates, four `crates/foundation` crates
-    and lower ticket crates
-    (`tooling_dependency_direction_is_enforced`,
-    `foundation_crates_depend_only_on_lower_foundation_crates` and
-    `ticket_crates_depend_only_on_foundations_and_lower_ticket_crates` in
-    `src/tests/tooling_dependency_boundaries.rs`);
-  - production files stay under 500 lines, test files under 1000 and `src/main.rs` under 150, and
-    tests live in separate files (`tooling_source_files_stay_below_their_structural_limits`,
-    `tooling_test_modules_live_in_separate_files`);
+    and lower ticket crates;
+  - production files should stay under 500 lines (`cargo xtask verify file-length` warns), and
+    tests live in separate files;
   - tests read fixtures from the checkout they run in: the execution receipts in
     `tools/tickets/ticket_metrics/tests/fixtures/execution_receipts/` and the blueprint fixtures in
     `tools/map_assets/blueprint_compiler/test_fixtures/blueprint/`.

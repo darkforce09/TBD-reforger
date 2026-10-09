@@ -1,21 +1,18 @@
-//! The documentation gates: README coverage with its Contents check, Markdown placement with its
-//! size limit, and the link check.
+//! The documentation link check.
 //!
-//! **Role:** one public module per gate ([`readme_coverage`], [`markdown_placement`],
-//! [`link_check`]) and the machinery every gate shares: the operator's [`GateRequest`], the tree
-//! of files a gate treats as tracked, the `--path` scope, the repository regions, fenced-block
-//! recognition, and the run that carries a gate's verdicts to [`verification_core::Report`].
+//! **Role:** the public [`link_check`] gate and the machinery it uses: the operator's
+//! [`GateRequest`], the tree of files the gate treats as tracked, the `--path` scope, the
+//! repository regions, fenced-block recognition, and the run that carries the gate's verdicts to
+//! [`verification_core::Report`].
 //!
 //! **Position:** tier 2 of `tools/checks`, over `verification_core` (verdicts and the report),
 //! `process_runner` (the `git ls-files` children), `repository_layout` (the repository regions)
-//! and `clap` (the command tree a citation walks). `cargo xtask verify readme-coverage`,
-//! `cargo xtask verify markdown-placement` and `cargo xtask verify link-check` reach
-//! [`verify_readme_coverage`], [`verify_markdown_placement`] and [`verify_link_check`] through
-//! the xtask binary's verify dispatcher, each with a [`GateRequest`]; the ci task table runs the
-//! same three over the committed files. The link check judges `cargo xtask` citations against the
-//! [`CommandVocabulary`] the binary hands in, so this crate never reads the command line itself.
-//! Every path a gate judges comes from `git ls-files` (the index, joined under
-//! `--with-untracked` by the untracked files git does not ignore).
+//! and `clap` (the command tree a citation walks). `cargo xtask verify link-check` reaches
+//! [`verify_link_check`] through the xtask binary's verify dispatcher with a [`GateRequest`]. The
+//! link check judges `cargo xtask` citations against the [`CommandVocabulary`] the binary hands
+//! in, so this crate never reads the command line itself. Every path the gate judges comes from
+//! `git ls-files` (the index, joined under `--with-untracked` by the untracked files git does not
+//! ignore).
 //!
 //! **Signals & state:** none held; a run lists the files once, judges them, prints its verdicts
 //! and returns its exit status.
@@ -27,9 +24,7 @@
 //! check of the committed files.
 
 pub mod link_check;
-pub mod markdown_placement;
 pub mod prelude;
-pub mod readme_coverage;
 
 mod gate_run;
 mod gate_scope;
@@ -43,6 +38,4 @@ mod fixture_checkout;
 
 pub use gate_run::GateRequest;
 pub use link_check::{BreakListing, CommandVocabulary, verify_link_check};
-pub use markdown_placement::verify_markdown_placement;
-pub use readme_coverage::verify_readme_coverage;
 pub use tracked_tree::UntrackedFiles;

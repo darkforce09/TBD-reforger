@@ -10,7 +10,7 @@
 //! [`crate::gate`] answers "does this pattern appear in these files" — one boolean for the whole
 //! set. Plenty of gates need the other shape: a recursive search over a directory that prints
 //! every hit with its path and line number, so the operator can go and fix them. `cargo xtask
-//! verify no-select-star`, `verify route-tags` and `verify crate-tiers` are all that shape.
+//! verify no-select-star` and `verify crate-tiers` are that shape.
 //!
 //! ── FAIL-CLOSED WALKING ──────────────────────────────────────────────────────────────────────
 //!

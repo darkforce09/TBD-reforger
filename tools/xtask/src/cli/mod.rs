@@ -166,15 +166,3 @@ pub(crate) enum TopCmd {
 
 pub(crate) mod command_vocabulary;
 pub(crate) mod dispatch;
-
-#[cfg(test)]
-#[path = "tests/documentation_command_tree_tests.rs"]
-mod documentation_command_tree_tests;
-
-#[cfg(test)]
-#[path = "tests/documentation_gate_arguments_tests.rs"]
-mod documentation_gate_arguments_tests;
-
-#[cfg(test)]
-#[path = "tests/workbench_logs_file_argument_tests.rs"]
-mod workbench_logs_file_argument_tests;

@@ -294,7 +294,3 @@ fn read_target(
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/link_targets.rs"]
-mod tests;

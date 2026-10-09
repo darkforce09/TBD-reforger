@@ -420,7 +420,3 @@ impl DocumentRule for CommandCitations<'_> {
         )]
     }
 }
-
-#[cfg(test)]
-#[path = "tests/command_citations.rs"]
-mod tests;

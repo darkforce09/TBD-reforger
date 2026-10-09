@@ -11,7 +11,7 @@ skipped at mission load.
 tools/checks/repository_checks/src/registry/
 ├── mod.rs                      the module tree
 ├── object_registry_aliases.rs  the census: inputs, mirror pins, alias derivation, fail-fast verdicts
-└── tests/                      unit tests against the real files, perturbed copies and missing inputs
+└── tests/                      the mirror test of the alias derivation
 ```
 
 ## How it works

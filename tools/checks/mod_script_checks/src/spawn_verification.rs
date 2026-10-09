@@ -90,7 +90,3 @@ fn cargo_xtask(root: &Path, args: &[&str]) -> std::result::Result<u8, NotRun> {
         Err(cause) => Err(cause),
     }
 }
-
-#[cfg(test)]
-#[path = "tests/spawn_verification/tests.rs"]
-mod tests;

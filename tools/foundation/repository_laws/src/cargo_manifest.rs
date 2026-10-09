@@ -5,8 +5,8 @@
 //! including target-specific, renamed and `workspace = true` ones), every declared feature, the
 //! `[package.metadata.layout]` declaration, the `[lints]` source, the library and binary targets,
 //! and a root manifest's `[workspace]` member list.
-//! **Position:** used by [`super::test_only_features`], [`super::workspace_members`] and the
-//! workspace laws in [`super::workspace_laws`]; reads one file.
+//! **Position:** used by [`super::workspace_members`] and the workspace laws in
+//! [`super::workspace_laws`]; reads one file.
 //! **Signals & state:** none; pure functions over manifest text.
 //! **Invariants:** it reads the TOML subset Cargo manifests are written in — section headers,
 //! `key = value` lines, dotted keys, inline tables and arrays that may span lines, `#` comments —

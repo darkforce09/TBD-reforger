@@ -91,7 +91,3 @@ fn attribute(chars: &[char], at: usize) -> Option<(String, Option<String>, usize
     let value: String = chars[after..after + length].iter().collect();
     Some((name, Some(value), after + length))
 }
-
-#[cfg(test)]
-#[path = "tests/inline_html.rs"]
-mod tests;

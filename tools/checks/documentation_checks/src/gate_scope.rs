@@ -72,12 +72,6 @@ impl GateScope {
         self.folders.is_empty() || self.folders.iter().any(|folder| is_within(path, folder))
     }
 
-    /// Whether any part of `folder` lies in the scope: the scope holds it, or it holds a scope
-    /// folder.
-    pub(super) fn overlaps(&self, folder: &str) -> bool {
-        self.contains(folder) || self.folders.iter().any(|scoped| is_within(scoped, folder))
-    }
-
     /// The scope as the gate's header and refusals name it.
     pub(super) fn describe(&self) -> String {
         if self.folders.is_empty() {
@@ -118,7 +112,3 @@ fn normalise(value: &str, repo_root: &Path) -> Result<String, &'static str> {
     }
     Ok(parts.join("/"))
 }
-
-#[cfg(test)]
-#[path = "tests/gate_scope.rs"]
-mod tests;

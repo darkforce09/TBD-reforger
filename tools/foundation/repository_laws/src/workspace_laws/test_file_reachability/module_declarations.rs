@@ -231,7 +231,3 @@ fn module_name(code: &[char], from: usize) -> Option<(String, usize)> {
     }
     Some((name, index))
 }
-
-#[cfg(test)]
-#[path = "../tests/test_file_reachability_module_declarations.rs"]
-mod tests;

@@ -9,8 +9,7 @@
 //!
 //! **Position:** called by [`crate::website`], which prints each command under
 //! `--dry-run` and sends it through ssh as a [`login_shell`] word otherwise, so the dry run shows
-//! exactly what a live run executes. `tests/website/tests.rs` pins what the host depends on, and
-//! `cargo xtask verify staging-compose-paths` reads this file's compose lines.
+//! exactly what a live run executes. `tests/website/tests.rs` pins what the host depends on.
 //!
 //! **Signals & state:** none; pure functions.
 //!

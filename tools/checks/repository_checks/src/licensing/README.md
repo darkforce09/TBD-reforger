@@ -11,7 +11,7 @@ this repository ships.
 ```text
 tools/checks/repository_checks/src/licensing/
 ├── mod.rs                  the module tree
-├── tests/                  unit tests for each step, the wordings, symlinked lanes and missing trees
+├── tests/                  unit tests of lane admission, the identifier step and the vanilla GUID exemption
 ├── upstream_code_leaks/    the gate body: the identifier step, the GUID step and the vanilla probe
 └── upstream_code_leaks.rs  the lanes, patterns and output log; re-exports `verify_crf_leak`
 ```

@@ -1,7 +1,5 @@
 //! The names a caller imports with `use repository_checks::prelude::*;`: each check's entry point.
 
-pub use crate::architecture::editor_orbat_coherency::verify_editor_orbat_coherency;
-pub use crate::architecture::route_tags::verify_route_tags;
 pub use crate::architecture::workspace_laws::{
     WorkspaceLaw, verify_crate_anatomy, verify_crate_tiers, verify_frontend_layering,
     verify_tailwind_sources, verify_test_file_reachability, verify_workspace_law,

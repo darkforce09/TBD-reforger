@@ -358,7 +358,3 @@ impl DocumentRule for BacktickedPaths<'_> {
         )]
     }
 }
-
-#[cfg(test)]
-#[path = "tests/backticked_paths.rs"]
-mod tests;

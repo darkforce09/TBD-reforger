@@ -13,8 +13,7 @@ tools/xtask/src/commands/ticket/
 ├── cli.rs        the `TicketCmd` clap enum: twenty-seven subcommands and their flags
 ├── dispatch.rs   loads the registry and calls the ticket_registry command for each subcommand
 ├── execution.rs  `clean`, `done` and `run`: worktree and branch removal, and slice runs through the agent
-├── mod.rs        the module tree; re-exports the ticket_registry commands and `load_registry`
-└── tests/        unit tests for the cleanup of an unregistered worktree and cleanup before a refused ship
+└── mod.rs        the module tree; re-exports the ticket_registry commands and `load_registry`
 ```
 
 ## How it works
@@ -133,12 +132,10 @@ other error (`xtask: <cause>`); 2 a clap usage error.
   - the ticketboard (`tools/tickets/ticketboard_desktop/`), whose every change is a `cargo xtask ticket` command;
     agents, the command center and people.
 - Rules:
-  - Ticket storage, validation, sync and wave packing stay in the ticket crates; `mod.rs` must
-    delegate to `ticket_registry` (`ticket_implementations_have_one_owner` in
-    `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`).
-  - `clean` removes a worktree even when git does not know it
-    (`cleanup_removes_an_unregistered_worktree_directory` in `tests/execution_tests.rs`), and
-    `done` cleans before a ship that is refused (`done_cleans_before_a_shipping_refusal`).
+  - Ticket storage, validation, sync and wave packing stay in the ticket crates; `mod.rs`
+    delegates to `ticket_registry`.
+  - `clean` removes a worktree even when git does not know it, and `done` cleans before a ship
+    that is refused.
 
 ## Related documentation
 

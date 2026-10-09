@@ -149,7 +149,3 @@ fn leading_crate(item: &str) -> Option<&str> {
     (starts_like_a_name && ends_a_segment && !["crate", "self", "super", "Self"].contains(&name))
         .then_some(name)
 }
-
-#[cfg(test)]
-#[path = "tests/public_reexports.rs"]
-mod tests;

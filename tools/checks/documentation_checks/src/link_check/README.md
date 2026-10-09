@@ -21,8 +21,7 @@ tools/checks/documentation_checks/src/link_check/
 ├── markdown_scan.rs          the block pass: code and comments set aside, runs, definitions, headings
 ├── permalink_targets.rs      the link rule's permalinks: held for the run, settled in two git batches
 ├── repository_permalinks.rs  blob and tree views of this repository, and the git objects they name
-├── target_resolution.rs      destination kinds, checkout path resolution, line anchors, fragment needs
-└── tests/                    unit tests for every module here
+└── target_resolution.rs      destination kinds, checkout path resolution, line anchors, fragment needs
 ```
 
 ## How it works
@@ -92,6 +91,4 @@ states every rule in full.
     `command_citations.rs` reads the command tree and the recipe and task tables;
   - a failed git batch is "did not run" and breaks nothing
     (`a_failed_batch_did_not_run_and_breaks_nothing`);
-  - every build recipe and CI task is a value the command tree declares
-    (`every_build_recipe_and_ci_task_is_a_value_the_xtask_tree_declares`, with the other tests
-    over the binary's own tree, in `tools/xtask/src/cli/tests/documentation_command_tree_tests.rs`).
+  - every build recipe and CI task is a value the command tree declares.

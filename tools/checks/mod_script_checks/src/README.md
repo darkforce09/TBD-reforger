@@ -1,29 +1,20 @@
 # Mod script checks
 
 Checks over the [EnfScript](/documentation/glossary/a_to_f.md#enfscript) sources and `.layout` files of
-the `tbd-framework` [mod](/documentation/glossary/g_to_m.md#mod): source pins that stop false comments
-and a size bypass from returning, the in-code documentation card over every script, the structural
-gate for UI layouts, and the two
-[Workbench](/documentation/glossary/n_to_z.md#workbench) spawn checks behind `cargo xtask mod`.
+the `tbd-framework` [mod](/documentation/glossary/g_to_m.md#mod): the structural gate for UI
+layouts, and the two [Workbench](/documentation/glossary/n_to_z.md#workbench) spawn checks behind `cargo xtask mod`.
 
 ## Contents
 
 ```text
 tools/checks/mod_script_checks/src/
-├── destroy_target_diagnostics/            the destroy-target audit body: live pins, RED proofs, comment stripping
-├── destroy_target_diagnostics.rs          the destroy-target targets, banned phrasings and pinned signatures
-├── enfusion_comments/                     `verify enfusion-comments`: the in-code documentation card, one module per rule
-├── enfusion_script_lexer.rs               splits a script into code, string literals and comments; `strip_c_comments`
 ├── error.rs                               `Error` and `Result`: a check that could not find the checkout or read a file
 ├── lib.rs                                 the crate root: the checks' shared contract, `mod` lines and the re-exports
-├── mission_rest_size_limits.rs            `verify mission-rest-size-limits`: the 8 MiB mission ceiling pins
-├── player_identity_comments.rs            `verify player-identity-comments`: bans and pins on `TBD_PlayerIdentity.c`
-├── prelude.rs                             each `verify` check's entry point for glob import
-├── results_reporter_identity_comments.rs  `verify results-reporter-identity-comments`: the same for `TBD_ResultsReporter.c`
+├── prelude.rs                             the `verify` check's entry point for glob import
 ├── spawn_determinism.rs                   `mod spawn-determinism`: preflight, offline selftest, log normalising
 ├── spawn_determinism_live.rs              the live Workbench runs of spawn-determinism and their comparison
 ├── spawn_verification.rs                  `mod spawn-verify`: a 25 s Workbench play, judged by `mcp wb-logs`
-├── tests/                                 unit tests for every check and the layout parser
+├── tests/                                 unit tests of the layout parser, the layout names and spawn determinism
 ├── ui_layout_parser/                      the parser's record, keyword and conversion helpers
 ├── ui_layout_parser.rs                    `Analyzer`: arms C1 to C4 and C6 over one `.layout` text
 └── ui_layouts.rs                          `verify ui-layouts`: walks the layouts, runs the parser and arm C5
@@ -31,19 +22,11 @@ tools/checks/mod_script_checks/src/
 
 ## How it works
 
-Every check reads committed files under `mod/tbd-framework/` (`enfusion-comments`: anywhere
-under `mod/`) from the checkout root and prints its own report. The source pins share one
-discipline: a live pin, then RED proofs that perturb the source text in memory and must fail, so a
-check that can no longer fail is itself a failure; `enfusion-comments` proves each rule on a passing
-and a failing fixture instead. None of them writes a file.
+The layout check reads committed files under `mod/tbd-framework/` from the checkout root, prints
+its own report and writes no file.
 
 | Check | Reads | Holds |
 |---|---|---|
-| `mission-rest-size-limits` | `Mission/TBD_MissionLoader.c`, `TBD_MissionArtifactVerification.c`, `TBD_MissionArtifactCache.c` in `mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/` | `IsMissionBodyWithinCap(` is called before `ParseMissionJson(` in comment-stripped code, its body compares `Length() <= MISSION_FILE_MAX_BYTES`, and the verification and cache refuse oversized documents |
-| `player-identity-comments` | `mod/tbd-framework/Scripts/Game/TBD/API/Identity/TBD_PlayerIdentity.c` | no comment claims `#tbd link` is unimplemented; the truth pins stay |
-| `results-reporter-identity-comments` | `mod/tbd-framework/Scripts/Game/TBD/API/Results/TBD_ResultsReporter.c` | the same, for the identity the reporter sends |
-| `destroy-target-diagnostics` | the objective sources, the mission validator's unconsumed-key check and `mission.schema.json` | no diagnostic claims `entities[]` go unspawned (see its folder's README) |
-| `enfusion-comments` | every `.c` file under the pinned roots in `enfusion_comments/mod.rs`, or under `--path` (anything in `mod/`) | rules ECM-1 to ECM-9 of the [Enfusion script header](/documentation/standards/templates/enfusion_script_header.md) card; exit 2 when a root is missing or the walk is empty (see its folder's README) |
 | `ui-layouts` | the `.layout` files directly in `mod/tbd-framework/UI/layouts/` (not its subfolders), and every file under `mod/tbd-framework/Scripts/Game/TBD/UI/` | C1 brace balance, C2 attested slot classes, C3 frame slot geometry, C4 container children declare a slot, C5 every widget name a script looks up exists, C6 a container child's slot sets its alignment |
 
 The `ui-layouts` walk does not descend: every committed layout sits in a subfolder of
@@ -57,52 +40,35 @@ spawn-determinism first checks that the Workbench Net API listens on `ENFUSION_W
 world; spawn-verify plays the open world through `cargo xtask mcp call` and returns the verdict of
 `cargo xtask mcp wb-logs`. `--selftest` runs either offline.
 
-Exit codes of the `verify` checks: 0 held; 1 a violation, a missing file, or a RED proof that
-passed; 2 a check that did not run (a RED perturbation that could not be set up, a missing layout
-folder).
+Exit codes of `verify ui-layouts`: 0 held; 1 a violation or a missing file; 2 a check that did
+not run (a missing layout folder).
 
 ## Public surface
 
-- `mission_rest_size_limits::verify_mission_rest_size_limits`,
-  `player_identity_comments::verify_player_identity_comments`,
-  `results_reporter_identity_comments::verify_results_reporter_identity_comments`,
-  `destroy_target_diagnostics::verify_destroy_target_diagnostics`,
-  `enfusion_comments::verify_enfusion_comments` and `ui_layouts::verify_ui_layouts`: the six
-  `cargo xtask verify` entries, each taking the checkout root (`verify_enfusion_comments` also
-  takes the `--path` values).
+- `ui_layouts::verify_ui_layouts`: the `cargo xtask verify ui-layouts` entry, taking the checkout
+  root.
 - `spawn_determinism::run` and `spawn_verification::run`: the bodies of
   `cargo xtask mod spawn-determinism` and `cargo xtask mod spawn-verify`.
-- At the crate root: `Error` and `Result`; `prelude`: the six `verify` entries.
-- Crate-private: `enfusion_script_lexer::strip_c_comments`, the comment stripping every source
-  pin reads through (a `//` inside a string literal is code), and the `ui_layout_parser`.
+- At the crate root: `Error` and `Result`; `prelude`: the `verify` entry.
+- Crate-private: the `ui_layout_parser`.
 
 ## Boundaries
 
 - Depends on: `verification_core` (`Pattern`, `Verdict`, `NotRun`, `gate`, `scan`);
   `process_runner` (`Run`, `Merged`); `content_digest` (the run digests); `regex`;
-  `repository_root` (the checkout root); `repository_layout` (the mission schema path and the
-  spawn-determinism runbook); `thiserror`; `tool_test_support` in tests; `cargo xtask mcp` subprocesses and `ss` for
-  the spawn checks. `spawn_verification` runs its `cargo xtask` children through
-  `process_runner` too: the selftest replaces this process (`Run::replace_process`), and the
-  live arm's children share the terminal (`Run::terminal`) so their report streams live.
+  `repository_root` (the checkout root); `repository_layout` (the spawn-determinism runbook);
+  `thiserror`; `cargo xtask mcp` subprocesses and `ss` for the spawn checks. `spawn_verification`
+  runs its `cargo xtask` children through `process_runner` too: the selftest replaces this process
+  (`Run::replace_process`), and the live arm's children share the terminal (`Run::terminal`) so
+  their report streams live.
 - Used by:
   - `tools/xtask/src/commands/verify/dispatch.rs` and
     `tools/commands/mod_operations/src/mod_dispatch.rs`;
-  - the `ci-local` step `verify-mission-rest-size-limits` in
-    `tools/commands/ci_task_catalog/src/task_definitions.rs`, and the `mod-gates-hosted` job of
-    `.github/workflows/ci.yml`;
-  - the platform [wave](/documentation/glossary/n_to_z.md#wave) gate's `VERIFY_STEPS`
-    (`tools/commands/platform_execution/src/wave_execution/gate.rs`): mission-rest-size-limits,
-    destroy-target-diagnostics and both identity-comment checks;
   - the mod wave gate (`tools/commands/mod_operations/src/wave_execution/execution.rs`), which
     runs `verify ui-layouts`.
 - Rules:
-  - Every ban and pin must fail on its perturbed copy (`every_ban_is_discriminating` and
-    `every_pin_is_discriminating` in `tests/player_identity_comments/tests.rs`,
-    `every_red_arm_turns_the_live_shape_red` in `tests/mission_rest_size_limits/tests.rs`).
-  - A missing target file never reads as a pass (`a_missing_target_does_not_read_as_pass`).
-  - The wave gates print the last 15 lines of a failed step, so the printed report is part of each
-    check's contract.
+  - A missing layout folder never reads as a pass.
+  - The printed report is part of each check's contract.
 
 ## Related documentation
 

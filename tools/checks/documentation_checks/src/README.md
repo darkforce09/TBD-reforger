@@ -1,11 +1,7 @@
-# Documentation gates
+# Documentation link check
 
-The three checks that keep documentation where it belongs, shaped the same way everywhere and
-linked correctly: `readme-coverage` (every folder carries a README.md whose Contents block matches
-the folder), `markdown-placement` (Markdown lives in the documentation tree, and live documents
-stay short) and `link-check` (every link reaches what it names, and every path and xtask command a
-live document writes as code exists). The
-[README standard](/documentation/standards/readme_standard.md) is the rule set they enforce.
+The check that keeps documentation linked correctly: `link-check` (every link reaches what it
+names, and every path and xtask command a live document writes as code exists).
 
 ## Contents
 
@@ -13,16 +9,13 @@ live document writes as code exists). The
 tools/checks/documentation_checks/src/
 ├── gate_run.rs            what every gate shares: the request, preparation, the run and its printing
 ├── gate_scope.rs          the --path scope: normalises each value, refuses one naming no listed folder
-├── lib.rs                 the crate root: the three gate modules and their entry points
+├── lib.rs                 the crate root: the link-check module and its entry point
 ├── link_check/            the link check's scan, anchors, and link, backticked-path and command rules
 ├── link_check.rs          the link-check gate: the rule pipeline, one verdict per document, the totals
 ├── markdown_fences.rs     recognises the lines that open and close a fenced code block
-├── markdown_placement.rs  the markdown-placement gate: code-tree Markdown, the retired root, the size limit
 ├── path_regions.rs        where a path sits: code trees, the README span, exempt folders, size-exempt areas
-├── prelude.rs             the names a caller imports: each gate's entry point, the request, the vocabulary
-├── readme_coverage/       the Contents block parser, entry names and globs, and child matching
-├── readme_coverage.rs     the readme-coverage gate: README coverage and the Contents check
-├── tests/                 unit tests, and the fixture checkout they share
+├── prelude.rs             the names a caller imports: the entry point, the request, the vocabulary
+├── tests/                 the link-check gate smoke tests and the fixture checkout they use
 └── tracked_tree.rs        the files git ls-files lists, untracked ones under --with-untracked, and their folders
 ```
 
@@ -32,7 +25,7 @@ tools/checks/documentation_checks/src/
 verify <gate> [--path <dir>]... [--with-untracked] [--report]
   └─▶ tracked_tree.rs: git ls-files -z  (+ git ls-files --others --exclude-standard -z)
         └─▶ gate_run.rs prepare: refuse a failed or empty listing; gate_scope.rs resolves --path
-              └─▶ readme_coverage.rs | markdown_placement.rs | link_check.rs
+              └─▶ link_check.rs
                     └─▶ one verdict per judged item ─▶ verification_core::Report ─▶ exit 0, 1, 2
 ```
 
@@ -44,95 +37,21 @@ not UTF-8 are replaced, not refused.
 
 With `--with-untracked`, the run also lists the untracked files git does not ignore, with
 `git ls-files --others --exclude-standard -z`, and judges each exactly like a tracked file: the
-folders it creates count, Contents entries match it, links and backticked paths to it resolve, and
-the placement rules apply to it. A file git ignores stays invisible, and a nested repository, which
+folders it creates count, and links and backticked paths to it resolve. A file git ignores stays invisible, and a nested repository, which
 that listing names as a folder without its files, is skipped. Wherever a rule below names a tracked
 file, it then means a tracked or a listed untracked file. The header's scope line counts the
 untracked files apart, and the summary line names the flag, as in
-`readme-coverage --with-untracked (untracked files included): OK`, so such a result is never
+`link-check --with-untracked (untracked files included): OK`, so such a result is never
 mistaken for a check of the committed files.
 
 `prepare` in `gate_run.rs` refuses to judge anything when either listing cannot run, fails, is killed or passes its
 120-second deadline, when the index lists no file, and when a `--path` value names no folder the
-listing holds (`gate_scope.rs`); each gate then turns every judged item into one
+listing holds (`gate_scope.rs`); the gate then turns every judged item into one
 `verification_core` verdict and prints them through the shared report.
 
 Exit status: 0 when every judged item held, 1 when at least one broke a rule, 2 when a check did not
 run: the listing failed or was empty, a judged file could not be read, the scope was refused, or the
 scope selected nothing to judge.
-
-### readme-coverage
-
-The README span is every tracked folder below the repository root, the top-level folders
-included, minus the exempt folders and everything below them: a folder named exactly `tests`,
-`generated` or `Generated` (the spelling of the Enfusion script trees; no other casing), a folder
-whose name begins with `.`, the pending-merge area (`PENDING_MERGE_DIR`) and the retired
-top-level folders (`RETIRED_TOP_LEVEL_FOLDERS`: `docs`, `apps`), which markdown-placement judges. The top-level folders are
-derived from the listing, never from a list of names, so the span fails closed: a top-level folder
-is judged from the moment it is tracked, and only a rule above takes one out. The hidden-folder rule
-covers the tool configuration at the root (`.github`, `.ai`, `.cursor`, `.claude`, `.cargo`), and
-build output such as `target/` is gitignored, so no listing holds it. The repository root itself
-lies outside the span: its README.md is the project's front page, and `CLAUDE.md` maps the root.
-The gate's header names the top-level folders the run judged. Both rules judge the span alone, so a
-README.md inside an exempt folder is neither required nor checked.
-
-1. Coverage: each folder in the span carries a tracked README.md.
-2. Contents: every tracked README.md in the span passes the Contents grammar below.
-
-### The Contents grammar
-
-The Contents block is the first fenced code block whose info string is exactly `text` and that opens
-after the `## Contents` heading and before the next `## ` heading. A heading or fence inside another
-fenced block does not count. A README without the heading, a section without such a block, and a block
-that never closes each fail.
-
-- Root line: line 1 of the block is exactly the folder's repository-relative path followed by `/`;
-  trailing whitespace is ignored.
-- Spacer lines: a line after the root line made only of whitespace and the tree-drawing characters
-  `├`, `└`, `│` and `─` lists nothing and is ignored, whether it is blank or a spacer such as `│` or
-  `│   │`.
-- Entry lines: every other line is one direct-child entry, made of an optional tree-drawing prefix,
-  the entry token, two or more spaces, and a non-empty role.
-  - The prefix is the leading run of `├── `, `└── `, `│   ` and single spaces. A direct child's
-    prefix is empty, one `├── ` or `└── `, or at most four spaces. A prefix that holds `│   `, a second
-    branch or deeper indentation marks a nested line, which fails.
-  - The token is a name or a glob, and it runs up to the first two consecutive spaces. A folder entry
-    ends in `/` and a file entry does not; any other `/` in the token fails, and `/` alone names
-    nothing and fails. On a line without two consecutive spaces the token is the first
-    space-separated word and the line has no role; a line whose two spaces are followed by nothing has
-    no role either. A line without a role fails, though its token still lists its child.
-  - Globs: `*` matches any run of characters, a leading dot included; `?` matches one character;
-    `[…]` matches one character of a set, where `!` or `^` first negates it, `a-z` is a range and a
-    `]` in first place is a member; `{a,b}` matches either alternative, and alternatives may nest and
-    hold globs. A glob matches whole names only; an unclosed `[` or `{`, or a reversed range, fails.
-- Matching: every tracked direct child except `README.md` matches exactly one entry of its own kind,
-  a file against file entries and a folder against folder entries, and every entry matches at least one
-  tracked child. Ignored files are invisible, and so are untracked files unless `--with-untracked`
-  lists them.
-
-Every violation prints as `path:line: message`: a child that no entry matches is reported at the root
-line, a missing heading at line 1, and every other violation at the line it concerns. The Contents
-check is the only structural rule: section order, headings and wording are not checked.
-
-### markdown-placement
-
-1. The code trees hold no tracked `.md` file, in any letter case, other than README.md, except below a
-   `tests`, `generated`, `Generated` or `.`-prefixed folder. A code tree is every top-level folder
-   but the documentation root (`DOCUMENTATION_ROOT`) and the retired top-level folders, derived
-   from the listing like the README span, so Markdown in a new top-level folder is judged at once;
-   a file at the repository root lies in no code tree.
-2. Each retired top-level folder (`RETIRED_TOP_LEVEL_FOLDERS`: `docs`, whose documents live under
-   `documentation/`, and `apps`, whose mod lives under `mod/`) holds no tracked file; one verdict
-   per retired folder the scope reaches, and a finding names where the folder's contents live now.
-3. Every tracked `.md` file, in any letter case, under the documentation root is at most 500 lines,
-   except under the [ticket](/documentation/glossary/n_to_z.md#ticket) records
-   (`TICKET_DOCUMENTS_DIR`), the archive (`ARCHIVE_DIR`) and the pending-merge area, and two
-   documents whose tables stay in one file: the roadmap (`ROADMAP`), whose next-work block `cargo xtask ticket sync` rewrites
-   between its markers, and the Eden gap analysis (`GAP_ANALYSIS`). Sync's column writer rewrites
-   the ticket column only of a gap table whose header holds both `| eden_id |` and `priority |`;
-   every table of the gap analysis is headed `| eden_id | tbd_id | parity | ticket | gap_notes |`,
-   so the writer matches none and the ticket column is kept by hand
-   ([Ticket identifiers](/documentation/standards/ticket_identifiers.md#in-documents)).
 
 ### link-check
 
@@ -229,30 +148,18 @@ A rule is a `DocumentRule` in `link_check.rs`: it says which areas it judges, ju
 document at a time, settles any batched work when the run ends, and adds its own totals lines. A
 new rule joins the list in `verify_link_check` and reads the scan it is given.
 
-### Exemptions at a glance
-
-| Area | readme-coverage | markdown-placement | link-check |
-|---|---|---|---|
-| a folder named `tests`, `generated` or `Generated`, or starting with `.`, and all below it | no README needed, none checked | in a code tree, may hold any Markdown; under the documentation root, still size-limited | judged like any other document |
-| the pending-merge area (`PENDING_MERGE_DIR`) | no README needed, none checked | outside the size limit | judged as live |
-| ticket records (`TICKET_DOCUMENTS_DIR`) and archive (`ARCHIVE_DIR`) | judged | outside the size limit | frozen: rules 1 to 7 only |
-| `ROADMAP` and `GAP_ANALYSIS` | not applicable | outside the size limit | judged as live |
-| the agent artifact tree (`ARTIFACTS_DIR`) | outside the span | outside every rule | not judged |
-
 ## Public surface
 
-- `cargo xtask verify readme-coverage [--path <dir>]... [--with-untracked]`
-- `cargo xtask verify markdown-placement [--path <dir>]... [--with-untracked]`
 - `cargo xtask verify link-check [--report] [--path <dir>]... [--with-untracked]`
 
-`--path` is repeatable and repository-relative: a gate judges only the folders (readme-coverage) or
-files (markdown-placement, link-check) at or under the named folders. `.` or the checkout root means
+`--path` is repeatable and repository-relative: the check judges only the files at or under the
+named folders. `.` or the checkout root means
 the whole repository, which is also the default. A value that climbs out with `..`, lies outside the
 checkout, names a file or names no folder the listing holds is refused with exit 2.
 
 `--with-untracked` adds the untracked files git does not ignore to what a gate judges, so new files
 can be checked before they are committed. Without it a gate judges the committed view, which is what
-CI runs. Both arguments come from one argument set that the three verbs share
+CI runs. Both arguments come from one argument set
 (`DocumentationGateArgs` in `tools/xtask/src/commands/verify/cli.rs`), which the dispatcher
 turns into the `GateRequest` every gate takes. `--report` belongs to link-check alone.
 
@@ -264,24 +171,13 @@ turns into the `GateRequest` every gate takes. `--report` belongs to link-check 
   vocabulary its caller injects (xtask's clap command tree, the build recipe names and the CI task
   names, declared as the values of `mk` and `ci`), never the command line itself; and the layout
   constants of the `repository_layout` crate.
-- Used by: `tools/xtask/src/commands/verify/dispatch.rs`, for the three verbs;
-  `tools/commands/ci_task_catalog/src/task_definitions/verification_dispatch.rs`, for the
-  `verify-documentation` row of `cargo xtask ci`, a `ci-local` step; and the `language-gates` job
-  of `.github/workflows/ci.yml`, which runs the three verbs over the committed tree.
+- Used by: `tools/xtask/src/commands/verify/dispatch.rs`, for `cargo xtask verify link-check`.
 - Rules:
   - every path and region comes from the layout module;
   - a check that could not examine its input reports "did not run", never a pass
-    (`a_failed_or_empty_listing_did_not_run`, `a_refused_or_empty_scope_did_not_run`,
-    `a_tracked_readme_missing_from_the_disk_did_not_run`,
-    `an_unreadable_document_or_a_failed_listing_did_not_run`);
-  - untracked files count only under `--with-untracked`, and ignored files never do
-    (`untracked_files_join_the_listing_only_when_included_and_ignored_files_never_do`);
-  - the exemptions above are fixed in `path_regions.rs` and `link_check/judged_documents.rs`
-    (`test_generated_hidden_and_pending_merge_folders_need_no_readme`,
-    `generated_folder_exemption_spares_the_capitalised_folder_and_no_other_spelling`,
-    `generated_folder_exemption_spares_markdown_below_the_capitalised_folder_only`,
-    `the_size_limit_skips_frozen_pending_record_and_sync_managed_documents`,
-    `every_judged_area_is_judged_and_nothing_else`).
+    (`an_unreadable_document_or_a_failed_listing_did_not_run`);
+  - the judged areas are fixed in `link_check/judged_documents.rs`
+    (`every_judged_area_is_judged_and_nothing_else`).
 
 ## Related documentation
 

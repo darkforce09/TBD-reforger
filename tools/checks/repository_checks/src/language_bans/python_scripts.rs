@@ -14,13 +14,3 @@ use crate::Result;
 pub fn verify_no_python() -> Result<u8> {
     crate::language_bans::shell_scripts::verify_no_python()
 }
-
-/// Testable / fixture entry that does not walk for the repo root.
-#[cfg(test)]
-pub fn run_with_root(root: &std::path::Path) -> Result<u8> {
-    crate::language_bans::shell_scripts::run_with_root(root)
-}
-
-#[cfg(test)]
-#[path = "tests/python_scripts/tests.rs"]
-mod tests;

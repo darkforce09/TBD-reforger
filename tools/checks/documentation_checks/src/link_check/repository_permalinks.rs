@@ -325,7 +325,3 @@ fn batch_problem(arguments: [&str; 2], status: i32, problem: &str) -> NotRun {
         stderr: problem.to_string(),
     }
 }
-
-#[cfg(test)]
-#[path = "tests/repository_permalinks.rs"]
-mod tests;

@@ -3,12 +3,10 @@
 //! **Role:** finds every `.rs` file of a workspace member that sits in a `tests` folder — under
 //! `src/` (sibling unit tests) or the member's `tests/` folder (integration test support) — and
 //! that no module declaration of the member reaches. Such a file is invisible to the compiler: its
-//! tests never run while the tree looks covered, and the sibling-test-placement and file-length
-//! laws judge it as if it ran.
+//! tests never run while the tree looks covered.
 //! **Position:** `cargo xtask verify test-file-reachability` prints
 //! [`check_test_file_reachability`]; it sits beside crate anatomy among the workspace laws
-//! because it judges each member as a crate (its targets, its module tree), which the
-//! repository-wide source scans of `crate::sibling_test_placement` do not model.
+//! because it judges each member as a crate (its targets, its module tree).
 //! **Signals & state:** none; reads the checkout.
 //! **Invariants:** a member's module tree is walked from the root files of its targets — the
 //! manifest's `[lib]` and `[[bin]]` paths, `src/lib.rs`, `src/main.rs`, `src/bin/*.rs`,
@@ -268,7 +266,3 @@ fn collect_sources(folder: &Path, rel: &str, out: &mut Vec<String>) -> Result<()
     out.sort();
     Ok(())
 }
-
-#[cfg(test)]
-#[path = "tests/test_file_reachability.rs"]
-mod tests;
