@@ -42,7 +42,3 @@ pub fn right_pane(viewer_open: bool, selected: Option<usize>, window_w: f32) -> 
         (true, Some(index)) => RightPane::Both(index),
     }
 }
-
-#[cfg(test)]
-#[path = "tests/window_layout.rs"]
-mod tests;

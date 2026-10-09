@@ -11,7 +11,6 @@ tools/tickets/ticketboard_model/src/repository_status/models/
 ├── check_status.rs  `CheckModel`, `Coalescer`: the strict check's command, phases, errors and verdict
 ├── git_status.rs    `GitChip` and `GIT_ARGS`: the `git status --porcelain` query and its parse
 ├── mod.rs           the module tree
-├── tests/           unit tests for phases, error counts, verdicts, the coalescer and porcelain
 └── view.rs          `StatusView`: check, output, watch state and chip, borrowed for a frame
 ```
 

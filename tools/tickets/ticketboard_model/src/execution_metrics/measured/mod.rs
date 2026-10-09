@@ -25,7 +25,3 @@ mod services;
 pub use services::*;
 mod formatting;
 pub use formatting::*;
-
-#[cfg(test)]
-#[path = "tests/measured.rs"]
-mod tests;

@@ -17,7 +17,6 @@ tools/tickets/ticket_metrics/src/
 ├── prelude.rs       the receipt model, `has_receipt`, `metrics_root` and `write_run_file` for glob import
 ├── receipts.rs      writes, finds and stamps run files, and the landing gate on missing receipts
 ├── summary.rs       `cmd_metrics` and `summarize_by_agent`: the `ticket metrics` report
-├── tests/           unit tests for both dialects, the token sum, file naming, stamping and the gate
 ├── token_usage.rs   `parse_tokens_from_cli_json`: token counts from an agent CLI's final JSON
 └── verification.rs  `check_as_errors`: every receipt against its schema and invariants
 ```

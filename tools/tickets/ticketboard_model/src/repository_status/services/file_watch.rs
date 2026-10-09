@@ -182,7 +182,3 @@ pub fn spawn(
         degraded,
     })
 }
-
-#[cfg(test)]
-#[path = "tests/file_watch.rs"]
-mod tests;

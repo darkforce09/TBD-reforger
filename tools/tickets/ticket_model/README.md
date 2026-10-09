@@ -11,8 +11,7 @@ tickets through it.
 ```text
 tools/tickets/ticket_model/
 ├── Cargo.toml  the `ticket_model` library package: `repository_layout`, `time_source`, `process_runner`, `newtype_ids`, layout tier 2
-├── src/        the model, the ticket id, the encoding, the store, the vocabulary, the paths and the miner
-└── tests/      the compile-fail test that keeps the scope `Domain` enum closed
+└── src/        the model, the ticket id, the encoding, the store, the vocabulary, the paths and the miner
 ```
 
 ## How it works

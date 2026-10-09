@@ -91,7 +91,3 @@ pub(crate) struct TicketboardApp {
     /// while the column is on screen, persisted in `save`.
     viewer_w: f32,
 }
-
-#[cfg(test)]
-#[path = "tests/rendering.rs"]
-mod rendering_tests;

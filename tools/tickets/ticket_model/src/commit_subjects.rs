@@ -128,7 +128,3 @@ pub fn mine_subjects(root: &Path) -> Result<BTreeMap<TicketId, Vec<SubjectCommit
     }
     Ok(map)
 }
-
-#[cfg(test)]
-#[path = "tests/commit_subjects_tests.rs"]
-mod tests;

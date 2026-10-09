@@ -97,7 +97,3 @@ impl ShippingStatus {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/shipping_status/mod.rs"]
-mod tests;

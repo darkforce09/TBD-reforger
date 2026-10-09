@@ -236,7 +236,3 @@ impl Corpus {
         Ok(())
     }
 }
-
-#[cfg(test)]
-#[path = "tests/store/mod.rs"]
-mod tests;

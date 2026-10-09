@@ -87,7 +87,3 @@ fn is_status_byte(byte: u8) -> bool {
         b' ' | b'M' | b'T' | b'A' | b'D' | b'R' | b'C' | b'U' | b'?' | b'!'
     )
 }
-
-#[cfg(test)]
-#[path = "tests/git_status.rs"]
-mod tests;

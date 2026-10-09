@@ -13,7 +13,6 @@ tools/tickets/ticketboard_model/src/ticket_browser/models/
 ├── mod.rs              the module tree
 ├── program_tree.rs     `TreeModel` from parents and dotted ids, with cycle rescue, and `flatten`
 ├── status_board.rs     `BoardModel`: eight status columns of precomputed `Card`s, the id-to-index map
-├── tests/              unit tests for the board sort and cards, the tree and the section order
 └── view.rs             `BrowserView`, the borrowed data the browser paints, and `DraggedTicket`
 ```
 

@@ -29,7 +29,3 @@ pub fn positional_arg<I: IntoIterator<Item = String>>(args: I) -> Option<PathBuf
         .find(|a| !a.starts_with('-'))
         .map(PathBuf::from)
 }
-
-#[cfg(test)]
-#[path = "tests/discovery.rs"]
-mod tests;

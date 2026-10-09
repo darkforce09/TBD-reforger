@@ -11,7 +11,6 @@ a past revision, and titles). Mutations never pass through here; they go through
 tools/tickets/ticket_registry/src/registry/
 ├── mod.rs                    `load_registry`, `save_registry`, `write_json_ascii` and the row helpers
 ├── shipping_status.rs        `ShippingStatus`: which tickets are shipped or cancelled
-├── tests/                    unit tests for the projection, shipping status and past statuses
 ├── ticket_file_storage/      the untyped ticket file encoding, path helpers and key sets
 ├── ticket_status_history.rs  `status_map_at_rev`: ticket statuses at a past git revision
 ├── ticket_titles.rs          `read_ticket_title`: one ticket's title, or empty

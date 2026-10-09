@@ -20,7 +20,6 @@ tools/tickets/ticket_wave_lock/src/
 ├── parking.rs              wave 0, the corpus-wide snapshots, and the carry of emptied waves
 ├── persistence.rs          render, parse, load, write, and the repacks (`cmd_repack` and others)
 ├── prelude.rs              the lock types, `load`, `load_views` and `repack_quiet` for glob import
-├── tests/                  unit tests for packing, numbering, emptied waves, the check and the collision facts
 ├── ticket_views.rs         `load_views` over every ticket file, `max_concurrent` and `collides`
 └── verification.rs         `check_as_errors` and `cmd_check`: the lock compared with a fresh compile
 ```

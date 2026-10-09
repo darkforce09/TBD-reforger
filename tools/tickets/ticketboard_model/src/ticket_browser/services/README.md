@@ -10,8 +10,7 @@ dropdowns narrowed from the scope vocabulary and the values the corpus holds.
 tools/tickets/ticketboard_model/src/ticket_browser/services/
 ├── filtering.rs     `FilterIndex` of per-ticket facts, and `Filters` with their per-ticket verdicts
 ├── mod.rs           the module tree
-├── scope_facets.rs  `load_vocabulary`, the display-tier `ScopeVocab` read, and `compute`, the narrowed options
-└── tests/           unit tests for filter composition and clearing, facet narrowing and fallback
+└── scope_facets.rs  `load_vocabulary`, the display-tier `ScopeVocab` read, and `compute`, the narrowed options
 ```
 
 ## How it works

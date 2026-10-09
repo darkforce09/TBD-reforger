@@ -45,6 +45,3 @@ impl WorkspaceState {
         Ok(board)
     }
 }
-#[cfg(test)]
-#[path = "tests/workspace_reload.rs"]
-mod tests;

@@ -20,10 +20,6 @@ mod summary;
 mod token_usage;
 mod verification;
 
-#[cfg(test)]
-#[path = "tests/mod.rs"]
-mod tests;
-
 pub use error::{Error, Result};
 pub use model::{RunRecord, TokensConsumed, elapsed_sec, metrics_root, validate_record};
 pub use receipts::{

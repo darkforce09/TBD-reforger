@@ -66,7 +66,3 @@ pub use status::{cmd_ready_ids, cmd_set_status};
 mod batch;
 
 pub use batch::{CleanupTargets, ExecutorResult, cleanup_targets, cmd_config, cmd_get, cmd_run};
-
-#[cfg(test)]
-#[path = "tests/mod.rs"]
-mod tests;

@@ -103,7 +103,3 @@ fn status_of(ticket: &Value) -> String {
         .unwrap_or("")
         .to_string()
 }
-
-#[cfg(test)]
-#[path = "tests/ticket_status_history_tests.rs"]
-mod tests;

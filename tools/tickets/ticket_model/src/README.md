@@ -17,7 +17,7 @@ tools/tickets/ticket_model/src/
 ├── prelude.rs          the model types, `TicketId`, `Corpus`, `ScopeVocab` and the encoding functions for glob import
 ├── repository.rs       the paths only the ticket domain names: handoff documents, sparse-checkout sets, cited documents
 ├── store.rs            `Corpus`: the fail-closed load, id minting, surgical writes and deletes; `ticket_id_order_key`
-├── tests/              unit tests for the encoding, the store, the vocabulary, the miner, the paths and the round trip
+├── tests/              unit tests for the encoding round trip
 ├── ticket_id.rs        `TicketId`, the ticket id newtype that serialises as its bare string
 └── vocab.rs            `ScopeVocab`: the `.ai/tickets/scope-vocab.toml` tree and the scope legality check
 ```

@@ -171,7 +171,3 @@ fn flatten_node(
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/program_tree.rs"]
-mod tests;

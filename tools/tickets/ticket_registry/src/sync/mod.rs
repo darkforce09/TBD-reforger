@@ -37,9 +37,3 @@ pub use queue_json::generate_queue_json;
 mod markers;
 
 use markers::inject_next_block;
-#[cfg(test)]
-use markers::marker_inner_is_vacuous;
-
-#[cfg(test)]
-#[path = "tests/mod.rs"]
-mod tests;

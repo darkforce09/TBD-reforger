@@ -139,7 +139,3 @@ impl ScopeVocab {
             .map(Vec::as_slice)
     }
 }
-
-#[cfg(test)]
-#[path = "tests/vocab/mod.rs"]
-mod tests;

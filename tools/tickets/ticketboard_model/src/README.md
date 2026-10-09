@@ -15,7 +15,6 @@ tools/tickets/ticketboard_model/src/
 ├── lib.rs              the crate root: module tree and the error re-export
 ├── prelude.rs          the names `use ticketboard_model::prelude::*;` brings in
 ├── repository_status/  the strict-check and `git status` models and the debounced file watch
-├── tests/              the architecture rules, the registry round trip and the shared test fixtures
 ├── ticket_actions/     `cargo xtask ticket` commands, guards, the queue, dialogs and toasts
 ├── ticket_browser/     the board, the program tree, detail sections, filters and scope facets
 ├── ticket_registry/    repository discovery, corpus loading and the ticket models every feature reads

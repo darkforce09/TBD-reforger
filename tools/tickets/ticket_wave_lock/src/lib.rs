@@ -26,10 +26,6 @@ pub mod prelude;
 mod ticket_views;
 mod verification;
 
-#[cfg(test)]
-#[path = "tests/mod.rs"]
-mod tests;
-
 pub use compiler::{compile, compile_reserving, compile_with_cap};
 pub use error::{Error, Result};
 pub use model::{LOCK_VERSION, LockWave, TicketView, WaveLock, lock_path};

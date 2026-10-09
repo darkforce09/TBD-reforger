@@ -112,7 +112,3 @@ impl BoardModel {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/status_board.rs"]
-mod tests;

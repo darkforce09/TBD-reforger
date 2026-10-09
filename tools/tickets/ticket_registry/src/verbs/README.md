@@ -19,8 +19,7 @@ tools/tickets/ticket_registry/src/verbs/
 ├── queries.rs           `show`, `next`, `list`, `prompt`, `scope-histogram` and the other reads
 ├── readiness.rs         `cmd_mark_ready`
 ├── shipping.rs          `cmd_ship`, `cmd_ship_opt` and `cmd_stamp_sha`, which writes a token estimate
-├── status.rs            `cmd_set_status` and `cmd_ready_ids`
-└── tests/               unit tests for red-tree refusals, the batch waiver, shipping, the executor
+└── status.rs            `cmd_set_status` and `cmd_ready_ids`
 ```
 
 ## How it works

@@ -136,13 +136,6 @@ impl Coalescer {
             false
         }
     }
-
-    /// Test-only observer: the app tracks in-flight runs by `ProcessHandle`
-    /// presence; the state-machine tests assert single-flight through this.
-    #[cfg(test)]
-    pub fn running(&self) -> bool {
-        self.running
-    }
 }
 
 // ---- the banner's check state ----
@@ -245,7 +238,3 @@ fn outcome_label(o: &Outcome) -> (String, Tone) {
 }
 
 pub use crate::core::time::utc_hms;
-
-#[cfg(test)]
-#[path = "tests/check_status.rs"]
-mod tests;

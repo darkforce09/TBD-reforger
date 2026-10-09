@@ -10,8 +10,7 @@ all-or-nothing load of every ticket file.
 tools/tickets/ticketboard_model/src/ticket_registry/services/
 ├── corpus_loading.rs  `load_corpus` and `is_child_id`; re-exports the corpus types
 ├── discovery.rs       `positional_arg`, `resolve_repo_root` and `has_tickets_dir`
-├── mod.rs             the module tree
-└── tests/             unit tests for discovery, the counts, fail-closed refusals and the live corpus
+└── mod.rs             the module tree
 ```
 
 ## How it works

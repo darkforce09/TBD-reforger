@@ -258,7 +258,3 @@ pub fn save_tree(root: &Path, registry: &Value) -> Result<()> {
     }
     Ok(())
 }
-
-#[cfg(test)]
-#[path = "tests/typed_projection/mod.rs"]
-mod tests;

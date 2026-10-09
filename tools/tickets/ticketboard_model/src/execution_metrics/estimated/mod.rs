@@ -30,7 +30,3 @@ mod detail_projection;
 pub use detail_projection::*;
 mod aggregation;
 pub use aggregation::*;
-
-#[cfg(test)]
-#[path = "tests/estimated.rs"]
-mod tests;

@@ -12,8 +12,7 @@ tools/tickets/ticket_registry/src/registry/ticket_file_storage/
 ├── encoding.rs      one ticket as JSON value to TOML text and back; ticket paths and parent ids
 ├── key_contract.rs  `FROZEN_27`, `ENCODING_C_KEYS` and `ALLOWED_NEW`: the governed ticket key sets
 ├── mod.rs           the module tree; re-exports the encoding, storage and key-set items
-├── storage.rs       `load_toml_tree` and `save_toml_tree` over a whole folder, and the id listings
-└── tests/           unit tests for the key sets, the byte-identical round trip and the id listings
+└── storage.rs       `load_toml_tree` and `save_toml_tree` over a whole folder, and the id listings
 ```
 
 ## How it works

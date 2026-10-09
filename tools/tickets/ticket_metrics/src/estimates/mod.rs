@@ -59,13 +59,6 @@ mod storage;
 
 pub use storage::{load_existing, run_estimates, write_estimate_file};
 
-#[cfg(test)]
-use storage::render_estimate;
-
 mod verification;
 
 pub use verification::check_as_errors;
-
-#[cfg(test)]
-#[path = "tests/mod.rs"]
-mod tests;

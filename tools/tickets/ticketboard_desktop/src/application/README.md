@@ -17,7 +17,6 @@ tools/tickets/ticketboard_desktop/src/application/
 ├── lifecycle.rs             `TicketboardApp::new`, root adoption, loads, picker, document opening
 ├── mod.rs                   the module tree and the `TicketboardApp` state
 ├── shell_screens.rs         the top bar and the no-repository, loading and refusal screens
-├── tests/                   the headless rendering tests
 ├── ticket_command_views.rs  the renderers of ticket-action dialogs, command chip, drawer, toasts
 └── window.rs                the `eframe::App` frame and `save`
 ```

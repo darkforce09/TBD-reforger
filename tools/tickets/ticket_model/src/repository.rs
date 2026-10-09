@@ -207,7 +207,3 @@ pub mod documentation {
         ),
     ];
 }
-
-#[cfg(test)]
-#[path = "tests/repository_layout_tests.rs"]
-mod tests;

@@ -9,8 +9,7 @@ path pairs behind the ownership collision rule that decides which tickets may sh
 ```text
 tools/tickets/ticketboard_model/src/wave_plan/services/
 ├── lock_file.rs  `load_lock`, `LockState`, the tolerant `WaveLock` mirror and the colliding path pairs
-├── mod.rs        the module tree
-└── tests/        unit tests for parsing, missing and refused locks, collisions, the live lock
+└── mod.rs        the module tree
 ```
 
 ## How it works

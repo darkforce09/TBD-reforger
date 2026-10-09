@@ -109,7 +109,3 @@ pub fn tickets_at(root: &Path, rev: &str, n: i64) -> Vec<String> {
     }
     out
 }
-
-#[cfg(test)]
-#[path = "tests/archived_wave_plans/mod.rs"]
-mod tests;

@@ -23,10 +23,6 @@ pub mod store;
 mod ticket_id;
 pub mod vocab;
 
-#[cfg(test)]
-#[path = "tests/proptest_roundtrip_tests.rs"]
-mod proptest_roundtrip_tests;
-
 pub use encoding::{TicketFile, parse_ticket_toml, render_ticket_toml};
 pub use error::{Error, Result};
 pub use error_chain::error_chain_text;

@@ -29,8 +29,6 @@ mod schema;
 
 pub use schema::validate_registry_schema;
 
-#[cfg(test)]
-use schema::ticket_schema_path;
 use schema::{PRIORITY_P, STRICT_RE, validate_registry};
 
 mod scope;
@@ -39,8 +37,6 @@ use scope::{check_live_work_surface, check_open_work_owns, check_work_class};
 
 mod body;
 
-#[cfg(test)]
-use body::body_findings;
 use body::check_body_rules;
 
 mod shipping;
@@ -53,8 +49,6 @@ use readiness::{check_plan_ready_gate, check_ready_tier_body, check_work_title_n
 
 mod debt;
 
-#[cfg(test)]
-use debt::pin_growth_finding;
 use debt::{check_debt_pins, debt_counter_lines};
 
 mod references;
@@ -70,9 +64,6 @@ pub use runner::check;
 mod command;
 
 pub use command::{cmd_check, require_check_ok, require_check_ok_deferring_repack};
-
-#[cfg(test)]
-use command::strict_honesty_counters;
 
 #[cfg(test)]
 #[path = "tests/mod.rs"]

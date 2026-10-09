@@ -16,7 +16,6 @@ tools/tickets/ticket_registry/src/
 ├── prelude.rs      `Registry`, `load_registry`, `cmd_sync`, `cmd_check`, `Error`, `OpOutcome` and `Result` for glob import
 ├── registry/       the JSON registry view, the ticket file storage, the typed projection, shipping status, status history
 ├── sync/           `ticket sync`: `queue.json`, the roadmap next-work markers, the gap-analysis ticket column
-├── tests/          unit tests for the corpus pins
 ├── validation/     `ticket check` and the preflight every writing verb runs
 └── verbs/          the bodies of the `cargo xtask ticket` verbs
 ```

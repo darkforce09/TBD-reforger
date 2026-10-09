@@ -16,7 +16,6 @@ tools/tickets/ticket_metrics/src/estimates/
 ├── model.rs         `EstimateRecord`, `CohortKey`, `TOKENS_PER_LOC` and `validate_estimate`
 ├── planning.rs      `plan_estimates`: the pure pass over every shipped ticket
 ├── storage.rs       reads and writes `estimates/<id>.json`, and `run_estimates`, the writing pass
-├── tests/           unit tests for the factor pin, the exclusions, the cohorts and the check
 └── verification.rs  `check_as_errors`: the estimate rules `ticket check` enforces
 ```
 

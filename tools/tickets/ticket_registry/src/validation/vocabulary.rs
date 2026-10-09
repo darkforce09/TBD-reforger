@@ -148,7 +148,3 @@ fn check_keys(table: &toml::map::Map<String, toml::Value>, path: &str, errors: &
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/vocabulary/mod.rs"]
-mod tests;

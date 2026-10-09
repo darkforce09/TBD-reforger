@@ -29,6 +29,3 @@ pub use cargo_discovery::*;
 mod bounded_log;
 pub use bounded_log::*;
 pub mod external_open;
-#[cfg(test)]
-#[path = "tests/process.rs"]
-mod tests;

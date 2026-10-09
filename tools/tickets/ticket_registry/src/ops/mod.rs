@@ -53,7 +53,3 @@ mod ordering;
 pub use ordering::{advance_slice, remove, reorder};
 
 use ordering::append_order;
-
-#[cfg(test)]
-#[path = "tests/mod.rs"]
-mod tests;

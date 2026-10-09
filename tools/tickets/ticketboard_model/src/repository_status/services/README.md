@@ -9,8 +9,7 @@ one reload and, when no ticket command is running, one strict check.
 ```text
 tools/tickets/ticketboard_model/src/repository_status/services/
 ├── file_watch.rs  `spawn` and `WatchHandle`, the `relevant` path filter, and the `Debouncer`
-├── mod.rs         the module tree
-└── tests/         unit tests for bursts, suppression, the trailing window and the path filter
+└── mod.rs         the module tree
 ```
 
 ## How it works

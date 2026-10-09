@@ -15,8 +15,7 @@ tools/tickets/ticket_registry/src/sync/
 ├── markers.rs       writes the next-work block between the roadmap's `ticket-sync:next` markers
 ├── mod.rs           the module tree; re-exports `cmd_sync`, `generate_queue_json` and `refuse_empty_write`
 ├── queue_json.rs    `generate_queue_json`: the dispatch queue built from the registry projection
-├── runner.rs        `cmd_sync`, which writes the three outputs in order, and `refuse_empty_write`
-└── tests/           unit tests for the queue order, the checkmark lookup and the empty-write refusals
+└── runner.rs        `cmd_sync`, which writes the three outputs in order, and `refuse_empty_write`
 ```
 
 ## How it works

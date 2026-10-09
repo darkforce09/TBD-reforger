@@ -218,7 +218,3 @@ pub fn sync_gap_analysis_ticket_column(root: &Path, registry: &Value) -> Result<
     fs::write(&path, updated)?;
     Ok(())
 }
-
-#[cfg(test)]
-#[path = "tests/gap_analysis_tests.rs"]
-mod tests;

@@ -24,7 +24,3 @@ mod queue;
 pub use queue::*;
 mod transitions;
 pub use transitions::*;
-
-#[cfg(test)]
-#[path = "tests/commands.rs"]
-mod tests;

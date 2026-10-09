@@ -15,7 +15,6 @@ tools/tickets/ticketboard_model/src/execution_metrics/estimated/
 ├── mod.rs                the module tree; holds the imports the children share and re-exports all five
 ├── models.rs             `EstimateFile`, `ValidEstimate`, `EstimatedTokens`, `EstimatesState`, the sorts
 ├── services.rs           `load_raw`, which scans the folder, and the panel's fixed texts and glyph
-├── tests/                unit tests for sums, buckets, error rows, stamps, sorts and the separation rule
 └── validation.rs         `validate_file`, the per-source estimate check, and `cohort_key_str`
 ```
 

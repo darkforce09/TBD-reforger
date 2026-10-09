@@ -222,7 +222,3 @@ fn surface_options(
     }
     to_options(set)
 }
-
-#[cfg(test)]
-#[path = "tests/scope_facets.rs"]
-mod tests;

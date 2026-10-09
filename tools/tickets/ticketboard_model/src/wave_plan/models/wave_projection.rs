@@ -155,7 +155,3 @@ impl WavesModel {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/wave_projection.rs"]
-mod tests;

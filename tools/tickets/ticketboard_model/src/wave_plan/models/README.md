@@ -9,7 +9,6 @@ the lock stores them, wave 0, and the dispatchable tickets no wave holds.
 ```text
 tools/tickets/ticketboard_model/src/wave_plan/models/
 ├── mod.rs              the module tree
-├── tests/              unit tests for the dispatchable rule, unplanned ids, lanes and the TSV
 ├── view.rs             `WavePlanView`: lock state, model, verdicts and selection lent to the tab
 └── wave_projection.rs  `WavesModel` with its lanes, wave 0 and unplanned bucket, and `dispatchable`
 ```

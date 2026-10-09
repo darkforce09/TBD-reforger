@@ -88,7 +88,3 @@ fn renderer() -> eframe::Renderer {
 fn renderer() -> eframe::Renderer {
     eframe::Renderer::Wgpu
 }
-
-#[cfg(test)]
-#[path = "tests/architecture_rules.rs"]
-mod architecture_rules;

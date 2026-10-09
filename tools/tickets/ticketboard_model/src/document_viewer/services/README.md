@@ -10,8 +10,7 @@ raw-text fallback.
 ```text
 tools/tickets/ticketboard_model/src/document_viewer/services/
 ├── document_loading.rs  `wants_viewer`, `resolve_repo_rel`, `classify`, `load_doc` and `spawn_read`
-├── mod.rs               the module tree
-└── tests/               unit tests for the click predicate, state machine, fence, cap and reads
+└── mod.rs               the module tree
 ```
 
 ## How it works

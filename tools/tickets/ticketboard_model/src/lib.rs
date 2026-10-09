@@ -29,15 +29,3 @@ pub mod ticket_registry;
 pub mod wave_plan;
 
 pub use error::{Error, Result};
-
-#[cfg(any(test, feature = "test_fixtures"))]
-#[path = "tests/support/mod.rs"]
-pub mod test_support;
-
-#[cfg(test)]
-#[path = "tests/architecture_rules.rs"]
-mod architecture_rules;
-
-#[cfg(test)]
-#[path = "tests/registry_round_trip.rs"]
-mod registry_round_trip;

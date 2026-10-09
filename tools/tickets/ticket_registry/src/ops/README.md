@@ -14,7 +14,6 @@ tools/tickets/ticket_registry/src/ops/
 ├── mod.rs          the module tree; re-exports the operations and `OpOutcome`
 ├── ordering.rs     `remove`, `reorder` and `advance_slice`, and the append order
 ├── readiness.rs    `mark_ready` and `default_plan_path`: the spec, plan, dependency and body gates
-├── tests/          unit tests for hierarchy, ordering, statuses, shipping, stamping and readiness
 ├── transitions.rs  `set_status`, `ship` and `stamp_sha`, and `commit`, which every operation ends in
 └── validation.rs   `validate_post_image`: what a candidate corpus must pass before commit
 ```

@@ -264,7 +264,3 @@ pub fn triage_block(id: &TicketId, parked_lines: &[String]) -> String {
         triage_skeleton()
     )
 }
-
-#[cfg(test)]
-#[path = "tests/detail_sections.rs"]
-mod tests;

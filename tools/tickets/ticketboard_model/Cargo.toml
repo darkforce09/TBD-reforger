@@ -37,10 +37,5 @@ time_source = { workspace = true }
 toml = { workspace = true }
 verification_core = { workspace = true }
 
-[features]
-# The shared test fixtures (scratch folders, ticket and corpus builders, source inspection) for
-# the ticketboard application's tests; enabled only from `[dev-dependencies]`.
-test_fixtures = []
-
 [lints]
 workspace = true

@@ -13,8 +13,7 @@ tools/tickets/ticketboard_model/src/core/process/
 ├── cargo_discovery.rs  `resolve_cargo`, which finds the cargo binary a bare desktop PATH can miss
 ├── external_open.rs    `open_path`, which opens a path with `xdg-open`, or `start` on Windows, and never waits
 ├── mod.rs              the module tree; re-exports the streaming, cargo and log items
-├── streaming.rs        `spawn_streaming`, `ProcessHandle` and `ProcessEvent`
-└── tests/              unit tests for cargo resolution, the bounded log, streaming and kill
+└── streaming.rs        `spawn_streaming`, `ProcessHandle` and `ProcessEvent`
 ```
 
 ## How it works

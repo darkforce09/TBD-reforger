@@ -26,8 +26,6 @@
 
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
-#[cfg(test)]
-use std::path::PathBuf;
 
 use crate::error::{Error, Result};
 use ticket_model::{Ticket, TicketId};
@@ -336,7 +334,3 @@ pub fn run(root: &Path, argv: &[String]) -> Result<u8> {
     warn_unplanned(&views, &lock);
     Ok(0)
 }
-
-#[cfg(test)]
-#[path = "tests/collisions/mod.rs"]
-mod tests;

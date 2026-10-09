@@ -13,8 +13,7 @@ tools/tickets/ticketboard_model/src/execution_metrics/measured/
 ├── formatting.rs   `format_tokens` (thousands commas) and `format_elapsed` (`45s`, `1h 02m 03s`)
 ├── mod.rs          the module tree; holds the imports the children share and re-exports all four
 ├── models.rs       `RunReceipt`, `TokensConsumed`, `ErrorRow`, `MeasuredRow`, `MetricsState`, the sorts
-├── services.rs     `load_metrics`, the receipt check, and the id and commit patterns `estimated` reuses
-└── tests/          unit tests for the empty states, hand-computed sums, error rows, instants and sorts
+└── services.rs     `load_metrics`, the receipt check, and the id and commit patterns `estimated` reuses
 ```
 
 ## How it works

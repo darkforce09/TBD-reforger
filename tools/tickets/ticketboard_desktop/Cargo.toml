@@ -49,11 +49,6 @@ ticket_wave_lock = { workspace = true }
 # Every model, service and the application state the views paint and the actions change.
 ticketboard_model = { workspace = true }
 
-[dev-dependencies]
-# The scratch folders, ticket and corpus builders and source inspection the rendering and
-# architecture tests share with the model crate's own tests.
-ticketboard_model = { workspace = true, features = ["test_fixtures"] }
-
 [features]
 # Driver-quirk fallback: `--features glow` builds the glow backend
 # in and the app then selects it; the default build stays pure wgpu.

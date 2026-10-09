@@ -19,7 +19,7 @@ tools/tickets/ticket_registry/src/validation/
 ├── schema.rs      the registry against `.ai/tickets/schema.json`, then ids, live orders, rows
 ├── scope.rs       `owns` on open work, `class` on work, a surface on live work with a component
 ├── shipping.rs    the ship gate and the agreement between `estimated` entries and the stamps
-├── tests/         unit tests for each rule, red and green, over scratch trees and the live tree
+├── tests/         unit tests for the registry schema check over the live tree
 └── vocabulary.rs  the shape of `.ai/tickets/scope-vocab.toml`
 ```
 

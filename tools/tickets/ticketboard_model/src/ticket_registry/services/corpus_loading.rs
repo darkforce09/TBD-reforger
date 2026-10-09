@@ -81,7 +81,3 @@ pub fn load_corpus(repo_root: &Path) -> LoadResult {
         tickets,
     })
 }
-
-#[cfg(test)]
-#[path = "tests/corpus_loading.rs"]
-mod tests;

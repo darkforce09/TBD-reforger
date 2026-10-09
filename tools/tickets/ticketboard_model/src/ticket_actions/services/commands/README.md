@@ -12,7 +12,6 @@ tools/tickets/ticketboard_model/src/ticket_actions/services/commands/
 ├── mod.rs                the module tree; re-exports every item of the four files
 ├── queue.rs              `TicketCommandQueue`, one command at a time with a FIFO tail, and `Finish`
 ├── requests.rs           `TicketCommand`, `TICKET_PREFIX` and one builder per ticket verb
-├── tests/                unit tests for the builders, queue, guard, transition matrices and hints
 └── transitions.rs        actions per status, the recovery hint, the success tail and the remove gates
 ```
 

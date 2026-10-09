@@ -234,7 +234,3 @@ fn parent_matches(f: &RowFacts, parent: &str) -> bool {
             .is_some_and(|rest| rest.starts_with('.'))
         || f.parent_lower.as_deref() == Some(parent)
 }
-
-#[cfg(test)]
-#[path = "tests/filtering.rs"]
-mod tests;

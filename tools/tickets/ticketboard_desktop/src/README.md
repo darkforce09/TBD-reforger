@@ -9,13 +9,12 @@ The models, services, events and application state the views paint are in
 
 ```text
 tools/tickets/ticketboard_desktop/src/
-├── application/        the eframe application: session, preferences, background jobs, dispatch, rendering tests
+├── application/        the eframe application: session, preferences, background jobs, dispatch
 ├── core/               the shared interface primitives: accent colours, row height, identifier link
 ├── document_viewer/    the document column: Markdown or raw text with its note, Back, open externally
 ├── execution_metrics/  the Metrics tab: the measured and the estimated tables and strips
 ├── main.rs             the command line and the native window
 ├── repository_status/  the status banner: strict check, output pane, `git status` chip, watch notes
-├── tests/              the architecture tests of this crate
 ├── ticket_actions/     the ticket menus, action strip, mutation dialogs, command chip, drawer, toasts
 ├── ticket_browser/     the filter bar, status board, cards, program tree and ticket details
 └── wave_plan/          the Waves tab: the recorded lanes, wave 0 and the pack-last tickets

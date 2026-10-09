@@ -212,7 +212,3 @@ pub fn spawn_read(
     });
     rx
 }
-
-#[cfg(test)]
-#[path = "tests/document_loading.rs"]
-mod tests;

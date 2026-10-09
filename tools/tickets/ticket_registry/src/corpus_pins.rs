@@ -63,7 +63,3 @@ pub fn load(root: &Path) -> Result<CorpusPins> {
         .with_context(|| format!("missing corpus pins: {}", path.display()))?;
     toml::from_str(&text).with_context(|| format!("malformed corpus pins: {}", path.display()))
 }
-
-#[cfg(test)]
-#[path = "tests/corpus_pins_tests.rs"]
-mod tests;

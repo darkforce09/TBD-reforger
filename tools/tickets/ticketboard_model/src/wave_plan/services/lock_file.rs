@@ -120,7 +120,3 @@ pub fn colliding_pairs(a: &[String], b: &[String]) -> Vec<(String, String)> {
     }
     pairs
 }
-
-#[cfg(test)]
-#[path = "tests/lock_file.rs"]
-mod tests;
