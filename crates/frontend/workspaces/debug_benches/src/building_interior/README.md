@@ -36,7 +36,7 @@ A ray that never enters the band returns an empty lane.
   tests in `crates/frontend/workspaces/debug_benches/src/tests/building_interior.rs`.
 - Rules: the ray lane is clipped with the raycaster's own band rule
   (`ray_lane_is_clipped_to_the_viewed_band`), its colours follow the hit state machine
-  (`ray_lane_colors_follow_the_hit_state_machine`, `ray_lane_colours_glass_and_foliage`), and a
+  (`ray_lane_colors_follow_the_hit_state_machine`), and a
   door counts as hit on its leaf or its closed footprint
   (`door_at_hits_leaf_and_closed_footprint`), all in that test file.
 

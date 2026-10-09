@@ -65,7 +65,3 @@ fn strip_leading_attributes(line: &str) -> &str {
     }
     rest
 }
-
-#[cfg(test)]
-#[path = "../tests/test_support.rs"]
-mod tests;

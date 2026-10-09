@@ -18,7 +18,7 @@ crates/frontend/workspaces/debug_benches/src/
 ├── error.rs                 `Error` and `Result`: why the agreement bench cannot start a run
 ├── lib.rs                   the module tree
 ├── prelude.rs               the four route components and `InteriorLanes`
-├── tests/                   unit tests for the interior lanes and the world bench's scene geometry
+├── tests/                   unit tests for the interior lanes
 ├── world_los/               the world bench's browser host: catalogue load, lane upload, the probe
 ├── world_los.rs             `WorldLosPage`, the `/debug/world-los` route component, and its defaults
 └── world_los_scene.rs       the world bench's plan geometry: footprints, section cuts, the probe ray
@@ -54,6 +54,5 @@ browser build, since leptos's component builder always has a `pub` `build` metho
 - Rules: the pure halves (`building_interior.rs`, `building_viewer/geom`, `world_los_scene.rs`,
   the agreement bench's `agreement_report.rs` and `bench_query.rs`, the data viewer's
   `navigation_state.rs` and `browsing_state.rs`) name no browser type, so they compile on every target; a bench imports no page and no other
-  workspace; the lane ids come from `map_draw_lanes::lane_roles::role_id` on every target
-  (`lane_ids_match_the_render_crate` in `tests/building_interior.rs`), and no wall lands on a
-  borrowed lane (`walls_never_use_borrowed_lanes`).
+  workspace; the lane ids come from `map_draw_lanes::lane_roles::role_id` on every target, and no
+  wall lands on a borrowed lane.

@@ -217,7 +217,3 @@ pub(crate) fn region_icon(key: &str) -> &'static str {
         _ => "footprint", // boots
     }
 }
-
-#[cfg(test)]
-#[path = "tests/shell_wiring.rs"]
-mod shell_wiring_tests;

@@ -27,8 +27,7 @@ crates/frontend/workspaces/mission_creator_session/src/
 ├── save_status.rs                 the save status, its self-mounted chip, one toast per failed episode
 ├── tab_lock/                      the browser transport of the writer role: Web Lock, channel, stamps
 ├── tab_lock.rs                    the writer role, the save decision, the election and the read-only banner
-├── tests/                         unit tests for the session's modules, source pins included
-├── title_prefer.rs                mounts the tests of the title preference and the mission-row metadata wire
+├── tests/                         unit tests for the session's modules
 └── warm_session_marker.rs         the account-scoped warm-editor marker in `sessionStorage`
 ```
 

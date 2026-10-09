@@ -36,6 +36,4 @@ shows the value at once, and expanding it opens `InlineDetails` or `ValueDetails
   `EquipmentSourcePage` in `crates/frontend/foundation/frontend_api_dtos/src/equipment_data_viewer/`.
 - Used by: `ResourceDetails` in `crates/frontend/workspaces/debug_benches/src/data_viewer/resources/`.
 - Rules: a card's anchor holds while content above it loads; an exact-source jump lands on the
-  named container and field; navigating to a new source clears stale value ranges and search
-  (`equipment_viewer_source_navigation_clears_stale_value_ranges_and_search` in
-  `crates/frontend/workspaces/debug_benches/src/data_viewer/tests/navigation.rs`).
+  named container and field; navigating to a new source clears stale value ranges and search.

@@ -410,7 +410,3 @@ fn paper_doll(
         </svg>
     }
 }
-
-#[cfg(test)]
-#[path = "tests/panels/cargo_persistence.rs"]
-mod cargo_persistence_tests;

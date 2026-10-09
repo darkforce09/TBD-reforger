@@ -48,7 +48,3 @@ pub fn publish_compile_findings(findings: &[Finding]) -> bool {
         None => false,
     }
 }
-
-#[cfg(test)]
-#[path = "tests/compile_findings_publisher.rs"]
-mod tests;

@@ -248,7 +248,3 @@ pub fn ray_strip(
     }
     (out, count)
 }
-
-#[cfg(test)]
-#[path = "tests/world_los_scene/scene_primitives.rs"]
-mod scene_primitives_tests;

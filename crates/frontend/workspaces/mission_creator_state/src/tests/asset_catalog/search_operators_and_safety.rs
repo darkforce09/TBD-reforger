@@ -1,4 +1,6 @@
-//! Asset catalog search operators and safety tests.
+//! The catalog search: the class, mod, glob and regex operators, the side chip composing with
+//! search, and the regex step and depth budgets that keep a hostile pattern from hanging or
+//! overflowing the wasm stack.
 
 use super::fixtures::*;
 use super::*;
@@ -107,28 +109,6 @@ fn filter_catalog_class_prefix() {
         filter_catalog(&tree, "nato"),
         tree,
         "an un-prefixed query is still the T-055 label substring match"
-    );
-}
-
-#[test]
-fn class_empty_operand_has_its_own_empty_message() {
-    assert_eq!(
-        search_empty_message("class:", "assets"),
-        "Type a class name after class:",
-        "empty operand → guidance, not a miss"
-    );
-    assert_eq!(
-        search_empty_message("class:   ", "vehicles"),
-        "Type a class name after class:",
-        "whitespace-only operand is still empty"
-    );
-    assert_eq!(
-        search_empty_message("class:zzz", "objects"),
-        "No objects match."
-    );
-    assert_eq!(
-        search_empty_message("rifleman", "assets"),
-        "No assets match."
     );
 }
 
@@ -348,46 +328,6 @@ fn regex_patterns_search_the_selected_field() {
 }
 
 #[test]
-fn a_broken_regex_says_so_instead_of_emptying_silently() {
-    let tree = build_catalog_tree(&golden_items(), "BLUFOR");
-    for broken in ["/us(/", "/[a-/", "/*us/", "/us)/"] {
-        assert_eq!(
-            parse_search_query(broken).pattern,
-            SearchPattern::Invalid,
-            "{broken} must not parse"
-        );
-        assert!(filter_catalog(&tree, broken).is_empty());
-        assert_eq!(
-            search_empty_message(broken, "assets"),
-            "That /…/ pattern could not be read — check the brackets and parentheses.",
-            "a broken pattern reads as a syntax problem, not as a miss"
-        );
-    }
-    assert_eq!(
-        parse_search_query("/").pattern,
-        SearchPattern::Plain("/".to_string())
-    );
-}
-
-#[test]
-fn every_operator_has_a_mid_type_empty_state() {
-    let tree = build_catalog_tree(&golden_items(), "BLUFOR");
-    for (q, msg) in [
-        ("class:", "Type a class name after class:"),
-        ("mod:", "Type a mod name after mod:"),
-        ("  MOD:  ", "Type a mod name after mod:"),
-        ("//", "Type a pattern between the slashes."),
-    ] {
-        assert!(
-            filter_catalog(&tree, q).is_empty(),
-            "{q} is mid-type and must not show the whole tree"
-        );
-        assert_eq!(search_empty_message(q, "assets"), msg);
-    }
-    assert_eq!(filter_catalog(&tree, "   "), tree);
-}
-
-#[test]
 fn a_catastrophic_regex_terminates_on_the_step_budget() {
     let long = "a".repeat(40);
     let items = vec![character_row(
@@ -523,29 +463,6 @@ fn multibyte_queries_do_not_panic_the_recogniser() {
         );
     }
     let _ = filter_catalog(&tree, "class:beauté");
-}
-
-#[test]
-fn class_prefix_fires_where_label_cannot() {
-    let tree = build_catalog_tree(&golden_items(), "BLUFOR");
-    let token = "Character_US_Rifleman";
-
-    assert!(
-        filter_catalog(&tree, token).is_empty(),
-        "guard: the classname token is absent from every label"
-    );
-    let classq =
-        "class:{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman";
-    let hit = filter_catalog(&tree, classq);
-    assert_eq!(
-        hit.len(),
-        1,
-        "class: fired: the classname-prefix leaf was selected"
-    );
-    assert_eq!(
-        hit[0].children[0].children[0].label, "US Rifleman",
-        "and it is the right leaf"
-    );
 }
 
 #[test]

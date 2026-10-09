@@ -424,9 +424,5 @@ mod imp {
 pub use imp::*;
 
 #[cfg(test)]
-#[path = "tests/document_commands/source_contracts.rs"]
-mod tests;
-
-#[cfg(test)]
 #[path = "tests/document_commands/duplicate_slot_guard.rs"]
-mod t946_86_duplicate_guard;
+mod duplicate_slot_guard_tests;

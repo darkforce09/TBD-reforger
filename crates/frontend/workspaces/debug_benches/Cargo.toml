@@ -94,8 +94,6 @@ web-sys = { workspace = true, features = [
 ] }
 
 [dev-dependencies]
-# The route rows the data viewer's navigation tests read.
-frontend_route_table = { workspace = true }
 frontend_test_support = { workspace = true }
 
 [lints]

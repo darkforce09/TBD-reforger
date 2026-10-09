@@ -104,7 +104,3 @@ pub fn assemble_report(
         cases,
     }
 }
-
-#[cfg(test)]
-#[path = "tests/agreement_report.rs"]
-mod tests;

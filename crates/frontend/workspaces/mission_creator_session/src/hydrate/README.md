@@ -58,7 +58,6 @@ sign-out deletes every local document of the departing account (`purge_local_doc
   dialog in `crates/frontend/workspaces/mission_creator_session/src/conflict_dialog.rs`; the Save
   in `crates/frontend/workspaces/mission_creator_session/src/document_commands/imp/`; the sign-out in
   `crates/frontend/foundation/frontend_session/src/store.rs`; the tests in
-  `crates/frontend/workspaces/mission_creator_session/src/tests/title_prefer/` and
   `crates/frontend/workspaces/mission_creator_workspace/src/tests/t628_boot_progress.rs`.
 - Rules: every snapshot is read, written and deleted under the signed-in account, so one account
   never restores or drops another's; a restore refuses any mission other than the one this mount

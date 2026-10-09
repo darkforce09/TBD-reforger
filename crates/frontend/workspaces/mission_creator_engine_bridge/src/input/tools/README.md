@@ -72,7 +72,7 @@ headless gates; the pick and the marquee themselves belong to
   up, and an older owner's cleanup never clobbers a newer registration
   (`a_seam_is_unregistered_when_its_owner_is_cleaned_up` and
   `an_older_owners_cleanup_does_not_clobber_a_newer_registration` in
-  `tests/ruler_tool/seam_lifecycle_and_render_context.rs`); `select_tool.rs` and `los_world_wasm.rs`
+  `tests/ruler_tool/seam_lifecycle.rs`); `select_tool.rs` and `los_world_wasm.rs`
   compile only for `wasm32`, through the `#[cfg(target_arch = "wasm32")]` on their `pub mod` lines.
 
 ## Related documentation

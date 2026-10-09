@@ -106,15 +106,13 @@ the harness.
     `w145_selection_prune.rs` call, and `t819_crewed_render_hide.rs`, which includes the file
     itself; `crates/frontend/workspaces/mission_creator_workspace/src/tests/review_mode/read_only_review.rs`,
     `crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/tests/attributes_modal/numeric_field_input.rs`,
-    `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/orbat_manager/roster_and_virtualization.rs`
-    and `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/tests/document_host/history_rebind_feeds_comments.rs`.
+    and `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/orbat_manager/roster_and_virtualization.rs`.
 - Rules: `doc_host` and `history` hold a live document handle, so each is
   `#[cfg(target_arch = "wasm32")]`, and so is its `pub mod` line; `edit_persist_hook` holds only the
   registered function and is tested natively
   (`crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/tests/document_host/edit_persist_hook.rs`); the
   session is reached only through that hook; `rebind_engine_from_doc` and `after_doc_change` both bind the comment
-  lane (`rebind_and_after_doc_change_both_feed_comments_bind` in
-  `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/tests/document_host/history_rebind_feeds_comments.rs`); undo and
+  lane; undo and
   redo go through `mission_editing_session::history` and nowhere else.
 
 ## Related documentation

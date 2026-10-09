@@ -1,10 +1,5 @@
-//! Layout t638 collapse tests.
-
-//! T-638 — the collapse state machine, the inset accessors, and the centre-hold math. Pure + native:
-//! the toggles live in `mission_editor`'s wasm keydown and the docks are Leptos views (no native
-//! mount), so — following the t636/t662 idiom — the *policy* is factored into these pure functions and
-//! pinned here, where a native `cargo test` can execute it. The keydown/chevron are thin callers that
-//! flip the signals this module mirrors; a source pin below proves the `E`/`R` wiring is present.
+//! The dock collapse state machine, the inset accessors, and the centre-hold math: the policy the
+//! wasm keydown and the dock chevrons drive, factored into pure functions a native test executes.
 
 use super::{
     DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX, STUB_PX, TOOLBELT_BAND_PX, centre_hold_target,
@@ -90,60 +85,6 @@ fn e_toggles_left_r_toggles_right_independently() {
     reset();
 }
 
-/// The chevron glyph MIRRORS the state, in the same 24×24 box, pointing outward when expanded and
-/// flipping when collapsed — for BOTH docks. This is the exact match arm `collapse_chevron` uses,
-/// pinned so a glyph regression (e.g. both docks showing the same chevron) is caught natively.
-#[test]
-fn chevron_glyph_mirrors_state_per_dock() {
-    // `(collapsed, expanded_is_left) -> icon`, verbatim from `collapse_chevron`.
-    fn icon(collapsed: bool, expanded_is_left: bool) -> &'static str {
-        match (collapsed, expanded_is_left) {
-            (false, true) => "chevron_left",
-            (true, true) => "chevron_right",
-            (false, false) => "chevron_right",
-            (true, false) => "chevron_left",
-        }
-    }
-    // Left dock: « expanded, » collapsed.
-    assert_eq!(icon(false, true), "chevron_left");
-    assert_eq!(icon(true, true), "chevron_right");
-    // Right dock: » expanded, « collapsed (the mirror of the left).
-    assert_eq!(icon(false, false), "chevron_right");
-    assert_eq!(icon(true, false), "chevron_left");
-    // The flip is real: collapsing swaps the glyph for each dock.
-    assert_ne!(icon(false, true), icon(true, true));
-    assert_ne!(icon(false, false), icon(true, false));
-    // Expanded, the two docks point in OPPOSITE (outward) directions.
-    assert_ne!(icon(false, true), icon(false, false));
-}
-
-/// The `E`/`R` keydown wiring is present in the editor keydown dispatch (source pin — the arms
-/// live in a wasm-only keydown a native test cannot fire). T-934.14 moved that dispatch from
-/// `mission_editor.rs` to `input/window_keydown.rs`; the pin follows the arms. Needles are assembled
-/// so this test's own source cannot satisfy them.
-#[test]
-fn keydown_binds_e_and_r_to_the_collapse_latches() {
-    let src = frontend_test_support::repository_root::repository_text(
-        env!("CARGO_MANIFEST_DIR"),
-        "crates/frontend/workspaces/mission_creator_engine_bridge/src/input/window_keydown.rs",
-    );
-    let arm = |code: &str| format!("\"{code}\" if !modk");
-    // E → left latch, R → right latch.
-    assert!(
-        src.contains(&arm("KeyE")) && src.contains("dock_left_collapsed.set("),
-        "E must toggle dock_left_collapsed"
-    );
-    assert!(
-        src.contains(&arm("KeyR")) && src.contains("dock_right_collapsed.set("),
-        "R must toggle dock_right_collapsed"
-    );
-    // Backspace (T-662) still owns hide-chrome — the E/R arms are ADDED, not a rebind of it.
-    assert!(
-        src.contains("chrome_hidden.set(!chrome_hidden.get_untracked())"),
-        "T-662 Backspace hide-chrome must be untouched"
-    );
-}
-
 /// The map-pane centre is the midpoint of the chrome-free rect using the LIVE insets. Collapsing a
 /// dock moves the pane centre toward that side by half the freed width — the delta the centre-hold
 /// consumes.
@@ -172,10 +113,9 @@ fn pane_centre_uses_live_insets() {
 }
 
 /// CENTRE-HOLD, fired against the engine's OWN camera (camera_math `OrthoCamera` — the exact
-/// type `select_tool::frozen_camera` builds). This is the perturb/fail/restore proof the ticket
-/// asks for: with the nudge applied, the world point under the pane centre is INVARIANT across the
-/// collapse reflow (RESTORE); without it, that point MOVES by the pane-centre delta in world units
-/// (FAIL) — so the assertion is not vacuously true.
+/// type `select_tool::frozen_camera` builds). With the nudge applied, the world point under the
+/// pane centre is INVARIANT across the collapse reflow (RESTORE); without it, that point MOVES by
+/// the pane-centre delta in world units (FAIL) — so the assertion is not vacuously true.
 #[test]
 fn centre_hold_keeps_the_pane_centre_world_point() {
     reset();

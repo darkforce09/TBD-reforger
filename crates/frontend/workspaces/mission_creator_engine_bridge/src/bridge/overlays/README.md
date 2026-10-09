@@ -56,8 +56,7 @@ dragged [slot](/documentation/glossary/n_to_z.md#slot) and vehicle height inside
   - the canvas mount in `crates/frontend/workspaces/mission_creator_workspace/src/mission_editor/`, which registers
     the pivot; the editor context, which holds the picker's state type.
 - Rules: the elevation preview and the commit share one arithmetic, and a cancelled drag cannot
-  commit on an unrelated pointerup (`the_preview_and_the_commit_share_one_arithmetic` and
-  `cancelling_then_unrelated_pointerup_cannot_commit` in
+  commit on an unrelated pointerup (`cancelling_then_unrelated_pointerup_cannot_commit` in
   `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/tests/overlays/z_arm_gesture.rs`); a drag over
   slots and vehicles commits and undoes as one step
   (`authored_mixed_elevations_commit_and_undo_together`, same file).

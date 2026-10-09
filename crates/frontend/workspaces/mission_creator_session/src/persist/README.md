@@ -61,11 +61,11 @@ request. `window.__missionPersist` gives the headless harness `ready`, `loaded_f
   `tools/browser_testing/browser_gate_suites/`, through `window.__missionPersist`.
 - Rules: the tests in `crates/frontend/workspaces/mission_creator_session/src/tests/` pin these: a stored
   record from another tab is merged, never overwritten, and a read-only tab defers instead of
-  writing (`t190_a_foreign_record_is_merged_not_overwritten` and
-  `t190_a_read_only_tab_defers_instead_of_writing_or_dropping` in
+  writing (`a_foreign_record_is_merged_not_overwritten` and
+  `a_read_only_tab_defers_instead_of_writing_or_dropping` in
   `crates/frontend/workspaces/mission_creator_session/src/tests/tab_lock/writer_election_and_conflict.rs`);
-  a failed write reports into the save status, and the idle debounce stays at or under one second
-  (`run_save_err_arm_reports_into_save_status` and `idle_debounce_is_at_most_one_second` in
+  a failure episode toasts once and a quota failure is named as quota
+  (`failed_status_toasts_once_per_episode` and `quota_failure_is_named_quota` in
   `crates/frontend/workspaces/mission_creator_session/src/tests/save_status/retry_and_failure.rs`).
 
 ## Related documentation

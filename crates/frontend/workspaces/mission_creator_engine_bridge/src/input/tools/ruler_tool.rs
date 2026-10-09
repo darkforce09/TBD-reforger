@@ -174,5 +174,5 @@ pub fn RulerOverlay(
 }
 
 #[cfg(test)]
-#[path = "tests/ruler_tool/seam_lifecycle_and_render_context.rs"]
-mod t778_seam_lifecycle;
+#[path = "tests/ruler_tool/seam_lifecycle.rs"]
+mod seam_lifecycle_tests;

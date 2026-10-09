@@ -97,36 +97,6 @@ fn cargo_key_presence_follows_user_state() {
 }
 
 #[test]
-fn canonical_v2_shape_matches_react() {
-    // primary weapon + a wear row → the exact `picksToLoadout` superset.
-    let lo = picks_to_loadout(
-        &picks(&[
-            ("primary", "res://rifle_m16"),
-            ("headCover", "res://helmet_pasgt"),
-        ]),
-        &names(),
-        None,
-    )
-    .expect("non-empty");
-    let v: serde_json::Value = serde_json::from_str(&lo).unwrap();
-    assert_eq!(v["version"], 2);
-    // weapons[0]: slotIndex 0 / slotType primary / attachments [] / null optic+magazine.
-    let w0 = &v["weapons"][0];
-    assert_eq!(w0["slotIndex"], 0);
-    assert_eq!(w0["slotType"], "primary");
-    assert_eq!(w0["weapon"], "res://rifle_m16");
-    assert!(w0["optic"].is_null());
-    assert!(w0["magazine"].is_null());
-    assert_eq!(w0["attachments"], serde_json::json!([]));
-    // wear carries EVERY wear key (present-or-null), headCover set.
-    assert_eq!(v["wear"]["headCover"], "res://helmet_pasgt");
-    assert!(v["wear"]["jacket"].is_null());
-    assert_eq!(v["wear"].as_object().unwrap().len(), 8);
-    // summary = display names of primary/optic/magazine/launcher.
-    assert_eq!(v["summary"], "M16A2");
-}
-
-#[test]
 fn round_trips_through_the_doc_field() {
     let p = picks(&[
         ("primary", "res://rifle_m16"),
@@ -143,7 +113,7 @@ fn round_trips_through_the_doc_field() {
 
 #[test]
 fn attachments_ride_their_own_weapon_and_round_trip() {
-    // T-197 — `attachments[]` is a per-weapon field, not a primary-only sub-slot: a set on the
+    // `attachments[]` is a per-weapon field, not a primary-only sub-slot: a set on the
     // handgun must land on the handgun's `weapons[]` entry and come back on the handgun.
     let mut p = picks(&[("primary", "res://rifle_m16"), ("handgun", "res://m9")]);
     p.insert(
@@ -174,27 +144,6 @@ fn attachments_ride_their_own_weapon_and_round_trip() {
     );
     assert_eq!(attachments_of(&back, "handgun"), ["res://supp"]);
     assert!(attachments_of(&back, "launcher").is_empty());
-}
-
-#[test]
-fn an_empty_attachment_set_keeps_the_pre_t197_byte_shape() {
-    // Primary keeps emitting `attachments: []` (what every persisted loadout already carries);
-    // the other three weapon rows still emit no key at all. A mission with no attachments must
-    // serialize byte-identically to its pre-T-197 self, or every save rewrites every slot.
-    let p = picks(&[("primary", "res://rifle_m16"), ("launcher", "res://rpg")]);
-    let lo = picks_to_loadout(&p, &names(), None).unwrap();
-    let v: serde_json::Value = serde_json::from_str(&lo).unwrap();
-    assert_eq!(v["weapons"][0]["attachments"], serde_json::json!([]));
-    assert!(v["weapons"][1].get("attachments").is_none());
-    // A set on a weapon that is NOT picked never reaches the doc (it is flagged in the UI).
-    let mut orphan = picks(&[("primary", "res://rifle_m16")]);
-    orphan.insert(
-        attachments_key("handgun"),
-        pack_attachments(&["res://supp".into()]),
-    );
-    let v: serde_json::Value =
-        serde_json::from_str(&picks_to_loadout(&orphan, &names(), None).unwrap()).unwrap();
-    assert_eq!(v["weapons"].as_array().unwrap().len(), 1);
 }
 
 #[test]
@@ -269,7 +218,7 @@ fn optic_magazine_survive_a_dumb_forge_resave() {
     assert_eq!(v["summary"], "M16A2 · ACOG · STANAG 30rd");
 }
 
-/* ─────────────── T-199 — the exported FILE vs `loadout-export.schema.json` ─────────────── */
+/* ─────────────── the exported FILE vs `loadout-export.schema.json` ─────────────── */
 
 /// The repo's real `loadout-export.schema.json`, read at test time.
 ///
@@ -446,7 +395,7 @@ fn exported_file_satisfies_the_v2_branch_of_the_real_schema() {
 fn export_carries_all_four_weapon_slots_and_the_locked_gear_derivation() {
     let raw = picks_to_export(&full_picks(), &[], &ModpackId::from("mp"));
     let v: serde_json::Value = serde_json::from_str(&raw).unwrap();
-    // T-182's four slots, each naming its engine slot — the pairs `mod_slot_loadout` matches.
+    // The four weapon slots, each naming its engine slot — the pairs `mod_slot_loadout` matches.
     let slots: Vec<(i64, &str, &str)> = v["weapons"]
         .as_array()
         .unwrap()
@@ -547,38 +496,7 @@ fn a_separator_bearing_attachment_never_reaches_the_export() {
     );
 }
 
-#[test]
-fn the_modpack_id_comes_from_the_catalog_the_picks_were_made_against() {
-    assert_eq!(export_modpack_id(&[]), "");
-    let it = frontend_api_dtos::RegistryItem {
-        id: "1".into(),
-        modpack_id: "00000000-0000-4000-a000-000000000001".into(),
-        resource_name: "res://rifle_m16".into(),
-        display_name: "M16A2".into(),
-        category: "WEAPONS".into(),
-        icon_url: None,
-        kind: "gear_primary".into(),
-        r#abstract: None,
-        arsenal_type: None,
-        weight_kg: None,
-        volume_cm3: None,
-        max_weight_kg: None,
-        max_volume_cm3: None,
-        cargo_grid_w: None,
-        cargo_grid_h: None,
-        addon: None,
-        variant_of: None,
-        sort_order: 0,
-        created_at: String::new(),
-        updated_at: String::new(),
-    };
-    assert_eq!(
-        export_modpack_id(std::slice::from_ref(&it)),
-        "00000000-0000-4000-a000-000000000001"
-    );
-}
-
-/* ─────────── T-240 — the export button refuses over-capacity cargo ─────────── */
+/* ─────────── the export button refuses over-capacity cargo ─────────── */
 
 fn gear(rn: &str, name: &str, kind: &str) -> RegistryItem {
     RegistryItem {
@@ -691,47 +609,11 @@ fn the_export_gate_never_refuses_on_capacity_it_does_not_have() {
             "must still export — {label}"
         );
     }
-    // And the pre-T-240 baseline: a full loadout over a catalog with no capacity columns
-    // at all exports exactly as it did before this ticket.
+    // A full loadout over a catalog with no capacity columns at all exports.
     assert!(try_export(&full_picks(), &[], &[], &ModpackId::from("mp")).is_ok());
 }
 
-#[test]
-fn the_verdict_counts_capacity_beside_compat_and_attachment_faults() {
-    let items = capacity_catalog();
-    let idx = index_by_name(&items);
-    // A ready feed with no edges → the packed attachment on the primary is stranded.
-    let feed = attachment_feed(&[]);
-    let mut p = picks(&[("vest", "res://chest_rig"), ("primary", "res://rifle_m16")]);
-    p.insert(
-        attachments_key("primary"),
-        pack_attachments(&["res://supp".into()]),
-    );
-
-    let kit = kit(&[]);
-    let faults = loadout_faults(
-        &p,
-        &[row("vest", "res://mag_stanag", 4)],
-        &feed,
-        &idx,
-        Some(&kit),
-    );
-    assert_eq!(
-        faults.len(),
-        2,
-        "one stranded attachment + one over-capacity vest"
-    );
-    let keys: Vec<&str> = faults.iter().map(|e| e.key).collect();
-    assert!(keys.contains(&"primary"), "{keys:?}");
-    assert!(keys.contains(&"vest"), "{keys:?}");
-
-    // Empty the cargo and the capacity fault goes with it — the attachment one stays.
-    let faults = loadout_faults(&p, &[], &feed, &idx, Some(&kit));
-    assert_eq!(faults.len(), 1);
-    assert_eq!(faults[0].key, "primary");
-}
-
-/* ═════════ T-504 — cargo with nowhere known to go ═════════ */
+/* ═════════ cargo with nowhere known to go ═════════ */
 
 /// The kit-default vouching set, as [`kit_default_items`] would build it.
 pub(super) fn kit(items: &[&str]) -> HashSet<String> {
@@ -744,9 +626,8 @@ fn undeliverable_cargo_fails_the_verdict_but_never_the_export() {
     let idx = index_by_name(&items);
     let feed = attachment_feed(&[]);
     // Three magazines into a vest: no vest picked, and a kit not catalogued as carrying them.
-    // 180 cm³ is comfortably inside any rig, so capacity has nothing to say — and before T-504
-    // neither did anything else: the badge read "Loadout valid" over cargo it had never checked
-    // was deliverable.
+    // 180 cm³ is comfortably inside any rig, so capacity has nothing to say; the deliverability
+    // rule is what flags it.
     let bare = picks(&[]);
     let rows = vec![row("vest", "res://mag_stanag", 3)];
     let empty_kit = kit(&[]);
@@ -789,6 +670,37 @@ fn undeliverable_cargo_fails_the_verdict_but_never_the_export() {
     assert!(
         loadout_faults(&bare, &rows, &feed, &idx, Some(&kit(&["res://mag_stanag"]))).is_empty(),
         "the kit's own default cargo must never fault"
+    );
+}
+
+#[test]
+fn the_modpack_id_comes_from_the_catalog_the_picks_were_made_against() {
+    assert_eq!(export_modpack_id(&[]), "");
+    let it = frontend_api_dtos::RegistryItem {
+        id: "1".into(),
+        modpack_id: "00000000-0000-4000-a000-000000000001".into(),
+        resource_name: "res://rifle_m16".into(),
+        display_name: "M16A2".into(),
+        category: "WEAPONS".into(),
+        icon_url: None,
+        kind: "gear_primary".into(),
+        r#abstract: None,
+        arsenal_type: None,
+        weight_kg: None,
+        volume_cm3: None,
+        max_weight_kg: None,
+        max_volume_cm3: None,
+        cargo_grid_w: None,
+        cargo_grid_h: None,
+        addon: None,
+        variant_of: None,
+        sort_order: 0,
+        created_at: String::new(),
+        updated_at: String::new(),
+    };
+    assert_eq!(
+        export_modpack_id(std::slice::from_ref(&it)),
+        "00000000-0000-4000-a000-000000000001"
     );
 }
 

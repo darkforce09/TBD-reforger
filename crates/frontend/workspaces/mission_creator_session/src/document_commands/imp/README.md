@@ -59,14 +59,12 @@ store, the mission id and the current-semver signal), which the canvas mount ins
   `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/top_strip/`; the
   [Arsenal](/documentation/glossary/a_to_f.md#arsenal) tab's loadout download (`download_json`) in
   `crates/frontend/workspaces/mission_creator_arsenal/src/tab_content.rs`; the parent's `__editorCommands`
-  bridge; the source contracts in
-  `crates/frontend/workspaces/mission_creator_session/src/tests/document_commands/`.
-- Rules: the tests in
-  `crates/frontend/workspaces/mission_creator_session/src/tests/document_commands/` pin these: the save
-  checks duplicate slot ids before it compiles or posts
-  (`save_now_checks_duplicates_before_it_compiles_or_posts` in `duplicate_slot_guard.rs`); the
-  compiled export is never pretty-printed, so it stays byte-comparable with the artifact document
-  (`class_r_source_forbids_value_pretty_on_compiled_export` in `source_contracts.rs`).
+  bridge.
+- Rules: the save checks duplicate slot ids before it compiles or posts, and refuses with one
+  line per duplicate naming the squad callsign and the slot id
+  (`the_refusal_names_the_callsign_and_the_id` in
+  `crates/frontend/workspaces/mission_creator_session/src/tests/document_commands/duplicate_slot_guard.rs`); the
+  compiled export is never pretty-printed, so it stays byte-comparable with the artifact document.
 
 ## Related documentation
 

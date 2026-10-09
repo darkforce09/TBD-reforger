@@ -31,9 +31,6 @@ the alert colour when either is exceeded. Every change updates the cargo signal 
   (`CargoRow`, `CARGO_CONTAINERS`, `cargo_garment`, `cargo_budget`, `index_by_name`), reached
   through the parent module; `RegistryItem` from `frontend_api_dtos`.
 - Used by: the Arsenal tab's `tab_content.rs` in `crates/frontend/workspaces/mission_creator_arsenal/src/`,
-  through the parent's re-export; the source pins in
-  `crates/frontend/workspaces/mission_creator_arsenal/src/tests/shell_wiring.rs` and
-  `crates/frontend/workspaces/mission_creator_arsenal/src/tests/panels/cargo_persistence.rs`.
+  through the parent's re-export.
 - Rules: a cargo edit never waits for a Save; each of the four mutations calls `on_change` in its
-  own handler (`cargo_mutations_commit_without_a_staging_gate` in
-  `crates/frontend/workspaces/mission_creator_arsenal/src/tests/panels/cargo_persistence.rs`).
+  own handler.

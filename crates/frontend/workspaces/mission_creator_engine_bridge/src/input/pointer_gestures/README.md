@@ -73,15 +73,10 @@ None: the handlers are private to the parent module, which exposes `EditorGestur
   camera settle).
 - Used by: the parent module, whose `attach_canvas_gestures` the input listeners of
   `crates/frontend/workspaces/mission_creator_workspace/src/mission_editor/canvas_mount/` call; the source pins that
-  read these files: the gesture pins in `crates/frontend/workspaces/mission_creator_workspace/src/tests/`, the Z-arm
-  pins in `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/tests/overlays/z_arm_gesture.rs`, the
-  inset pin in `crates/frontend/workspaces/mission_creator_state/src/tests/layout/band_readers.rs` and
-  `pointer_up_move_arm_commits_through_the_atomic_mix_api` in
-  `crates/frontend/workspaces/mission_creator_engine_bridge/src/input/tests/pointer_up_move_commit.rs`.
+  read these files: the gesture pins in `crates/frontend/workspaces/mission_creator_workspace/src/tests/`.
 - Rules:
   - exactly one `LG::Move` arm of `pointer_up.rs` commits, through `.move_entities_and_vehicles(`,
-    never through `core.move_entities(` or `editor_ops::move_vehicles`
-    (`pointer_up_move_arm_commits_through_the_atomic_mix_api`), and exactly one across the whole
+    never through `core.move_entities(` or `editor_ops::move_vehicles`, and exactly one across the whole
     editor source with the canvas mount (`only_one_move_arm_commits_the_atomic_mix` in
     `crates/frontend/workspaces/mission_creator_workspace/src/tests/t648_transform.rs`);
   - the place release reads the insets through the `mission_creator_state::layout` accessors, never a literal

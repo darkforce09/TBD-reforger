@@ -21,7 +21,6 @@ crates/frontend/workspaces/debug_benches/src/data_viewer/
 ├── resource_data/       one scrolling surface of every native container of a resource
 ├── resources/           the filtered resource catalog and the selected resource's header
 ├── source_inspector/    native value and provenance rendering, and the original document view
-├── tests/               unit tests for the location and the browsing memory
 └── viewer.css           the viewer's own styles, inlined by `page.rs`
 ```
 
@@ -46,13 +45,13 @@ the gameplay catalog and the diagnostics. Reads go through `data/`, which aborts
 so it cannot overwrite a newer location, and caches settled pages per generation.
 `browsing_state.rs` keeps expanded values and catalog positions for recently viewed resources
 only. The panels compile for `wasm32` alone; `navigation_state.rs` and `browsing_state.rs` are
-pure and covered by the native tests.
+pure.
 
 ## Public surface
 
 - `DataViewerPage`: the route component `crates/frontend/shell/frontend_application/src/app_routes.rs` mounts at
   `/debug/data-viewer`.
-- `navigation_state` and `browsing_state`: public so the native unit tests reach them.
+- `navigation_state` and `browsing_state`: the pure location and browsing-memory models.
 
 ## Boundaries
 
@@ -64,12 +63,8 @@ pure and covered by the native tests.
   check `gate equipment-data-viewer` in
   `tools/browser_testing/browser_gate_suites/src/equipment_data_viewer/`.
 - Rules: the viewer only reads, anonymously, and never touches the session; a location keeps
-  exact source identities (`equipment_viewer_locations_preserve_opaque_identity_and_back_context`
-  in `tests/navigation.rs`); a dataset switch drops dataset-specific documents
-  (`equipment_viewer_dataset_switch_drops_dataset_specific_documents`); the browsing memory keeps
-  expansions and evicts old resources
-  (`equipment_viewer_resource_memory_keeps_expansions_and_evicts_old_resources` in
-  `tests/browsing_state.rs`).
+  exact source identities; a dataset switch drops dataset-specific documents; the browsing memory
+  keeps expansions and evicts old resources.
 
 ## Related documentation
 

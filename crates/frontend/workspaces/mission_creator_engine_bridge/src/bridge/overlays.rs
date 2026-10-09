@@ -36,4 +36,4 @@ pub mod connections_panel;
 pub use connections_panel::ConnectionsPanelOverlay;
 #[cfg(test)]
 #[path = "tests/overlays/z_arm_gesture.rs"]
-mod t946_86_z_arm;
+mod z_arm_gesture_tests;

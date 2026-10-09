@@ -35,11 +35,8 @@ floor's wall centerlines as ghosts.
   starts from it and routes the result onto the bench's `INTERIOR_*` lanes; the unit tests in
   `crates/frontend/workspaces/debug_benches/src/building_viewer/tests/geometry_and_lanes.rs` and
   `crates/frontend/workspaces/debug_benches/src/tests/building_interior.rs`.
-- Rules: a pure function of its inputs, with no browser or engine handle, so the native tests
-  cover it; the mesh replaces the blueprint's walls whenever a drawing exists
-  (`mesh_drawing_replaces_walls_and_paints_heightfield`), and a lower floor shows only through
-  voids (`lower_floor_ghosts_only_through_voids`), both in the parent folder's
-  `geometry_and_lanes.rs` test file named above.
+- Rules: a pure function of its inputs, with no browser or engine handle; the mesh replaces the
+  blueprint's walls whenever a drawing exists, and a lower floor shows only through voids.
 
 ## Related documentation
 

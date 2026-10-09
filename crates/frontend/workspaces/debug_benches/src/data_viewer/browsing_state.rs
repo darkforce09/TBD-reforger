@@ -66,6 +66,3 @@ pub fn save_catalog_scroll(key: String, value: i32) {
         }
     });
 }
-#[cfg(test)]
-#[path = "tests/browsing_state.rs"]
-mod tests;

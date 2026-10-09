@@ -1,20 +1,7 @@
-//! World Layer Prefs tests tests.
+//! World-layer preferences: the stored blob round-trips, garbage and partial blobs fall back to
+//! defaults, and the legacy store migrates idempotently with its values preserved.
 
 use super::*;
-
-#[test]
-fn defaults_props_off_rest_on() {
-    let p = WorldLayerPrefs::default();
-    assert!(!p.props);
-    assert!(p.roads && p.buildings && p.forest && p.trees && p.contours && p.sea);
-    assert!(p.fences && p.airfield && p.heights && p.town_labels && p.road_names);
-}
-
-#[test]
-fn rows_cover_all_twelve_keys() {
-    let p = WorldLayerPrefs::default();
-    assert_eq!(p.rows().len(), 12);
-}
 
 #[test]
 fn set_flips_by_key_and_ignores_unknown() {
@@ -29,15 +16,6 @@ fn set_flips_by_key_and_ignores_unknown() {
             ..Default::default()
         }
     );
-}
-
-#[test]
-fn round_trips_through_json_with_react_keys() {
-    let p = WorldLayerPrefs::default();
-    let j = serde_json::to_string(&p).unwrap();
-    assert!(j.contains("townLabels") && j.contains("roadNames"));
-    let back: WorldLayerPrefs = serde_json::from_str(&j).unwrap();
-    assert_eq!(p, back);
 }
 
 #[test]

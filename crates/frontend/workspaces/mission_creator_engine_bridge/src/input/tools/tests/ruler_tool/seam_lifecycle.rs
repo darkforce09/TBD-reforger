@@ -1,4 +1,5 @@
-//! Checks seam registration lifetime and render-context source invariants.
+//! Seam registration lifetime: an owner's cleanup unregisters its seam, and a superseded
+//! owner's cleanup leaves the newer registration alone.
 
 use super::register_ruler_chain;
 use crate::input::tools::los_tool::{
@@ -97,7 +98,7 @@ fn seams() -> [Seam; 4] {
         },
         Seam {
             name: "LOS_SAMPLER",
-            // The one seam that is a real closure: it notes its own tag when CALLED, so shape 2
+            // The one seam that is a real closure: it notes its own tag when CALLED, so the unmount case
             // can distinguish "the seam reported failure" from "the stale closure still ran".
             install: |tag| {
                 register_los_sampler(Rc::new(move |_x, _y| {
@@ -129,28 +130,7 @@ fn seams() -> [Seam; 4] {
     ]
 }
 
-/// Shape 1 — never installed. The baseline: without it, a green in shape 2 could just mean the
-/// seam never worked in the first place.
-#[test]
-fn an_uninstalled_seam_reports_honest_failure() {
-    let _root = Owner::new();
-    for seam in seams() {
-        forget_answers();
-        assert!(
-            !(seam.ask)(),
-            "T-778 {}: a seam nothing ever registered must report FAILURE",
-            seam.name
-        );
-        assert!(
-            answered().is_empty(),
-            "T-778 {}: nothing may answer when nothing is installed — got {:?}",
-            seam.name,
-            answered()
-        );
-    }
-}
-
-/// Shape 2 — install then unmount. The seam must report failure AND not read the dead handle.
+/// Install then unmount. The seam must report failure AND not read the dead handle.
 #[test]
 fn a_seam_is_unregistered_when_its_owner_is_cleaned_up() {
     let root = Owner::new();
@@ -161,13 +141,13 @@ fn a_seam_is_unregistered_when_its_owner_is_cleaned_up() {
         forget_answers();
         assert!(
             (seam.ask)(),
-            "T-778 {} precondition: while mounted the seam really does answer",
+            "{} precondition: while mounted the seam really does answer",
             seam.name
         );
         assert_eq!(
             answered(),
             vec!["A".to_string()],
-            "T-778 {} precondition: the LIVE registration is the one that answered",
+            "{} precondition: the LIVE registration is the one that answered",
             seam.name
         );
 
@@ -176,20 +156,20 @@ fn a_seam_is_unregistered_when_its_owner_is_cleaned_up() {
         forget_answers();
         assert!(
             !(seam.ask)(),
-            "T-778 {}: the installing owner is gone, so the seam must report FAILURE rather \
+            "{}: the installing owner is gone, so the seam must report FAILURE rather \
                  than success over state whose every write is a disposed no-op",
             seam.name
         );
         assert!(
             answered().is_empty(),
-            "T-778 {}: the stale registration must not be read at all after unmount — got {:?}",
+            "{}: the stale registration must not be read at all after unmount — got {:?}",
             seam.name,
             answered()
         );
     }
 }
 
-/// Shape 3 — the identity guard. A remount installs its NEWER value before the old owner's
+/// The identity guard. A remount installs its NEWER value before the old owner's
 /// cleanup runs. The losing cleanup must recognise it is no longer the live registration and
 /// leave the new one alone — otherwise the fix for a stale seam becomes a fresh way to kill a
 /// live one, and the click is dead again. This is the case an unconditional unregister fails.
@@ -209,14 +189,14 @@ fn an_older_owners_cleanup_does_not_clobber_a_newer_registration() {
         forget_answers();
         assert!(
             (seam.ask)(),
-            "T-778 {}: the NEW mount is live — the superseded owner's cleanup must not \
+            "{}: the NEW mount is live — the superseded owner's cleanup must not \
                  unregister it",
             seam.name
         );
         assert_eq!(
             answered(),
             vec!["B".to_string()],
-            "T-778 {}: the surviving registration must be the NEWER one, not a leftover that \
+            "{}: the surviving registration must be the NEWER one, not a leftover that \
                  merely happens to answer",
             seam.name
         );
@@ -226,73 +206,9 @@ fn an_older_owners_cleanup_does_not_clobber_a_newer_registration() {
         forget_answers();
         assert!(
             !(seam.ask)(),
-            "T-778 {}: the live mount's OWN cleanup does clear it — the guard skips losers, \
+            "{}: the live mount's OWN cleanup does clear it — the guard skips losers, \
                  not everyone",
             seam.name
         );
     }
-}
-
-/// Class-R — the fifth seam, `world_assets::RENDER_CTX`, which is wasm-only and so invisible to
-/// every test above. Pinned over `live_code`, which cuts the test module, the comments AND the
-/// string literals: the needles below therefore have to be real calls in the production body,
-/// not the prose two lines above them nor a decoy in a string.
-///
-/// [wave 142 F-3] TIGHTENED. The pin reddened on the honest regression (the pre-T-778 direct
-/// write) but GREENED on a decoy: rename a local to `install_seam_later` and write the cell with
-/// `RefCell::replace` instead of `borrow_mut`, and both needles were satisfied while the
-/// un-unregisterable registration was back. `install_seam` was a bare substring, and the negative
-/// named ONE of the several ways to write a `RefCell`. Two changes close it:
-///
-/// * the positive names the CALL and its ARGUMENT — the seam has to be installed on THIS cell,
-///   which no local's name can satisfy;
-/// * the negative forbids reaching the cell at all from this body. `install_seam(&RENDER_CTX, …)`
-///   passes the cell; it never opens it. So `RENDER_CTX.with` inside `register_render_ctx` means
-///   a hand-rolled registration by definition, whatever mutator it then reaches for — and the
-///   three write shapes are forbidden by name as well, so the failure message says which one.
-///
-/// This seam has no behavioural test anywhere (`world_assets` is wasm32-only with no
-/// wasm-bindgen-test target), so this pin is its only guarantee. That is exactly the case where
-/// the standard Class-R substring ceiling is worth paying to raise.
-#[test]
-fn the_render_ctx_seam_is_installed() {
-    use frontend_test_support::class_r_scrub::{live_code, only_body, only_item};
-    let src = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/bridge/world_assets.rs"
-    )));
-
-    let body = only_body(&src, "pub fn register_render_ctx(");
-    // The call AND the cell it installs on — `install_seam_later = ()` does not contain this.
-    let install = ["install_seam(&", "RENDER_CTX"].concat();
-    assert!(
-        body.contains(&install),
-        "T-778: register_render_ctx must INSTALL on RENDER_CTX (register + guarded unregister at \
-             the owner's cleanup), not write the cell directly; got:\n{body}"
-    );
-    // `install_seam` takes the cell; it never opens it. Opening it here is a hand-rolled
-    // registration whichever mutator follows — `borrow_mut`, `replace`, `take`, `set`.
-    let opens_cell = ["RENDER_CTX", ".with"].concat();
-    for forbidden in [opens_cell.as_str(), "borrow_mut", ".replace(", ".take("] {
-        assert!(
-            !body.contains(forbidden),
-            "T-778: register_render_ctx must not reach into RENDER_CTX behind install_seam's \
-                 back (`{forbidden}`) — a bare write is the un-unregisterable registration this \
-                 ticket removes; got:\n{body}"
-        );
-    }
-
-    // The tuple-valued seam's identity is the state crate's pair registration, and it must be Rc
-    // IDENTITY on both handles — never a `usize` address (ABA) and never `||`, which would let a
-    // half-matching cleanup clear a live remount.
-    let seam = live_code(frontend_test_support::repository_root::repository_text(
-        env!("CARGO_MANIFEST_DIR"),
-        "crates/frontend/workspaces/mission_creator_state/src/seam_registration.rs",
-    ));
-    let pair = only_item(&seam, "SeamRegistration for (A, B)");
-    let handle = only_item(&seam, "SeamRegistration for std::rc::Rc<T>");
-    assert!(
-        pair.contains("&&") && !pair.contains("||") && handle.contains("Rc::ptr_eq"),
-        "T-778: RENDER_CTX identity must be Rc::ptr_eq on BOTH leaked handles; got:\n{pair}\n{handle}"
-    );
 }

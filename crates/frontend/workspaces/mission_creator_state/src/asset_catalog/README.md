@@ -56,8 +56,7 @@ folders follow the row's `category` path.
 - Rules: a regular expression that reaches a cap stops rather than runs on
   (`a_catastrophic_regex_terminates_on_the_step_budget`,
   `deep_regex_input_refuses_instead_of_trapping_the_wasm_stack`), an unfinished or broken pattern
-  says so (`every_operator_has_a_mid_type_empty_state`,
-  `a_broken_regex_says_so_instead_of_emptying_silently`), and the picker tree still drops abstract
+  says so, and the picker tree still drops abstract
   rows (`picker_tree_spans_all_sides_and_still_drops_abstract`); the tests live in
   `crates/frontend/workspaces/mission_creator_state/src/tests/asset_catalog/`.
 

@@ -16,7 +16,7 @@ crates/frontend/workspaces/debug_benches/src/building_viewer/
 ├── live/     `wire`: the engine boot, the fetches, the upload effects and the pointer listeners
 ├── live.rs   the browser host: URL readers, lane and wash uploads, the compound loader
 ├── page.rs   `BuildingViewerPage`: the signals, the pure effects, the header, verdict and legend
-└── tests/    unit tests for the world mapping, the camera, the lanes and the wash texture
+└── tests/    unit tests for the world mapping, the camera, the band math and the wash texture
 ```
 
 ## How it works

@@ -18,6 +18,5 @@ crates/frontend/workspaces/debug_benches/src/data_viewer/resources/
   `EquipmentResourcePage` in `crates/frontend/foundation/frontend_api_dtos/src/equipment_data_viewer/`.
 - Used by: `page.rs` in `crates/frontend/workspaces/debug_benches/src/data_viewer/`, for the `resources` tab.
 - Rules: the catalog stays mounted, with its scroll position remembered, while the selection
-  changes (`equipment_viewer_catalog_filters_survive_resource_and_source_navigation` in
-  `crates/frontend/workspaces/debug_benches/src/data_viewer/tests/navigation.rs`); a resource the selected generation lacks shows an absence notice
+  changes; a resource the selected generation lacks shows an absence notice
   instead of its sections.

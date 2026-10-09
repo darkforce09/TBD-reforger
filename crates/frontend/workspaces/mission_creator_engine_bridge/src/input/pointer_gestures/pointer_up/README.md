@@ -31,9 +31,6 @@ nothing was written.
   `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/overlays/`, `tactical_graphics_authoring` and the
   undo driver from `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/`, and the snap state of
   `mission_editor::transform`.
-- Used by: the pointer-up closure in the parent `pointer_up.rs`; the source pins
-  `the_z_arm_releases_the_pointer_capture_before_it_commits` and its neighbours in
-  `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/tests/overlays/z_arm_gesture.rs`, which read this
-  file.
+- Used by: the pointer-up closure in the parent `pointer_up.rs`.
 - Rules: the release frees the pointer capture before it commits, so a click on the arm that moves
-  nothing never strands the capture (`the_z_arm_releases_the_pointer_capture_before_it_commits`).
+  nothing never strands the capture.

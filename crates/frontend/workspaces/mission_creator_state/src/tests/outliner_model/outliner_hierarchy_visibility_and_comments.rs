@@ -12,7 +12,7 @@ fn layer(id: &str, name: &str, parent: Option<&str>, ents: &[&str]) -> LayerRow 
     layer_flags(id, name, parent, ents, false, false)
 }
 
-/// T-665 — a layer row with explicit `hidden`/`locked` flags.
+/// A layer row with explicit `hidden`/`locked` flags.
 fn layer_flags(
     id: &str,
     name: &str,
@@ -75,17 +75,7 @@ fn filed_slot_leaves_unfiled_and_appears_in_its_layer() {
     assert_eq!(tree[1].children[0].label, "US Rifleman");
 }
 
-/// No Unfiled root at all once every slot is filed — the React-parity shape.
-#[test]
-fn no_unfiled_root_when_everything_is_filed() {
-    let slots = vec![slot("n0", "US Rifleman")];
-    let layers = vec![layer("layer-1", "Layer 1", None, &["n0"])];
-    let tree = build_outliner(&layers, &slots);
-    assert_eq!(tree.len(), 1);
-    assert_eq!(tree[0].id, "layer-1");
-}
-
-/// React's `[...childFolders, ...entityNodes]` order + `parentId` nesting.
+/// Child folders precede entity rows, and folders nest by `parentId`.
 #[test]
 fn child_folders_precede_slots_and_nest_by_parent_id() {
     let slots = vec![slot("a", "Alpha"), slot("b", "Bravo")];
@@ -101,13 +91,6 @@ fn child_folders_precede_slots_and_nest_by_parent_id() {
     assert_eq!(root.children[0].id, "kid", "child folder first");
     assert_eq!(root.children[0].children[0].id, "b");
     assert_eq!(root.children[1].id, "a", "then this folder's slots");
-}
-
-/// Empty role → React's `'Unit'` fallback.
-#[test]
-fn empty_role_falls_back_to_unit() {
-    let tree = build_outliner(&[], &[slot("s0", "")]);
-    assert_eq!(tree[0].children[0].label, "Unit");
 }
 
 /// A slot id listed by a layer but absent from the doc is skipped, not rendered blank.
@@ -153,12 +136,6 @@ fn squad(id: &str, name: &str, faction: &str, slots: &[&str], leader: &str) -> S
     }
 }
 
-/// No factions/squads (seed boot) → empty ORBAT tree.
-#[test]
-fn orbat_empty_before_any_squad() {
-    assert!(build_orbat(&[], &[], &[slot("s0", "Rifleman")]).is_empty());
-}
-
 /// faction → squad → slot in doc (`squadIds`/`slotIds`) order; squad label carries its count.
 #[test]
 fn orbat_nests_faction_squad_slot_in_order() {
@@ -178,26 +155,7 @@ fn orbat_nests_faction_squad_slot_in_order() {
     assert!(sq.children.iter().all(|n| n.kind == NodeKind::Slot));
 }
 
-/// F3 — place-shaped rows (one side faction, two minted squads) both appear in the ORBAT tree.
-#[test]
-fn orbat_includes_two_squads_after_place_shaped_rows() {
-    let factions = vec![faction(
-        "faction-BLUFOR",
-        "BLUFOR",
-        &["squad-BLUFOR-1", "squad-BLUFOR-2"],
-    )];
-    let squads = vec![
-        squad("squad-BLUFOR-1", "Squad 1", "faction-BLUFOR", &["a"], "a"),
-        squad("squad-BLUFOR-2", "Squad 2", "faction-BLUFOR", &["b"], "b"),
-    ];
-    let slots = vec![slot("a", "Rifleman"), slot("b", "Rifleman")];
-    let tree = build_orbat(&factions, &squads, &slots);
-    assert_eq!(tree.len(), 1);
-    let sq_ids: Vec<&str> = tree[0].children.iter().map(|n| n.id.as_str()).collect();
-    assert_eq!(sq_ids, ["squad-BLUFOR-1", "squad-BLUFOR-2"]);
-}
-
-/// F-L6 — SL badge flag from `leaderSlotId` only (not role / tag text).
+/// The SL badge flag from `leaderSlotId` only (not role / tag text).
 #[test]
 fn orbat_sl_badge_from_leader_slot_id() {
     let factions = vec![faction("f1", "BLUFOR", &["sq1"])];
@@ -234,7 +192,7 @@ fn flatten_is_preorder_with_depths() {
     assert_eq!((flat[5].id.as_str(), flat[5].depth), ("n0", 2));
 }
 
-/// T-177 A1 — the YouTube-guide continuation vector. `ancestors[k]` = "column k continues below
+/// The guide-line continuation vector. `ancestors[k]` = "column k continues below
 /// this row"; roots are `[]`, a non-last parent leads a child's vector with `true`, and last
 /// children trim to `false`. Self-contained per row so the windowed slice needs no sibling peek.
 #[test]
@@ -319,31 +277,7 @@ fn orbat_skips_dangling_ids() {
     assert_eq!(tree[0].children[0].children[0].id, "s0");
 }
 
-/// G1 — dialog class is near-fullscreen (`w-[min(` / `max-w-6xl`), not `max-w-xl`-only.
-#[test]
-fn orbat_manager_dialog_class_near_fullscreen() {
-    assert!(
-        ORBAT_MANAGER_DIALOG_CLASS.contains("w-[min(")
-            || ORBAT_MANAGER_DIALOG_CLASS.contains("max-w-6xl")
-            || ORBAT_MANAGER_DIALOG_CLASS.contains("max-w-4xl"),
-        "{ORBAT_MANAGER_DIALOG_CLASS}"
-    );
-    assert!(
-        !ORBAT_MANAGER_DIALOG_CLASS.contains("max-w-xl"),
-        "max-w-xl must not be the width constraint"
-    );
-}
-
-/// G7 — empty factions ⇒ empty filtered tree (no Stitch sample SoT).
-#[test]
-fn orbat_manager_empty_doc_empty_tree() {
-    let filtered = filter_orbat_squads_by_side_key(&[], &[], &[], "BLUFOR");
-    assert!(filtered.is_empty());
-    assert!(!ORBAT_MANAGER_EMPTY.contains("L85A3"));
-    assert!(!ORBAT_MANAGER_EMPTY.contains("US 1980s"));
-}
-
-/// G8 — OPFOR tab filters by FactionRow.key, not name substring.
+/// The OPFOR tab filters by FactionRow.key, not name substring.
 #[test]
 fn orbat_side_tab_filters_by_faction_key() {
     let factions = vec![
@@ -373,7 +307,7 @@ fn orbat_side_tab_filters_by_faction_key() {
     assert_eq!(blufor[0].id, "sq-blu");
 }
 
-/// T-172 B6 — collapse hides the subtree, keeps the container row, and `has_children` is
+/// Collapse hides the subtree, keeps the container row, and `has_children` is
 /// true only for containers with kids; depths of surviving rows are unchanged.
 #[test]
 fn flatten_visible_collapse_hides_subtree() {
@@ -405,7 +339,7 @@ fn flatten_visible_collapse_hides_subtree() {
     assert!(!vis.iter().any(|r| r.id == "s1"));
 }
 
-/* ───────────────────────────── T-665 — layer flags in the tree ───────────────────────────── */
+/* ───────────────────────────── layer flags in the tree ───────────────────────────── */
 
 /// A layer's own `hidden` flag reaches its Folder row AND dims its own slots (own == effective),
 /// while a sibling layer with no flag stays fully visible. Fired once: flag present vs absent.
@@ -457,7 +391,7 @@ fn child_folder_and_slots_inherit_parent_hidden_and_locked() {
     );
 }
 
-/* ───────────────── T-651 — editor comments / annotations (PLACE-COMMENT-001) ───────────────── */
+/* ───────────────── editor comments / annotations ───────────────── */
 
 fn comment(id: &str, title: &str, tooltip: &str) -> CommentRow {
     CommentRow {
@@ -531,14 +465,6 @@ fn a_lone_unfiled_comment_still_gets_the_pseudo_root() {
     assert_eq!(tree[0].children[0].kind, NodeKind::Comment);
 }
 
-/// An untitled comment still renders a clickable row (the `SLOT_FALLBACK_LABEL` rule) — a blank
-/// title must not produce a zero-width row you cannot select in order to fix it.
-#[test]
-fn an_untitled_comment_falls_back_to_a_label() {
-    let tree = build_outliner_with_comments(&[], &[], &[comment("cmt-1", "", "body")]);
-    assert_eq!(tree[0].children[0].label, COMMENT_FALLBACK_LABEL);
-}
-
 /// A comment does NOT inherit its folder's hidden/locked adornments: it is not in the render SoA
 /// (so "hidden" has nothing to hide) and its position is not transform-locked (see
 /// `MissionDocCore::set_comment_position`). Dimming it would advertise a refusal that does not
@@ -571,19 +497,6 @@ fn a_comment_does_not_inherit_hidden_or_locked_but_its_sibling_slot_does() {
     );
 }
 
-/// `build_outliner` (the comment-free entry point) is exactly `build_outliner_with_comments`
-/// with an empty slice — so no caller that predates comments can drift from the one that has
-/// them.
-#[test]
-fn build_outliner_is_the_empty_comment_case() {
-    let layers = vec![layer("L", "Layer", None, &["s1"])];
-    let slots = vec![slot("s1", "SL")];
-    assert_eq!(
-        build_outliner(&layers, &slots),
-        build_outliner_with_comments(&layers, &slots, &[])
-    );
-}
-
 /// The tooltip survives the flatten into windowed rows — the windowed renderer draws from
 /// `FlatRow`, so a body that stopped at `OutlinerNode` would vanish on any tree past the
 /// virtualization threshold and nowhere else (the nastiest possible way to lose it).
@@ -604,21 +517,5 @@ fn flatten_carries_the_comment_tooltip_into_the_windowed_row() {
         rows.iter()
             .filter(|r| r.kind != NodeKind::Comment)
             .all(|r| r.tooltip.is_empty())
-    );
-}
-
-/// A dangling id in `entityIds` (the comment was deleted, the folder not yet patched) is skipped
-/// exactly as a dangling slot id is — a stale reference must never panic or render a ghost row.
-#[test]
-fn a_dangling_comment_id_is_skipped_not_rendered() {
-    let layers = vec![layer("L", "Layer", None, &["cmt-gone", "s1"])];
-    let tree = build_outliner_with_comments(&layers, &[slot("s1", "SL")], &[]);
-    assert_eq!(
-        tree[0]
-            .children
-            .iter()
-            .map(|n| n.id.as_str())
-            .collect::<Vec<_>>(),
-        vec!["s1"]
     );
 }

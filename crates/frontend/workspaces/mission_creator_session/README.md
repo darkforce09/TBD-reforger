@@ -47,7 +47,7 @@ cargo test -p mission_creator_session   # the save policy, writer election, size
 - `hydrate` (the server fetch, `purge_local_documents`, the snapshot pair) and `conflict_dialog`
   (`ConflictDialog`, `ConflictInfo`), both `wasm32`.
 - `document_commands` (the command context, the hydrated mission row, Save, Export,
-  `download_json`), `compile_findings_publisher`, `mission_size`, `title_prefer` and
+  `download_json`), `compile_findings_publisher`, `mission_size` and
   `warm_session_marker`.
 - `error`: `Error` (`CompileRefused`, `DownloadRefused`) and `Result`, the failure of the compiled
   export and the JSON download.
@@ -60,8 +60,7 @@ cargo test -p mission_creator_session   # the save policy, writer election, size
   `frontend_api_dtos`, `frontend_transport`, `frontend_session`, the mission crates,
   `mission_persistence`, `mission_editing_commands`,
   `map_streaming_model`, `time_source`, `leptos`, `serde`, `serde_json`, `thiserror`; on `wasm32` `idb`, `futures`, `gloo-net`,
-  `web-sys`, `js-sys`, `wasm-bindgen`, `wasm-bindgen-futures`; `frontend_test_support` and the
-  engine bridge's `test_fixtures` for its tests.
+  `web-sys`, `js-sys`, `wasm-bindgen`, `wasm-bindgen-futures`.
 - Used by: the single-page app (`crates/frontend/shell/frontend_application`): the Mission Creator's page, canvas mount, docks,
   dialogs and Arsenal tab, and `main.rs`, which registers `hydrate::purge_local_documents` as a
   sign-out hook of `frontend_session`.

@@ -38,9 +38,7 @@ the receipt of what landed, and ends with the persistence line: the last pick wa
 - Used by: `tab_content.rs`, the only caller of the three section functions.
 - Rules: the sections render and report; a write happens only in the parent's handlers. The
   persistence line reads the document's dirty flag and the refusal flag, never the pick counter,
-  so it never reports a refused pick as saved (`the_panel_states_the_persistence_contract` and
-  `a_refused_pick_is_visible_in_the_panel_not_silent` in
-  `crates/frontend/workspaces/mission_creator_arsenal/src/tests/shell_wiring.rs`).
+  so it never reports a refused pick as saved.
 
 ## Related documentation
 

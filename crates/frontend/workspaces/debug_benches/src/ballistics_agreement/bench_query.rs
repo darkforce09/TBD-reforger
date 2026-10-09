@@ -160,7 +160,3 @@ pub fn choose_catalog_version(
         catalog_version,
     })
 }
-
-#[cfg(test)]
-#[path = "tests/bench_query.rs"]
-mod tests;

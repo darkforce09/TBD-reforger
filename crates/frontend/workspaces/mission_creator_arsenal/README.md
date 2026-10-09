@@ -54,8 +54,7 @@ cargo test -p mission_creator_arsenal   # the loadout core, the export and impor
 - Depends on: `mission_creator_state`, `mission_creator_engine_bridge`, `mission_creator_session`,
   `frontend_api_dtos`, `mission_operations`, `mission_editing_commands`, `mission_editing_session`,
   `orbat_slot_ids`, `deterministic_random`, `leptos`, `serde_json`; on `wasm32` `paper_doll_renderer`, `web-sys`, `js-sys`,
-  `wasm-bindgen`, `wasm-bindgen-futures`; `frontend_test_support` and the engine bridge's
-  `test_fixtures` for its tests.
+  `wasm-bindgen`, `wasm-bindgen-futures`; `frontend_test_support` for its tests.
 - Used by: the single-page app (`crates/frontend/shell/frontend_application`), whose Attributes dialog mounts `ArsenalTab`;
   `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/arsenal.rs`, which drives the
   tab in a headless browser; `tools/checks/repository_checks/src/architecture/editor_orbat_coherency.rs`,

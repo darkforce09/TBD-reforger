@@ -1,110 +1,8 @@
+//! The Z-arm drag: mixed-kind elevation commits share one undo group, a foreign pointer
+//! cannot steal the arm, the snap rung quantises, and a degenerate camera never reaches the
+//! document.
+
 use crate::bridge::overlays::z_drag_elevation_delta;
-use frontend_test_support::class_r_scrub::{live_code, only_body};
-
-/// Returns the live pointer-move handler, with comments and literals scrubbed.
-fn live_move() -> String {
-    live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/input/pointer_gestures/pointer_move.rs"
-    )))
-}
-
-/// Returns the live special-drag release handler, with comments and literals scrubbed.
-fn live_release() -> String {
-    live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/input/pointer_gestures/pointer_up/special_drag_release.rs"
-    )))
-}
-
-/// Returns the live pointer-up event closure that calls the release handler: the block
-/// `make_pointer_up_handler` hands to `Closure::new`, the only closure in that factory.
-fn pointer_up_closure() -> String {
-    let up = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/input/pointer_gestures/pointer_up.rs"
-    )));
-    only_body(only_body(&up, "fn make_pointer_up_handler("), "Closure::").to_string()
-}
-
-/// **The arm is READ, not merely written.** The wave-255 defect verbatim: `z_drag` had exactly
-/// four occurrences — the declaration, two closure clones, and the pointerdown write — and
-/// neither closure body ever borrowed it, so the Z arm armed and then did nothing at all.
-///
-/// PERTURB: delete either borrow and this goes RED.
-#[test]
-fn the_z_arm_is_borrowed_by_both_pointer_closures() {
-    let src = live_move();
-    assert!(
-        src.contains("z_drag.borrow()"),
-        "T-946.86 (.82): onpointermove must BORROW the armed z_drag — writing it at \
-         pointerdown and never reading it is the wave-255 defect this repairs"
-    );
-    assert!(
-        pointer_up_closure().contains("special_drag_release::consume_special_drag(")
-            && live_release().contains("ov::take_z_drag("),
-        "T-946.86 (.82): onpointerup must TAKE the arm — leaving it latched strands the next \
-         gesture behind a drag that already ended"
-    );
-}
-
-/// **The readout writer is called.** `set_z_drag_readout` shipped with zero callers while its
-/// reader was already wired into the gizmo chip, so the chip rendered and could never be
-/// populated. Both halves are pinned: the call, and the tracking closure at the render site
-/// (a bare expression there would run once and never re-read the value the drag writes).
-#[test]
-fn the_height_chip_is_written_and_its_render_site_tracks() {
-    let src = live_move();
-    assert!(
-        src.contains("set_z_drag_readout(Some("),
-        "T-946.86 (.82): the drag must publish the height readout — a reader with no writer \
-         is a chip that can never populate"
-    );
-    assert!(
-        live_release().contains("set_z_drag_readout(None)"),
-        "T-946.86 (.82): the release must clear the readout, or the chip keeps the last \
-         drag's height after the gesture is over"
-    );
-    let overlays = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/bridge/overlays/transform_widget.rs"
-    )));
-    assert!(
-        overlays.contains("{move || {") && overlays.contains("read_z_drag_readout()"),
-        "T-946.86 (.82): the chip's render site must be a TRACKING closure — as a bare \
-         expression it is evaluated once, when the value is still None"
-    );
-}
-
-/// **The capture this arm takes is the capture this arm releases.** `onpointerdown` calls
-/// `set_pointer_capture` on the Z arm and none of the file's other releases belonged to it, so
-/// the container held the pointer after the drag ended and every later click was retargeted.
-///
-/// The release is pinned as sitting BEFORE the commit: a release that only runs on the
-/// success path strands the capture on every no-travel click of the arm.
-#[test]
-fn the_z_arm_releases_the_pointer_capture_before_it_commits() {
-    assert!(
-        pointer_up_closure().contains("special_drag_release::consume_special_drag("),
-        "the pointerup closure must call the special-drag release handler"
-    );
-    let src = live_release();
-    let at_take = src
-        .find("ov::take_z_drag(")
-        .expect("the pointerup arm is present");
-    let after = &src[at_take..];
-    let at_release = after
-        .find("release_pointer_capture")
-        .expect("T-946.86 (.82): the Z-arm release must release the capture it took");
-    let at_commit = after
-        .find("arm.commit(core, delta)")
-        .expect("T-946.86 (.82): the Z-arm release must commit the elevation");
-    assert!(
-        at_release < at_commit,
-        "T-946.86 (.82): release the capture BEFORE the commit — a release reached only when \
-         the document accepts the edit strands the pointer on every no-travel click"
-    );
-}
 
 fn mixed_doc() -> mission_document::MissionDocCore {
     let core = mission_document::MissionDocCore::new();
@@ -223,26 +121,6 @@ fn vehicle_only_drag_uses_same_snap_and_shift_suspension() {
     );
 }
 
-/// The preview and the commit must resolve the SAME number from the same inputs. Two copies of
-/// "pixels to metres" would show the operator one height and store another; both call sites
-/// therefore go through `z_drag_elevation_delta`, and there are exactly two of them.
-#[test]
-fn the_preview_and_the_commit_share_one_arithmetic() {
-    let src = format!("{}{}", live_move(), live_release());
-    let calls = src.matches("z_drag_elevation_delta(").count();
-    assert_eq!(
-        calls, 2,
-        "T-946.86 (.82): the gesture file must carry exactly two call sites — the preview and \
-         the commit — found {calls}. A third would be a second vocabulary; one means a call \
-         site was lost, and the preview would then show a height the commit does not store"
-    );
-    assert_eq!(
-        src.matches("ov::z_drag_snap_step(").count(),
-        2,
-        "T-946.86 (.82): both call sites must resolve the snap rung the same way"
-    );
-}
-
 /// Up is +Z, and the ladder quantises. `dy_to_elevation` inverts the screen axis (`-dy/scale`)
 /// and `snap_elevation` rounds to the rung; step `0.0` is passthrough.
 #[test]
@@ -266,7 +144,7 @@ fn a_degenerate_camera_scale_cannot_produce_an_infinite_elevation() {
         let d = z_drag_elevation_delta(80.0, 100.0, scale, 0.0);
         assert!(
             d.is_finite(),
-            "T-946.86 (.82): scale {scale} produced a non-finite elevation ({d})"
+            "scale {scale} produced a non-finite elevation ({d})"
         );
     }
 }

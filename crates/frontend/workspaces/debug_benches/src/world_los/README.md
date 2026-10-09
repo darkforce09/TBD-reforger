@@ -78,8 +78,7 @@ east, up, north), `&eye=` (the cut height above the ground, default 1.8 m) and `
 - Rules: the bench reads committed assets only and never touches the
   [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s code; it loads objects
   through the same `OccluderHost` the Mission Creator's line-of-sight tool reads.
-  No test covers these browser-only files; the pure scene code they call is tested in
-  `crates/frontend/workspaces/debug_benches/src/tests/world_los_scene/`. The route's row in
+  No test covers these browser-only files or the pure scene code they call. The route's row in
   `crates/frontend/foundation/frontend_route_table/src/routes.rs` must match
   `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/manifests/routes.csv` (`gate s-routes`).
 

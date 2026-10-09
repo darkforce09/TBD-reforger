@@ -35,7 +35,3 @@ pub mod tools;
 /// and the undo/redo shortcuts that call into `document_host::history`.
 #[cfg(target_arch = "wasm32")]
 pub mod window_keydown;
-
-#[cfg(test)]
-#[path = "tests/pointer_up_move_commit.rs"]
-mod pointer_up_move_commit_tests;

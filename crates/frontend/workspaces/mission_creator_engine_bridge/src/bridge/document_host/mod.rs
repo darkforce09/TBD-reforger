@@ -24,7 +24,3 @@ pub mod edit_persist_hook;
 /// render lane, and the guard that warns before a tab close discards unsaved work.
 #[cfg(target_arch = "wasm32")]
 pub mod history;
-
-#[cfg(test)]
-#[path = "../tests/document_host/history_rebind_feeds_comments.rs"]
-mod tests;

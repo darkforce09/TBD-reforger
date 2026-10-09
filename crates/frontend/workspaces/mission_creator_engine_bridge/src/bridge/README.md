@@ -21,7 +21,7 @@ crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/
 ├── pointer_hover.rs                the hover-cursor state machine, throttled and transition-driven
 ├── tactical_graphics.rs            the tactical-graphic rows: parse, curve, pack for the lane, pick
 ├── tactical_graphics_authoring.rs  the tactical-graphic draw, vertex drag and delete
-├── tests/                          unit tests for the Z arm, elevation drag and graphic geometry; the history rebind source pin
+├── tests/                          unit tests for the Z arm, elevation drag, graphic geometry and the draft-persist hook
 ├── viewport.rs                     frame-pump readouts, harness gates, registry cache
 └── world_assets.rs                 preferences and registration for the engine's streaming host
 ```
@@ -97,8 +97,7 @@ the document.
     session also registers its draft writer into the undo driver's draft-persist hook
     (`document_host::edit_persist_hook`), so the edit tail arms a draft write without naming the
     session;
-  - the source pins in `crates/frontend/workspaces/mission_creator_engine_bridge/src/test_support/editor_operations.rs`,
-    `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/tests/document_host/history_rebind_feeds_comments.rs` and the
+  - the source pins in `crates/frontend/workspaces/mission_creator_engine_bridge/src/test_support/editor_operations.rs` and the
     editor's own tests in `crates/frontend/workspaces/mission_creator_workspace/src/tests/`;
   - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, through the window
     gates.

@@ -60,7 +60,7 @@ cargo test -p mission_creator_engine_bridge   # the boot progress, hover, gizmo,
   mission crates, `mission_editing_session`, `mission_editing_commands`, `map_editing_tools`, the
   overlay, terrain and line-of-sight crates, `time_source`, `leptos`, `serde_json`; on `wasm32` `map_renderer`,
   `map_streaming_host`, `map_asset_loading`, `map_render_diagnostics`, `web-sys`, `js-sys`,
-  `wasm-bindgen`; `frontend_test_support` for its tests.
+  `wasm-bindgen`.
 - Used by: the single-page app (`crates/frontend/shell/frontend_application`): the Mission Creator's session, Arsenal, docks,
   inspectors, modals and page.
 - Rules: depends on no Mission Creator crate above `mission_creator_state`

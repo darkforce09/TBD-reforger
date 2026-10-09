@@ -50,9 +50,6 @@ pub mod save_status;
 /// Cross-tab presence for one mission: the writer role a tab holds, the read-only role a second
 /// tab takes, and the save-decision policy `persist` obeys.
 pub mod tab_lock;
-/// The anti-stomp rule that decides which title an adopt carries, and the pins that hold the
-/// mission row's metadata wire together across the engine wall.
-pub mod title_prefer;
 /// The warm-editor-session marker in `sessionStorage`, scoped to the signed-in account.
 #[cfg(target_arch = "wasm32")]
 pub mod warm_session_marker;

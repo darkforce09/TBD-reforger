@@ -23,7 +23,7 @@ crates/frontend/workspaces/mission_creator_arsenal/src/
 ├── prelude.rs           the items most callers name: `ArsenalTab` and the loadout conversions
 ├── tab_content/         the loaded tab's header, selection grid and status sections
 ├── tab_content.rs       `loaded_catalog`: the loaded view and its action handlers
-└── tests/               unit tests for the loadout, the panels' cargo path and the tab wiring
+└── tests/               unit tests for the loadout
 ```
 
 ## How it works
@@ -89,15 +89,10 @@ more than ten slots, through the bridge's `confirm_bulk_n_step`.
     `loadout_commands.rs`.
 - Rules:
   - a pick reaches the document only through `loadout_commands` and the map engine's hosted
-    commands, and the history tail runs only on an acknowledged write
-    (`set_loadout_returns_the_documents_answer_instead_of_a_hardcoded_true` and
-    `the_panel_states_the_persistence_contract` in `tests/shell_wiring.rs`);
+    commands, and the history tail runs only on an acknowledged write;
   - `doll.rs` and `loadout_commands.rs` are `#[cfg(target_arch = "wasm32")]` on their `pub mod`
     lines, and `loadout` stays free of `web_sys`, so the native tests cover it;
-  - a panel renders and reports; a cargo edit commits in its own handler
-    (`cargo_mutations_commit_without_a_staging_gate` in `tests/panels/cargo_persistence.rs`);
-  - `arsenal_tab.rs` cites `set_loadout` and its history tail by line in `loadout_commands.rs`, and
-    `arsenal_cites_live_set_loadout_lines` fails when the lines move;
+  - a panel renders and reports; a cargo edit commits in its own handler;
   - `loadout_commands.rs` must keep its path and never call `ensure_default_squad`
     (`cargo xtask verify editor-orbat-coherency`).
 

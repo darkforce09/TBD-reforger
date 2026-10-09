@@ -86,7 +86,7 @@ chromeless, with no navigation entry:
   `serde`, `serde_json` and `url`; in the browser build `frontend_transport` (the anonymous reads),
   `map_renderer`, `gpu_frame`, `map_asset_loading`, `world_line_of_sight`, `chunk_draw_buffers`,
   `browser_platform`, `leptos_router`, `futures`, `gloo-net`, `gloo-timers`, `js-sys`,
-  `wasm-bindgen` and `web-sys`; `frontend_route_table` and `frontend_test_support` for its tests
+  `wasm-bindgen` and `web-sys`; `frontend_test_support` for its tests
   only.
 - Used by: the four routes in `crates/frontend/shell/frontend_application/src/app_routes.rs`, with their rows in
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; nothing in the navigation
@@ -97,9 +97,8 @@ chromeless, with no navigation entry:
     document or persists anything;
   - the crate depends on foundation crates only, never on a page, a feature or a Mission Creator
     crate, and no Mission Creator crate depends on it (`cargo xtask ci verify-workspace-laws`);
-  - the lane ids the benches draw on are the render crate's own table
-    (`lane_ids_match_the_render_crate` in `src/tests/building_interior.rs`), and no wall lands on
-    a borrowed lane (`walls_never_use_borrowed_lanes`);
+  - the lane ids the benches draw on are the render crate's own `role_id` constants, and no
+    wall lands on a borrowed lane;
   - the ballistics agreement bench's reading and case mapping are mirrored by the gate
     `gate ballistics-agreement` in
     `tools/browser_testing/browser_gate_suites/src/ballistics_agreement/`;

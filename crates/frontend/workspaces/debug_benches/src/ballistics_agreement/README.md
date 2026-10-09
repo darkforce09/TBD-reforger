@@ -11,8 +11,7 @@ routes, solves in the page and writes one JSON reading; it has no canvas and no 
 crates/frontend/workspaces/debug_benches/src/ballistics_agreement/
 ├── agreement_report.rs  `AgreementReport`, `case_report`, `assemble_report`: one solved case and the whole reading
 ├── bench_query.rs       `parse_bench_query` and `choose_catalog_version`: the URL and the catalog version
-├── live.rs              the browser half: catalog reads, one solve per macrotask, the finished reading
-└── tests/               unit tests for the URL parser, the version choice and the reading
+└── live.rs              the browser half: catalog reads, one solve per macrotask, the finished reading
 ```
 
 ## How it works

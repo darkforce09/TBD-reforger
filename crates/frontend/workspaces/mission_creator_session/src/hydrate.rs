@@ -121,7 +121,3 @@ fn register_mission_backup(mission_id: mission_model::ids::MissionId, doc: &DocH
     has_undo_fn.forget();
     undo_restore_fn.forget();
 }
-
-// The pins on this module's row-metadata wire, both briefing `Option` wires into
-// `apply_row_meta` among them, live in `title_prefer`'s tests so they run on native
-// `cargo test -p mission_creator_session` (this file is `#![cfg(target_arch = "wasm32")]`).

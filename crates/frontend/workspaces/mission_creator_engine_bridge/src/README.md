@@ -12,8 +12,7 @@ crates/frontend/workspaces/mission_creator_engine_bridge/src/
 ├── input/         pointer and keyboard events turned into map-engine commands; the browser half of the map tools
 ├── lib.rs         the crate root: the module tree
 ├── prelude.rs     the hosted document handle, the undo drive and the gesture context most callers name
-├── test_support/  the production half of a source file and the live entity operation sources (`test_fixtures`)
-└── tests/         unit tests for `test_support`
+└── test_support/  the production half of a source file and the live entity operation sources (`test_fixtures`)
 ```
 
 ## How it works

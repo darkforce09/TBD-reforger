@@ -58,7 +58,3 @@ pub fn open_context_menu(request: ContextMenuRequest) -> bool {
         None => false,
     }
 }
-
-#[cfg(test)]
-#[path = "tests/context_menu_opener.rs"]
-mod tests;

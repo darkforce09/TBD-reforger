@@ -40,8 +40,8 @@ choose a write-through or a merge. `register_bridge` publishes `window.__mission
   `crates/frontend/workspaces/mission_creator_session/src/persist/save_scheduler.rs` (`join`,
   `register_bridge`, `leave`, `announce_saved`, `read_stamp`, `write_stamp`).
 - Rules: only the lock holder writes, and a stamp that is missing or names another tab means a
-  merge, never a blind overwrite (`t190_a_second_tab_cannot_silently_overwrite_the_first` and
-  `t190_the_oldest_tab_writes_and_the_election_is_total` in
+  merge, never a blind overwrite (`a_foreign_record_is_merged_not_overwritten` and
+  `the_oldest_tab_writes_and_the_election_is_total` in
   `crates/frontend/workspaces/mission_creator_session/src/tests/tab_lock/writer_election_and_conflict.rs`);
   a message is one flat struct, so a message from a build with other fields is ignored rather than
   half-read.

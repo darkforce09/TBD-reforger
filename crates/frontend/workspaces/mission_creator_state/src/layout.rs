@@ -353,7 +353,7 @@ pub const DIVIDER: &str = "h-5 w-px bg-white/10";
 // `frontend_ui::tokens` (`HOVER_FILL`, `DISABLED_GLYPH`), where the chrome takes them to compose
 // with `TOGGLED_PLATE` and the rest of this vocabulary. A hover is a solid fill and never a border,
 // so it can never be mistaken for `TOGGLED_PLATE`; `DISABLED_GLYPH` cancels the hover fill and is
-// composed after it. Rule (3)'s tooltip half is `DISABLED_KEEPS_TOOLTIP`.
+// composed after it. Rule (3)'s tooltip half is stated after `TOGGLED_PLATE`.
 
 /// Rule (2)  **TOGGLED ON = lighter plate + 1px dark top border.** The persistent "this is the
 /// active/selected/open one" state: an open menu, the current dock tab's panel, a selected tree row.
@@ -364,17 +364,9 @@ pub const DIVIDER: &str = "h-5 w-px bg-white/10";
 /// toggled-plate cue.
 pub const TOGGLED_PLATE: &str = "bg-primary/20 text-primary border-t border-background/60";
 
-/// Rule (3), the tooltip half, as a documented invariant rather than a class: a control that carries
-/// a `title=` (or `aria-label` used as its tooltip) MUST keep it when `disabled`. In Leptos a static
-/// `title=` attribute is emitted regardless of the `disabled` prop, so the pattern is simply "do not
-/// gate the `title=` on `!disabled`". The chrome files hold that end: `context_menu`'s
-/// `every_disabled_row_in_both_takes_has_a_nonempty_title` and `toolbelt`'s
-/// `tools_keep_their_tooltips` check each disabled control still carries its `title`. This const
-/// exists so the rule has a name the pins and future edits can cite; its value is documentation,
-/// never rendered.
-#[cfg(test)]
-pub(crate) const DISABLED_KEEPS_TOOLTIP: &str =
-    "title stays on a disabled control (tooltip retention — rule 3)";
+// Rule (3), the tooltip half: a control that carries a `title=` (or an `aria-label` used as its
+// tooltip) keeps it when `disabled`. Leptos emits a static `title=` attribute regardless of the
+// `disabled` prop, so the pattern is simply "do not gate the `title=` on `!disabled`".
 
 /// Convention  **the checkmark gutter is reserved UNCONDITIONALLY in menus.** Eden only allocates it
 /// when a menu happens to carry a checked item, so its label indent jumps between menus; that is a
@@ -384,17 +376,9 @@ pub(crate) const DISABLED_KEEPS_TOOLTIP: &str =
 pub const MENU_GUTTER: &str = "flex size-4 shrink-0 items-center justify-center";
 
 #[cfg(test)]
-#[path = "tests/layout/band_readers.rs"]
-mod t636_band_readers_agree;
-
-#[cfg(test)]
 #[path = "tests/layout/dock_collapse.rs"]
-mod t638_collapse;
-
-#[cfg(test)]
-#[path = "tests/layout/state_vocabulary.rs"]
-mod t668_state_vocabulary;
+mod dock_collapse_tests;
 
 #[cfg(test)]
 #[path = "tests/layout/dock_geometry.rs"]
-mod t637_dock_geometry;
+mod dock_geometry_tests;

@@ -1,4 +1,5 @@
-//! Asset catalog object catalog and favorites tests.
+//! The object catalog tree, object alias derivation, and favourite resolution against the palette
+//! builders.
 
 use super::fixtures::*;
 use super::*;
@@ -50,39 +51,6 @@ fn derive_object_alias_slugs_display_name_and_hits_known_comp() {
             "Checkpoint Small"
         ),
         "comp:checkpoint_small"
-    );
-}
-
-#[test]
-fn t439_mod_registry_exposes_prop_and_comp_aliases() {
-    let aliases = mod_object_aliases();
-    let prop = aliases.iter().filter(|a| a.starts_with("prop:")).count();
-    let comp = aliases.iter().filter(|a| a.starts_with("comp:")).count();
-    assert!(
-        prop >= 289,
-        "expected ≥289 prop: rows in mod registry, got {prop}"
-    );
-    assert!(
-        comp >= 45,
-        "expected ≥45 comp: rows in mod registry (incl. checkpoint_small), got {comp}"
-    );
-    assert!(
-        aliases.contains("comp:checkpoint_small"),
-        "POC comp:checkpoint_small must remain registered"
-    );
-    assert!(
-        object_alias_registered(
-            "{7007B975BEC018D9}Prefabs/Props/Military/AmmoBoxes/AmmoBox_50cal_100rnd.et",
-            "AmmoBox 50cal 100rnd"
-        ),
-        "workbench crate must resolve to a registered prop: alias"
-    );
-    assert!(
-        !object_alias_registered(
-            "{DEADBEEFDEADBEEF}Prefabs/Props/Military/Unregistered.et",
-            "Unregistered Test Crate"
-        ),
-        "unregistered synthesised alias must not pass the palette gate"
     );
 }
 

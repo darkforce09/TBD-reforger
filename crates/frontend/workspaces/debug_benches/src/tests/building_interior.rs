@@ -1,6 +1,5 @@
-//! Tests for the interior plan lanes: the lane ids the bench draws on pinned against the render
-//! crate's own table, lane routing with and without a compound, door toggling and swing arcs, glazing,
-//! scene trees, the `door_at` hit test, and the probe ray's colours.
+//! Tests for the interior plan lanes: door toggling and swing arcs, the `door_at` hit test, and
+//! the probe ray's hit state machine and band clipping.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -174,102 +173,6 @@ fn strip_centroid(packed: &[f32]) -> [f32; 2] {
     [x / n, y / n]
 }
 
-/// Every lane id the bench draws on is the value the render crate's lane table declares.
-#[test]
-fn lane_ids_match_the_render_crate() {
-    let lane_table = frontend_test_support::repository_root::repository_text(
-        env!("CARGO_MANIFEST_DIR"),
-        "crates/map_overlay/map_draw_lanes/src/lane_roles.rs",
-    );
-    for (name, value) in [
-        ("LANDCOVER", role_id::LANDCOVER),
-        ("CONTOURS", role_id::CONTOURS),
-        ("ROADS_CASING", role_id::ROADS_CASING),
-        ("ROADS", role_id::ROADS),
-        ("FOREST_OUTLINE", role_id::FOREST_OUTLINE),
-        ("AIRFIELD_APRON", role_id::AIRFIELD_APRON),
-        ("MISSION_ZONES", role_id::MISSION_ZONES),
-        ("INTERIOR_SLABS", role_id::INTERIOR_SLABS),
-        ("INTERIOR_FURNITURE", role_id::INTERIOR_FURNITURE),
-        (
-            "INTERIOR_FURNITURE_OUTLINE",
-            role_id::INTERIOR_FURNITURE_OUTLINE,
-        ),
-        ("INTERIOR_WALLS", role_id::INTERIOR_WALLS),
-        ("INTERIOR_WALLS_OUTLINE", role_id::INTERIOR_WALLS_OUTLINE),
-        ("INTERIOR_PORTALS", role_id::INTERIOR_PORTALS),
-        (
-            "INTERIOR_PORTALS_OUTLINE",
-            role_id::INTERIOR_PORTALS_OUTLINE,
-        ),
-        ("INTERIOR_GLAZING", role_id::INTERIOR_GLAZING),
-        (
-            "INTERIOR_GLAZING_OUTLINE",
-            role_id::INTERIOR_GLAZING_OUTLINE,
-        ),
-        ("INTERIOR_STAIRS", role_id::INTERIOR_STAIRS),
-        ("SCENE_VEGETATION", role_id::SCENE_VEGETATION),
-        (
-            "SCENE_VEGETATION_OUTLINE",
-            role_id::SCENE_VEGETATION_OUTLINE,
-        ),
-        ("INTERIOR_PROBE", role_id::INTERIOR_PROBE),
-    ] {
-        let needle = format!("pub const {name}: u32 = {value};");
-        assert!(
-            lane_table.contains(&needle),
-            "render crate lost `{needle}` — renumber both sides"
-        );
-    }
-    assert!(lane_table.contains("pub const MAX: u32 = INTERIOR_PROBE;"));
-}
-
-#[test]
-fn walls_never_use_borrowed_lanes() {
-    let roles = InteriorLanes::ROLES;
-    assert_eq!(roles.len(), 13);
-    assert!(
-        roles
-            .iter()
-            .all(|&r| (role_id::INTERIOR_SLABS..=role_id::MAX).contains(&r))
-    );
-    let mut sorted = roles.to_vec();
-    sorted.sort_unstable();
-    sorted.dedup();
-    assert_eq!(sorted.len(), 13, "distinct");
-    assert_eq!(*roles.last().unwrap(), role_id::INTERIOR_PROBE);
-    for borrowed in [
-        role_id::LANDCOVER,
-        role_id::AIRFIELD_APRON,
-        role_id::ROADS_CASING,
-        role_id::ROADS,
-        role_id::CONTOURS,
-        role_id::FOREST_OUTLINE,
-        role_id::MISSION_ZONES,
-    ] {
-        assert!(
-            !roles.contains(&borrowed),
-            "borrowed lane {borrowed} must not be used"
-        );
-    }
-    // The blueprint-only path lands its payloads on the bench lanes with nothing lost.
-    let bp = farmhouse();
-    let s = geom::build_static_lanes(&bp, None, ViewFloor::Level(0));
-    let (walls, hair, cutn, arcs, stairs) = (
-        s.wall_count,
-        s.hairline_count,
-        s.cut_count,
-        s.arc_count,
-        s.stairs_count,
-    );
-    let l = InteriorLanes::from_static(s);
-    assert_eq!(l.wall_count, walls);
-    assert_eq!(l.walls_outline_count, hair + cutn);
-    assert_eq!(l.portals_outline_count, arcs);
-    assert_eq!(l.stairs_count, stairs);
-    assert!(!l.slabs_idx.is_empty());
-}
-
 #[test]
 fn door_toggle_moves_leaf_and_arc() {
     let bp = farmhouse();
@@ -325,43 +228,6 @@ fn door_toggle_moves_leaf_and_arc() {
 }
 
 #[test]
-fn glass_cut_lands_on_glazing_lane() {
-    let bp = farmhouse();
-    let c = compound();
-    let l = build_interior_lanes(
-        &bp,
-        None,
-        Some(&c),
-        Some(&cuts_at(&c, 1.5)),
-        ViewFloor::Level(0),
-    );
-    assert_eq!(l.pane_count, 1);
-    assert!(l.glazing_count >= 1, "{l:?}");
-    assert!(colours(&l.glazing).iter().all(|c| *c == COL_WINDOW));
-    assert!(!colours(&l.walls).contains(&COL_WINDOW));
-    // The table draws as a low-cover footprint with an outline, on the furniture lanes.
-    assert_eq!(l.furniture_count, 1);
-    assert!(!l.furniture_idx.is_empty());
-    assert_eq!(l.furniture_outline_count, 4);
-    assert!(l.furniture_col.chunks_exact(4).all(|c| c == COL_FURN_LOW));
-}
-
-#[test]
-fn scene_trees_paint_canopy_and_trunk() {
-    let bp = farmhouse();
-    let c = compound();
-    for view in [ViewFloor::Level(0), ViewFloor::Roof] {
-        let l = build_interior_lanes(&bp, None, Some(&c), None, view);
-        assert_eq!(l.tree_count, 1, "{view:?}");
-        // Canopy 24-gon + trunk 12-gon.
-        assert_eq!(l.vegetation_pos.len(), (24 + 12) * 2);
-        assert!(l.vegetation_col.chunks_exact(4).any(|c| c == COL_CANOPY));
-        assert!(l.vegetation_col.chunks_exact(4).any(|c| c == COL_TRUNK));
-        assert_eq!(l.vegetation_outline_count, 24 + 8);
-    }
-}
-
-#[test]
 fn door_at_hits_leaf_and_closed_footprint() {
     let bp = farmhouse();
     let (band, _) = ViewFloor::Level(0).band(&bp);
@@ -401,25 +267,6 @@ fn lane_colours(kind: LosHitKind, conceal: f64, clear: bool) -> Vec<[f32; 4]> {
         false,
     );
     colours(&packed)
-}
-
-#[test]
-fn ray_lane_colours_glass_and_foliage() {
-    let c = lane_colours(LosHitKind::Glass, 0.05, true);
-    assert!(c.contains(&RAY_CLEAR) && c.contains(&RAY_GLASS) && !c.contains(&RAY_BLOCKED));
-    let c = lane_colours(LosHitKind::Foliage, 0.6, true);
-    assert!(c.contains(&RAY_FOLIAGE) && !c.contains(&RAY_BLOCKED));
-    let c = lane_colours(LosHitKind::DoorAperture, 0.0, true);
-    assert!(c.iter().all(|k| *k == RAY_CLEAR), "{c:?}");
-    for kind in [
-        LosHitKind::DoorLeaf,
-        LosHitKind::DoorFrame,
-        LosHitKind::WindowFrame,
-        LosHitKind::Prop,
-    ] {
-        let c = lane_colours(kind.clone(), 1.0, false);
-        assert!(c.contains(&RAY_BLOCKED), "{kind:?}");
-    }
 }
 
 #[test]

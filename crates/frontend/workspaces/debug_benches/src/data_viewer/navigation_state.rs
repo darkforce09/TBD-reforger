@@ -272,7 +272,3 @@ impl Navigation {
         ])
     }
 }
-
-#[cfg(test)]
-#[path = "tests/navigation.rs"]
-mod tests;

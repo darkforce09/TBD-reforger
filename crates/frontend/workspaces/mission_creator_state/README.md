@@ -71,8 +71,7 @@ None: no feature, no environment variable.
 - Rules:
   - the crate depends on no other Mission Creator crate (`cargo xtask ci verify-workspace-laws`,
     the frontend layering's crate order);
-  - every inset has one definition in `layout.rs`, and the readers use the live accessors
-    (`both_readers_reference_the_single_band_const` in `tests/layout/band_readers.rs`);
+  - every inset has one definition in `layout.rs`, and the readers use the live accessors;
   - `install_seam` and `unregister_seam` are defined exactly once across the app's source and the
     Mission Creator crates (`the_seam_mechanism_is_defined_exactly_once_in_the_crate`, in the
     app's validation-panel tests);

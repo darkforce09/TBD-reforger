@@ -83,11 +83,5 @@ web-sys = { workspace = true, features = [
     "ReadableStreamDefaultReader",
 ] }
 
-[dev-dependencies]
-# The repository-root finder, the source scrubber and the source shards the source pins read.
-frontend_test_support = { workspace = true }
-# The production half of a source file and the live entity operation sources.
-mission_creator_engine_bridge = { workspace = true, features = ["test_fixtures"] }
-
 [lints]
 workspace = true
