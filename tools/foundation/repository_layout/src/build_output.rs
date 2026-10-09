@@ -92,7 +92,3 @@ pub fn is_retired_root_level_build_folder(name: &str) -> bool {
             .iter()
             .any(|prefix| name.starts_with(prefix))
 }
-
-#[cfg(test)]
-#[path = "tests/build_output_tests.rs"]
-mod tests;

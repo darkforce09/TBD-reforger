@@ -84,11 +84,6 @@ parent with a rotated child, and exits 1 unless `Rigid::from_enfusion`,
   `tools/map_assets/blueprint_compiler/src/archive_emission/`; `xob-inspect` in
   `tools/map_assets/blueprint_compiler/src/mesh_decoding/`.
 - Rules:
-  - sidecars are deterministic: the committed
-    `assets/terrains/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.bvh` is byte-identical to
-    `tools/map_assets/blueprint_compiler/test_fixtures/blueprint/FarmHouse_E_1L01_Wood.bvh.golden`, and 400 of
-    400 oracle pairs agree over it (`farmhouse_bvh_sidecar_parity_is_pinned` in
-    `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/construction_tests.rs`);
   - the compound lane's door parity is pinned (`farmhouse_compound_door_parity_is_pinned` in
     `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/construction_compound_tests.rs`);
   - `Rigid::from_enfusion` stays the winning hypothesis

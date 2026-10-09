@@ -321,15 +321,6 @@ fn write_oracle(directory: &Path, step_mils: f64) {
 /// fresh folder named for `tag`, with `skew` applied to the exported table rows only, and returns
 /// where the trim reads and writes.
 pub(super) fn synthetic_export(tag: &str, skew: Option<RowSkew>) -> (PathBuf, TrimLocations) {
-    synthetic_export_on_lattice(tag, skew, FORWARD_STEP_MILS)
-}
-
-/// [`synthetic_export`] with the oracle's forward samples on a `step_mils` lattice.
-pub(super) fn synthetic_export_on_lattice(
-    tag: &str,
-    skew: Option<RowSkew>,
-    step_mils: f64,
-) -> (PathBuf, TrimLocations) {
     let root = std::env::temp_dir().join(format!(
         "xtask-ballistics-trim-{tag}-{}",
         std::process::id()
@@ -359,7 +350,7 @@ pub(super) fn synthetic_export_on_lattice(
         &export_dir.join("resource_index.json"),
         &json!({"resources": index}),
     );
-    write_oracle(&root.join("oracle"), step_mils);
+    write_oracle(&root.join("oracle"), FORWARD_STEP_MILS);
     let locations = TrimLocations {
         export_dir,
         oracle_dir: root.join("oracle"),

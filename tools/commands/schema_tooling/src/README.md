@@ -15,7 +15,7 @@ tools/commands/schema_tooling/src/
 ├── prelude.rs             every public entry for glob import
 ├── schema_checks/         one module per contract gate, the validation suite and the shared helpers
 ├── schema_checks.rs       the gates' shared constants and pins, the submodule wiring and the entries
-└── tests/                 unit tests for the gates' pins, the citation scope and the flattening
+└── tests/                 unit tests for the gates' pins and the flattening
 ```
 
 ## How it works
@@ -37,7 +37,7 @@ tools/commands/schema_tooling/src/
 - Depends on: the crates `Cargo.toml` names; `rustfmt` on `PATH` for the codegen.
 - Used by: the crate root's re-exports, called by the xtask binary's `schema`, `gen` and `ci`
   groups.
-- Rules: `tests/schema_checks/` holds the pins the gates also run (the instance-kind lockstep, the
-  unread wire fields) and the citation scope contract; `tests/mission_flattening.rs` the
+- Rules: `tests/schema_checks/` holds the instance-kind lockstep pin the gates also run, the
+  ballistics section's cases and the side-fallback simulation; `tests/mission_flattening.rs` the
   flattening's preserve and refuse rules; `generate/tests/` and `generate/schema_types/tests/` the
   codegen's layout and freshness.

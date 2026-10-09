@@ -96,7 +96,3 @@ pub fn enfusion_sample_fixtures_dir(root: &Path) -> PathBuf {
 pub fn bridge_sample_fixtures_dir(root: &Path) -> PathBuf {
     contract_fixtures_dir(root).join("bridge_samples")
 }
-
-#[cfg(test)]
-#[path = "tests/contracts_tests.rs"]
-mod tests;

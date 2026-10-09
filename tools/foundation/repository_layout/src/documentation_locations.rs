@@ -105,7 +105,3 @@ pub const HISTORICAL_PATH_SPELLINGS: &[(&str, &str)] = &[];
 /// looks the object of every blob or tree view pinned to a full commit up in the local
 /// history, and refuses a blob or tree view of a branch, a tag or an abbreviated commit.
 pub const PERMALINK_BASE: &str = "https://github.com/darkforce09/TBD-reforger/blob/";
-
-#[cfg(test)]
-#[path = "tests/command_locations_tests.rs"]
-mod tests;

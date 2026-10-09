@@ -11,7 +11,6 @@ them; mod developers run them by hand.
 ```text
 tools/enfusion/enfusion_script_index/src/vanilla_page_fetch/
 ├── reference_cache.rs  the cache folder each mirror fills in the vanilla lane, refused without `mod/References/`
-├── tests/              unit tests for both mirrors on scratch checkouts, offline
 ├── vanilla_api.rs      `vanilla-api`: the Script API reference in Doxygen HTML
 └── vanilla_source.rs   `vanilla-source`: vanilla script source pages, one per `.c` file
 ```

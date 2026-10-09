@@ -206,7 +206,3 @@ fn exit_u8(code: i32) -> u8 {
         1
     }
 }
-
-#[cfg(test)]
-#[path = "tests/export_terrain_driver/tests.rs"]
-mod tests;

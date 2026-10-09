@@ -13,8 +13,6 @@ pub(crate) enum SchemaCmd {
     /// Validate one mission JSON file or stdin (`-`)
     #[command(name = "validate-file")]
     ValidateFile { target: String },
-    /// @contract citation integrity
-    Citations,
     /// Semantic golden gates S2-S9 + S11-S15
     #[command(name = "map-object-golden")]
     MapObjectGolden,

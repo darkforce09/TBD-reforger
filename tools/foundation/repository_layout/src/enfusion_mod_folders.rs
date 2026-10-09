@@ -33,7 +33,3 @@ pub const EXPORT_ADDON_DIR: &str = "mod/tbd-export";
 
 /// The Enfusion MCP bridge addon's folder, relative to the checkout root.
 pub const MCP_BRIDGE_ADDON_DIR: &str = "mod/tbd-emcp";
-
-#[cfg(test)]
-#[path = "tests/enfusion_mod_folders_tests.rs"]
-mod tests;

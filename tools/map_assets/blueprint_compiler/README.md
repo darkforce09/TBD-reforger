@@ -37,7 +37,7 @@ cargo xtask map blueprint-from-voxels --filter FarmHouse   # interpret the match
 ```
 
 The tests that read `assets/terrains/everon/prefabs/` and `objects/` need those Git LFS files
-pulled; two tests that need a game install or a local extract are ignored.
+pulled; the test that needs a local game extract is ignored.
 
 ## Boundaries
 

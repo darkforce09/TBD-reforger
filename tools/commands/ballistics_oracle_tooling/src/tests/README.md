@@ -20,7 +20,7 @@ toward the vertical and a maximum-range last row; its forward samples, on a latt
 every row, are the linear interpolation of the rows, as the engine answers. `trim_export/mod.rs` holds the
 tests, all named `ballistics_trim_export_*`: two runs write identical bytes; the documents validate
 against the committed schemas and pin each other by hash; every row is matched by a forward sample
-or a lattice end; and an unmatched row, a row between the forward lattice's points, a missing
-export and oracle output that differs from its sidecar are refused without writing anything.
+or a lattice end; and an unmatched row and oracle output that differs from its sidecar are
+refused.
 
 Run them with `cargo test -p ballistics_oracle_tooling`.

@@ -27,7 +27,7 @@ tools/enfusion/enfusion_script_index/src/
 ├── script_index_layout.rs      the index folder, the upstream symbol table and the capability verdict table `enf` defaults to
 ├── source.rs                   `enf source`: vanilla `.c` files rebuilt from cached source HTML pages
 ├── symbols.rs                  the `.c` scanner: declarations, methods, `modded` classes, `RplProp` fields
-├── tests/                      unit tests for the scanner, the parsers, citations, the guards
+├── tests/                      unit tests for the scanner and the parsers
 ├── vanilla_page_fetch/         the Script API and source page mirrors behind `cargo xtask fetch`
 └── vanilla_page_fetch.rs       the mirrors' module tree and contract
 ```
@@ -82,10 +82,9 @@ index TSVs ─▶ enf lookup | enf dirs | enf citations | enf capability ─▶ 
   - the mod wave gate in `tools/commands/mod_operations/src/wave_execution/execution.rs`, whose
     unit-test step runs this crate's tests.
 - Rules: every lane shares the one scanner in `symbols.rs` (`does_not_invent_apis` and the other
-  tests in `tests/symbols/tests.rs`); a committed index is never overwritten with an empty one
-  (`refuse_empty_write_reds_on_empty`); a lane output lands only inside the references folder and
-  replaces a previous one only on `--replace` (`an_output_outside_the_references_folder_is_refused`,
-  `a_previous_output_is_removed_only_on_request`); `enf citations` exits 1 on any unresolved marker and `enf
+  tests in `tests/symbols/tests.rs`); a committed index is never overwritten with an empty one;
+  a lane output lands only inside the references folder and replaces a previous one only on
+  `--replace`; `enf citations` exits 1 on any unresolved marker and `enf
   capability` on any untriaged framework file.
 
 ## Related documentation

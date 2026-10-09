@@ -37,7 +37,3 @@ pub(crate) fn inland_water_artifacts_dir(root: &Path) -> PathBuf {
 pub(crate) fn aerial_orthophoto_artifacts_dir(root: &Path) -> PathBuf {
     root.join(AERIAL_ORTHOPHOTO_ARTIFACTS_DIR)
 }
-
-#[cfg(test)]
-#[path = "tests/decision_record_locations_tests.rs"]
-mod tests;

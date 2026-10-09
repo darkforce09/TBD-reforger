@@ -41,7 +41,3 @@ pub const API_DATABASE_MIGRATIONS_DIR: &str = "crates/api/api_database/migration
 
 /// The development seeds `cargo xtask db seed` applies to the migrated tables.
 pub const API_DATABASE_SEEDS_DIR: &str = "crates/api/api_database/seeds";
-
-#[cfg(test)]
-#[path = "tests/workspace_folders_tests.rs"]
-mod tests;

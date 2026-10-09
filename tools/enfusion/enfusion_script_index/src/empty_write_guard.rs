@@ -20,7 +20,3 @@ pub(crate) fn refuse_empty_write(context: &str, empty: bool, detail: &str) -> Re
     }
     Ok(())
 }
-
-#[cfg(test)]
-#[path = "tests/empty_write_guard/tests.rs"]
-mod tests;

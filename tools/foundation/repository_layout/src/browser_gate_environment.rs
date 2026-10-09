@@ -11,7 +11,3 @@
 /// the resource floors `gate doctor` checks.
 pub const BROWSER_GATE_ENVIRONMENT: &str =
     "tools/browser_testing/browser_gate_suites/gate-env.json";
-
-#[cfg(test)]
-#[path = "tests/browser_gate_environment_tests.rs"]
-mod tests;

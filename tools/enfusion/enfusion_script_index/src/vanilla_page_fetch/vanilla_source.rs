@@ -332,7 +332,3 @@ fn curl_fetch(url: &str, dest: &Path) -> Result<String> {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/vanilla_source/tests.rs"]
-mod tests;

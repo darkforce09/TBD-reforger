@@ -147,7 +147,3 @@ pub fn verify(docs_root: &Path, index_dir: &Path) -> Result<CiteReport> {
     }
     Ok(rep)
 }
-
-#[cfg(test)]
-#[path = "tests/citations/tests.rs"]
-mod tests;

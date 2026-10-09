@@ -44,7 +44,7 @@ module.
 Run from the repository root:
 
 ```bash
-cargo test -p world_export_pipeline   # the emitters, decoders, geometry, export driver arguments and tile index
+cargo test -p world_export_pipeline   # the emitters, decoders, geometry and tile index
 cargo run -q -p developer_tools --bin world -- --help
 ```
 
@@ -63,7 +63,7 @@ The Everon tests read Git LFS objects under `assets/terrains/everon/`; pull them
 - Depends on: `world_file_formats`, `prefab_catalog`, `world_chunks`, `world_store`,
   `terrain_elevation`, `road_network`, `vegetation`, `enfusion_pak`, `repository_layout`,
   `process_runner`, `verification_core`, `time_source`; `clap`, `serde`, `serde_json`,
-  `jsonschema`, `flate2`, `png`, `bcdec_rs`, `thiserror`; `tool_test_support` and `deterministic_random` (tests only).
+  `jsonschema`, `flate2`, `png`, `bcdec_rs`, `thiserror`; `deterministic_random` (tests only).
 - Used by: the `world` binary of `developer_tools` (`entrypoint`); the `map_raster_pipeline`
   crate (`json_number_formatting`, `topo`, `enfusion_texture_decoder`) and the map verification
   (`binary_emit`, `forest_contours`, `polygon_geometry`, `vegetation_density`); xtask's `map`

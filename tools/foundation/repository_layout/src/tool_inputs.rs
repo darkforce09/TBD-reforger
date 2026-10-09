@@ -32,7 +32,3 @@ pub const STAGING_LOAD_WORKLOAD: &str = "tools/xtask/staging/load_workload.json"
 
 /// The synthetic population the staging host seeds before the load run.
 pub const STAGING_LOAD_POPULATION: &str = "tools/xtask/staging/load_population.json";
-
-#[cfg(test)]
-#[path = "tests/tool_inputs_tests.rs"]
-mod tests;

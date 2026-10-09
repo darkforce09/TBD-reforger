@@ -6,6 +6,6 @@ The `ballistics_trim_export_*` tests and the synthetic export they run over.
 
 ```text
 tools/commands/ballistics_oracle_tooling/src/tests/trim_export/
-├── mod.rs               the tests: determinism, schema validity, row evidence, four refusals
+├── mod.rs               the tests: determinism, schema validity, row evidence, two refusals
 └── synthetic_export.rs  writes a one-mortar export and its oracle output into a temporary folder
 ```

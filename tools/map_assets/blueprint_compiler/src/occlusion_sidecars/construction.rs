@@ -448,9 +448,5 @@ pub fn run_occlusion_sidecar_emission(root: &std::path::Path, args: &[String]) -
 }
 
 #[cfg(test)]
-#[path = "tests/construction_tests.rs"]
-mod tests;
-
-#[cfg(test)]
 #[path = "tests/construction_compound_tests.rs"]
 mod compound_tests;

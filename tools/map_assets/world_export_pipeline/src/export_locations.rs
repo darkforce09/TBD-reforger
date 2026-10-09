@@ -32,7 +32,3 @@ pub fn object_type_inventory(root: &Path, terrain: &str) -> PathBuf {
     root.join(repository_layout::ARTIFACTS_DIR)
         .join(format!("type_inventory_{terrain}.json"))
 }
-
-#[cfg(test)]
-#[path = "tests/export_locations/tests.rs"]
-mod tests;

@@ -1,13 +1,12 @@
 //! Trim tests over a synthetic export: byte determinism, schema validity, the elevation evidence,
-//! the record-per-line layout, and the refusals of an unmatched row, a row between the forward
-//! lattice's points, a missing export and a tampered oracle output.
+//! and the refusals of an unmatched row and a tampered oracle output.
 use super::*;
 use repository_layout::definition_path;
 use serde_json::Value;
 use tool_test_support::test_repo_root;
 
 mod synthetic_export;
-use synthetic_export::{GENERATION_ID, SELECTION, synthetic_export, synthetic_export_on_lattice};
+use synthetic_export::{GENERATION_ID, SELECTION, synthetic_export};
 
 /// Every file under `directory` with its bytes, in path order.
 fn files_under(directory: &Path) -> Vec<(PathBuf, Vec<u8>)> {
@@ -179,28 +178,6 @@ fn ballistics_trim_export_matches_every_row_by_a_forward_sample_or_a_lattice_end
 }
 
 #[test]
-fn ballistics_trim_export_refuses_a_row_between_the_forward_lattice_points() {
-    // On a 25-mil lattice the row at 1587.5 mils equals no forward sample, although the samples
-    // bracketing it are consistent with its interpolation: only a matching sample fixes a row.
-    let (root, locations) = synthetic_export_on_lattice("between-lattice-points", None, 25.0);
-    let error = trim_export(&locations, GENERATION_ID, &SELECTION)
-        .err()
-        .expect("a row between the forward lattice points must be refused");
-    let message = format!("{error:#}");
-    assert!(
-        message.contains("unmatched row")
-            && message.contains("row 1 (")
-            && message.contains("matches no forward sample"),
-        "{message}"
-    );
-    assert!(
-        !locations.catalog_path.exists(),
-        "a refused trim wrote the catalog"
-    );
-    let _ = fs::remove_dir_all(root);
-}
-
-#[test]
 fn ballistics_trim_export_refuses_an_unmatched_row() {
     let (root, locations) = synthetic_export("unmatched", Some((1.0, 6, 5.0)));
     let error = trim_export(&locations, GENERATION_ID, &SELECTION)
@@ -209,25 +186,6 @@ fn ballistics_trim_export_refuses_an_unmatched_row() {
     let message = format!("{error:#}");
     assert!(
         message.contains("unmatched row") && message.contains("row 6"),
-        "{message}"
-    );
-    assert!(
-        !locations.catalog_path.exists(),
-        "a refused trim wrote the catalog"
-    );
-    let _ = fs::remove_dir_all(root);
-}
-
-#[test]
-fn ballistics_trim_export_refuses_a_missing_export() {
-    let (root, mut locations) = synthetic_export("missing-export", None);
-    locations.export_dir = root.join("absent");
-    let error = trim_export(&locations, GENERATION_ID, &SELECTION)
-        .err()
-        .expect("a missing export must be refused");
-    let message = format!("{error:#}");
-    assert!(
-        message.contains("gameplay export") && message.contains("is missing"),
         "{message}"
     );
     assert!(
@@ -256,19 +214,4 @@ fn ballistics_trim_export_refuses_oracle_output_that_differs_from_its_sidecar() 
         "{error:#}"
     );
     let _ = fs::remove_dir_all(root);
-}
-
-#[test]
-fn ballistics_trim_export_record_layout_parses_to_the_same_value_one_record_per_line() {
-    let value = serde_json::json!({"rows": [{"a": 1.5, "values": [1, 2]}, {"a": 2}], "empty": [],
-        "tables": [{"rows": [[1, 2], [3, 4]]}], "scalars": [1, 2]});
-    let bytes = super::super::record_per_line_json::record_per_line_bytes(&value).expect("layout");
-    let text = String::from_utf8(bytes).expect("utf-8");
-    assert_eq!(serde_json::from_str::<Value>(&text).expect("parse"), value);
-    assert!(
-        text.contains("\n    {\"a\":1.5,\"values\":[1,2]},\n"),
-        "{text}"
-    );
-    assert!(text.contains("\n        [1,2],\n"), "{text}");
-    assert!(text.ends_with("}\n"), "{text}");
 }

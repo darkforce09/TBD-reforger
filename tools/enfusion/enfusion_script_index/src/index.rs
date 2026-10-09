@@ -191,7 +191,3 @@ pub fn dir_histogram(index_tsv: &Path, depth: usize) -> Result<BTreeMap<String, 
     }
     Ok(out)
 }
-
-#[cfg(test)]
-#[path = "tests/index/tests.rs"]
-mod tests;

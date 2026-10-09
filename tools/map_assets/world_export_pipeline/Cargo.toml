@@ -48,8 +48,6 @@ world_store = { workspace = true }
 [dev-dependencies]
 # The seeded stream of the randomized corner-partition sweep.
 deterministic_random = { workspace = true }
-# The process-variable lock the export driver's argument tests hold while they set `TERRAIN`.
-tool_test_support = { workspace = true }
 
 [lints]
 workspace = true

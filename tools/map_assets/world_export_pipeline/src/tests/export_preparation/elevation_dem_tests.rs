@@ -5,7 +5,6 @@ use terrain_elevation::raw::RawDem;
 use world_file_formats::containers::header::HEADER_BYTES;
 
 use super::*;
-use ::repository_layout::{terrain_dir, terrain_manifest_path};
 
 /// A distinct, non-square grid: a width/height swap anywhere in the emit or the read is a
 /// different file, and both `u16` endpoints are present.
@@ -18,7 +17,7 @@ fn grid() -> Vec<u16> {
 }
 
 fn tmpdir(tag: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("t935-4-{tag}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("elevation-dem-{tag}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).expect("tempdir");
     dir
@@ -164,91 +163,48 @@ fn elevation_dem_falls_back_to_the_v4_range_when_meta_omits_it() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
-/// **The everon spot check.** Decodes the committed 6400x6400 DEM PNG, emits the `.dem` from
-/// its raster and re-reads it, asserting all 40,960,000 samples are identical and metres agree
-/// to within the `f32` rounding of the header's scale/offset.
-///
-/// NOT `#[ignore]`: `assets/terrains/**/*.png` is git-LFS and
-/// in a slice worktree the file is a 133-byte pointer — but a blanket ignore also hid it from
-/// the WAVE gate, which runs on main where the payload is real. The wave 238 verifier found
-/// that `test xtask+developer_tools PASS` covers the emitter's unit tests and not the one test
-/// that compares the emitted `.dem` against the shipped DEM. It costs 3.5 s there.
-///
-/// So the skip is now conditional on the evidence rather than declared: a pointer file is a
-/// few hundred bytes, the real DEM is 71.9 MB, and a skip SAYS SO on stdout instead of
-/// vanishing into an ignore count.
+/// The emitted `.dem` of a grid that spans the whole `u16` range keeps every sample bit for bit
+/// and gives back the same metres as the PNG quantisation, within the `f32` rounding of the
+/// header's scale and offset.
 #[test]
-fn everon_elevation_dem_matches_the_shipped_png() {
+fn elevation_dem_metres_agree_with_the_png_quantisation() {
     use terrain_elevation::sampling::uint16_to_meters;
 
-    let root = find_repository_root().expect("repository root");
-    let png = terrain_dir(&root, "everon").join("dem/everon-dem-16bit.png");
-    // An LFS pointer is ~133 B; the real 6400x6400 16-bit PNG is 71.9 MB. Anything in between
-    // is neither, and is worth failing on rather than skipping past.
-    const LFS_POINTER_MAX: u64 = 4096;
-    match std::fs::metadata(&png) {
-        Ok(m) if m.len() <= LFS_POINTER_MAX => {
-            println!(
-                "skip-lfs: {} is {} bytes — a git-LFS pointer, not the DEM. \
-                 Hydrate with `git lfs pull --include assets/terrains/everon/dem/`",
-                png.display(),
-                m.len()
-            );
-            return;
-        }
-        Ok(_) => {}
-        Err(e) => panic!("{}: {e}", png.display()),
-    }
-    let bytes = std::fs::read(&png).unwrap_or_else(|e| panic!("{}: {e}", png.display()));
-    assert!(
-        bytes.len() > 1_000_000,
-        "{} is {} bytes — this is the git-lfs pointer, not the DEM; \
-         `git lfs pull --include {}` first",
-        png.display(),
-        bytes.len(),
-        png.display()
-    );
-    let (raster, w, h) = decode_png_gray16(&bytes).expect("png decode");
-    assert_eq!((w, h), (6400, 6400), "everon DEM dims");
+    const SYNTHETIC_W: u32 = 37;
+    const SYNTHETIC_H: u32 = 23;
+    let (min_m, max_m) = (DEM_DEFAULT_MIN_M, DEM_DEFAULT_MAX_M);
+    let cells = SYNTHETIC_W * SYNTHETIC_H;
+    let raster: Vec<u16> = (0..cells)
+        .map(|i| {
+            let step = u64::from(i) * u64::from(u16::MAX) / u64::from(cells - 1);
+            u16::try_from(step).expect("ramp stays inside u16")
+        })
+        .collect();
+    assert_eq!(raster.first(), Some(&0));
+    assert_eq!(raster.last(), Some(&u16::MAX));
 
-    let manifest: Value = serde_json::from_str(
-        &std::fs::read_to_string(terrain_manifest_path(&root, "everon")).expect("manifest"),
-    )
-    .expect("manifest json");
-    let min_m = manifest["dem"]["heightRangeMinM"].as_f64().expect("min");
-    let max_m = manifest["dem"]["heightRangeMaxM"].as_f64().expect("max");
-
-    let dir = tmpdir("everon");
+    let dir = tmpdir("synthetic-metres");
     let p = dir.join("elevation.dem");
-    write_elevation_dem(&p, w, h, min_m, max_m, &raster).expect("write");
+    write_elevation_dem(&p, SYNTHETIC_W, SYNTHETIC_H, min_m, max_m, &raster).expect("write");
     let on_disk = std::fs::read(&p).expect("read");
     assert_eq!(
         on_disk.len(),
-        HEADER_BYTES + 2 * 6400 * 6400,
-        "everon .dem is 32 + 81,920,000 bytes"
+        HEADER_BYTES + 2 * (cells as usize),
+        "file length must be 32 + 2 x width x height"
     );
     let dem = RawDem::parse(&on_disk).expect("parse");
-    assert_eq!(
-        dem.samples, raster,
-        "all 40,960,000 samples must be identical"
-    );
+    assert_eq!((dem.width(), dem.height()), (SYNTHETIC_W, SYNTHETIC_H));
+    assert_eq!(dem.samples, raster, "every sample must be identical");
 
     let mut worst = 0.0_f64;
-    for y in 0..h {
-        for x in 0..w {
-            let v = raster[(y * w + x) as usize];
+    for y in 0..SYNTHETIC_H {
+        for x in 0..SYNTHETIC_W {
+            let v = raster[(y * SYNTHETIC_W + x) as usize];
             let png_m = uint16_to_meters(f64::from(v), min_m, max_m) as f32;
             let raw_m = dem.metres(x, y).expect("in range");
             worst = worst.max((f64::from(raw_m) - f64::from(png_m)).abs());
         }
     }
-    println!(
-        "everon spot check: {}x{} samples bit-identical; worst metre delta {worst:e} m \
-         (quantisation step {} m)",
-        w,
-        h,
-        (max_m - min_m) / 65535.0
-    );
     assert!(worst <= 1e-4, "worst metre delta {worst}");
     let _ = std::fs::remove_dir_all(&dir);
 }

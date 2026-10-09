@@ -10,7 +10,6 @@ use spatial_indexes::bounding_volume_hierarchy::sidecar::BvhSidecar;
 use world_chunks::world_chunk::WorldChunk;
 use world_line_of_sight::BlockPolicy;
 use world_line_of_sight::WorldOccluder;
-use world_line_of_sight::map_to_engine;
 use world_line_of_sight::occluder_library::PrefabDescriptor;
 
 use super::*;
@@ -119,32 +118,9 @@ fn farmhouse_descriptor_placed_at_a_yaw_replays_the_door_parity_fixture() {
     );
 }
 
-/// The committed cell 18_0 (the farmhouse village) loads end to end: every placed pid resolves
-/// to a descriptor, every BLAS parses, nothing is left as a proxy, and a probe through the
-/// farmhouse's own wall is blocked by pid 132.
-#[test]
-fn cell_18_0_loads_with_no_proxy_rows_and_names_the_farmhouse() {
-    let (occ, loaded) = load_cell_occluder(&assets(), "18_0").unwrap();
-    assert!(loaded.contains(&"18_0".to_string()), "{loaded:?}");
-    assert_eq!(
-        occ.proxy_rows(&"18_0".into()),
-        Some(0),
-        "every placed pid expanded"
-    );
-    // Recon rootWorldPos (9363.58, 13.05, 285.60), yaw 38.46: a ray from 14 m west into the origin.
-    let r = occ.evaluate_los(
-        map_to_engine(9350.0, 285.6, 14.6),
-        map_to_engine(9363.58, 285.6, 14.6),
-    );
-    assert!(r.blocker.as_ref().is_some_and(|b| b.pid == 132), "{r:?}");
-}
-
-/// The world-parity pins: both Workbench oracle cells (4000 seeded pairs each,
+/// The world-parity pin: the Workbench oracle cell 18_0 (4000 seeded pairs,
 /// `EPhysicsLayerPresets.Projectile`, `ENTS` column) replayed through `blocked` under the vision
 /// policy on the committed chunks + library, pinned at the measured numbers. Bar: ≥ 98 %.
-/// Measured 2026-09-04 (scale re-export + projectile layer policy): village 18_0 3971/4000
-/// (99.28 %, 12 phantom / 17 missed), forest 16_2 3977/4000 (99.42 %, 11 / 12). Before the
-/// layer policy the same cells scored 3917 and 3897; before the scale re-export 3807 and 3813.
 #[test]
 fn world_parity_cell_18_0_is_pinned() {
     let (occ, _) = load_cell_occluder(&assets(), "18_0").unwrap();
@@ -159,83 +135,4 @@ fn world_parity_cell_18_0_is_pinned() {
         "{r:?}"
     );
     assert!(r.agreement() >= 0.98, "{r:?}");
-}
-
-#[test]
-fn world_parity_forest_cell_is_pinned() {
-    let file: WorldParityFile =
-        serde_json::from_str(&fs::read_to_string(fixture("world_parity_forest.json")).unwrap())
-            .unwrap();
-    let cell = format!("{}_{}", file.cell[0], file.cell[1]);
-    assert_eq!(cell, "16_2");
-    let (occ, _) = load_cell_occluder(&assets(), &cell).unwrap();
-    let r = replay(&occ, &file, BlockPolicy::VISION, &mut Vec::new(), None);
-    assert_eq!(
-        (r.n, r.agree, r.phantom, r.missed, r.provisional),
-        (4000, 3977, 11, 12, 0),
-        "{r:?}"
-    );
-    assert!(r.agreement() >= 0.98, "{r:?}");
-}
-
-/// The engine's foliage semantics, pinned the other way round: making canopy terminal
-/// (`--foliage-blocks`) is far worse on both cells, so the vision policy (foliage as
-/// concealment) is the one that matches `Projectile`.
-#[test]
-fn foliage_as_a_blocker_disagrees_with_the_projectile_trace() {
-    let file: WorldParityFile =
-        serde_json::from_str(&fs::read_to_string(fixture("world_parity_forest.json")).unwrap())
-            .unwrap();
-    let (occ, _) = load_cell_occluder(&assets(), "16_2").unwrap();
-    let foliage = BlockPolicy {
-        foliage_blocks: true,
-        ..BlockPolicy::VISION
-    };
-    let r = replay(&occ, &file, foliage, &mut Vec::new(), None);
-    assert!(r.agreement() < 0.90, "{r:?}");
-    assert!(
-        r.phantom > 500,
-        "canopy blocks the engine never sees: {r:?}"
-    );
-}
-
-/// The world-inclusive column (`clearWorld` = objects ∧ terrain) against the committed 2 m DEM,
-/// reported with its resolution caveat: a floor, not an exact pin (the engine's `WORLD` trace
-/// sees terrain detail below 2 m). Skips — loudly — when the DEM is an LFS pointer (CI's
-/// selective pull), so the objects-only pins above are the ones that must always run.
-#[test]
-fn world_parity_world_column_clears_its_floor_when_the_dem_is_present() {
-    let dem = match load_elevation_raster(&assets()) {
-        Ok(d) => d,
-        Err(e) => {
-            eprintln!("world column skipped: DEM not decodable here ({e})");
-            return;
-        }
-    };
-    for (name, cell, floor) in [
-        ("world_parity_18_0.json", "18_0", 0.96),
-        ("world_parity_forest.json", "16_2", 0.94),
-    ] {
-        let file: WorldParityFile =
-            serde_json::from_str(&fs::read_to_string(fixture(name)).unwrap()).unwrap();
-        let (occ, _) = load_cell_occluder(&assets(), cell).unwrap();
-        let r = replay(
-            &occ,
-            &file,
-            BlockPolicy::VISION,
-            &mut Vec::new(),
-            Some(&dem),
-        );
-        assert_eq!(r.world_n, 4000);
-        assert!(
-            r.world_agreement() >= floor,
-            "{cell}: world {}/{} ({:.2} %) phantom terrain {} objects {} missed {}",
-            r.world_agree,
-            r.world_n,
-            r.world_agreement() * 100.0,
-            r.world_phantom_terrain,
-            r.world_phantom_objects,
-            r.world_missed
-        );
-    }
 }

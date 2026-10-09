@@ -38,7 +38,7 @@ tools/map_assets/world_export_pipeline/src/
 ├── reclassify/                   the catalogue reclassification body
 ├── reclassify.rs                 the reclassification module: `Drift`, `Report`, `Mode`
 ├── roads_emit.rs                 the centrelined `.rkyv` twin of the road JSON
-├── tests/                        unit tests for the emitters, builders, decoders, geometry, export driver and tile index
+├── tests/                        unit tests for the emitters, builders, decoders, geometry and tile index
 ├── topo.rs                       the `.topo` road and airfield decoder, with its terrain table
 └── vegetation_density.rs         the `TBDD` density grid: corner counts, canopy blur, slicing
 ```
@@ -121,11 +121,10 @@ no raster code, so xtask runs it in process.
   platform wave gate, which runs `world reclassify`; the map raster pipeline and the map verification gates through the modules above.
 - Rules: every census bucket is one of `prefab_catalog`'s `INSTANCE_KINDS`, in its order; a JSON
   artifact and its binary twin change together; no stage writes an empty set over a committed one
-  (`refuse_empty_write`, `tests/empty_write_refusal/tests.rs`); the seven source files that
+  (`refuse_empty_write`); the seven source files that
   `world validate-exports` scans spell no terrain id outside a line marked `E2c-allow` (gate E2c),
   and `topo.rs` holds the per-terrain table; `export-terrain` runs the phase gate before anything
-  is built and exits 2 rather than build over a missing staged export (its argument defaults and
-  refusals: `tests/export_terrain_driver/tests.rs`); `tile-index` never writes an index over a
+  is built and exits 2 rather than build over a missing staged export; `tile-index` never writes an index over a
   missing or empty pyramid, and what it writes validates against `map-tile-index.schema.json`
   (`tests/map_tile_index/tests.rs`).
 

@@ -24,7 +24,7 @@ line; every subcommand runs code elsewhere:
 codegen                    ─▶ tools/commands/schema_tooling/src/generate/schema_types.rs
 list-gates                 ─▶ tools/commands/ci_task_catalog/src/ (the schema-validate row)
 validate, validate-file,   ─▶ tools/commands/schema_tooling/src/schema_checks/
-citations, map-glyphs,
+map-glyphs,
 map-object-enums, type-inventory
 map-object-golden, height-labels, terrain-alignment, locations,
 town-labels, road-names, terrain-manifest ─▶ tools/map_assets/map_asset_verification/src/
@@ -65,16 +65,6 @@ subcommand prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
   unique slot ids, and prints `ok`.
 - Exit codes: 0 valid; 1 at least one document failed.
 - Example: `cargo xtask schema validate-file contracts/fixtures/missions/valid/empty-warning-fields.json`
-
-### citations
-
-- Synopsis: `schema citations`
-- Does: resolves every `@contract <file>.schema.json#<pointer>` tag in the code under every
-  workspace member's top-level folder (`crates/`, `tools/`) and under `mod/` against
-  `contracts/definitions/`, and prints the scanned scope and a count per file extension.
-- Exit codes: 0 every citation resolves; 1 a dangling citation, a missing scan root or no
-  citation found.
-- Example: `cargo xtask schema citations`
 
 ### map-object-enums, type-inventory and map-glyphs
 

@@ -191,9 +191,6 @@ mod instance_matching;
 pub use instance_matching::run_instance_verification;
 
 #[cfg(test)]
-pub(crate) use instance_matching::load;
-
-#[cfg(test)]
 pub(crate) use instance_matching::verify;
 
 #[cfg(test)]

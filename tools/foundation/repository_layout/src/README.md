@@ -38,9 +38,8 @@ tools/foundation/repository_layout/src/
   `/`; the API readiness evidence prefix alone ends in `/`, because the fingerprint matches it with
   `starts_with`.
 - `build_output.rs` names every purpose subfolder a tool builds into under `target/`, each its own
-  `CARGO_TARGET_DIR` with its own cargo lock; `tests/build_output_tests.rs` proves no name collides
-  with an entry cargo writes inside a target directory (profile folders, target triples, its
-  bookkeeping files).
+  `CARGO_TARGET_DIR` with its own cargo lock; no name collides with an entry cargo writes inside a
+  target directory (profile folders, target triples, its bookkeeping files).
 
 ## Boundaries
 
@@ -48,10 +47,6 @@ tools/foundation/repository_layout/src/
   checkout with it.
 - Used by: the ticket crates in `tools/tickets/`, `xtask` (the checkout root, through the prelude),
   the check and command crates and `ticketboard_desktop`.
-- Rules: each location module's test file in `tests/` pins its committed locations against this
-  checkout and its derived locations by shape; `tests/shared_locations_tests.rs` holds the tree
-  containment of every location (the root marker among the ticket registry's files) and the
-  presence of every committed location in this checkout;
-  `tests/command_locations_tests.rs` holds the deployment, tool input and documentation locations
-  (every documentation item classified as a location the checkout holds or an exemption with its
-  reason).
+- Rules: `tests/shared_locations_tests.rs` holds the tree containment of every location (the root
+  marker among the ticket registry's files) and the presence of every committed location in this
+  checkout.

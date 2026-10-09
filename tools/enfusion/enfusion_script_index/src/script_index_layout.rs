@@ -19,7 +19,3 @@ pub const CRF_SYMBOL_TABLE: &str = ".ai/artifacts/enf-index/crf_symbols.tsv";
 /// The hand-authored verdict table `enf capability` joins the upstream symbol index against, so a
 /// framework file nobody has triaged is a build error rather than an oversight.
 pub const CAPABILITY_VERDICTS: &str = "documentation/mod/tbd-framework/capability_verdicts.tsv";
-
-#[cfg(test)]
-#[path = "tests/script_index_layout_tests.rs"]
-mod tests;

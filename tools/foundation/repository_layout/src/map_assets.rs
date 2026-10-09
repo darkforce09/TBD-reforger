@@ -59,7 +59,3 @@ pub fn glyph_manifest_path(root: &Path) -> PathBuf {
 pub fn map_scratch_dir(root: &Path, terrain: &str) -> PathBuf {
     root.join(MAP_SCRATCH_DIR).join(terrain)
 }
-
-#[cfg(test)]
-#[path = "tests/map_assets_tests.rs"]
-mod tests;

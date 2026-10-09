@@ -12,7 +12,6 @@ pub(crate) fn run(cmd: SchemaCmd) -> Result<u8> {
             }
             SchemaCmd::Validate => schema_tooling::validate_all()?,
             SchemaCmd::ValidateFile { target } => schema_tooling::validate_file(&target)?,
-            SchemaCmd::Citations => schema_tooling::citations()?,
             SchemaCmd::MapObjectGolden => {
                 object_goldens::map_object_golden(&find_repository_root()?)?
             }

@@ -71,8 +71,7 @@ The loadout export model is not generated: its versioned root `oneOf` does not s
 
 ## Boundaries
 
-- Depends on: `repository_layout::contract_definitions_dir`;
-  `tool_test_support` in its tests; the `typify`, `schemars`, `syn`, `serde_json` and `walkdir` crates; `rustfmt` on
+- Depends on: `repository_layout::contract_definitions_dir`; the `typify`, `schemars`, `syn`, `serde_json` and `walkdir` crates; `rustfmt` on
   `PATH`.
 - Used by:
   - `tools/xtask/src/cli/dispatch.rs`, for `cargo xtask gen`;

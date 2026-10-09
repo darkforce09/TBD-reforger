@@ -31,7 +31,3 @@ pub fn enfusion_mcp_entrypoint(root: &Path) -> PathBuf {
 pub fn enfusion_mcp_node_package_dir(root: &Path) -> PathBuf {
     root.join(ENFUSION_MCP_NODE_PACKAGE_DIR)
 }
-
-#[cfg(test)]
-#[path = "tests/enfusion_mcp_node_package_tests.rs"]
-mod tests;

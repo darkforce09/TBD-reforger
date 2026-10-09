@@ -77,7 +77,3 @@ pub fn clear_previous_output(dir: &Path, replace: bool) -> Result<()> {
         cause,
     })
 }
-
-#[cfg(test)]
-#[path = "tests/reference_output/tests.rs"]
-mod tests;

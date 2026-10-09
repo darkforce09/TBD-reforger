@@ -36,7 +36,7 @@ tools/map_assets/map_raster_pipeline/src/
 ├── satellite_archive/              the satellite container builder and the container and pyramid checks
 ├── satellite_archive.rs            declares the satellite modules and re-exports their entry points
 ├── satellite_archive_container.rs  the version 2 `TBDS` container: rkyv index, writer and reader
-├── tests/                          unit tests for the archives, label exporters, empty guard, locations, PNG writer and export images
+├── tests/                          unit tests for the archives, label exporters, PNG writer and export images
 ├── water_export_images/            the water export's folder search, grid decoding, vector rasterization and image writes
 └── water_export_images.rs          `water-images`: the Workbench water export drawn as PNG images
 ```
@@ -95,8 +95,7 @@ read back through the `world_file_formats` validating reader before they are wri
   `tools/commands/ci_task_catalog/src/task_definitions.rs`, run as `cargo xtask ci <task>`; the hint in
   `tools/commands/schema_tooling/src/schema_checks/map_glyphs.rs` that names `build-glyph-atlas`;
   and people, for the other subcommands.
-- Rules: no empty write over a committed asset (`refuse_empty_write_reds_on_empty` in
-  `tests/empty_write_refusal_tests.rs`); the archive emitters give the same bytes for the same
+- Rules: no empty write over a committed asset (`refuse_empty_write`); the archive emitters give the same bytes for the same
   inputs (`bytes_are_deterministic_across_runs`); an image lane (`inland_water`, `map_labels`) and
   its binary archive lane (`inland_water_archive`, `map_label_archives`) stay separate modules that
   share only names.

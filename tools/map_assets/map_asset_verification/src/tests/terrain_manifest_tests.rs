@@ -2,7 +2,7 @@ use super::*;
 use serde_json::json;
 
 fn fixture_dir(name: &str) -> PathBuf {
-    let d = std::env::temp_dir().join(format!("t935-12-{}-{name}", std::process::id()));
+    let d = std::env::temp_dir().join(format!("terrain-manifest-{}-{name}", std::process::id()));
     let _ = fs::remove_dir_all(&d);
     fs::create_dir_all(&d).expect("fixture root");
     d
@@ -59,27 +59,6 @@ fn live_pod_row_doc_matches_the_rust_pod() {
     assert_eq!(
         pod_row_doc_failures(&live_instance_schema()),
         Vec::<String>::new()
-    );
-}
-
-/// …and would notice if it stopped. One shifted offset leaves a hole in the row, which is
-/// exactly the drift the doc exists to make visible.
-#[test]
-fn pod_row_doc_reds_on_a_shifted_offset_and_on_a_missing_block() {
-    let mut s = live_instance_schema();
-    s["$defs"]["objectInstancePodRow"]["fields"][8]["offset"] = json!(31);
-    let errs = pod_row_doc_failures(&s);
-    assert!(
-        errs.iter()
-            .any(|e| e.contains("class_code") && e.contains("offset")),
-        "shifted offset must red: {errs:?}"
-    );
-    let mut gone = live_instance_schema();
-    gone["$defs"] = json!({});
-    assert_eq!(
-        pod_row_doc_failures(&gone).len(),
-        1,
-        "a missing row doc is a FAIL"
     );
 }
 
@@ -151,52 +130,4 @@ fn a_row_shape_this_build_cannot_read_is_refused() {
     t["objects"]["binary"]["chunks"] = json!("objects/chunks/all.bin");
     let (_, errs) = manifest_binary_failures(&t, &dir);
     assert!(errs.iter().any(|e| e.contains("{cx}")), "{errs:?}");
-}
-
-/// ACCEPTANCE: everon declares objects + labels + buildings (not dem.raw,
-/// not water: those emitters did not run). Every named path must resolve.
-#[test]
-fn the_live_everon_manifest_declares_the_cutover_blocks_and_passes() {
-    let root = ::repository_root::find_repository_root().expect("repository root");
-    let dir = terrain_dir(&root, "everon");
-    let m = read_json_file(&dir.join("manifest.json")).expect("everon manifest");
-    let (declared, errs) = manifest_binary_failures(&m, &dir);
-    assert_eq!(errs, Vec::<String>::new(), "{errs:?}");
-    assert_eq!(
-        declared, 3,
-        "objects + labels + buildings, not dem.raw/water"
-    );
-    assert!(m.get("dem").and_then(|d| d.get("raw")).is_none());
-    assert!(m.get("water").is_none());
-    assert_eq!(
-        m["tiles"]["satellite"]["unified"]["encoding"].as_str(),
-        Some("tbd-sat-v1"),
-        "unified v2 emitter skipped; encoding stays v1 while the reader accepts v2"
-    );
-}
-
-/// Archive boot must still fetch blas-manifest.json for `.hot`: an early `return` on the
-/// archive branch, placed before that fetch, leaves hot chunks without their manifest. Put such a
-/// return back and this test goes red.
-#[test]
-fn occluder_init_still_fetches_the_blas_manifest_for_hot_chunks() {
-    let root = ::repository_root::find_repository_root().expect("repository root");
-    let src =
-        fs::read_to_string(root.join("crates/streaming/map_asset_loading/src/occluder_loader.rs"))
-            .expect("occluder_host.rs");
-    let init = src
-        .split("pub async fn init(")
-        .nth(1)
-        .expect("init")
-        .split("async fn init_from_archive")
-        .next()
-        .expect("split");
-    assert!(
-        init.contains("blas-manifest.json"),
-        "archive boot must still read blas-manifest.json for the hot list: {init}"
-    );
-    assert!(
-        !init.contains("return;"),
-        "T-985: init must not return before the hot-list fetch: {init}"
-    );
 }

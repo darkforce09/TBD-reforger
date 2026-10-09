@@ -109,9 +109,7 @@ also read by the world line-of-sight tests in `tools/map_assets/map_asset_verifi
 - Rules:
   - the whole voxel pipeline on the committed farmhouse dump reproduces
     `tools/map_assets/blueprint_compiler/test_fixtures/blueprint/FarmHouse_E_1L01_Wood_blueprint.golden.json`
-    (`farmhouse_dump_matches_golden_blueprint`), and that golden blueprint agrees with all 400
-    oracle pairs with no phantom blocks (`farmhouse_golden_parity_is_pinned`), both in
-    `tests/blueprint_from_voxels_tests.rs`; a heuristic change that moves the output re-blesses the golden on
+    (`farmhouse_dump_matches_golden_blueprint` in `tests/blueprint_from_voxels_tests.rs`); a heuristic change that moves the output re-blesses the golden on
     purpose;
   - every emitted document passes its schema in `contracts/definitions/` before it is written,
     and the archive refuses inputs that disagree;

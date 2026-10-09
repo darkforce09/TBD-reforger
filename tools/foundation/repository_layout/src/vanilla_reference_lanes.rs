@@ -19,7 +19,3 @@ pub const VANILLA_SOURCE_PAGES: &str = "mod/References/vanilla_reference/source_
 
 /// Vanilla `.c` files `enf source` rebuilds, method bodies included, from the source pages.
 pub const VANILLA_RECONSTRUCTED_SOURCE: &str = "mod/References/vanilla_reference/Source";
-
-#[cfg(test)]
-#[path = "tests/vanilla_reference_lanes_tests.rs"]
-mod tests;

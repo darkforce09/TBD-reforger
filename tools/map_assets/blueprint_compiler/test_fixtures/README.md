@@ -24,8 +24,7 @@ is recorded from the engine or emitted by the compiler.
 
 ## Format
 
-- Encoding: JSON, gzip-compressed JSON lines, one binary occlusion sidecar and Enfusion prefab
-  text; the [blueprint fixtures README](/tools/map_assets/blueprint_compiler/test_fixtures/blueprint/README.md)
+- Encoding: JSON, gzip-compressed JSON lines and Enfusion prefab text; the [blueprint fixtures README](/tools/map_assets/blueprint_compiler/test_fixtures/blueprint/README.md)
   gives each file's schema.
 - Schema: the loaders and contracts the tests read the files with, named per file in the child
   README.
@@ -37,8 +36,7 @@ is recorded from the engine or emitted by the compiler.
 - Producers: the `tbd-export` Workbench handler `EMCP_WB_TbdBlueprint` for the recordings,
   `cargo xtask map` for the golden outputs, and people for the synthetic prefabs.
 - Consumers: the unit tests of `tools/map_assets/blueprint_compiler/src/` and
-  `tools/map_assets/map_asset_verification/src/tests/`, the path-resolution test in
-  `tools/map_assets/blueprint_compiler/src/tests/blueprint_from_voxels_tests.rs`, and
+  `tools/map_assets/map_asset_verification/src/tests/`, and
   `tools/foundation/tool_test_support/src/tests/test_checkout_root_tests.rs`, which checks that a fixture here resolves
   from inside `tools/xtask/`.
 
@@ -47,10 +45,8 @@ is recorded from the engine or emitted by the compiler.
 - Depends on: the committed Everon assets in `assets/terrains/everon/` that the pins pair with.
 - Used by: the tests above; `cargo xtask ci workspace-member-tests` runs them in CI, through this
   crate's and the map asset verification crate's tests.
-- Rules: the prose rules of `tools/checks/repository_checks/src/tests/tooling_prose_rules.rs` exempt this tree from
-  the ticket-id and Rust-file-name rules, since the recordings are data; tests address the tree by
-  its full path, so a move updates `tools/map_assets/blueprint_compiler/src/tests/blueprint_from_voxels_tests.rs` and
-  every other `git grep test_fixtures` hit in the same change.
+- Rules: tests address the tree by its full path, so a move updates
+  `tools/map_assets/blueprint_compiler/src/test_fixtures.rs` and every other `git grep test_fixtures` hit in the same change.
 
 ## Related documentation
 

@@ -1,6 +1,6 @@
 # The contract tooling of `cargo xtask schema` and `cargo xtask gen`: the typify codegen of the
 # `contract_schema_types` crate from `contracts/definitions/`, the Spleen font-table generator, the
-# contract schema gates (document validation, `@contract` citations, map-object enums, the type
+# contract schema gates (document validation, map-object enums, the type
 # inventory, the glyph manifest) and the ORBAT slot flattening. `thiserror` carries its errors.
 [package]
 name = "schema_tooling"
@@ -28,7 +28,6 @@ prefab_catalog = { workspace = true }
 prettyplease = { workspace = true }
 process_runner = { workspace = true }
 regex = { workspace = true }
-repository_laws = { workspace = true }
 repository_layout = { workspace = true }
 repository_root = { workspace = true }
 schemars = { workspace = true }
@@ -39,10 +38,6 @@ thiserror = { workspace = true }
 ticket_registry = { workspace = true }
 typify = { workspace = true }
 walkdir = { workspace = true }
-
-[dev-dependencies]
-# The test checkout root.
-tool_test_support = { workspace = true }
 
 [lints]
 workspace = true

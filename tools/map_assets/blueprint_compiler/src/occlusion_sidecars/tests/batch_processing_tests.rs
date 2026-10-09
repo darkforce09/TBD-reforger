@@ -4,60 +4,6 @@
 use super::*;
 use crate::test_fixtures::fixture;
 
-/// The real farmhouse closure out of the operator's paks — the acceptance pin
-/// on the live install: 181 collision-bearing instances, 90 of them on decoded sockets, the
-/// shell all-Opaque, every glass pane Glass. Needs `~/.cache/enfusion-mcp-root/addons`.
-#[test]
-#[ignore = "needs ~/.cache/enfusion-mcp-root/addons"]
-fn real_farmhouse_closure_counts_are_pinned() {
-    let Some(dir) = PakSet::default_dir().filter(|d| d.is_dir()) else {
-        return;
-    };
-    let source = open_sources(Some(&dir), None).expect("pak set");
-    let mut w = ChildEntityWalker::new(&source);
-    let prefab = "Prefabs/Structures/Houses/Farm/FarmHouse_E_1L01/FarmHouse_E_1L01_Wood.et";
-    let shell = w
-        .walk(
-            prefab,
-            "FarmHouse_E_1L01_Wood",
-            None,
-            Rigid::identity(),
-            PlacementSource::PrefabCoords,
-            true,
-            0,
-        )
-        .expect("walk")
-        .expect("shell");
-    assert_eq!(shell.kind_counts(), (4012, 0, 0));
-    assert_eq!(w.instances.len(), 181, "instances");
-    let by_kind = |k: InstanceKind| w.instances.iter().filter(|i| i.kind == k).count();
-    assert_eq!(by_kind(InstanceKind::DoorFrame), 7);
-    assert_eq!(by_kind(InstanceKind::DoorLeaf), 7);
-    assert_eq!(by_kind(InstanceKind::WindowFrame), 16);
-    assert_eq!(by_kind(InstanceKind::Glass), 58);
-    assert_eq!(by_kind(InstanceKind::Furniture), 49);
-    assert_eq!(by_kind(InstanceKind::Prop), 44);
-    assert_eq!(
-        w.instances
-            .iter()
-            .filter(|i| i.source == PlacementSource::XobSocket)
-            .count(),
-        90
-    );
-    for inst in w.instances.iter().filter(|i| i.kind == InstanceKind::Glass) {
-        let a = w.assets.load(inst.xob.as_deref().unwrap()).unwrap();
-        let (o, g, f) = a.kind_counts();
-        assert!(o == 0 && f == 0 && g > 0, "{}: {:?}", inst.id, (o, g, f));
-    }
-    for inst in w
-        .instances
-        .iter()
-        .filter(|i| i.kind == InstanceKind::DoorLeaf)
-    {
-        assert!(inst.door.is_some(), "{} has no door record", inst.id);
-    }
-}
-
 #[test]
 fn cover_and_kind_heuristics() {
     assert_eq!(

@@ -2,64 +2,51 @@
 
 The recorded inputs and blessed outputs that pin the building blueprint compiler and the world
 line-of-sight model to the engine: [Workbench](/documentation/glossary/n_to_z.md#workbench) recordings
-of one Everon farmhouse, a tilted garbage container and two terrain cells, the golden files the
+of one Everon farmhouse, a tilted garbage container and one terrain cell, the golden files the
 compiler must reproduce, and a synthetic prefab tree.
 
 ## Contents
 
 ```text
 tools/map_assets/blueprint_compiler/test_fixtures/blueprint/
-├── FarmHouse_E_1L01_Wood.bvh.golden             the farmhouse shell's occlusion sidecar
 ├── FarmHouse_E_1L01_Wood.instances.golden.json  the farmhouse's socket and furniture instances
 ├── FarmHouse_E_1L01_Wood_blueprint.golden.json  the blueprint the voxel pipeline must reproduce
 ├── FarmHouse_E_1L01_Wood_children.json          the Workbench recon of the farmhouse's 88 children
 ├── FarmHouse_E_1L01_Wood_parity.json            400 engine verdicts, doors and glass excluded
 ├── FarmHouse_E_1L01_Wood_parity_doors.json      4000 engine verdicts with the doors closed
 ├── FarmHouse_E_1L01_Wood_voxels.jsonl.gz        the Workbench voxel dump of the farmhouse
-├── GarbageContainer_01_children.json            the Workbench recon of a tilted garbage container
 ├── prefab/                                      synthetic `.et` prefabs for the prefab tests
 ├── rotation_pin_GarbageContainer_01.json        a tilted parent and its rotated child
-├── world_parity_18_0.json                       4000 engine verdicts in cell 18_0, a village
-└── world_parity_forest.json                     4000 engine verdicts in cell 16_2, a forest
+└── world_parity_18_0.json                       4000 engine verdicts in cell 18_0, a village
 ```
 
 ## How it works
 
 Tests reach the files through `fixture(name)` in
-`tools/map_assets/blueprint_compiler/src/tests/blueprint_from_voxels_tests.rs`, which joins the compile-time
-checkout root to this folder, or by the folder's full path. Every file is read, never written. Most
+`tools/map_assets/blueprint_compiler/src/test_fixtures.rs`, which joins the checkout root to this
+folder. Every file is read, never written. Most
 pins pair a fixture with the committed Everon assets under `assets/terrains/everon/`, so a
 re-export of those assets re-blesses the matching golden here in the same change.
 
 | Fixture | Test | What the test asserts |
 |---|---|---|
 | `_voxels.jsonl.gz` + `_blueprint.golden.json` | `farmhouse_dump_matches_golden_blueprint` | the full voxel pipeline (segments, default parameters) reproduces the golden exactly |
-| `_blueprint.golden.json` + `.bvh.golden` + `_parity.json` | `farmhouse_golden_parity_is_pinned` | `annotate_sight_line` agrees with all 400 pairs, none blocked where the engine is clear |
-| `.bvh.golden` + `_parity.json` | `farmhouse_bvh_sidecar_parity_is_pinned` | byte-identical to the shipped `.bvh`; 3170 vertices, 2883 triangles, 1125 nodes; 400 of 400 agree |
 | `.instances.golden.json` + both parity files | `farmhouse_compound_door_parity_is_pinned` | byte-identical to the shipped `.instances.json`; 120 kept, 49 dropped, 7 closed doors; 3998 of 4000 and 400 of 400 agree |
-| `_children.json` | `farmhouse_sockets_match_the_workbench_recon` | all 88 children match the shipped instances with no extras or failures; 7 door, 88 pivot and at least 60 local checks |
-| `_children.json` | `farmhouse_chunk_row_places_every_socket_child_within_2cm` | the farmhouse's row in chunk 18_0 is 5 wide at yaw 38.46 and places all 88 children within `POSITION_TOLERANCE_METERS` |
 | `rotation_pin_*.json` | `garbage_container_lid_pins_y_x_z_with_negated_pitch_and_roll` | `RIGID_HYPOTHESIS` wins, under 5 mm and 0.05°, by more than four times the runner-up's error |
-| `rotation_pin_*.json` | `garbage_container_row_carries_pitch_and_roll` | the container's row in chunk 19_0 is 8 wide with yaw 255.87, pitch -3.04, roll -4.75 and scale 1.0 |
 | both farmhouse parity files | `farmhouse_descriptor_placed_at_a_yaw_replays_the_door_parity_fixture` | descriptor 132 placed at a yaw through the world occluder gives the compound's counts |
 | `world_parity_18_0.json` | `world_parity_cell_18_0_is_pinned` | 3971 agree, 12 phantom, 17 missed of 4000, and at least 98 % |
-| `world_parity_forest.json` | `world_parity_forest_cell_is_pinned`, `foliage_as_a_blocker_disagrees_with_the_projectile_trace` | 3977 agree, 11 phantom, 12 missed; with foliage blocking, under 90 % and over 500 phantoms |
-| both world parity files | `world_parity_world_column_clears_its_floor_when_the_dem_is_present` | the terrain-inclusive column reaches 96 % and 94 %; skipped when the DEM does not decode |
 
-The first eight tests live in `tools/map_assets/blueprint_compiler/src/tests/` and
-`tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/`, and the other five in
+The first three tests live in `tools/map_assets/blueprint_compiler/src/tests/` and
+`tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/`, and the other two in
 `tools/map_assets/map_asset_verification/src/tests/world_line_of_sight_tests.rs`.
-`GarbageContainer_01_children.json` is the recon the rotation pin's `source` field cites, at the
-same world position; no test reads it. Every number above is a blessed measurement: a change that
+`_children.json` is read only by the path-resolution test below. Every number above is a blessed measurement: a change that
 moves one re-blesses the fixture or the assertion on purpose.
 
 ## Format
 
-- Encoding: JSON, gzip-compressed JSON lines and one binary sidecar, named after the prefab slug
+- Encoding: JSON and gzip-compressed JSON lines, named after the prefab slug
   (`<slug>_<kind>.json`); `.golden` marks a blessed output.
 - Schema:
-  - `.bvh.golden`: the `TBVH` binary sidecar that `BvhSidecar` in
-    `crates/geometry/spatial_indexes/src/bounding_volume_hierarchy/sidecar.rs` parses;
   - `.instances.golden.json`: `contracts/definitions/building-instances.schema.json`;
   - `_blueprint.golden.json`: `contracts/definitions/building-blueprint.schema.json`;
   - `_children.json`: a recon dump: `prefabFilter`, `slug`, the root's pose and bounds,
@@ -93,13 +80,11 @@ moves one re-blesses the fixture or the assertion on purpose.
   - `rotation_pin_GarbageContainer_01.json` is assembled from a recon and the prefab text, as its
     `source` field states;
   - the goldens are copies of compiler output: `cargo xtask map bvh-batch --prefab` writes the
-    sidecar and the instances, `cargo xtask map blueprint-from-voxels` the blueprint.
+    instances, `cargo xtask map blueprint-from-voxels` the blueprint.
 - Consumers: the tests in the table;
-  `compiler_fixtures_resolve_from_root_crate_and_source_directory`
-  (`tools/map_assets/blueprint_compiler/src/tests/blueprint_from_voxels_tests.rs`) and
   `nested_tooling_directories_resolve_repository_and_fixtures`
-  (`tools/foundation/tool_test_support/src/tests/test_checkout_root_tests.rs`), which check that fixtures here resolve
-  from nested working directories. `cargo xtask map parity-report`, `bvh-parity`,
+  (`tools/foundation/tool_test_support/src/tests/test_checkout_root_tests.rs`), which checks that
+  a fixture here resolves from nested working directories. `cargo xtask map parity-report`, `bvh-parity`,
   `instances-verify`, `rotation-pin` and `world-los` accept files of these shapes by path.
 
 ## Boundaries
@@ -112,14 +97,11 @@ moves one re-blesses the fixture or the assertion on purpose.
   DEM image that `assets/terrains/everon/manifest.json` names; nothing in this folder is in
   Git LFS.
 - Used by: `tools/map_assets/blueprint_compiler/src/tests/`,
-  `tools/map_assets/map_asset_verification/src/tests/`, and the path-resolution tests above.
+  `tools/map_assets/map_asset_verification/src/tests/`, and the path-resolution test above.
 - Rules:
-  - `FarmHouse_E_1L01_Wood.bvh.golden` and `FarmHouse_E_1L01_Wood.instances.golden.json` stay
-    byte-identical to their shipped copies (`farmhouse_bvh_sidecar_parity_is_pinned`,
-    `farmhouse_compound_door_parity_is_pinned`), so a re-emit re-blesses both;
-  - the pipeline reproduces the blueprint golden (`farmhouse_dump_matches_golden_blueprint`);
-  - the prose rules of `tools/checks/repository_checks/src/tests/tooling_prose_rules.rs` exempt this tree from the
-    ticket-id and Rust-file-name rules, since the recordings are data.
+  - `FarmHouse_E_1L01_Wood.instances.golden.json` stays byte-identical to its shipped copy
+    (`farmhouse_compound_door_parity_is_pinned`), so a re-emit re-blesses both;
+  - the pipeline reproduces the blueprint golden (`farmhouse_dump_matches_golden_blueprint`).
 
 ## Related documentation
 

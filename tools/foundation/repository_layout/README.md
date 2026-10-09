@@ -102,10 +102,8 @@ No feature and no environment variable; the crate holds constants and pure path 
   for every location listed above; `deploy_settings` (the settings file and its example); `xtask`,
   for the checkout root through the prelude.
 - Rules: tier 1 of `tools/foundation`, over `repository_root` alone (`cargo xtask verify
-  crate-tiers`; `foundation_crates_depend_only_on_lower_foundation_crates` in
-  `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`); the root walk is
-  `repository_root`'s alone, and the tool binaries reach it only through this crate
-  (`tooling_dependency_direction_is_enforced` in the same file).
+  crate-tiers`); the root walk is `repository_root`'s alone, and the tool binaries reach it only
+  through this crate.
 
 ## Related documentation
 

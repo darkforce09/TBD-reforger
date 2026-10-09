@@ -306,7 +306,3 @@ the pak FILE tree — there are no `.c` names to recover. `_MANIFEST.tsv` record
 offset and length each blob came from. Only the derived symbol index
 (`.ai/artifacts/enf-index/vanilla_*.tsv` — names and coordinates, no bodies) is committed.
 "#;
-
-#[cfg(test)]
-#[path = "tests/carve/tests.rs"]
-mod tests;

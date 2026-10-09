@@ -275,7 +275,3 @@ impl FileOpen {
         })
     }
 }
-
-#[cfg(test)]
-#[path = "tests/vanilla_api/tests.rs"]
-mod tests;

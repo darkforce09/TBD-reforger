@@ -28,9 +28,5 @@ repository_root = { workspace = true }
 thiserror = { workspace = true }
 verification_core = { workspace = true }
 
-[dev-dependencies]
-# The environment lock the curl-override test holds while it changes a variable.
-tool_test_support = { workspace = true }
-
 [lints]
 workspace = true

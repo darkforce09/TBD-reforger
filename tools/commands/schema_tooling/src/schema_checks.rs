@@ -1,4 +1,4 @@
-//! The text and JSON schema gates: contract citations, map-object enums, type inventory, terrain
+//! The text and JSON schema gates: map-object enums, type inventory, terrain
 //! manifest, and ORBAT slot flattening. Each gate's acceptance contract is its verdict set plus
 //! its exit code; stdout formatting carries no contract.
 //!
@@ -8,7 +8,7 @@
 //!   R-api golden tests, so there is no separate export-tag surface to match.
 //! - GO-7 @route match — axum wires routes through typed functions, so a route rename is a
 //!   compile error rather than documentation rot.
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -34,34 +34,11 @@ use serde_json::Value;
 // A `#[test]` alone is decorative: it proves the list it can see, not the schema the gate reads.
 use prefab_catalog::instance_kinds::INSTANCE_KINDS;
 
-use repository_laws::workspace_members::read_workspace_members;
-
-use repository_layout::workspace_folders::ENFUSION_MOD_DIR;
-use repository_layout::{
-    contract_catalogs_dir, contract_definitions_dir, definition_path, registry_fixtures_dir,
-};
+use repository_layout::{contract_catalogs_dir, definition_path, registry_fixtures_dir};
 
 use repository_root::find_repository_root as repo_root;
 
-/* ─────────────────────────── citations ─────────────────────────── */
-
-/// Extensions scanned for `@contract` tags.
-///
-/// `rs` and `c` carry every citation the gate reads. `go`, `js`, `mjs`, `ts` and `tsx` match
-/// nothing in this tree and are kept anyway: an extension that matches nothing cannot cause a
-/// false green — only a *missing* one can, and a missing one lets a whole language's citations
-/// go unread while the gate still prints "All @contract citations resolve". Their zeros in the
-/// per-extension breakdown are the visible evidence that the tree holds no Go or Node sources.
-const CODE_EXTS: [&str; 7] = ["c", "go", "js", "mjs", "rs", "ts", "tsx"];
-/// Code folders outside the Cargo workspace whose contract citations must resolve: the Enfusion
-/// mod suite ([`ENFUSION_MOD_DIR`]), whose script trees (`.c`) declare `@contract` on their JSON
-/// DTO structs.
-///
-/// Every other scan root is derived from the workspace members ([`scan_roots`]), so no member is
-/// left out by a list that was not extended. Markdown is excluded because prose examples are not
-/// code contract declarations, and the contract and asset trees hold data, not code that declares
-/// a citation, so neither is a member or listed here.
-const NON_WORKSPACE_CODE_ROOTS: [&str; 1] = [ENFUSION_MOD_DIR];
+/// Folder names the mod-tree scans skip: dependency, build and version-control output.
 const IGNORE_DIRS: [&str; 6] = [
     "node_modules",
     "dist",
@@ -70,32 +47,6 @@ const IGNORE_DIRS: [&str; 6] = [
     "coverage",
     "vendor",
 ];
-
-/// One pass over the `@contract` corpus.
-///
-/// `problems` are dangling citations; `scope_errors` are reasons the scan itself cannot be
-/// trusted (a root that was never read, an empty corpus). They are separate because "0
-/// problems over 0 files" is not a pass — it is the absence of a verdict.
-#[derive(Debug, Default)]
-struct CitationScan {
-    /// The folders walked, as [`scan_roots`] derived them; empty when they could not be derived.
-    roots: Vec<String>,
-    citations: usize,
-    files_read: usize,
-    per_ext: BTreeMap<&'static str, usize>,
-    problems: Vec<String>,
-    scope_errors: Vec<String>,
-}
-
-/// The scope contract, pinned against a fixture tree.
-///
-/// The failure this guards is a broad claim over a narrow scan, not a bad count. These tests
-/// fail if `rs` leaves [`CODE_EXTS`], if a workspace member's top-level folder or a
-/// [`NON_WORKSPACE_CODE_ROOTS`] entry goes unscanned, or if the walker ever reports a clean
-/// verdict over a tree it did not read.
-#[cfg(test)]
-#[path = "tests/schema_checks/citation_scope_tests.rs"]
-mod citation_scope_tests;
 
 /* ─────────────────────────── map-object enums ─────────────────────────── */
 
@@ -161,8 +112,6 @@ const KNOWN_UNRESOLVABLE_KITS: &[(&str, &str)] = &[
 // FIELD, that the mod tree holds exactly its baseline number of readers. The day a real reader
 // lands, that field's count rises above its baseline, THIS GATE FAILS, and whoever landed the
 // reader must come here, drop the field's "no reader" wording, and move its row out of the table.
-// `unread_gate_fires_when_a_reader_appears` proves the mechanism fires rather than passing
-// vacuously.
 //
 // WHY A COMMENT/STRING-STRIPPED WHOLE-WORD COUNT, AND WHY A PER-FIELD BASELINE
 // ---------------------------------------------------------------------------
@@ -203,57 +152,9 @@ const KNOWN_UNRESOLVABLE_KITS: &[(&str, &str)] = &[
 // field — is always a +1 that trips it. Fail-closed with a documented table, the same discipline
 // `KNOWN_UNRESOLVABLE_KITS` uses above.
 
-/// The developer-feedback half of the unread-fields gate. The load-bearing half is the
-/// `unread_wire_field_failures` call inside `validate_all()` (run in every slice + wave gate via
-/// `gate_schema`); this proves the mechanism actually FIRES so the assertion is not decorative —
-/// the same non-vacuity discipline the INSTANCE_KINDS lockstep tests use.
-#[cfg(test)]
-#[path = "tests/schema_checks/unread_wire_field_tests.rs"]
-mod unread_wire_field_tests;
-
 /* ─────────────────────────── validate (the document validation core) ─────────────────────────── */
 
 /* ─────────────────────────── map glyphs manifest (GL-G1…G6) ─────────────────────────── */
-
-/// The typed objective spine must actually be READ by the objectives lane.
-///
-/// `#/$defs/objective` (plus `#/$defs/objectiveFraming`) is the uniform attribute spine every
-/// objective carries. Enfusion's `JsonLoadContext` binds JSON keys onto identically-named class
-/// MEMBERS, so for this wire shape the identifier IS the contract: a property with no identifier
-/// under `Scripts/Game/TBD/Gamemode/Objectives` cannot be read by any objective code, whatever the rest of
-/// the mod happens to spell somewhere else.
-///
-/// Scoped to that ONE lane deliberately. A whole-tree count passes vacuously on the common words:
-/// measured on `main` before this slice, the tree held `id` 206, `label` 111, `text` 91, `side` 59
-/// — every one of them an unrelated subsystem's identifier. In the Objectives lane the same scan
-/// reads `side` 0, `label` 0, `framing` 0, `lock` 0, `autoLose` 0, `variantId` 0 whenever a reader
-/// goes missing: six of the eleven spine properties with no reader at all is the defect this pins.
-///
-/// This is the complement of `UNREAD_WIRE_FIELDS`, not a duplicate of it. That table pins fields
-/// that must stay unread; this one pins a field set that must stay READ, so a later refactor that
-/// deletes the reader is a red rather than a silent regression back to a dead container.
-#[cfg(test)]
-#[path = "tests/schema_checks/objective_spine_tests.rs"]
-mod objective_spine_tests;
-
-/// The hand-staged 1.3 golden actually REACHES the reader.
-///
-/// `flatten.rs` emits no `objectives[]` on `/compiled`, so the only document that can reach
-/// `TBD_ObjectiveEntityReader` is a hand-staged schemaVersion 1.3 one, and
-/// `golden-missions/schema-1_3-wire-fields.json` is that document. It makes "proven" mechanical
-/// for a wire field that has no live emitter.
-///
-/// `JsonLoadContext` binds JSON keys onto identically-named class MEMBERS, so "the golden reaches
-/// the reader" is exactly the claim "every key the golden's objectives rows author is declared as a
-/// member of the reader's structs". A key the structs do not declare is invisible at runtime — not
-/// rejected, not logged, simply absent — so it is asserted rather than eyeballed.
-///
-/// What it cannot prove is stated rather than implied: the gate for the `.c` half is
-/// `cargo xtask mod compile`, which cannot run a round. Whether the attacker and the defender are
-/// actually shown different text with two clients connected is a human checklist item.
-#[cfg(test)]
-#[path = "tests/schema_checks/staged_golden_tests.rs"]
-mod staged_golden_tests;
 
 /// Execute the actual side-validation and framing branches with a small native shim. This is
 /// source simulation, not Enfusion JSON loading, engine execution or a two-client RPC proof.
@@ -267,9 +168,6 @@ mod registry_validation;
 mod mission_validation;
 
 mod ballistics_validation;
-
-mod contract_citations;
-pub use contract_citations::citations;
 
 mod object_enumerations;
 pub use object_enumerations::map_object_enums;
@@ -303,7 +201,4 @@ use wire_field_readers::UNREAD_WIRE_FIELDS;
 use object_type_inventory::instance_kinds_lockstep_failures;
 
 #[cfg(test)]
-use contract_citations::{citation_scope, scan_citations, scan_roots};
-
-#[cfg(test)]
-use wire_field_readers::{count_mod_readers, strip_enfusion_comments_and_strings};
+use wire_field_readers::strip_enfusion_comments_and_strings;

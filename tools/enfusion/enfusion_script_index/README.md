@@ -34,7 +34,7 @@ module.
 Run from the repository root:
 
 ```bash
-cargo test -p enfusion_script_index                          # scanner, parsers, guards and offline page mirrors
+cargo test -p enfusion_script_index                          # scanner and parsers
 cargo run -q -p developer_tools --bin enf -- index crf --root mod/References/crf_framework
 cargo run -q -p developer_tools --bin enf -- citations       # every @idx marker in documentation/
 cargo xtask fetch vanilla-api                                # the Script API index into the vanilla lane
@@ -46,7 +46,7 @@ cargo xtask fetch vanilla-api                                # the Script API in
 |---|---|---|
 | `ENFUSION_GAME_PATH` | `$HOME/.cache/enfusion-mcp-root` | the game folder `enf extract` and `enf dump-entry` read |
 | `TBD_FETCH_DELAY` | 0.3 s (`vanilla-api`), 0.4 s (`vanilla-source`) | the pause after each page fetched from the network |
-| `TBD_FETCH_VANILLA_API_CURL` | `curl` on `PATH` | the curl binary `vanilla-api` runs; the tests point it at a stub |
+| `TBD_FETCH_VANILLA_API_CURL` | `curl` on `PATH` | the curl binary `vanilla-api` runs |
 
 ## Boundaries
 
