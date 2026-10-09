@@ -1,7 +1,6 @@
 # Architecture verifications
 
-Source checks for the workspace laws over the members of the root manifest, and the source
-readers of the platform wave gate. Each law is its own `cargo xtask verify` verb.
+Source checks for the workspace laws over the members of the root manifest. Each law is its own `cargo xtask verify` verb.
 
 ## Contents
 
@@ -9,7 +8,6 @@ readers of the platform wave gate. Each law is its own `cargo xtask verify` verb
 tools/checks/repository_checks/src/architecture/
 ├── mod.rs                      the module tree
 ├── tests/                      the Tailwind-sources gate test over this checkout
-├── wave_gate_sources.rs        the wave gate facade linkage check and the source spellings its audits share
 ├── workspace_law_locations.rs  the application packages, the Tailwind stylesheet and the frontend-layering configuration the laws read
 └── workspace_laws.rs           the five workspace-law gates: print each library report
 ```
@@ -52,24 +50,14 @@ runs the five laws in order as a step of `ci-local`.
 - `workspace_laws::verify_crate_tiers`, `verify_crate_anatomy`, `verify_test_file_reachability`,
   `verify_frontend_layering` and `verify_tailwind_sources`: the five workspace-law gates over the
   checkout the command runs in; `workspace_law_report` and `verify_workspace_law` take a root.
-- `wave_gate_sources::WAVE_CHILDREN` and `wave_children_are_linked`: the two implementation
-  modules of `tools/commands/platform_execution/src/wave_execution/gate.rs` (`checkrun` with
-  `gate_slice`, `gate_dispatch` with `cmd_gate`) and the `syn` check that the facade declares each
-  module and re-exports its function to the crate (`pub` or `pub(crate)`; the gate lives in a
-  private module of a library crate); `WAVE_EXPORT_VISIBILITY`, `wave_child_link_statements` and
-  `wave_function_opener_pattern`: the facade statements and the function-opener pattern the audits
-  pin, spelled once.
 
 ## Boundaries
 
-- Depends on: `repository_laws::workspace_laws` for the rules; the `syn` crate for the wave gate
-  linkage check.
+- Depends on: `repository_laws::workspace_laws` for the rules.
 - Used by:
   - `tools/xtask/src/commands/verify/dispatch.rs`, for the five workspace-law verbs;
   - `tools/commands/ci_task_catalog/src/task_definitions.rs`, for the steps of
-    `verify-workspace-laws`;
-  - `tools/commands/ci_task_catalog/src/workflow_checks/schema_parity/source_audit.rs`, for
-    `wave_gate_sources.rs`.
+    `verify-workspace-laws`.
 - Rules:
   - a law that could not read its input never reads as a pass.
 

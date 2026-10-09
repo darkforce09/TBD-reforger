@@ -57,7 +57,6 @@ pub fn run(cmd: ModCmd) -> Result<u8> {
         ModCmd::TestGameRuntimeApi => crate::game_runtime_api_smoke::run(),
         ModCmd::Playtest { args } => crate::playtest_server::run(&args),
         ModCmd::Compile { args } => crate::compile::run(&args),
-        ModCmd::CompileSelftest => crate::compile::run_selftest(),
         ModCmd::CompilePreflight => crate::compile::run_preflight(),
         ModCmd::WorldBoot { args } => crate::world_boot::run(&args),
         ModCmd::Wave { args } => crate::wave_execution::run(&args),

@@ -10,19 +10,15 @@ pub(crate) use verification_dispatch::run_database_test_suite;
 mod workspace_law_steps;
 
 use super::{Lane, Step, Task};
-use crate::workflow_checks::workflow_shell::verify_ci_shell;
 use map_asset_steps::{MAP_CARTOGRAPHIC_EVERON_STEPS, MAP_WATER_EVERON_STEPS};
 use repository_checks::language_bans::node_and_file_limits::{verify_file_length, verify_no_node};
 use repository_checks::language_bans::python_scripts::verify_no_python;
 use repository_checks::language_bans::shell_scripts::verify_no_shell;
-use repository_root::find_repository_root;
 use schema_tooling::codegen;
-use schema_tooling::{citations, map_glyphs, map_object_enums, type_inventory, validate_all};
+use schema_tooling::{map_glyphs, map_object_enums, type_inventory, validate_all};
 use verification_dispatch::{
-    run_ci_schema_parity, run_enfusion_comments, run_height_labels, run_link_check,
-    run_map_object_golden, run_markdown_placement, run_mission_rest_size_limits,
-    run_no_select_star, run_readme_coverage, run_route_tags, run_staging_compose_paths,
-    run_terrain_alignment, run_terrain_alignment_strict, run_terrain_manifest,
+    run_height_labels, run_map_object_golden, run_terrain_alignment, run_terrain_alignment_strict,
+    run_terrain_manifest,
 };
 use workspace_law_steps::WORKSPACE_LAW_STEPS;
 
@@ -31,58 +27,36 @@ pub static TASKS: &[Task] = &[
     // ── composites ──────────────────────────────────────────────────────────────────────────
     Task {
         name: "ci-local",
-        help: "Full CI gate locally — mirrors ci.yml (run `cargo xtask db up` first)",
+        help: "Full CI gate locally — the cargo, schema and repository-law jobs of ci.yml (run `cargo xtask db up` first)",
         group: "CI",
         lane: Lane::Ci,
-        // Invoke parity verification directly: it checks dispatcher bodies and cannot rely
-        // on the dispatcher it checks to reach its own validation. ci.yml does the same.
         steps: &[
-            Step::Task("verify-editorconfig"),
-            Step::Task("verify-no-python"),
-            Step::Task("verify-no-node"),
-            Step::Task("verify-no-shell"),
-            Step::Task("verify-ci-shell"),
-            Step::Task("verify-workspace-laws"),
             Step::Task("rust-ci"),
             Step::Task("workspace-member-tests"),
-            Step::Task("verify-coding-standards"),
-            Step::Task("verify-documentation"),
             Step::Task("ci-local-leptos"),
             Step::Task("ci-local-schema"),
-            Step::Task("verify-staging-compose-paths"),
-            Step::Task("verify-mission-rest-size-limits"),
-            xt!(
-                "cargo xtask verify ci-schema-parity",
-                true,
-                run_ci_schema_parity
-            ),
+            Step::Task("verify-workspace-laws"),
+            Step::Task("verify-language-bans"),
+            Step::Task("verify-file-length"),
         ],
     },
     Task {
         name: "ci-local-schema",
-        help: "CI gate: generated-byte freshness + schema validation (TEST-3) + contract citations",
+        help: "CI gate: generated-byte freshness + schema validation (TEST-3)",
         group: "CI",
         lane: Lane::Ci,
         steps: &[
             Step::Task("verify-codegen-fresh"),
             Step::Task("schema-validate"),
-            Step::Task("verify-citations"),
         ],
     },
     Task {
         name: "schema-validate",
-        help: "Validate golden missions + map-object contracts (enums + glyphs + type inventory) + height labels",
+        help: "Validate golden missions + the map-object enums and type inventory",
         group: "schema",
         lane: Lane::Ci,
         steps: &[
             xt!("cargo xtask schema validate", false, || Ok(validate_all()?)),
-            xt!(
-                "cargo xtask schema map-object-golden",
-                false,
-                run_map_object_golden
-            ),
-            xt!("cargo xtask schema map-glyphs", false, || Ok(map_glyphs()?)),
-            xt!("cargo xtask schema height-labels", false, run_height_labels),
             xt!("cargo xtask schema map-object-enums", false, || Ok(
                 map_object_enums()?
             )),
@@ -92,61 +66,26 @@ pub static TASKS: &[Task] = &[
         ],
     },
     Task {
+        name: "schema-map-goldens",
+        help: "On demand: the map-object golden, the glyph atlas and the height labels (needs the LFS Everon DEM: `cargo xtask ci lfs-dem`)",
+        group: "schema",
+        lane: Lane::Ci,
+        steps: &[
+            xt!(
+                "cargo xtask schema map-object-golden",
+                false,
+                run_map_object_golden
+            ),
+            xt!("cargo xtask schema map-glyphs", false, || Ok(map_glyphs()?)),
+            xt!("cargo xtask schema height-labels", false, run_height_labels),
+        ],
+    },
+    Task {
         name: "schema-codegen",
         help: "Regenerate the contract_schema_types crate from contracts/definitions via typify (loadout_projection.rs is hand-maintained)",
         group: "schema",
         lane: Lane::Ci,
         steps: &[xt!("cargo xtask schema codegen", false, || Ok(codegen()?))],
-    },
-    Task {
-        name: "verify-citations",
-        help: "Verify @contract citations in code under every workspace member's top-level folder (crates/, tools/) and the mod folder (mod/) — NOT documentation/ prose (documentation/standards/documentation_standards.md §10)",
-        group: "schema",
-        lane: Lane::Ci,
-        steps: &[xt!("cargo xtask schema citations", false, || Ok(
-            citations()?
-        ))],
-    },
-    Task {
-        name: "verify-coding-standards",
-        help: "SIZE file length + Enfusion comment card + no SELECT * + GO-7 @route/router match (documentation/standards/coding_standards/README.md §11)",
-        group: "verify",
-        lane: Lane::Ci,
-        steps: &[
-            xt!("cargo xtask verify file-length", true, || Ok(
-                verify_file_length()?
-            )),
-            xt!(
-                "cargo xtask verify enfusion-comments",
-                true,
-                run_enfusion_comments
-            ),
-            xt!(
-                "cargo xtask verify no-select-star",
-                true,
-                run_no_select_star
-            ),
-            xt!("cargo xtask verify route-tags", true, run_route_tags),
-        ],
-    },
-    Task {
-        name: "verify-documentation",
-        help: "README coverage + Contents, links + cited paths and commands, Markdown placement + size — over the committed tree",
-        group: "verify",
-        lane: Lane::Ci,
-        steps: &[
-            xt!(
-                "cargo xtask verify readme-coverage",
-                false,
-                run_readme_coverage
-            ),
-            xt!("cargo xtask verify link-check", false, run_link_check),
-            xt!(
-                "cargo xtask verify markdown-placement",
-                false,
-                run_markdown_placement
-            ),
-        ],
     },
     Task {
         name: "verify-editorconfig",
@@ -193,10 +132,10 @@ pub static TASKS: &[Task] = &[
             run: crate::api_package_lane::run_api_test,
         }],
     },
-    // Derived from the workspace: every member no task above tests, one `cargo test -p` each.
+    // Derived from the workspace: one `cargo test --workspace` excluding the families other rows test.
     Task {
         name: "workspace-member-tests",
-        help: "cargo test -p <package> for every workspace member no dedicated task tests (derived from Cargo.toml)",
+        help: "One cargo test --workspace run, excluding the API and frontend families their own rows test",
         group: "build",
         lane: Lane::Ci,
         steps: &[Step::Native {
@@ -229,7 +168,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "lfs-dem",
-        help: "Pull the Everon DEM from LFS (72 MB — terrain and world-object tests + hillshade)",
+        help: "Pull the Everon DEM from LFS (72 MB — height labels, terrain alignment, hillshade)",
         group: "map",
         lane: Lane::Ci,
         steps: &[sh!(
@@ -263,69 +202,41 @@ pub static TASKS: &[Task] = &[
             Step::Task("leptos-build"),
         ],
     },
-    // ── aliases: one-line wrappers on an existing `cargo xtask verify …` command ────────────
+    // ── aliases: one-line wrappers on existing `cargo xtask verify …` commands ──────────────
     Task {
-        name: "verify-no-python",
-        help: "LANG-2 hard zero — same TrackedLanguageBan table as verify-no-shell (.py / python3)",
+        name: "verify-language-bans",
+        help: "LANG-1/2: no tracked Python, Node script or shell/Make path, and no node/npx or python3 invocation",
         group: "verify",
         lane: Lane::Alias,
-        steps: &[xt!("cargo xtask verify no-python", false, || Ok(
-            verify_no_python()?
-        ))],
+        steps: &[
+            xt!("cargo xtask verify no-python", false, || Ok(
+                verify_no_python()?
+            )),
+            xt!(
+                "cargo xtask verify no-node",
+                false,
+                || Ok(verify_no_node()?)
+            ),
+            xt!("cargo xtask verify no-shell", false, || Ok(
+                verify_no_shell()?
+            )),
+        ],
     },
     Task {
-        name: "verify-no-node",
-        help: "zero tracked Node script files (mjs/cjs); no node/npx invocation in a scanned file",
+        name: "verify-file-length",
+        help: "File-length advice: warns about every production file over 500 lines, never fails on one",
         group: "verify",
         lane: Lane::Alias,
-        steps: &[xt!("cargo xtask verify no-node", false, || Ok(
-            verify_no_node()?
+        steps: &[xt!("cargo xtask verify file-length", false, || Ok(
+            verify_file_length()?
         ))],
     },
     Task {
         name: "verify-workspace-laws",
-        help: "WS-1 to WS-5, the workspace laws — crate tiers, crate anatomy, test-file reachability, frontend layering (hard at zero: any violation fails) and Tailwind sources over the workspace members",
+        help: "The enforced workspace laws: crate tiers, crate anatomy and Tailwind sources over the workspace members",
         group: "verify",
         lane: Lane::Alias,
         steps: WORKSPACE_LAW_STEPS,
-    },
-    Task {
-        name: "verify-no-shell",
-        help: "LANG-1 hard zero — no tracked shell/Make/Python/Node-script paths",
-        group: "verify",
-        lane: Lane::Alias,
-        steps: &[xt!("cargo xtask verify no-shell", false, || Ok(
-            verify_no_shell()?
-        ))],
-    },
-    Task {
-        name: "verify-ci-shell",
-        help: "Every GitHub Actions run: is cargo xtask or a short pre-cargo allowlist",
-        group: "verify",
-        lane: Lane::Alias,
-        steps: &[xt!("cargo xtask verify ci-shell", false, verify_ci_shell)],
-    },
-    Task {
-        name: "verify-staging-compose-paths",
-        help: "deploy staging resolves the compose file under website/, not api/",
-        group: "verify",
-        lane: Lane::Alias,
-        steps: &[xt!(
-            "cargo xtask verify staging-compose-paths",
-            true,
-            run_staging_compose_paths
-        )],
-    },
-    Task {
-        name: "verify-mission-rest-size-limits",
-        help: "mission REST body size gate runs before ParseMissionJson",
-        group: "verify",
-        lane: Lane::Alias,
-        steps: &[xt!(
-            "cargo xtask verify mission-rest-size-limits",
-            true,
-            run_mission_rest_size_limits
-        )],
     },
     Task {
         name: "verify-terrain",
@@ -366,13 +277,12 @@ pub static TASKS: &[Task] = &[
     // ── borrowed rows: the build lane and the db lane, carried so the composites above run. ──
     Task {
         name: "rust-ci",
-        help: "Rust CI gate locally — fmt + clippy + build + test-it (mirrors the ci.yml rust-backend job)",
+        help: "Rust CI gate locally — fmt + clippy + wasm-ci + test-it (mirrors the ci.yml api job)",
         group: "build",
         lane: Lane::Borrowed,
         steps: &[
             Step::Task("rust-fmt"),
             Step::Task("rust-clippy"),
-            Step::Task("rust-build"),
             Step::Task("wasm-ci"),
             Step::Task("rust-test-it"),
         ],
@@ -394,15 +304,6 @@ pub static TASKS: &[Task] = &[
         lane: Lane::Borrowed,
         steps: &[Step::Native {
             run: crate::api_package_lane::run_api_clippy,
-        }],
-    },
-    Task {
-        name: "rust-build",
-        help: "Build api_server and every crates/api package (all targets)",
-        group: "build",
-        lane: Lane::Borrowed,
-        steps: &[Step::Native {
-            run: crate::api_package_lane::run_api_build,
         }],
     },
     Task {

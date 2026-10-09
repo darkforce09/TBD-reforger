@@ -16,8 +16,7 @@ tools/browser_testing/chrome_devtools_protocol/src/
 ├── http_client.rs          `new_http_client`: the DevTools endpoint poll's client, built after the rustls ring provider is installed
 ├── intercepted_request.rs  `InterceptedRequestId`: the typed `requestId` of a paused request a fulfil or continue call answers
 ├── lib.rs                  the crate root: module header, `mod` lines and the re-exports
-├── prelude.rs              the common handles for glob import
-└── tests/                  unit tests for Chromium discovery over scratch Playwright folders
+└── prelude.rs              the common handles for glob import
 ```
 
 ## How it works

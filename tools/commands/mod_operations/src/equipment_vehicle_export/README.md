@@ -16,7 +16,7 @@ tools/commands/mod_operations/src/equipment_vehicle_export/
 ├── mod.rs                         the module tree, the validation report and the two command entry points
 ├── publication.rs                 the locked, staged, hash-verified publication and the pointer swap
 ├── relationships.rs               reference, type and class-hierarchy checks across resources
-├── tests/                         unit tests for validation, publication, recovery and tampering
+├── tests/                         unit tests for validation, publication and recovery
 ├── unversioned_export_archive.rs  journalled move of the unversioned export folders aside at first publication
 ├── upload_bundle.rs               the `archives/<generation id>.tar.gz` upload bundle of a published gameplay generation
 └── validation.rs                  the generation walk against the export schema and every census check
@@ -54,8 +54,7 @@ The Workbench plugins write a generation under
 - Rules: a generation that is partial or unverified never publishes, and a failed validation
   leaves the current generation untouched (`partial_and_unverified_exports_cannot_publish` and
   `failed_validation_keeps_the_current_generation_byte_for_byte` in `tests/validation.rs`);
-  published bytes are sealed by their hashes (`publication_is_sealed_retryable_and_preserves_old_data`,
-  `finalized_hashes_detect_consistent_but_tampered_facts`); paths never escape the root or follow
+  published bytes are sealed by their hashes (`publication_is_sealed_retryable_and_preserves_old_data`); paths never escape the root or follow
   a symlink (`path_traversal_and_symlinks_fail`).
 
 ## Related documentation

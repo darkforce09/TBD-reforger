@@ -33,13 +33,7 @@ Browser::shutdown: SIGTERM the group, reap (5 s), SIGKILL the group, remove the 
 
 ## Getting started
 
-Run from the repository root:
-
-```bash
-cargo test -p chrome_devtools_protocol   # Chromium discovery over scratch Playwright folders
-```
-
-The tests build scratch folders and need no browser. The gates that launch one are run through
+The crate has no tests of its own. The gates that launch a browser are run through
 the `gate` binary (see [Editor gates](/documentation/runbooks/editor_gates.md)).
 
 ## Configuration

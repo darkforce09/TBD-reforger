@@ -23,17 +23,16 @@ tools/commands/platform_execution/src/wave_execution/
 ├── land.rs                 re-exports of land/ and the close-ceremony contract
 ├── ledger.rs               wave lock, ticket registry and worktree readers; the current wave
 ├── lock.rs                 the gate lock that serialises gates across worktrees
-├── migrate/                the migration claim-body pin and the persistent database step
+├── migrate/                the persistent database migration step
 ├── migrate.rs              the persist-database design; re-exports migrate/
 ├── mod.rs                  `Ctx`, the help text, output macros, `RunStamp` and the module tree
 ├── push.rs                 `push`, with the guard that asks git which paths are LFS
 ├── reclaim/                the orphan build-cache sweep
 ├── reclaim.rs              the reclaim policy; re-exports reclaim/
-├── schema.rs               the gate's schema step: `cargo xtask ci ci-local-schema`
+├── schema.rs               the gate's schema step: the sub-gates of `cargo xtask ci schema-validate`
 ├── status.rs               `status`, `prep` and `wave`, the read-only commands
 ├── test_cmd.rs             `test --slice <id>`: cargo test into a per-slice private target folder
-├── tests/                  unit tests for every module of the driver
-├── touch.rs                fingerprint invalidation and the changed-crates clippy step
+├── touch.rs                fingerprint invalidation before the gates' cargo steps
 ├── trunk.rs                `trunk build --release` into the gate's private dist and target folders
 └── verdict.rs              the gate verdict receipt `land` and `slice-worktree merge` read
 ```
@@ -90,21 +89,18 @@ verified <sha> ─▶ wave --close ─▶ marker commit ─▶ next wave
 - Depends on:
   - `repository_layout` (with its `build_output` subfolders and `RUN_TARGET_SUBDIR`),
     `process_runner::host_execution` and `ci_task_catalog::cargo_target_pin` (the glibc
-    guard); `tool_test_support` (`CwdGuard`, `test_repo_root`) in its tests;
+    guard);
   - `crate::slice_worktree` (`new`, `drop`);
   - `ticket_wave_lock`, `ticket_registry` (`registry`), `ticket_metrics`, `ticket_model`
     (`TicketId`, `error_chain_text`) and `verification_core` (`lock`, `proc`);
   - `git`, `cargo`, `trunk`, `rustfmt`, `psql` through `podman exec tbd_reforger_db`,
     `sha384sum`, and the `slice-collisions` command.
 - Used by: `cargo xtask platform wave`; `tools/commands/platform_execution/src/preflight/`;
-  `tools/commands/platform_execution/src/slice_worktree/`; the source audit
-  `tools/checks/repository_checks/src/architecture/wave_gate_sources.rs`, which checks that `gate.rs`
-  declares its two implementation modules and exports `gate_slice` and `cmd_gate` to the crate
-  (`pub(crate) use`); `.github/workflows/ci.yml`, whose schema job
-  runs the same `ci ci-local-schema` set as the gate's schema step.
+  `tools/commands/platform_execution/src/slice_worktree/`; `.github/workflows/ci.yml`, whose schema job runs the
+  same `ci schema-validate` sub-gates as the gate's schema step.
 - Rules: an unreadable wave lock is a refusal, never an empty plan (`ledger`); `land` refuses a
   slice without a green verdict for its tip sha (`verdict`); a failing step never stops the gate
-  early; the tests for each module are under `tests/<module>/`.
+  early.
 
 ## Related documentation
 

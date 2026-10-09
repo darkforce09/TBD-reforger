@@ -126,8 +126,8 @@ pub(crate) fn rust_api() -> Vec<Step> {
 }
 
 /// One step running `line` over `api_server` and every API crate of the workspace under
-/// `repo_root`, from the repository root. The `api-test`, `rust-test`, `rust-clippy` and
-/// `rust-build` rows of the CI task table run the same argv through [`crate::api_package_lane`].
+/// `repo_root`, from the repository root. The `api-test`, `rust-test` and `rust-clippy` rows of
+/// the CI task table run the same argv through [`crate::api_package_lane`].
 ///
 /// # Errors
 /// The API packages cannot be derived from the workspace.
@@ -216,9 +216,8 @@ pub(crate) fn gate_doctor() -> Vec<Step> {
 }
 
 pub(crate) fn leptos_gates() -> Vec<Step> {
-    // The **required editor-factory pre-close** path. It runs
-    // `gate editor-suite` (incl. save-dialog-rect / entrance-motion-rect). Chromium stays OUT of
-    // `cargo xtask platform wave gate` — see documentation/runbooks/factory_waves/README.md §5.
+    // The build, the doctor, then `gate editor-suite` (selfcheck, editor, save-export, undo).
+    // Chromium stays OUT of `cargo xtask platform wave gate`.
     // `leptos-gates: leptos-build gate-doctor` and `gate-doctor: leptos-build`. make builds a
     // prerequisite ONCE per run, so `trunk build --release` appears once here, not twice —
     // reproducing that dedupe is part of the byte-for-byte contract.
@@ -233,18 +232,6 @@ pub(crate) fn leptos_gates() -> Vec<Step> {
         "gate",
         "--",
         "editor-suite",
-    ]));
-    v.push(Step::new(&[
-        "cargo",
-        "run",
-        "-q",
-        "-p",
-        "developer_tools",
-        "--bin",
-        "gate",
-        "--",
-        "v-suite",
-        "verify",
     ]));
     v
 }
@@ -289,8 +276,7 @@ pub(crate) fn ballistics_wasm_agreement() -> Vec<Step> {
 /// (the app and every crate under `crates/frontend`, which
 /// [`crate::frontend_package_lane::frontend_packages`] derives from the workspace under
 /// `repo_root`), then the trunk release build. Kept in lockstep with the `ci-local-leptos` row in
-/// `crate::task_definitions`, which runs the same derived lines;
-/// `ci_local_leptos_recipe_and_ci_task_row_run_the_same_lines` pins them.
+/// `crate::task_definitions`, which runs the same derived lines.
 ///
 /// # Errors
 /// The frontend family cannot be derived from the workspace.
@@ -311,10 +297,10 @@ pub(crate) fn ci_local_leptos(repo_root: &Path) -> Result<Vec<Step>> {
     Ok(steps)
 }
 
-/// The command `rust-ci`'s fifth step runs: the database lane's complete integration suite.
+/// The command `rust-ci`'s last step runs: the database lane's complete integration suite.
 const RUST_TEST_IT_COMMAND: &str = "cargo xtask db test-it";
 
-/// `rust-test-it`, `rust-ci`'s fifth step: [`RUST_TEST_IT_COMMAND`], called in process.
+/// `rust-test-it`, `rust-ci`'s last step: [`RUST_TEST_IT_COMMAND`], called in process.
 ///
 /// The database lane owns the whole run: it resolves the container runtime
 /// (`TBD_CONTAINER_RUNTIME`, `podman`, `docker`, or either through the distrobox bridge), creates
@@ -327,17 +313,12 @@ fn rust_test_it() -> Result<u8> {
     crate::task_runner::run_database_test_suite()
 }
 
-/// The four step lists `rust-ci` runs before [`rust_test_it`], in order.
+/// The three step lists `rust-ci` runs before [`rust_test_it`], in order.
 ///
 /// # Errors
 /// As [`wasm_ci`].
-fn rust_ci_recipes() -> Result<[Vec<Step>; 4]> {
-    Ok([
-        rust_fmt(),
-        rust_clippy(&cwd_root())?,
-        rust_build(&cwd_root())?,
-        wasm_ci(&cwd_root())?,
-    ])
+fn rust_ci_recipes() -> Result<[Vec<Step>; 3]> {
+    Ok([rust_fmt(), rust_clippy(&cwd_root())?, wasm_ci(&cwd_root())?])
 }
 
 /// The lines `rust-ci` runs, in order, as `--dry-run` prints them.
@@ -354,7 +335,7 @@ pub(crate) fn rust_ci_lines() -> Result<Vec<String>> {
     Ok(lines)
 }
 
-/// `rust-ci` — fmt + clippy + build + wasm-ci + test-it, in that order, stopping at the first red.
+/// `rust-ci` — fmt + clippy + wasm-ci + test-it, in that order, stopping at the first red.
 ///
 /// Composed from the same leaf functions the individual targets use, which is what makes a hollow
 /// composite structurally impossible: there is no second copy of the recipe to fall out of date.

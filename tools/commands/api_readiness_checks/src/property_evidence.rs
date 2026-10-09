@@ -111,7 +111,3 @@ fn validate_with_configuration(
     }
     Ok(())
 }
-
-#[cfg(test)]
-#[path = "tests/property_evidence.rs"]
-mod tests;

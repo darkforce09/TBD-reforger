@@ -15,18 +15,12 @@ pub(crate) fn run(args: &[String]) -> Result<u8> {
         Ok(o) => o,
         Err(code) => return Ok(code),
     };
-    if opts.selftest {
-        let v = crate::world_boot_verdict::cmd_selftest();
-        let t = four_weapon_equip_selftest();
-        return Ok(if v == 0 && t == 0 { 0 } else { 1 });
-    }
     boot(&find_repository_root()?, opts)
 }
 
 pub(super) fn parse_args(args: &[String]) -> std::result::Result<Opts, u8> {
     let mut opts = Opts {
         keep_logs: false,
-        selftest: false,
         mission: None,
         compiled: false,
         compiled_uuid: None,
@@ -34,8 +28,6 @@ pub(super) fn parse_args(args: &[String]) -> std::result::Result<Opts, u8> {
     for arg in args {
         if arg == "--keep-logs" {
             opts.keep_logs = true;
-        } else if arg == "--selftest" {
-            opts.selftest = true;
         } else if let Some(rest) = arg.strip_prefix("--mission=") {
             opts.mission = Some(rest.to_string());
         } else if arg == "--mission" {

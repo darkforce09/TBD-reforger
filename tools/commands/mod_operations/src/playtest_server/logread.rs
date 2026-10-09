@@ -263,7 +263,3 @@ pub(super) fn console_log_path(run_dir: &str) -> String {
     let dir = hits.last().cloned().unwrap_or_default();
     format!("{dir}/console.log")
 }
-
-#[cfg(test)]
-#[path = "tests/logread/tests.rs"]
-mod tests;

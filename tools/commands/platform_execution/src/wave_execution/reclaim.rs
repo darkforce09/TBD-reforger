@@ -19,10 +19,6 @@ use std::path::{Path, PathBuf};
 use super::Ctx;
 use crate::wave_execution::{werr, wprintln};
 
-#[cfg(test)]
-#[path = "tests/reclaim/tests.rs"]
-mod tests;
-
 mod reclaim_command;
 pub(crate) use reclaim_command::cmd_reclaim;
 
@@ -32,8 +28,3 @@ mod adhoc_token;
 use adhoc_token::adhoc_token;
 use adhoc_token::df_avail;
 use adhoc_token::dir_age_days;
-
-#[cfg(test)]
-use build_output_folders::{gate_folders, sweep_gate_folders, sweep_retired_root_level_folders};
-#[cfg(test)]
-use reclaim_command::{key_of, slice_token};

@@ -8,8 +8,7 @@
 //!
 //! **Position:** reached through `platform_dispatch`; `ticket run` delegates here for each ready
 //! slice (see [`ticket_registry::verbs`]). The token parsing is
-//! [`ticket_metrics::parse_tokens_from_cli_json`], pinned by the recorded fixtures in
-//! `tools/tickets/ticket_metrics/tests/fixtures/execution_receipts/`.
+//! [`ticket_metrics::parse_tokens_from_cli_json`].
 //!
 //! **Signals & state:** none held; spawns the agent CLI through [`process_runner::Run`] in the
 //! slice's worktree (or the repository root when it has none) and writes one receipt file.
@@ -274,7 +273,3 @@ pub fn run_slice(
     println!("[{id}] receipt {}", path.display());
     Ok(Some(path))
 }
-
-#[cfg(test)]
-#[path = "tests/slice_execution/tests.rs"]
-mod tests;

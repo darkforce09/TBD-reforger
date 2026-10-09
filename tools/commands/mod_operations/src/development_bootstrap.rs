@@ -348,7 +348,3 @@ fn out_line(s: &str) -> Result<()> {
     let _ = io::stdout().flush();
     Ok(())
 }
-
-#[cfg(test)]
-#[path = "tests/development_bootstrap/tests.rs"]
-mod tests;

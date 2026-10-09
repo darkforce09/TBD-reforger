@@ -47,8 +47,8 @@ liveness passes, 1 on either failure, and 1 with `--strict` when any warning was
 
 - Depends on: the parent's `FontProbe` and `Liveness` types and constants;
   `tools/browser_testing/chrome_devtools_protocol/src/browser_session.rs` (with the font cache decision,
-  `CacheOrigin` among it) and `server.rs`; `seed_script` from
-  `tools/browser_testing/browser_gate_suites/src/dom_oracle/`; `crate::gate_layout` and the
+  `CacheOrigin` among it) and `server.rs`; `admin_session_seed_script` from
+  `tools/browser_testing/browser_gate_suites/src/session_tokens.rs`; `crate::gate_layout` and the
   `repository_layout` crate; the pins in `tools/browser_testing/browser_gate_suites/gate-env.json`.
 - Used by: `diagnostics.rs`, which re-exports `ensure_gate_font_cache` and `run`; the `gate`
   command line in `tools/browser_testing/browser_gate_suites/src/command_lines/gate.rs`; `cargo xtask mk gate-doctor` and `cargo xtask mk leptos-gates`, and

@@ -168,14 +168,7 @@ enum Parsed {
     Unknown(String),
 }
 
-#[cfg(test)]
-#[path = "tests/playtest_server/tests.rs"]
-mod tests;
-
 mod usage_fail;
 use usage_fail::env_fail;
 use usage_fail::grep_o;
 pub(crate) use usage_fail::run;
-
-#[cfg(test)]
-use usage_fail::{admin_id_is_valid, parse, read_addon_guid, read_scenario};

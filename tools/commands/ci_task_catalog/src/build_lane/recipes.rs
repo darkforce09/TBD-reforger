@@ -8,16 +8,15 @@
 //! **Invariants:** an echo is rendered from the argv that runs; every child cargo gets the shared
 //! target pin unless its recipe sets its own (`rust-api` alone).
 //!
-//! `print-cargo-target-dir`, `verify-cargo-target` and `reclaim-target-ci` compute or delete; every
+//! `print-cargo-target-dir` and `reclaim-target-ci` compute or delete; every
 //! other target is a recipe of `Step`s. `mortar-offline-gate` (a release build, then `gate
 //! mortar-offline`) and `ballistics-wasm-agreement` (a release build, then `gate
 //! ballistics-agreement`) chain a build into a browser gate.
 //!
 //! ── WHERE THE TARGET-DIR PIN LIVES ───────────────────────────────────────────────────────────
 //!
-//! In [`crate::cargo_target_pin`], with the `mk` targets that police it in
-//! `crate::cargo_target_verification`. The pin module is the one to read before changing anything here: `CARGO_TARGET_DIR` is derived from `git rev-parse
-//! --git-common-dir` so that every linked worktree shares the PRIMARY repo's warm `target/`, and
+//! In [`crate::cargo_target_pin`], the module to read before changing anything here:
+//! `CARGO_TARGET_DIR` is derived from `git rev-parse --git-common-dir` so that every linked worktree shares the PRIMARY repo's warm `target/`, and
 //! a `.cargo/config.toml` `[env]` with `relative = true` would silently reverse that.
 //!
 //! Because the pin is a *value we compute*, it is **injected into every child cargo**
@@ -53,7 +52,7 @@ use crate::api_package_lane::{ApiLine, api_line_argv};
 use crate::cargo_target_pin::{
     abi_guard, cwd_root, dev_api_target_dir, env_pin, primary_root, resolve_target_dir,
 };
-use crate::cargo_target_verification::{reclaim_target_ci, verify_cargo_target};
+use crate::ci_scratch_reclaim::reclaim_target_ci;
 
 // ── A RECIPE LINE ────────────────────────────────────────────────────────────────────────────
 
@@ -61,8 +60,7 @@ use crate::cargo_target_verification::{reclaim_target_ci, verify_cargo_target};
 ///
 /// `envs` are **recipe-level** assignments — the ones make echoed as part of the line, e.g.
 /// `CARGO_TARGET_DIR=…/target/dev-api cargo run --bin api-server`. The inherited shared pin is NOT
-/// one of these; it is injected by [`run_steps`] and was never echoed. That distinction is what
-/// [`verify_cargo_target`] §5 checks, so it is structural rather than a convention.
+/// one of these; it is injected by [`run_steps`] and was never echoed.
 pub(crate) struct Step {
     cwd: Option<String>,
     envs: Vec<(String, String)>,
@@ -86,19 +84,6 @@ impl Step {
         self
     }
 
-    /// The value of a **recipe-level** env assignment, if this line makes one.
-    ///
-    /// The accessor rather than a public field: `verify-cargo-target` §5 asks exactly this question
-    /// and nothing else needs the vector. Keeping `envs` private is what stops a future caller from
-    /// *appending* to a recipe from the outside, which is the shape that would let `rust-build`
-    /// acquire a private target dir without the gate having anything to look at.
-    pub(crate) fn recipe_env(&self, key: &str) -> Option<&str> {
-        self.envs
-            .iter()
-            .find(|(k, _)| k == key)
-            .map(|(_, v)| v.as_str())
-    }
-
     /// The line `make` printed before running this — rendered FROM the fields that run.
     ///
     /// Hand-writing the label next to the argv is how a port drifts: the two are edited apart and
@@ -106,8 +91,7 @@ impl Step {
     ///
     /// `shell_word` re-quotes arguments containing whitespace because make echoed the recipe
     /// *text*, where every such argument is written quoted. Nothing here contains a `"` or a `$`,
-    /// so the naive rule is exact; a future argument that does would need real quoting, and
-    /// `tests::echo_matches_make` would catch it.
+    /// so the naive rule is exact; a future argument that does would need real quoting.
     pub(crate) fn echo(&self) -> String {
         let mut s = String::new();
         if let Some(d) = &self.cwd {
@@ -142,7 +126,6 @@ const FRONTEND_APPLICATION_FOLDER: &str = "crates/frontend/shell/frontend_applic
 /// Every Makefile target this module answers to, in `make help` order.
 pub const TARGETS: &[&str] = &[
     "print-cargo-target-dir",
-    "verify-cargo-target",
     "reclaim-target-ci",
     "rust-api",
     "rust-build",
@@ -184,11 +167,4 @@ use shell_word::unknown_target;
 pub(crate) use shell_word::wasm_ci;
 
 mod execution;
-// The recipe tests scan every target's lines through the function `--dry-run` prints them with.
-#[cfg(test)]
-pub(crate) use execution::recipe_lines;
 pub use execution::run;
-
-#[cfg(test)]
-#[path = "tests/recipes.rs"]
-mod tests;

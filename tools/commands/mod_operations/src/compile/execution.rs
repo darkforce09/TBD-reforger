@@ -1,15 +1,14 @@
 //! The compile gate's entry points, its server run and log poll, and the Workbench-tooling guard.
 //!
-//! **Role:** `run`, `run_selftest` and `run_preflight` answer `mod compile`, `compile-selftest` and
-//! `compile-preflight`; `compile_inner` stages the addons, starts the dedicated server and polls
-//! its logs for a verdict.
+//! **Role:** `run` and `run_preflight` answer `mod compile` and `compile-preflight`;
+//! `compile_inner` stages the addons, starts the dedicated server and polls its logs for a verdict.
 //! **Position:** under [`crate::compile`]; called by [`crate::mod_dispatch`]; starts the server
 //! through [`crate::compile_host::hostrun`] and [`crate::server_launcher`], and hands a failing log
 //! to `report_compile_errors`.
 //! **Signals & state:** the run folder and the cleanup [`crate::compile_host::Session`] it arms;
 //! the launcher's output goes to the run folder's `stdout.log`.
-//! **Invariants:** the verdict comes from the server's logs, never its exit status; only exit 1
-//! counts as a passing selftest; a missing server or bridge is exit 3.
+//! **Invariants:** the verdict comes from the server's logs, never its exit status; a missing
+//! server or bridge is exit 3.
 
 use super::*;
 
@@ -28,69 +27,7 @@ pub(crate) fn run(args: &[String]) -> Result<u8> {
     }
 }
 
-/// Entry for `xtask mod compile-selftest`.
-///
-/// THE INSTRUMENT BEFORE THE VERDICT. This check's entire job is to prove the absence of false
-/// greens, so it must not be one. Only exit **1** — a real Enfusion rejection of the deliberately
-/// broken `--selftest` addon — counts as a pass, per the contract at the top of this file:
-/// 0 compiled clean · 1 real compile failure · 2 no verdict reached · 3 environment failure.
-///
-/// A check shaped `if compile --selftest; then FAIL else OK fi` reads ANY
-/// non-zero as "the gate correctly rejected broken source". On a machine with no dedicated server
-/// and no host bridge the gate exits 3 without compiling a line, and that printed SELFTEST OK —
-/// while `mod wave gate` called it and reported PASS for a check that never happened.
-///
-/// The classification lives here rather than in a recipe, where it would have
-/// to be a shell `case` **because GNU make flattens every failed recipe to its own status 2**,
-/// destroying the 1-vs-3 distinction the whole check turns on. In-process there is no flattening:
-/// `rc` below is this gate's own. Each branch still NAMES its failure mode, because a caller
-/// should get the diagnosis from the text and not have to reconstruct it from `$?`.
-pub(crate) fn run_selftest() -> Result<u8> {
-    let opts = Opts {
-        selftest: true,
-        ..Opts::default()
-    };
-    let rc = run_with_root(&find_repository_root()?, &opts);
-    Ok(match rc {
-        1 => {
-            println!("SELFTEST OK: gate correctly rejected broken source (exit 1)");
-            0
-        }
-        0 => {
-            println!(
-                "SELFTEST FAIL: gate returned 0 on deliberately broken source — it is no longer \
-                 detecting compile errors, so every green mod-compile since is suspect."
-            );
-            1
-        }
-        3 => {
-            println!(
-                "SELFTEST FAIL: ENVIRONMENT (exit 3) — the gate never ran. Read the ENV FAIL \
-                 above: it is this machine, and it says NOTHING about tbd-framework. A check that \
-                 did not happen is not a pass."
-            );
-            1
-        }
-        2 => {
-            println!(
-                "SELFTEST FAIL: no verdict reached (exit 2 — timeout, or a bad argument to mod \
-                 compile). Inconclusive is not a pass."
-            );
-            1
-        }
-        other => {
-            println!(
-                "SELFTEST FAIL: mod compile --selftest exited {other}, outside its documented \
-                 0/1/2/3 contract."
-            );
-            1
-        }
-    })
-}
-
-/// The mod-gates.yml preflight, in Rust. Missing server or empty rdb is a hard fail
-/// (exit 1). A check that did not find the depot must not print SELFTEST OK — that is
-/// `run_selftest`'s job, and it already refuses exit 0 / 3 as a pass.
+/// The mod-gates.yml preflight, in Rust. Missing server or empty rdb is a hard fail (exit 1).
 pub(crate) fn run_preflight() -> Result<u8> {
     Ok(preflight_with_root(&find_repository_root()?))
 }

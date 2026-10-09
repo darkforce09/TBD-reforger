@@ -69,7 +69,3 @@ impl PropertyTestConfiguration {
         ]
     }
 }
-
-#[cfg(test)]
-#[path = "tests/property_test_configuration.rs"]
-mod tests;

@@ -14,7 +14,7 @@ tools/commands/mod_operations/src/equipment_gameplay/
 ├── policy_codegen.rs       writes, or with `--check` compares, the Workbench selection tables
 ├── projection.rs           `mod project-equipment-gameplay`: a complete source generation into a gameplay one
 ├── resource_projection.rs  one resource's projection: selected nodes, fields, sections and links
-├── tests/                  unit tests for numeric tokens, broken publications and the policy's selections
+├── tests/                  unit tests for numeric tokens and broken publications
 ├── validation.rs           the gameplay generation check the validate and publish commands call
 └── validation_resource.rs  one gameplay resource's check: location, identity, fields and references
 ```
@@ -53,8 +53,7 @@ into the policy digest. Three users share it:
   generates (`--check`); a gameplay generation built under another policy digest never validates;
   numeric source tokens survive projection unchanged and a broken publication is refused
   (`gameplay_preserves_numeric_tokens_and_rejects_broken_publication` in `tests/catalog.rs`); the policy
-  keeps gameplay controls and drops presentation
-  (`gameplay_policy_retains_gameplay_controls_and_excludes_presentation`).
+  keeps gameplay controls and drops presentation.
 
 ## Related documentation
 

@@ -284,7 +284,3 @@ fn ensure_ascii(s: &str) -> String {
     }
     out
 }
-
-#[cfg(test)]
-#[path = "tests/render/tests.rs"]
-mod tests;

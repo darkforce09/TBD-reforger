@@ -6,9 +6,7 @@
 //! development API's private folder under `cwd_root`; [`abi_guard`] refuses a target directory
 //! that another glibc built.
 //! **Position:** read by the `mk` recipes ([`crate::build_lane::recipes`]), the xtask wave
-//! driver's flush (through [`abi_guard`]) and the target checks of `cargo_target_verification`,
-//! which read this file for the pin's source text. The
-//! subfolder names and their formula are `repository_layout::build_output`'s.
+//! driver's flush (through [`abi_guard`]) and `mk reclaim-target-ci`. The subfolder names and their formula are `repository_layout::build_output`'s.
 //! **Signals & state:** none held; `primary_root` asks `git`, and [`abi_guard`] writes one
 //! stamp file per target directory.
 //! **Invariants:**
@@ -22,8 +20,7 @@
 //! - The pin is computed here and never moved into `.cargo/config.toml`: an `[env]` entry with
 //!   `relative = true` resolves against the config file's own folder, which inside a linked
 //!   worktree is that worktree, so every worktree would get its own cold `target/` and nothing would
-//!   report it. `verify-cargo-target` §4 asserts the negation, and §1 reads this file for the pin's
-//!   source text.
+//!   report it.
 
 use std::path::{Path, PathBuf};
 
@@ -62,9 +59,8 @@ pub(crate) fn primary_root() -> PathBuf {
 /// `CARGO_TARGET_DIR` when set and non-empty, else the primary checkout's `target/`.
 ///
 /// `env` is the caller's `$CARGO_TARGET_DIR`, threaded as a **parameter** rather than read from the
-/// process environment, so `verify-cargo-target` can ask "what would this be with the variable
-/// unset?" without a `remove_var` (unsafe, global, and racy with any thread). One function answers
-/// both questions, so the probe cannot test a different formula than the one that ships.
+/// process environment, so a caller can ask "what would this be with the variable unset?" without
+/// a `remove_var` (unsafe, global, and racy with any thread).
 pub(crate) fn resolve_target_dir(env: Option<&str>) -> String {
     match env {
         // An operator or driver export wins: the wave driver hands its gate steps a private

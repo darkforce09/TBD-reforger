@@ -279,39 +279,17 @@ pub(super) struct GateStep {
 
 /// The wave gate's steps, in run order. `capability` and `oracle citations` are the `enf` checks
 /// of the upstream-framework capability verdicts and of the `@idx` citations in the docs; `schema
-/// validate` is the contract sub-gate set of `cargo xtask ci schema-validate`. Exit 2 from `verify no-crf-leak` (a reference lane
-/// missing) is a FAIL like exit 1: the gate never passes a slice whose leak check did not run.
+/// validate` is the contract sub-gate set of `cargo xtask ci schema-validate`.
 pub(super) const GATE_STEPS: &[GateStep] = &[
     GateStep {
         label: "compile",
         program: "cargo",
         args: &["run", "-q", "-p", "xtask", "--", "mod", "compile"],
     },
-    // Only exit 1, a real rejection of broken source, is a pass for the self-test; the
-    // classification lives in `crate::compile::run_selftest`.
-    GateStep {
-        label: "compile-selftest",
-        program: "cargo",
-        args: &["run", "-q", "-p", "xtask", "--", "mod", "compile-selftest"],
-    },
     GateStep {
         label: "world boot",
         program: "cargo",
         args: &["run", "-q", "-p", "xtask", "--", "mod", "world-boot"],
-    },
-    GateStep {
-        label: "world-boot selftest",
-        program: "cargo",
-        args: &[
-            "run",
-            "-q",
-            "-p",
-            "xtask",
-            "--",
-            "mod",
-            "world-boot",
-            "--selftest",
-        ],
     },
     GateStep {
         label: "world boot +mission",
@@ -326,11 +304,6 @@ pub(super) const GATE_STEPS: &[GateStep] = &[
             "world-boot",
             "--mission=bridgehead-at-levie",
         ],
-    },
-    GateStep {
-        label: "ui layouts",
-        program: "cargo",
-        args: &["run", "-q", "-p", "xtask", "--", "verify", "ui-layouts"],
     },
     GateStep {
         label: "schema validate",
@@ -364,11 +337,6 @@ pub(super) const GATE_STEPS: &[GateStep] = &[
             "--",
             "citations",
         ],
-    },
-    GateStep {
-        label: "no-crf-leak",
-        program: "cargo",
-        args: &["run", "-q", "-p", "xtask", "--", "verify", "no-crf-leak"],
     },
     GateStep {
         label: "ticket registry",

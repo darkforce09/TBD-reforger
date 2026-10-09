@@ -3,7 +3,7 @@
 //! **Role:** turns the final JSON an agent CLI prints into a [`crate::TokensConsumed`]
 //! ([`parse_tokens_from_cli_json`]).
 //! **Position:** xtask's `platform slice-run` calls it on the captured output before writing a
-//! receipt; the recorded outputs in `tests/fixtures/execution_receipts/` pin both dialects.
+//! receipt.
 //! **Signals & state:** none; pure functions.
 //! **Invariants:** only the two recorded dialects parse, the Cursor agent's camelCase keys and
 //! Claude's snake_case keys; a missing usage object, an unknown dialect or a reported total that
@@ -15,11 +15,11 @@ use serde_json::Value;
 
 // ── CLI usage parsing — the two RECORDED dialects ──────────────────────────────────────
 //
-// Pinned by fixtures in `tools/tickets/ticket_metrics/tests/fixtures/execution_receipts/` (recorded output, not guessed):
-//   - `slice_run_cursor_agent.json` — `agent --output-format json`:
+// The two dialects, as the agent CLIs print them:
+//   - `agent --output-format json`:
 //     `usage.inputTokens` / `outputTokens` / `cacheReadTokens` / `cacheWriteTokens`,
 //     optional `reasoningTokens`, optional `totalTokens`.
-//   - `slice_run_claude_print.json` — `claude --print --output-format json`:
+//   - `claude --print --output-format json`:
 //     `usage.input_tokens` / `output_tokens` / `cache_read_input_tokens` /
 //     `cache_creation_input_tokens`.
 // Anything else is an unknown dialect and FAILS CLOSED — never coerced to zeros.

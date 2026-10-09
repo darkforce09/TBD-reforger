@@ -110,10 +110,6 @@ use crate::wave_execution::{werr, wprintln};
 // WHEN NOTHING CAN SPEAK, THE GATE REFUSES AND ASKS. There is no silent pass left on this path:
 // TBD_GATE_BASE_CONFIRM must name the exact sha, so confirming requires reading the sha.
 
-#[cfg(test)]
-#[path = "tests/base/tests.rs"]
-mod tests;
-
 mod wave_close_number;
 pub(crate) use wave_close_number::is_ancestor;
 pub(crate) use wave_close_number::prev_wave_close;

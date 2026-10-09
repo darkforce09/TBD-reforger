@@ -41,10 +41,6 @@ type CloseArgs = (Option<String>, bool, Option<Vec<String>>);
 // was validated IS what lands, by sha identity; a refused candidate never becomes reachable and
 // is garbage for `git gc`.
 
-#[cfg(test)]
-#[path = "tests/land/tests.rs"]
-mod tests;
-
 mod merge_execution;
 pub(crate) use merge_execution::cmd_land;
 pub(crate) use merge_execution::cmd_revert;
@@ -57,9 +53,3 @@ use wave_close::git_at;
 
 mod close_ceremony;
 use close_ceremony::close_ceremony;
-
-#[cfg(test)]
-use wave_close::{close_target, parse_close_args, sanitize_summary};
-
-#[cfg(test)]
-use merge_execution::is_ticket_glob;

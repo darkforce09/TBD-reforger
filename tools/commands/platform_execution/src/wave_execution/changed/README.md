@@ -25,9 +25,8 @@ tools/commands/platform_execution/src/wave_execution/changed/
 - `wasm_scope_prefixes` starts at the app and at every crate of the frontend family (the members
   under crates/frontend) and walks their dependency edges, `path` ones and `workspace = true`
   ones that name a workspace member (the `crates/` members the frontend depends on), instead of a
-  fixed list. `wasm_changed` runs `cargo check` for `wasm32-unknown-unknown` over the frontend
-  family (`-p` per package, from `ci_task_catalog::frontend_package_lane`) when the range touches
-  that scope, and prints a skip otherwise. `frontend_tests_changed` also counts the scope's
+  fixed list; the wave gate's trunk build runs only when the range touches that scope.
+  `frontend_tests_changed` also counts the scope's
   `include_str!` inputs and the repository files its tests read through the frontend test support
   (`repository_reads_under`: `golden!("<file>")` as `contracts/fixtures/api_goldens/<file>`, a
   forwarding `golden!` as the whole folder, the path argument of `repository_text` and

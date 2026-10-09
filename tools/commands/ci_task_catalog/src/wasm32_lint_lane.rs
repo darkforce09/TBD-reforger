@@ -115,7 +115,3 @@ fn is_linted_for_wasm32(member: &WorkspaceMember) -> bool {
         .and_then(|layout| layout.targets.as_deref());
     declared == Some(WASM32_LAYOUT_TARGETS) || is_frontend_member(member)
 }
-
-#[cfg(test)]
-#[path = "tests/wasm32_lint_lane.rs"]
-mod tests;

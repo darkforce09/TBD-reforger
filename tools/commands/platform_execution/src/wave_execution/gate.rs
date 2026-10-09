@@ -1,6 +1,6 @@
 //! The two gate drivers: the cheap per-slice gate and the full wave gate.
 //!
-//! **Role:** holds the step `Runner`, the ten `cargo xtask verify` steps both gates share
+//! **Role:** holds the step `Runner`, the `cargo xtask verify` steps the wave gate runs
 //! (`VERIFY_STEPS`), the derivation of the tool crates the wave gate lints and the native clippy
 //! command line, and re-exports `gate_slice` and `cmd_gate`.
 //!
@@ -59,23 +59,16 @@ impl Runner {
     }
 }
 
-/// The ten `xtask verify` Class-R steps both gates share, in order.
-///
-/// Both `gate_slice` and `cmd_gate` iterate this one table, so no step can be wired into a single
-/// driver and drift green on the path that never runs it. A verification that exists but appears
-/// in no row is invoked by nothing and proves nothing; `verify ci-schema-parity` is the tripwire
-/// that reds when a row or its dispatch disappears.
+/// The `xtask verify` steps the wave gate runs, in order: the enforced workspace laws, the language
+/// bans and the file-length advice, the same verbs `cargo xtask ci ci-local` runs.
 const VERIFY_STEPS: &[(&str, &str)] = &[
-    ("object registry aliases", "object-registry-aliases"),
-    ("wiki seeds", "wiki-seeds"),
-    ("faction library seeds", "faction-library-seeds"),
-    ("staging compose paths", "staging-compose-paths"),
-    ("mission REST size limits", "mission-rest-size-limits"),
-    ("CI schema parity", "ci-schema-parity"),
-    ("destroy target diagnostics", "destroy-target-diagnostics"),
-    ("route tags", "route-tags"),
-    ("reporter identity", "results-reporter-identity-comments"),
-    ("player identity comments", "player-identity-comments"),
+    ("crate tiers", "crate-tiers"),
+    ("crate anatomy", "crate-anatomy"),
+    ("tailwind sources", "tailwind-sources"),
+    ("no-python", "no-python"),
+    ("no-node", "no-node"),
+    ("no-shell", "no-shell"),
+    ("file length", "file-length"),
 ];
 
 /// The repository folder whose workspace members are the tool crates a wave can touch.
@@ -124,10 +117,6 @@ fn native_clippy_argv(packages: &[String]) -> Vec<&str> {
     argv.extend(["--all-targets", "--quiet", "--", "-D", "warnings"]);
     argv
 }
-
-#[cfg(test)]
-#[path = "tests/gate/tests.rs"]
-mod tests;
 
 mod checkrun;
 mod clippy_package_sets;

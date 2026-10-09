@@ -9,7 +9,7 @@ code-leak gate (`licensing/`) and the object registry alias gate (`registry/`). 
 
 ```text
 tools/checks/repository_checks/src/
-├── architecture/   the five workspace laws and the wave-gate linkage pins
+├── architecture/   the five workspace laws
 ├── error.rs        `Error` and `Result`: a check that could not find the checkout, read a file or start a program
 ├── language_bans/  the shell, Python and Node bans and the file-length gate
 ├── lib.rs          the crate root: the checks' shared contract, `mod` lines and the re-exports
@@ -35,10 +35,9 @@ tools/checks/repository_checks/src/
 ## Boundaries
 
 - Depends on: `verification_core`, `process_runner`, `repository_laws`, `repository_layout`,
-  `regex`, `serde_json`, `syn`, `thiserror`.
-- Used by: `tools/xtask/src/commands/verify/dispatch.rs`, the `ci` task table in
-  `tools/commands/ci_task_catalog/src/task_definitions.rs`, and the wave-gate linkage pins of
-  `tools/commands/ci_task_catalog/src/workflow_checks/` and `tools/commands/database_operations/src/database_checks/`.
+  `regex`, `serde_json`, `thiserror`.
+- Used by: `tools/xtask/src/commands/verify/dispatch.rs` and the `ci` task table in
+  `tools/commands/ci_task_catalog/src/task_definitions.rs`.
 - Rules:
   - a check that could not read its input never reads as a pass (each group's README names its
     tests).

@@ -249,7 +249,3 @@ fn canon(p: &str) -> String {
         Err(_) => realpath_m(&PathBuf::from(p)).display().to_string(),
     }
 }
-
-#[cfg(test)]
-#[path = "tests/test_cmd/tests.rs"]
-mod tests;

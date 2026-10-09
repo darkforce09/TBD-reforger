@@ -43,9 +43,6 @@ rows, and lists the `mk` targets and the `db` commands.
   and `LANE_COMMANDS` in `tools/commands/database_operations/src/local_database.rs` for `help`.
 - Used by: `task_runner.rs`, whose re-exports serve `tools/xtask/src/cli/dispatch.rs`
   (`ci`, `help`), `tools/xtask/src/commands/schema/dispatch.rs` (`schema list-gates`),
-  `tools/commands/platform_execution/src/wave_execution/schema.rs` and
-  `tools/commands/ci_task_catalog/src/workflow_checks/schema_parity/source_audit.rs`.
-- Rules: a composite stops at its first failing step and returns that step's code
-  (`a_failing_leaf_fails_the_composite`); an unknown task named by a composite refuses with 2
-  rather than skipping (`every_composite_step_resolves` keeps the table free of one); every row
-  appears in `help` (`help_lists_every_task`).
+  and `tools/commands/platform_execution/src/wave_execution/schema.rs`.
+- Rules: a composite stops at its first failing step and returns that step's code; an unknown
+  task named by a composite refuses with 2 rather than skipping; every row appears in `help`.

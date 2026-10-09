@@ -201,7 +201,3 @@ pub(super) fn table_differences(page: &SolutionTables, expected: &SolutionTables
     }
     out
 }
-
-#[cfg(test)]
-#[path = "../tests/mortar_offline/expected_solution.rs"]
-mod tests;

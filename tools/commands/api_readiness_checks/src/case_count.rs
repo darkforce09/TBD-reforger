@@ -55,7 +55,3 @@ pub(super) fn successful_cases(pattern: &Regex, output: &str) -> u64 {
     }
     unique.len() as u64
 }
-
-#[cfg(test)]
-#[path = "tests/case_count.rs"]
-mod tests;

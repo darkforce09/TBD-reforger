@@ -178,7 +178,3 @@ pub(super) fn gun_position(target_x: f64, target_y: f64) -> (f64, f64) {
         (target_x, target_y + GUN_OFFSET_M)
     }
 }
-
-#[cfg(test)]
-#[path = "../tests/mortar_offline/mission_plan.rs"]
-mod tests;

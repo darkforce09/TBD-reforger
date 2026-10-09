@@ -21,7 +21,6 @@ tools/commands/platform_execution/src/
 ├── slice_execution.rs    `platform slice-run`: one slice through the agent CLI, and its run receipt
 ├── slice_worktree/       the worktree subcommands and their guards
 ├── slice_worktree.rs     `platform slice-worktree`: usage text and module wiring
-├── tests/                unit tests for the preflight run target and `slice-run`
 └── wave_execution/       the platform wave driver, `platform wave`
 ```
 
@@ -109,8 +108,7 @@ an entry function prints `xtask: <cause>` and exits 1; a clap usage error exits 
 
 - Depends on: `repository_layout` (with its `build_output` subfolders), `repository_laws` (the
   workspace members), `process_runner`, `ci_task_catalog` (the glibc guard, the schema gate list,
-  the member package list), `time_source`, and `tool_test_support` in its tests; the
-  `ticket_registry` (`load_registry`), `ticket_metrics`, `ticket_wave_lock`, `ticket_model` and
+  the member package list), `time_source`; the `ticket_registry` (`load_registry`), `ticket_metrics`, `ticket_wave_lock`, `ticket_model` and
   `verification_core` crates; `git`, `cargo`, `trunk`, the local Postgres container and the agent
   CLI.
 - Used by:
@@ -121,11 +119,9 @@ an entry function prints `xtask: <cause>` and exits 1; a clap usage error exits 
     (`tools/commands/mod_operations/src/wave_execution/`);
   - the orchestrator, factory dispatchers and slice agents.
 - Rules:
-  - A slice-run that exits 0 without a usage object fails and writes no receipt
-    (`exit_zero_without_usage_fails_and_writes_no_file` in `tests/slice_execution/tests.rs`).
-  - A slice whose executor is not `claude-code` is refused
-    (`non_claude_code_executor_is_refused`).
-  - Unknown run-target provenance blocks preflight (`tests/preflight/run_target_tests.rs`).
+  - A slice-run that exits 0 without a usage object fails and writes no receipt.
+  - A slice whose executor is not `claude-code` is refused.
+  - Unknown run-target provenance blocks preflight.
   - `slice/<slice>` branches are created and deleted only by `slice-worktree` and the wave drivers.
 
 ## Related documentation

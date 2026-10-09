@@ -207,7 +207,7 @@ pub async fn r_auth(dist_override: Option<String>) -> Result<u8> {
 /// expected text and passes the assertion script; returns 0 pass or 1 fail.
 pub async fn render_check(a: &RenderCheckArgs) -> Result<u8> {
     let seed = if a.seed_auth {
-        Some(crate::dom_oracle::seed_script()?)
+        Some(crate::session_tokens::admin_session_seed_script()?)
     } else {
         None
     };
@@ -282,7 +282,7 @@ pub async fn render_check(a: &RenderCheckArgs) -> Result<u8> {
             "url": url, "ready": ready, "expect": a.expect, "found": found,
             "assertJs": a.assert_js, "assertOk": assert_ok, "assertValue": assert_value,
             "textPreview": text.chars().take(200).collect::<String>(),
-            "htmlBytes": crate::dom_oracle::js_len(&html),
+            "htmlBytes": html.encode_utf16().count(),
         }));
         Ok::<u8, crate::Error>(to_code(pass))
     };

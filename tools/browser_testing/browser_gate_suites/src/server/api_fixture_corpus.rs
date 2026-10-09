@@ -97,7 +97,3 @@ pub(super) async fn answer(corpus: &Path, method: &Method, path: &str) -> Respon
         body.to_string().into_bytes(),
     )
 }
-
-#[cfg(test)]
-#[path = "../tests/server/api_fixture_corpus.rs"]
-mod tests;

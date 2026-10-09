@@ -42,7 +42,7 @@ The run target and its stamp come from
 - Used by: `tools/commands/platform_execution/src/preflight.rs`, which re-exports `run` to the
   `platform` dispatch.
 - Rules: a missing or unreadable stamp blocks like a stale one, so unknown provenance is never
-  green (`tools/commands/platform_execution/src/tests/preflight/run_target_tests.rs`); `--warn`
+  green; `--warn`
   changes only the exit code, never which lines print.
 
 ## Related documentation

@@ -320,7 +320,3 @@ fn drain(rx: &mut UnboundedReceiver<Value>) -> Vec<Value> {
     }
     out
 }
-
-#[cfg(test)]
-#[path = "../tests/mortar_offline/step_progress.rs"]
-mod tests;

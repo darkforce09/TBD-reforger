@@ -62,7 +62,3 @@ pub(crate) fn run_with_root(_root: &Path, args: &[String]) -> Result<u8> {
     // outcome to report — the type system discharges that question.
     crate::playtest_server::run(args)
 }
-
-#[cfg(test)]
-#[path = "tests/development_server/tests.rs"]
-mod tests;

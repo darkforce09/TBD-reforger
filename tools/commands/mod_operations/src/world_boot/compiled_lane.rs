@@ -92,21 +92,6 @@ pub(super) fn assert_four_weapon_equip(text: &str, print: bool) -> bool {
 }
 
 #[rustfmt::skip]
-pub(super) fn four_weapon_equip_selftest() -> u8 {
-    println!("==> four-weapon equip assertion");
-    let g = "[TBD][Equip] slot=0 weapon={3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et result=ok\n[TBD][Equip] slot=1 weapon={9C5C20FB0E01E64F}Prefabs/Weapons/Launchers/M72/Launcher_M72A3.et result=ok\n[TBD][Equip] slot=2 weapon={1353C6EAD1DCFE43}Prefabs/Weapons/Handguns/M9/Handgun_M9.et result=ok\n[TBD][Equip] slot=3 weapon={E8F00BF730225B00}Prefabs/Weapons/Grenades/Grenade_M67.et result=ok\n";
-    let mut rc = 0u8;
-    if !assert_four_weapon_equip(g, true) { rc = 1; }
-    let three: String = g.lines().take(3).collect::<Vec<_>>().join("\n");
-    if assert_four_weapon_equip(&three, false) { println!("  FAIL  four-weapon equip selftest accepted 3 weapons"); rc = 1; }
-    else { println!("  ok    four-weapon equip selftest rejects 3 weapons"); }
-    let r = g.replace("slot=1 weapon={9C5C20FB0E01E64F}Prefabs/Weapons/Launchers/M72/Launcher_M72A3.et result=ok", "slot=0 weapon={9C5C20FB0E01E64F}Prefabs/Weapons/Launchers/M72/Launcher_M72A3.et result=replaced");
-    if assert_four_weapon_equip(&r, false) { println!("  FAIL  four-weapon equip selftest accepted a replaced line"); rc = 1; }
-    else { println!("  ok    four-weapon equip selftest rejects replaced"); }
-    rc
-}
-
-#[rustfmt::skip]
 pub(super) fn seed_fixture_body() -> Value {
     // The four-weapon proof lives on sl_ar: the unarmed base kit, so each weapon row inserts
     // (result=ok) instead of replacing a kit weapon.

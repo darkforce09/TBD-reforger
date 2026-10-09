@@ -23,8 +23,7 @@ tools/commands/api_readiness_checks/src/
 ├── property_test_configuration.rs  the property-test seed, and the refusal of a case-count override
 ├── readiness_verification.rs       `verify`: runs the local checks under `--execute`, then judges every receipt
 ├── register.rs                     reads and validates the acceptance register of requirements and checks
-├── tool_identity.rs                the rustc, cargo and git version lines every receipt records
-└── tests/                          unit tests: case counting, receipts, recordings, property evidence, fingerprints, the seed
+└── tool_identity.rs                the rustc, cargo and git version lines every receipt records
 ```
 
 ## How it works

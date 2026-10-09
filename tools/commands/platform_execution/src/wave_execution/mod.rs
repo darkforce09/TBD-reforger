@@ -373,10 +373,6 @@ impl RunStamp {
     }
 }
 
-#[cfg(test)]
-#[path = "tests/module/run_target_tests.rs"]
-mod run_target_tests;
-
 mod flush;
 pub(crate) use flush::capture_step;
 pub(crate) use flush::emit;
@@ -389,8 +385,3 @@ pub(crate) use flush::resolve_run_target_dir;
 pub(crate) use flush::run;
 pub(crate) use flush::short;
 pub(crate) use flush::subject;
-
-#[cfg(test)]
-use flush::{run_lane_refusal, split_run_args};
-#[cfg(test)]
-pub(crate) use flush::{run_stamp_path, run_target_dir_for, write_run_stamp};

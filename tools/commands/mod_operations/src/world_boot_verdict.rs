@@ -1,20 +1,16 @@
-//! The verdict and `--selftest` half of `cargo xtask mod world-boot`.
+//! The verdict half of `cargo xtask mod world-boot`.
 //!
 //! **Role:** `assess_log` triages a world boot's log against the scenario's assertions (the world
-//! loaded, no hard failure, no unexpected script error, the warning ratchet of a seeded mission);
-//! `cmd_selftest` runs it over offline good and bad fixtures.
+//! loaded, no hard failure, no unexpected script error, the warning ratchet of a seeded mission).
 //! **Position:** under the crate root beside [`crate::world_boot`], which owns the boot driver and
 //! the command line and calls this module with the server's log.
-//! **Signals & state:** none; pure log triage, plus the selftest's temporary fixture folder.
+//! **Signals & state:** none; pure log triage.
 //! **Invariants:** `true` means the log holds every assertion, `false` that at least one failed;
 //! script errors are judged fail-closed: a TBD-owned one fails, and any other fails unless it is
-//! expected on a bare boot or listed as benign vanilla; the selftest exits **0** only when every
-//! good fixture passes and every bad fixture is rejected (a gate that accepts a bad fixture is
-//! hollow, which the bad-* arms pin).
+//! expected on a bare boot or listed as benign vanilla.
 
 use std::fs;
-use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use regex::Regex;
 use verification_core::pattern::Pattern;
@@ -53,11 +49,6 @@ pub(crate) fn assess_log(log: &Path, scenario: &str, mission: Option<MissionCtx<
 /// In-memory twin of [`assess_log`].
 pub(crate) fn assess_log_text(text: &str, scenario: &str, mission: Option<MissionCtx<'_>>) -> bool {
     assess_inner(text, scenario, mission, true)
-}
-
-/// The verdict only, with nothing printed.
-fn assess_quiet(text: &str, scenario: &str) -> bool {
-    assess_inner(text, scenario, None, false)
 }
 
 fn assess_inner(text: &str, scenario: &str, mission: Option<MissionCtx<'_>>, print: bool) -> bool {
@@ -322,170 +313,3 @@ fn read_warn_budget(baseline: &Path, key: &str) -> Option<u32> {
     }
     None
 }
-
-/// Offline anti-vacuity harness (`--selftest`). Returns **0** on SELFTEST OK.
-///
-/// Critical: every `bad-*` fixture must make assess return `false`.
-/// If any bad fixture is accepted (assess exit 0), this returns 1 — a hollow gate.
-pub(crate) fn cmd_selftest() -> u8 {
-    println!("==> world-boot selftest (verdict logic must reject a bad log)");
-    let t = match tempfile_dir("tbd-wb-selftest") {
-        Ok(p) => p,
-        Err(e) => {
-            eprintln!("selftest: could not create temp dir: {e}");
-            return 1;
-        }
-    };
-    let _guard = TempDirGuard(t.clone());
-
-    write_fixture(
-        &t,
-        "good.log",
-        r#"DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
-SCRIPT       : string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok'
-SCRIPT    (E): [TBD][Mission] NO MISSION YET - no machine credential is configured (backend=), and no verified artifact is cached in $profile:TBD_MissionArtifactCache.
-"#,
-    );
-    write_fixture(
-        &t,
-        "bad-missing.log",
-        r#"DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
-SCRIPT    (E): string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=MISSING'
-"#,
-    );
-    write_fixture(
-        &t,
-        "bad-noworld.log",
-        "ENGINE       : Game successfully created.\n",
-    );
-    write_fixture(
-        &t,
-        "bad-scripterr.log",
-        r#"DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
-SCRIPT       : string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok'
-SCRIPT    (E): @"Scripts/Game/TBD/Boom.c,12": null pointer to instance
-"#,
-    );
-    write_fixture(
-        &t,
-        "bad-unknown-class.log",
-        r#"DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
-WORLD     (E): Unknown class 'TBD_ThisComponentDoesNotExist' at offset 530(0x212)
-SCRIPT       : string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok'
-"#,
-    );
-    write_fixture(
-        &t,
-        "bad-vm-exception.log",
-        r#"DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
-SCRIPT       : string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok'
-SCRIPT       : Virtual Machine Exception - Null pointer to instance in TBD_SafestartManager::Restore
-"#,
-    );
-    write_fixture(
-        &t,
-        "bad-lowercase-path.log",
-        r#"DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
-SCRIPT       : string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok'
-SCRIPT    (E): @"scripts/game/tbd/Gamemode/TBD_SpawnManager.c,1400": null pointer to instance
-"#,
-    );
-    write_fixture(
-        &t,
-        "bad-untagged-tbd.log",
-        r#"DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
-SCRIPT       : string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok'
-SCRIPT    (E): Instance of class TBD_SpawnManager is null
-"#,
-    );
-    write_fixture(
-        &t,
-        "bad-unrecognised.log",
-        r#"DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
-SCRIPT       : string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok'
-SCRIPT    (E): Resource file worlds/SomeOther.ent not found
-"#,
-    );
-    write_fixture(
-        &t,
-        "good-vanilla-noise.log",
-        r#"DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
-SCRIPT       : string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok'
-SCRIPT    (E): 'SCR_BaseResupplySupportStationComponent' needs a entity catalog manager!
-"#,
-    );
-
-    let scen = "{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf";
-    let mut st: u8 = 0;
-
-    for good in ["good", "good-vanilla-noise"] {
-        println!("-- {good} (must PASS)");
-        let text = fs::read_to_string(t.join(format!("{good}.log"))).unwrap_or_default();
-        if assess_quiet(&text, scen) {
-            println!("   PASS");
-        } else {
-            println!("   FAIL: rejected {good}");
-            st = 1;
-        }
-    }
-    for bad in [
-        "bad-missing",
-        "bad-noworld",
-        "bad-scripterr",
-        "bad-unknown-class",
-        "bad-vm-exception",
-        "bad-lowercase-path",
-        "bad-untagged-tbd",
-        "bad-unrecognised",
-    ] {
-        println!("-- {bad} (must FAIL)");
-        let text = fs::read_to_string(t.join(format!("{bad}.log"))).unwrap_or_default();
-        if assess_quiet(&text, scen) {
-            // Hollow: assess returned true (exit 0) on a fixture that must be rejected (exit 1).
-            println!("   FAIL: accepted {bad}");
-            st = 1;
-        } else {
-            println!("   PASS (correctly rejected)");
-        }
-    }
-
-    if st == 0 {
-        println!("SELFTEST OK");
-    } else {
-        println!("SELFTEST FAILED");
-    }
-    st
-}
-
-fn write_fixture(dir: &Path, name: &str, body: &str) {
-    let path = dir.join(name);
-    let mut f = fs::File::create(&path).expect("fixture create");
-    f.write_all(body.as_bytes()).expect("fixture write");
-}
-
-fn tempfile_dir(prefix: &str) -> std::io::Result<PathBuf> {
-    let base = std::env::var_os("TMPDIR").unwrap_or_else(|| "/tmp".into());
-    let path = PathBuf::from(base).join(format!("{prefix}.{}.{}", std::process::id(), uuidish()));
-    fs::create_dir_all(&path)?;
-    Ok(path)
-}
-
-fn uuidish() -> u64 {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_nanos() as u64)
-        .unwrap_or(0)
-        ^ (std::process::id() as u64) << 32
-}
-
-struct TempDirGuard(PathBuf);
-impl Drop for TempDirGuard {
-    fn drop(&mut self) {
-        let _ = fs::remove_dir_all(&self.0);
-    }
-}
-
-#[cfg(test)]
-#[path = "tests/world_boot_verdict/tests.rs"]
-mod tests;

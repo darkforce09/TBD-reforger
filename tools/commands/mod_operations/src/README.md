@@ -29,13 +29,12 @@ tools/commands/mod_operations/src/
 ├── playtest_server.rs         `mod playtest`: help text, options and module wiring
 ├── prelude.rs                 the names a caller imports with one `use`
 ├── server_launcher.rs         a server launcher's line drain and its stop after the server's group is killed
-├── tests/                     unit tests for the command modules in this folder
 ├── wave_execution/            the mod wave driver's status, prep, gate, land and push
 ├── wave_execution.rs          `mod wave`: help text, worktree states and module wiring
 ├── website_api_client/        the website API client the playtest, world boot and smoke tests use
 ├── world_boot/                the headless world boot driver and its compiled-mission lane
 ├── world_boot.rs              `mod world-boot`: options, run state and module wiring
-└── world_boot_verdict.rs      the world boot's log verdict and its offline `--selftest` fixtures
+└── world_boot_verdict.rs      the world boot's log verdict
 ```
 
 ## How it works
@@ -218,14 +217,6 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
   missing or unreadable `resourceDatabase.rdb`).
 - Example: `cargo xtask mod compile`
 
-### compile-selftest
-
-- Synopsis: `mod compile-selftest`
-- Does: runs `mod compile --selftest` in-process and passes only when the gate rejects the
-  deliberately broken source.
-- Exit codes: 0 the gate exited 1; 1 any other gate exit.
-- Example: `cargo xtask mod compile-selftest`
-
 ### compile-preflight
 
 - Synopsis: `mod compile-preflight`
@@ -236,11 +227,11 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 
 ### world-boot
 
-- Synopsis: `mod world-boot [--selftest] [--keep-logs] [--mission=<file|name> | --compiled[=<uuid>]]`
+- Synopsis: `mod world-boot [--keep-logs] [--mission=<file|name> | --compiled[=<uuid>]]`
 - Does: boots the dedicated server headless with the local addon and asserts the world loads, the
   framework roll-call is clean and no TBD script errors; with a mission, also that it validated
   within its warning budget; `--compiled` seeds a mission through the API and checks the
-  four-weapon equip; `--selftest` runs the verdict against fixtures with no engine.
+  four-weapon equip.
 - Exit codes: 0 pass; 1 code failure; 2 usage; 3 environment.
 - Example: `cargo xtask mod world-boot --mission=bridgehead-at-levie`
 
@@ -256,7 +247,7 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 ## Boundaries
 
 - Depends on:
-  - `repository_layout`, `process_runner::host_execution`, and `tool_test_support` in its tests;
+  - `repository_layout`, `process_runner::host_execution`, and `tool_test_support` in the equipment tests;
   - `remote_debugging::debug::remote_logs`, `workstation_setup` (`staging_server`,
     `mcp_game_root`), `database_operations::milestone_announcement`,
     `enfusion_mcp::daemon` and `platform_execution::slice_worktree`;
@@ -267,21 +258,15 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
     website API for the platform lanes.
 - Used by:
   - `tools/xtask/src/cli/mod.rs` and `tools/xtask/src/cli/dispatch.rs`, which mount the group;
-  - `.github/workflows/mod-gates.yml` (`compile-preflight`, `compile-selftest`, `compile`,
-    `world-boot`) and `.github/workflows/ci.yml` (`world-boot --selftest`);
-  - `mod wave gate`, which runs `compile`, `compile-selftest` and `world-boot`, and
+  - `.github/workflows/mod-gates.yml` (`compile-preflight`, `compile`, `world-boot`);
+  - `mod wave gate`, which runs `compile` and `world-boot`, and
     `mod dev-bootstrap --server`, which runs `mod dev-server`;
   - mod developers and slice agents.
 - Rules:
-  - The game-facing gates keep the 0/1/2/3 contract, and an environment fault never exits 1
-    (`no_server_is_rc3` in `tests/compile/tests.rs`).
-  - `compile-selftest` passes only on the gate's exit 1 (`run_selftest` in
-    `compile/execution.rs`).
-  - `mod dev-server` with no arguments exits 2 (`no_args_is_rc2` in
-    `tests/development_server/tests.rs`).
-  - `mod playtest --help` lists exactly the parsed flags (`help_text_matches_the_options_we_parse`
-    in `tests/playtest_server/tests.rs`).
-  - Unit tests live under `tests/`, never inline.
+  - The game-facing gates keep the 0/1/2/3 contract, and an environment fault never exits 1.
+  - `mod dev-server` with no arguments exits 2.
+  - `mod playtest --help` lists exactly the parsed flags.
+  - Unit tests live in `tests/` folders, never inline.
 
 ## Related documentation
 

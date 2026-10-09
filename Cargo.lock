@@ -399,13 +399,10 @@ dependencies = [
  "api_server_infrastructure",
  "api_state",
  "axum",
- "chrono",
- "serde_json",
  "sqlx",
  "thiserror 2.0.18",
  "tokio",
  "tracing",
- "uuid",
 ]
 
 [[package]]
@@ -587,10 +584,7 @@ name = "api_identifiers"
 version = "0.1.0"
 dependencies = [
  "newtype_ids",
- "serde",
- "serde_json",
  "sqlx",
- "uuid",
 ]
 
 [[package]]
@@ -754,12 +748,10 @@ dependencies = [
  "process_runner",
  "regex",
  "repository_layout",
- "repository_root",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
  "time_source",
- "tool_test_support",
  "verification_core",
 ]
 
@@ -799,8 +791,6 @@ dependencies = [
  "fleet_wire_contract",
  "futures",
  "jsonschema",
- "proptest",
- "repository_laws",
  "repository_root",
  "serde",
  "serde_json",
@@ -1748,15 +1738,10 @@ dependencies = [
 name = "ci_task_catalog"
 version = "0.1.0"
 dependencies = [
- "clap",
  "database_operations",
- "deployment",
- "documentation_checks",
  "libc",
  "map_asset_verification",
- "mod_script_checks",
  "process_runner",
- "regex",
  "repository_checks",
  "repository_laws",
  "repository_layout",
@@ -1764,9 +1749,7 @@ dependencies = [
  "schema_tooling",
  "serde",
  "serde_json",
- "serde_norway",
  "thiserror 2.0.18",
- "tool_test_support",
  "verification_core",
 ]
 
@@ -2272,7 +2255,6 @@ dependencies = [
  "repository_layout",
  "repository_root",
  "thiserror 2.0.18",
- "tool_test_support",
  "verification_core",
 ]
 
@@ -2341,7 +2323,6 @@ dependencies = [
  "repository_root",
  "serde_json",
  "thiserror 2.0.18",
- "toml",
  "tool_test_support",
  "verification_core",
 ]
@@ -2831,7 +2812,6 @@ dependencies = [
  "repository_root",
  "serde_json",
  "thiserror 2.0.18",
- "tool_test_support",
  "verification_core",
 ]
 
@@ -4645,7 +4625,6 @@ dependencies = [
  "newtype_ids",
  "render_primitives",
  "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -5141,7 +5120,6 @@ version = "0.1.0"
 dependencies = [
  "render_primitives",
  "serde",
- "serde_json",
  "thiserror 2.0.18",
 ]
 
@@ -6361,7 +6339,6 @@ name = "orbat_slot_ids"
 version = "0.1.0"
 dependencies = [
  "newtype_ids",
- "serde_json",
 ]
 
 [[package]]
@@ -6696,7 +6673,6 @@ dependencies = [
  "ticket_registry",
  "ticket_wave_lock",
  "time_source",
- "tool_test_support",
  "verification_core",
  "walkdir",
 ]
@@ -7372,12 +7348,10 @@ dependencies = [
  "newtype_ids",
  "process_runner",
  "regex",
- "repository_layout",
  "repository_root",
  "serde_json",
  "thiserror 2.0.18",
  "time_source",
- "tool_test_support",
  "verification_core",
 ]
 
@@ -7423,7 +7397,6 @@ dependencies = [
  "repository_layout",
  "repository_root",
  "serde_json",
- "syn 2.0.118",
  "thiserror 2.0.18",
  "verification_core",
 ]
@@ -7453,7 +7426,6 @@ dependencies = [
  "process_runner",
  "repository_layout",
  "ticket_model",
- "tool_test_support",
  "verification_core",
 ]
 
@@ -8038,19 +8010,6 @@ dependencies = [
  "serde",
  "serde_core",
  "zmij",
-]
-
-[[package]]
-name = "serde_norway"
-version = "0.9.42"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e408f29489b5fd500fab51ff1484fc859bb655f32c671f307dcd733b72e8168c"
-dependencies = [
- "indexmap",
- "itoa",
- "ryu",
- "serde",
- "unsafe-libyaml-norway",
 ]
 
 [[package]]
@@ -8645,19 +8604,14 @@ version = "0.1.0"
 dependencies = [
  "api_audit_log",
  "api_caller_identity",
- "api_configuration",
  "api_database",
  "api_discord",
- "api_equipment_datasets",
  "api_foundation",
  "api_http_layer",
  "api_identifiers",
  "api_identity_and_access",
- "api_missions",
  "api_operations",
  "api_server_infrastructure",
- "api_state",
- "axum",
  "chrono",
  "dotenvy",
  "fleet_wire_contract",
@@ -8670,8 +8624,6 @@ dependencies = [
  "sqlx",
  "time_source",
  "tokio",
- "tower",
- "tower-http 0.7.0",
  "tracing-subscriber",
  "url",
  "uuid",
@@ -8713,7 +8665,6 @@ dependencies = [
  "deploy_settings",
  "deployment",
  "process_runner",
- "regex",
  "repository_layout",
  "repository_root",
  "serde",
@@ -8721,8 +8672,6 @@ dependencies = [
  "staging_load_plan",
  "thiserror 2.0.18",
  "time_source",
- "toml",
- "tool_test_support",
 ]
 
 [[package]]
@@ -9698,12 +9647,6 @@ dependencies = [
  "orbat_slot_ids",
  "render_primitives",
 ]
-
-[[package]]
-name = "unsafe-libyaml-norway"
-version = "0.2.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b39abd59bf32521c7f2301b52d05a6a2c975b6003521cbd0c6dc1582f0a22104"
 
 [[package]]
 name = "untrusted"
@@ -10924,7 +10867,6 @@ dependencies = [
  "repository_root",
  "serde_json",
  "thiserror 2.0.18",
- "tool_test_support",
  "verification_core",
 ]
 

@@ -191,7 +191,7 @@ pub(super) async fn liveness_probe(dist: &str, env: Option<&Value>) -> Result<Li
     )
     .await?;
     let browser = cdp::launch(9399, &[]).await?;
-    let auth_seed = crate::dom_oracle::seed_script()?;
+    let auth_seed = crate::session_tokens::admin_session_seed_script()?;
     let page = cdp::new_page(&browser, None, &[auth_seed.as_str()]).await?;
     page.bypass_service_worker().await?;
     let url = format!("http://localhost:{}{}", srv.port, EDIT_PATH);

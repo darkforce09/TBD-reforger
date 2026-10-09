@@ -43,9 +43,8 @@ No feature and no environment variable.
 ## Boundaries
 
 - Depends on: `verification_core`, `process_runner`, `repository_laws`, `repository_layout`,
-  `regex`, `serde_json`, `syn` and `thiserror`; `tool_test_support`, `toml` and `walkdir` in tests.
-- Used by: `xtask` (`cargo xtask verify`, the `ci` task table, and the wave-gate linkage pins of
-  its CI schema-parity and faction-library checks).
+  `regex`, `serde_json` and `thiserror`; `tool_test_support`, `toml` and `walkdir` in tests.
+- Used by: `xtask` (`cargo xtask verify` and the `ci` task table).
 - Rules: tier 2 of `tools/checks` (`cargo xtask verify crate-tiers`); the crate anatomy
   (`cargo xtask verify crate-anatomy`).
 

@@ -40,9 +40,6 @@ use repository_layout::build_output;
 ///   * [`super::super::touch::touch_changed`] — touches the owning crate's Cargo.toml (or `include!`
 ///     consumers) so cargo fingerprints still invalidate; refuses only when nothing at all can be
 ///     touched.
-///   * [`super::super::touch::clippy_changed`] — resolves the crate from the path (or `include!`
-///     consumers for an orphan fragment: a `.rs` file outside every package that crates pull in
-///     through `include!`); refuses only when zero crates resolve.
 ///
 /// The signature-defect refuse that remains is "listed Rust changes, examined NOTHING" — not
 /// "listed deletions, rustfmt had no file to open".
@@ -245,50 +242,10 @@ pub(crate) fn wasm_scope_touched<'a>(root: &Path, paths: impl Iterator<Item = &'
     })
 }
 
-pub(crate) fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
-    let base = if base.is_empty() { DEFAULT_BASE } else { base };
-    // Same union as fmt_changed, for the same reason. LFS-safe porcelain.
-    let wt = match ledger::git_porcelain_paths() {
-        Ok(v) => v,
-        Err(rc) => return rc,
-    };
-    let diff = git_stdout_lossy(&["diff", "--name-only", base]);
-    let touched = wasm_scope_touched(&ctx.root, diff.lines().chain(wt.iter().map(String::as_str)));
-    if !touched {
-        wprintln!(
-            "frontend untouched — scope: {}",
-            wasm_scope_prefixes(&ctx.root).join(" ")
-        );
-        return 0;
-    }
-    // checkrun, not hostrun: this IS a cargo check, so it carries the exposure verbatim. The
-    // ticket's fix direction names `cargo check --workspace` and the three clippy steps; this line
-    // is neither, and leaving it would have left a check step on the shared dir in the one file
-    // whose subject is check steps on the shared dir. Same dir as the rest — cargo namespaces by
-    // target triple, so wasm32 and native coexist without either evicting the other.
-    // Every package of the frontend family, derived from the workspace: a crate under
-    // `crates/frontend` is checked for wasm32 from the moment the workspace names it.
-    let check = match frontend_family_argv(
-        &ctx.root,
-        &["cargo", "check"],
-        &["--target", "wasm32-unknown-unknown", "--quiet"],
-    ) {
-        Ok(argv) => argv,
-        Err(error) => {
-            wprintln!("    {error}");
-            return 1;
-        }
-    };
-    let argv = ctx.host.checkrun_argv(&ctx.gate_check_target, &check);
-    let (out, rc) = host::capture(&argv);
-    wprint!("{out}");
-    rc
-}
-
 /// THE SLICE GATE HAD NO TEST STEP AT ALL, AND WAVE 253 PAID FOR IT TWICE.
 ///
-/// [`super::super::gate::gate_slice`] ran `cargo check`, wasm32, fmt, clippy, schema, the catalogue-drift
-/// probe, two `db_migrate` steps and the `VERIFY_STEPS` loop — every one of which asks "does this
+/// [`super::super::gate::gate_slice`] ran compile, format, lint, schema and migration steps — every one
+/// of which asks "does this
 /// compile / is it formatted / does the schema still hold", and none of which runs a test. A slice
 /// only executed its own tests if its BRIEF told it to, and on 2026-09-07 two slices in one wave
 /// shipped deterministically-failing frontend tests that only the wave-level gate caught, after

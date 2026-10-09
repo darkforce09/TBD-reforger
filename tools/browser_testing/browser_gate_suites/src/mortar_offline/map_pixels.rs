@@ -83,7 +83,3 @@ pub(super) fn region_stats(png: &[u8], rect: CssRect) -> Result<RegionStats> {
 pub(super) fn imagery_drew(stats: RegionStats) -> bool {
     stats.distinct_colours >= MIN_DISTINCT_COLOURS && stats.luma_std_dev >= MIN_LUMA_STD_DEV
 }
-
-#[cfg(test)]
-#[path = "../tests/mortar_offline/map_pixels.rs"]
-mod tests;

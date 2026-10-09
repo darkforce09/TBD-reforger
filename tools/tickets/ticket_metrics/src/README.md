@@ -37,8 +37,7 @@ ticket metrics ──cmd_metrics──► runs, elapsed and token sums, optional
   stamps (`time_source::validate_rfc3339_utc`).
 - `parse_tokens_from_cli_json` reads the two recorded dialects, the Cursor agent's
   (`usage.inputTokens`, …) and Claude's (`usage.input_tokens`, …), and fails on anything else
-  rather than recording zeros. The recorded outputs sit in the crate's
-  `tests/fixtures/execution_receipts/`.
+  rather than recording zeros.
 - A run file is named by its compact start time and the first 12 characters of its commit
   (`nosha` when there is none), with `-1`, `-2`, … added when a name is taken, so two runs never
   share a file; the newest one is chosen by `started`, then by name length and name.

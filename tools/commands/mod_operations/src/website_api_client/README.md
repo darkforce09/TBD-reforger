@@ -17,8 +17,7 @@ tools/commands/mod_operations/src/website_api_client/
 ├── mission_artifact_cache.rs   stage or clear `TBD_MissionArtifactCache/` in a mod profile
 ├── mission_publication.rs      create, read, submit, approve and delete missions; artifact documents
 ├── mod.rs                      the module tree; re-exports the client, flows and cache helpers
-├── runtime_telemetry_reads.rs  a server's current match and telemetry queue reading; a match's events
-└── tests/                      unit tests for the flows and the transport parsing
+└── runtime_telemetry_reads.rs  a server's current match and telemetry queue reading; a match's events
 ```
 
 ## How it works
@@ -58,12 +57,9 @@ the cached document only when its bytes hash to the recorded SHA-256.
   `tools/commands/mod_operations/src/world_boot.rs` and its `compiled_lane.rs`,
   `tools/commands/mod_operations/src/mission_test.rs` and
   `tools/commands/mod_operations/src/game_runtime_api_smoke.rs`.
-- Rules: the flows are tested against a scripted transport, with no network
-  (`tests/flows.rs`); a fetched artifact document must hash to its entity tag
-  (`artifact_document_must_hash_to_its_entity_tag`); a refused submission names its code
-  (`a_refused_submission_names_its_code`); a partial queue reading is an error, never a zero
-  (`a_partial_queue_reading_is_an_error_not_a_zero`); URL components are percent-encoded except unreserved
-  bytes (`components_are_percent_encoded_except_unreserved_bytes` in `tests/transport_parsing.rs`).
+- Rules: a fetched artifact document must hash to its entity tag; a refused submission names its
+  code; a partial queue reading is an error, never a zero; URL components are percent-encoded
+  except unreserved bytes.
 
 ## Related documentation
 

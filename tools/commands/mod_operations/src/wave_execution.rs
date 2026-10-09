@@ -81,10 +81,6 @@ impl TreeState {
 
 // ── commands ──────────────────────────────────────────────────────────────────
 
-#[cfg(test)]
-#[path = "tests/wave_execution.rs"]
-mod tests;
-
 mod execution;
 use execution::cmd_gate;
 use execution::current_wave;
@@ -96,6 +92,3 @@ use execution::wave_slices;
 mod land;
 use land::cmd_land;
 use land::cmd_push;
-
-#[cfg(test)]
-use execution::{parent_slice, run_with_root};

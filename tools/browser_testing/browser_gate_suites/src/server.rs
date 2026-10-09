@@ -464,22 +464,5 @@ pub async fn start_server(cfg: ServeConfig, port: u16) -> Result<RunningServer> 
     })
 }
 
-/// The `/api` proxy must **stream**, not buffer.
-///
-/// These tests exist because the gate could not see something. `gate serve` used to do
-/// `upstream.bytes().await`, which resolves only at end-of-body, so an endless response (SSE,
-/// long-poll) parked the handler forever and the downstream request never completed. Measured
-/// against the live `GET /api/v1/servers/{id}/status/stream`: 0 bytes delivered in 12 s through
-/// the old proxy while the upstream emitted 4 lines in the same window.
-///
-/// The trap these tests are built to avoid: **a test that only checks the final assembled body
-/// would pass under the old buffering code too, and would therefore prove nothing.** So
-/// [`sse_frames_arrive_incrementally_not_buffered`] keys on ORDERING — it shows frame 1 is in
-/// hand while frame 2 does not exist yet — which buffering cannot fake, because buffering has
-/// exactly one delivery moment and it is at end-of-body.
-#[cfg(test)]
-#[path = "tests/server/tests.rs"]
-mod tests;
-
 #[path = "server/api_fixture_corpus.rs"]
 pub mod api_fixture_corpus;

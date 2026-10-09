@@ -340,7 +340,3 @@ pub(crate) fn run(warn_only: bool) -> Result<u8> {
     writeln!(out, "PREFLIGHT: PASS ({} warn)", c.warn)?;
     Ok(0)
 }
-
-#[cfg(test)]
-#[path = "../tests/preflight/api_freshness_tests.rs"]
-mod api_freshness_tests;

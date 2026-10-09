@@ -70,10 +70,6 @@ enum RunTargetState {
     },
 }
 
-#[cfg(test)]
-#[path = "tests/preflight/run_target_tests.rs"]
-mod run_target_tests;
-
 mod ok;
 use ok::api_listen_pid;
 use ok::capture_stdout;
@@ -103,6 +99,3 @@ use ok::worktree_paths;
 
 mod execution;
 pub(crate) use execution::run;
-
-#[cfg(test)]
-use ok::run_binaries;

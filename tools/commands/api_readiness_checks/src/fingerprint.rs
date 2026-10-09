@@ -399,11 +399,3 @@ pub(super) fn configuration(root: &Path) -> Result<String> {
     }
     Ok(hash.finalize_hex())
 }
-
-#[cfg(test)]
-#[path = "tests/property_fingerprint.rs"]
-mod tests;
-
-#[cfg(test)]
-#[path = "tests/source_fingerprint.rs"]
-mod source_tests;

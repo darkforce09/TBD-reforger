@@ -23,7 +23,6 @@ repository_laws = { workspace = true }
 repository_layout = { workspace = true }
 repository_root = { workspace = true }
 serde_json = { workspace = true }
-syn = { workspace = true, features = ["full"] }
 thiserror = { workspace = true }
 verification_core = { workspace = true }
 

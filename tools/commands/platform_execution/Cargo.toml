@@ -37,9 +37,5 @@ time_source = { workspace = true }
 verification_core = { workspace = true }
 walkdir = { workspace = true }
 
-[dev-dependencies]
-# The working-directory lock and the test checkout root.
-tool_test_support = { workspace = true }
-
 [lints]
 workspace = true

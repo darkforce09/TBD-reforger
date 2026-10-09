@@ -73,15 +73,8 @@ enum Verdict {
     Interrupted,
 }
 
-#[cfg(test)]
-#[path = "tests/boot/tests.rs"]
-mod tests;
-
 #[path = "boot/on_stop_signal.rs"]
 mod on_stop_signal;
 #[path = "boot/run_deadline.rs"]
 mod run_deadline;
 pub(super) use on_stop_signal::boot_and_wait;
-
-#[cfg(test)]
-use on_stop_signal::launcher_script;

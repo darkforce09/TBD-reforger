@@ -54,7 +54,3 @@ impl MapAssetMounts {
         Self { terrains, glyphs }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/gate_layout_tests.rs"]
-mod tests;

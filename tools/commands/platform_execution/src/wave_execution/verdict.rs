@@ -293,7 +293,3 @@ pub(crate) fn land_refusal(main_root: &Path, slice: &str, landing_sha: &str) -> 
     }
     None
 }
-
-#[cfg(test)]
-#[path = "tests/verdict/tests.rs"]
-mod tests;

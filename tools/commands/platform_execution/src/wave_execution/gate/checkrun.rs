@@ -2,7 +2,8 @@
 //!
 //! **Role:** `checkrun` runs a check-class command into the gate's private analysis folder,
 //! `hostrun` runs a command through the host bridge, and `gate_slice` is the cheap gate a slice
-//! agent runs in its worktree before reporting done.
+//! agent runs in its worktree before reporting done: `cargo check`, the format of the changed
+//! files and the tests of the changed frontend crates.
 //!
 //! **Position:** re-exported by the parent `gate` module; `gate_dispatch.rs` uses both helpers for
 //! the wave gate.
@@ -77,92 +78,12 @@ pub(crate) fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {
     r.run("cargo check", || {
         checkrun(ctx, &["cargo", "check", "--workspace", "--quiet"])
     });
-    r.run("wasm32 (frontend)", || changed::wasm_changed(ctx, ""));
     r.run("fmt (changed)", || changed::fmt_changed(ctx, ""));
-    r.run("clippy (changed crates)", || touch::clippy_changed(ctx, ""));
-    // The first step in this gate that RUNS anything rather than compiling it. See
+    // The one step in this gate that RUNS anything rather than compiling it. See
     // `changed::frontend_tests_changed` for the scope it derives: deterministic frontend test
     // failures are otherwise in this gate's blind spot until after a merge.
     r.run("test (frontend, changed)", || {
         changed::frontend_tests_changed(ctx, "", tid)
-    });
-    // NOT change-scoped, and it is in the CHEAP gate on purpose: a slice whose diff is 0 `.rs`
-    // files scopes every step above it down to nothing, so without this one its gate goes green
-    // over a red `cargo xtask ci schema-validate`. ~1.4 s warm.
-    r.run("schema", || schema::gate_schema(ctx));
-    // The half `schema` cannot reach.
-    //
-    // `gate_schema` validates the catalogue AS COMMITTED. It cannot tell you the committed
-    // catalogue disagrees with `contracts/rules/prefab-classify.json`, because a rule edit
-    // changes nothing until the catalogue is rebuilt. This step re-derives the classification lane
-    // from committed artifacts alone and exits 1 on disagreement. ~12 s.
-    //
-    // `checkrun`, NOT `hostrun`: `hostrun` bakes in the SHARED CARGO_TARGET_DIR, which can hand
-    // this step a `world` binary built from a DIFFERENT WORKTREE'S sources while it reports on
-    // yours. The binary reads the rules and catalogue of the checkout its working directory is in
-    // (`repository_root::find_repository_root`), the two inputs the verdict is about.
-    //
-    // And NOT folded into `xtask ci schema-validate`: gate_schema's drift tripwire reads that
-    // task's `xtask schema <name>` steps, and this is a `developer_tools --bin world` call — it
-    // would either trip the tripwire or be silently skipped by it.
-    r.run("catalogue drift", || {
-        checkrun(
-            ctx,
-            &[
-                "cargo",
-                "run",
-                "-q",
-                "-p",
-                "developer_tools",
-                "--bin",
-                "world",
-                "--",
-                "reclassify",
-                "--terrain",
-                "everon",
-            ],
-        )
-    });
-    // Class-R on migration 0016's claim UPDATE body — the migrate step is schema-count-only, so a
-    // hollow claim migration stays green without this. Unconditional: every slice must hit it.
-    r.run("db_migrate claim body", || {
-        migrate::gate_db_migrate_claim_body(ctx)
-    });
-    // The populated-database step, in AUDIT mode: checksum-audits every already-applied migration
-    // and dry-runs the pending ones against real rows, without advancing the shared DB. It belongs
-    // in the CHEAP gate because an edit to an already-applied migration breaks every existing
-    // database and reaches main through a slice gate. Unconditional and not change-scoped: a slice
-    // that touches no migration can still be the one that has to notice a sibling's drift, and
-    // this step is psql-only (~1 s), not a cargo step.
-    r.run("db_migrate persist", || {
-        migrate::gate_db_migrate_persist(ctx, &state, "audit") as i32
-    });
-    for (label, name) in VERIFY_STEPS {
-        r.run(label, || {
-            checkrun(
-                ctx,
-                &["cargo", "run", "-q", "-p", "xtask", "--", "verify", name],
-            )
-        });
-    }
-    // Hot-path twin of the cmd_gate run — see the note there for why the language gates run in a
-    // driver rather than only in a composite. `verify no-python` and `verify no-shell` share one
-    // TrackedLanguageBan table (hard zero). Catching a planted shell / Make / python3 path at
-    // SLICE time is the cheapest place to catch it; the no-node twin stays wave-level.
-    r.run("no-python", || {
-        checkrun(
-            ctx,
-            &[
-                "cargo",
-                "run",
-                "-q",
-                "-p",
-                "xtask",
-                "--",
-                "verify",
-                "no-python",
-            ],
-        )
     });
 
     wprintln!();

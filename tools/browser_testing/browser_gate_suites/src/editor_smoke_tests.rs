@@ -44,31 +44,10 @@ mod outliner_drag;
 const EDIT_PATH: &str = "/missions/smoke/edit?force=webgl&sat=preview";
 const SEED_N: i64 = 8; // must match mission_doc.rs `SEED_N`
 
-/// The full editor suite, `selfcheck` first (it proves the harness itself works) and the rest in
-/// name order.
-pub const EDITOR_SUITE: [&str; 21] = [
-    "selfcheck",
-    "arsenal",
-    "attributes",
-    "cur",
-    "doc",
-    "editor",
-    "entrance-motion-rect",
-    "fullmap",
-    "hillshade",
-    "hydrate",
-    "keyboard-settings",
-    "marquee-drag",
-    "outliner-drag",
-    "outliner-palette",
-    "pan",
-    "persist",
-    "save-dialog-rect",
-    "save-export",
-    "select",
-    "undo",
-    "virtual-outliner",
-];
+/// The editor suite `gate editor-suite` runs: `selfcheck` first (it proves the harness itself
+/// works), then the editor boot, the save and export flow and undo. Every other smoke runs on its
+/// own through `gate smoke <name>`.
+pub const EDITOR_SUITE: [&str; 4] = ["selfcheck", "editor", "save-export", "undo"];
 
 /// The full satellite bundle size — a full GET of this body must never happen under
 /// `?sat=preview`.
@@ -185,7 +164,7 @@ pub struct RenderCheckArgs {
     pub expect: String,
     /// A script that must evaluate truthy on the rendered page.
     pub assert_js: Option<String>,
-    /// Inject the v-suite admin localStorage seed before boot, for probes on auth-gated pages.
+    /// Inject the admin localStorage seed before boot, for probes on auth-gated pages.
     pub seed_auth: bool,
     /// The static server's port.
     pub port: u16,
@@ -349,10 +328,6 @@ const PERF_PROBE_NOBLUR_PAN: &str = r#"(async () => {
     max_ms: +(s[s.length - 1] || 0).toFixed(2), hitches: a.filter(x2 => x2 > 33.4).length });
 })()"#;
 
-#[cfg(test)]
-#[path = "tests/editor_smoke_tests/assert_js_ok_tests.rs"]
-mod assert_js_ok_tests;
-
 #[path = "editor_smoke_tests/fullmap.rs"]
 mod fullmap;
 pub use fullmap::smoke_doc;
@@ -408,9 +383,6 @@ pub use mutations::smoke_perf;
 mod run_smoke;
 pub use run_smoke::editor_suite;
 pub use run_smoke::run_smoke;
-
-#[cfg(test)]
-pub(crate) use mutations::assert_js_ok;
 
 mod browser_fixture_helpers;
 use browser_fixture_helpers::editor_auth_seed;

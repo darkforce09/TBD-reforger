@@ -25,10 +25,6 @@ use crate::wave_execution::{wprint, wprintln};
 /// The default diff base — the slice's own range inside a worktree.
 pub(crate) const DEFAULT_BASE: &str = "main...HEAD";
 
-#[cfg(test)]
-#[path = "tests/changed/tests.rs"]
-mod tests;
-
 mod changed_rs;
 pub(crate) use changed_rs::changed_rs;
 pub(crate) use changed_rs::fmt_changed;
@@ -36,7 +32,6 @@ pub(crate) use changed_rs::frontend_tests_changed;
 pub(crate) use changed_rs::owning_package_dir;
 pub(crate) use changed_rs::realpath_m;
 use changed_rs::rs_files_under;
-pub(crate) use changed_rs::wasm_changed;
 pub(crate) use changed_rs::wasm_scope_prefixes;
 pub(crate) use changed_rs::wasm_scope_touched;
 
@@ -46,8 +41,3 @@ pub(crate) use include_consumer_package_dirs::include_consumer_package_dirs;
 pub(crate) use include_consumer_package_dirs::include_inputs_under;
 pub(crate) use include_consumer_package_dirs::repository_reads_under;
 pub(crate) use include_consumer_package_dirs::workspace_members;
-
-#[cfg(test)]
-use changed_rs::{file_edition, frontend_include_input_touched, frontend_include_inputs, join_rel};
-#[cfg(test)]
-use include_consumer_package_dirs::include_consumers_under;

@@ -37,11 +37,3 @@ pub(crate) use runtime_telemetry_reads::{
     ServerTelemetryStatus, TelemetryQueueReading, match_has_acknowledged_events,
     server_telemetry_status,
 };
-
-#[cfg(test)]
-#[path = "tests/flows.rs"]
-mod flow_tests;
-
-#[cfg(test)]
-#[path = "tests/transport_parsing.rs"]
-mod transport_parsing_tests;

@@ -3,7 +3,7 @@
 //!
 //! **Role:** the behaviour half of [`super`], which holds the step and row types.
 //! **Position:** private to the runner; its public functions are re-exported from [`super`].
-//! **Signals & state:** sets the runner's command-tree cell once per process; spawns children.
+//! **Signals & state:** none held; spawns children.
 //! **Invariants:** a child inherits stdio and gets the lane's `PATH` prepend and target pin; a
 //! signal is reported as a signal, never as an ordinary exit code.
 
@@ -27,36 +27,8 @@ pub fn find(name: &str) -> Option<&'static Task> {
     TASKS.iter().find(|t| t.name == name)
 }
 
-/// The command line a step ECHOES, or `None` for the shapes that echo nothing.
-///
-/// `verify ci-schema-parity` pins the `verify-mission-rest-size-limits` and `ci-local` rows
-/// against being hollowed, and this accessor is how it reads them. [`Step::Native`] is
-/// deliberately `None` — it carries no command line to pin, which is why every row that gate
-/// pins runs its checks as [`Step::Xtask`] steps.
-pub fn step_echo(s: &Step) -> Option<&'static str> {
-    match s {
-        Step::Cmd { line, .. } => Some(line),
-        Step::Xtask { echo, .. } => Some(echo),
-        Step::Task(_) | Step::Native { .. } => None,
-    }
-}
-
-/// The task names a row delegates to — the successor to a recipe's `$(MAKE) <target>` lines.
-pub fn invoked_tasks(t: &Task) -> Vec<&'static str> {
-    t.steps
-        .iter()
-        .filter_map(|s| match s {
-            Step::Task(n) => Some(*n),
-            _ => None,
-        })
-        .collect()
-}
-
 /// `cargo xtask ci [<target>]`. No target lists the lane, as `make` with no target would not.
-/// `command_tree` is the binary's clap tree, kept for the in-process link-check step.
-pub fn run(target: Option<&str>, command_tree: fn() -> clap::Command) -> i32 {
-    // A second run in one process hands the same tree, so the first installation stands.
-    let _ = XTASK_COMMAND_TREE.set(command_tree);
+pub fn run(target: Option<&str>) -> i32 {
     let Some(name) = target else {
         return help();
     };
@@ -72,7 +44,7 @@ pub fn run(target: Option<&str>, command_tree: fn() -> clap::Command) -> i32 {
 
 /// Run one task's steps, stopping at the first non-zero — make's fail-fast, one shell per line.
 ///
-/// Returns the **leaf's** code, not make's flattened 2. See §3.
+/// Returns the **leaf's** code, never a flattened status.
 pub(crate) fn run_task(t: &Task) -> i32 {
     run_task_in(t, TASKS)
 }
@@ -94,8 +66,8 @@ pub(super) fn run_step(s: &Step, all: &[Task]) -> i32 {
     match s {
         Step::Task(name) => {
             let Some(t) = all.iter().find(|t| t.name == *name) else {
-                // Unreachable while the parity test passes; a loud refusal rather than a silent
-                // skip, because a composite that skips a step is the defect this module prevents.
+                // A loud refusal rather than a silent skip: a composite that skips a step reports a
+                // result for a sequence it did not run.
                 eprintln!("xtask ci: composite references unknown task `{name}` — refusing to");
                 eprintln!("  report a result for a sequence with a missing step.");
                 return 2;
@@ -197,7 +169,7 @@ pub(super) fn spawn(cwd: Option<&str>, argv: &[&str]) -> i32 {
 }
 
 /// The Makefile's two exported variables (`Makefile:7` PATH, `Makefile:16` CARGO_TARGET_DIR).
-/// Both are load-bearing — see §3. `?=` semantics for the target dir: an existing export wins.
+/// Both are load-bearing (see the `task_runner` header); an existing target-dir export wins.
 pub(super) fn apply_env(mut child: Run, root: &Path) -> Run {
     for k in CARGO_RUN_INJECTED {
         child = child.env_remove(*k);

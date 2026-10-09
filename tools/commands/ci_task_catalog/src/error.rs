@@ -1,4 +1,4 @@
-//! Why a CI task step, an `mk` recipe or a CI workflow check could not run.
+//! Why a CI task step or an `mk` recipe could not run.
 //!
 //! **Role:** the crate's [`Error`], its [`Result`] alias and [`cause_chain`], the one rendering of
 //! an error with its causes.
@@ -11,7 +11,7 @@
 //! **Invariants:** a wrapped error of another crate keeps its own text and source chain, a map
 //! asset check's failure included.
 
-/// Why a CI task step, an `mk` recipe or a CI workflow check could not run.
+/// Why a CI task step or an `mk` recipe could not run.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     /// A refusal with its whole explanation.
@@ -26,30 +26,15 @@ pub enum Error {
     /// The checkout root could not be found.
     #[error(transparent)]
     RepositoryRoot(#[from] repository_root::Error),
-    /// A language ban, workspace law, route-tag or engine-layer check could not run.
+    /// A language ban or workspace law check could not run.
     #[error(transparent)]
     RepositoryChecks(#[from] repository_checks::Error),
-    /// A mod script check could not run.
-    #[error(transparent)]
-    ModScriptChecks(#[from] mod_script_checks::Error),
     /// A contract codegen or schema gate could not run.
     #[error(transparent)]
     SchemaTooling(#[from] schema_tooling::Error),
     /// The database lane's suite or a database source check could not run, or stopped.
     #[error(transparent)]
     DatabaseOperations(#[from] database_operations::Error),
-    /// The staging compose-path check could not run.
-    #[error(transparent)]
-    Deployment(#[from] deployment::Error),
-    /// `cargo test -p <package>` could not be started.
-    #[error("start `cargo test -p {package}`")]
-    CargoTestStart {
-        /// The package whose test run could not start.
-        package: String,
-        /// Why the child could not be started or reaped.
-        #[source]
-        source: verification_core::NotRun,
-    },
 }
 
 impl Error {

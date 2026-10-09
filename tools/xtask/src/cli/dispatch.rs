@@ -1,4 +1,3 @@
-use super::command_vocabulary::xtask_command_tree;
 use super::{Cli, TopCmd};
 use crate::commands;
 use crate::commands::ticket::load_registry;
@@ -28,7 +27,7 @@ pub(crate) fn run() -> Result<u8> {
         TopCmd::Ai { cmd } => commands::agent_context::dispatch::run(cmd),
         TopCmd::Mk { args } => Ok(ci_task_catalog::build_lane::recipes::run(&args)?),
         TopCmd::Ci { target } => {
-            let code = ci_task_catalog::task_runner::run(target.as_deref(), xtask_command_tree);
+            let code = ci_task_catalog::task_runner::run(target.as_deref());
             Ok(u8::try_from(code).unwrap_or(1))
         }
         TopCmd::Help => Ok(u8::try_from(ci_task_catalog::task_runner::help()).unwrap_or(1)),

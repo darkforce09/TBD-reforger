@@ -107,8 +107,7 @@ The crate has no features and reads no configuration file of its own. What it re
     and lower ticket crates;
   - production files should stay under 500 lines (`cargo xtask verify file-length` warns), and
     tests live in separate files;
-  - tests read fixtures from the checkout they run in: the execution receipts in
-    `tools/tickets/ticket_metrics/tests/fixtures/execution_receipts/` and the blueprint fixtures in
+  - tests read fixtures from the checkout they run in: the blueprint fixtures in
     `tools/map_assets/blueprint_compiler/test_fixtures/blueprint/`.
 
 ## Related documentation

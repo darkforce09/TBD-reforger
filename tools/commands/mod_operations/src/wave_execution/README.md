@@ -27,17 +27,15 @@ states, and declares both files.
   shares its parent's.
 - `prep`, `land` and the reap call `platform_execution::slice_worktree::run_at` in-process
   with `new`, `merge` and `reap`.
-- `gate` runs the twelve steps of `GATE_STEPS` in order and prints PASS or FAIL for each, with the last 12 output lines
+- `gate` runs the eight steps of `GATE_STEPS` in order and prints PASS or FAIL for each, with the last 12 output lines
   of a failure. It fails when any step fails:
 
   | Step | Command |
   |---|---|
-  | compile, compile-selftest | `cargo run -q -p xtask -- mod compile` and `mod compile-selftest` |
-  | world boot, world-boot selftest, world boot +mission | `mod world-boot`, `--selftest`, `--mission=bridgehead-at-levie` |
-  | ui layouts | `cargo run -q -p xtask -- verify ui-layouts` |
+  | compile | `cargo run -q -p xtask -- mod compile` |
+  | world boot, world boot +mission | `mod world-boot` and `--mission=bridgehead-at-levie` |
   | schema validate | `cargo run -q -p xtask -- ci schema-validate` |
   | capability, oracle citations | `cargo run -q -p developer_tools --bin enf -- capability` and `-- citations` |
-  | no-crf-leak | `cargo run -q -p xtask -- verify no-crf-leak` (exit 2, a reference lane missing, fails too) |
   | ticket registry | `ticket check`, through `distrobox-host-exec` |
   | enf unit tests | `cargo test -q -p enfusion_script_index --lib`, through `distrobox-host-exec` |
 

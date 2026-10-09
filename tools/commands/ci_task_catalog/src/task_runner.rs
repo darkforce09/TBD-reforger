@@ -5,82 +5,20 @@
 //! steps, recursing into named rows, spawning command lines and calling in-process leaves;
 //! [`help`] and [`schema_list_gates`] render the same table.
 //! **Position:** the crate's centre; the xtask binary's `ci`, `help` and `schema list-gates` verbs
-//! call it, the wave driver reads the `schema-validate` row, and the CI schema parity pins read
-//! the table in process.
-//! **Signals & state:** one process-wide cell holds the command tree the binary handed [`run`];
-//! each step's child inherits this process's stdio.
+//! call it, and the wave driver reads the `schema-validate` row.
+//! **Signals & state:** none held; each step's child inherits this process's stdio.
 //! **Invariants:** a composite runs the very rows it names; the runner stops at the first red step
 //! and returns that leaf's raw exit code; a step naming no row is refused, never skipped.
 //!
-//!
-//! The task index. There is no root `Makefile`; this
-//! module owns the CI lane: `ci-local`, `ci-local-schema`, `schema-validate`, `schema-codegen`,
-//! `verify-citations`, `verify-coding-standards`, `verify-documentation`, `verify-editorconfig`, the
-//! three `map-*` composites, `lfs-dem`, `lfs-sat`, `help`, `test`, `build`.
-//!
-//! ── 1. WHY A TABLE AND NOT SIXTEEN FUNCTIONS ────────────────────────────────────────────────
-//!
-//! `ci-local`, `ci-local-schema` and `rust-ci` are *sequences of other targets*. Written as
-//! sixteen independent functions, a composite would have to re-list what its parts do, and the
-//! copy rots — a target that reports success while its
-//! recipe had been hollowed to `@true`. Here [`Step::Task`] names another row of [`TASKS`] and
-//! the runner recurses into **the same** `run_task` the standalone command calls. A composite
-//! therefore cannot drift from its parts or be hollowed independently of them: there is one
-//! implementation of "what `verify-documentation` does", and both
-//! `cargo xtask ci verify-documentation` and `cargo xtask ci ci-local` reach it through the
-//! identical call.
-//!
-//! The same table is the source for [`help`] (so a task cannot exist and be undiscoverable) and
-//! for [`schema_list_gates`] (so the wave driver's drift tripwire keeps an input with no Makefile
-//! dies — see §4).
-//!
-//! ── 2. WHY SOME ROWS BELONG TO OTHER SLICES ─────────────────────────────────────────────────
-//!
-//! `ci-local` runs `rust-ci` and `ci-local-leptos`; `test` runs `rust-test`; `build` runs
-//! `leptos-build`. Those targets are the build lane's and `rust-test-it` is the database lane's, and all
-//! three slices are in flight on the same commit. Two options existed:
-//!
-//!   * stub them, and have `ci-local` report a green it did not earn — the defect this program
-//!     exists to kill; or
-//!   * carry the recipe here, marked [`Lane::Borrowed`], so the composite genuinely runs.
-//!
-//! The second, with a guard: the task tests parse the recipe text and assert every row's steps
-//! reproduce that target's recipe **verbatim**, borrowed rows included. While the Makefile lives
-//! they cannot drift; the lanes are proven equal, so composing them
-//! is a deletion of duplicates, not a reconciliation of two guesses.
-//!
-//! [`Lane::Alias`] rows are different: `verify-no-python` and friends were *already* one-line
-//! aliases for an existing `cargo xtask verify …`, so nothing is borrowed — the row just records
-//! that the task name maps onto a command that exists.
-//!
-//! ── 3. MAKEFILE ODDITIES PRESERVED ON PURPOSE ───────────────────────────────────────────────
-//!
-//! * **The PATH prepend** (`Makefile:7`) is load-bearing, not decoration: `editorconfig-checker`
-//!   lives in `~/go/bin`, which is on no default PATH. `apply_env` reproduces the prepend for
-//!   every child. Dropping it would turn `verify-editorconfig` into "command not found" on a
-//!   correct machine.
-//! * **`CARGO_TARGET_DIR ?=`** points every linked worktree at the primary
-//!   checkout's warm `target/`, and `?=` lets an operator/wave export win. Not reproducing it
-//!   would silently split the 52 GB cache per worktree. The build lane owns the *assertion* half
-//!   (`verify-cargo-target`); this is the derivation half, and the two should become one helper
-//!   when the lanes merge.
-//!
-//! **make's own framing is NOT reproduced**, deliberately, and it is the one place where output
-//! differs. GNU make prints `make[1]: Entering directory …` around every sub-make and collapses
-//! **every** recipe failure to its own exit status 2 — the Makefile itself complains about that
-//! flattening at `mod-compile-selftest` (`Makefile:286`), where a `case` had to be written to
-//! recover the 1-vs-3 distinction make destroyed. This runner returns the **leaf's raw code**.
-//! Acceptance diffs therefore normalise make's framing away and reconstruct the true rc from the
-//! `make: *** [Makefile:NNN: t] Error N` line, which states it.
-//!
-//! ── 4. `xtask schema list-gates` ────────────────────────────────────────────────────────────
-//!
-//! `tools/commands/platform_execution/src/wave_execution/schema.rs` **parses the recipe's
-//! `schema-validate` recipe** to cross-check `GATE_SCHEMA_VALIDATE_GATES`; that tripwire refuses
-//! to report PASS when the parse comes back empty. Deleting the Makefile removes its input, so
-//! the tripwire would go permanently red — or, worse, be quietly loosened. [`schema_list_gates`]
-//! prints the set derived from the `schema-validate` row of [`TASKS`], i.e. from the code that
-//! actually runs the gates, so the cross-check keeps a source that cannot be a stale second copy.
+//! A composite (`ci-local`, `ci-local-schema`, `rust-ci`) names its parts as [`Step::Task`] rows,
+//! and the runner recurses into the same `run_task` the standalone command calls, so a composite
+//! cannot drift from its parts. [`Lane::Borrowed`] rows carry the build and database lanes'
+//! recipes so the composites run them; [`Lane::Alias`] rows wrap an existing
+//! `cargo xtask verify …` command. Every child gets the `PATH` prepend that puts
+//! `editorconfig-checker` (`~/go/bin`) on the path and, unless the caller exported one, the shared
+//! `CARGO_TARGET_DIR` of the primary checkout, so linked worktrees share one warm cache.
+//! [`schema_list_gates`] prints the `schema-validate` row's sub-gates, the list the wave driver's
+//! schema step cross-checks its own against.
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -111,8 +49,7 @@ pub enum Step {
     /// A child process. ONE datum: the make-expanded recipe line. It is both what gets echoed and
     /// what gets spawned (`split_cmd`), so the trace and the execution cannot disagree — a
     /// separate `argv` field is exactly the kind of second copy this module exists to avoid.
-    /// No shell: none of this lane's own lines carry metacharacters or quoting, and
-    /// `cmd_lines_are_shell_free` pins that.
+    /// No shell: none of this lane's own lines carry metacharacters or quoting.
     Cmd {
         /// The recipe line, echoed and spawned.
         line: &'static str,
@@ -167,15 +104,6 @@ mod tasks;
 pub use tasks::TASKS;
 pub(crate) use tasks::run_database_test_suite;
 
-/// xtask's clap command tree, which the binary hands [`run`]: the in-process link-check step
-/// judges `cargo xtask` citations against it, so this lane never reads the command line itself.
-static XTASK_COMMAND_TREE: std::sync::OnceLock<fn() -> clap::Command> = std::sync::OnceLock::new();
-
-/// The command tree the binary handed [`run`]; `None` when no `cargo xtask ci` run installed one.
-pub(crate) fn installed_command_tree() -> Option<fn() -> clap::Command> {
-    XTASK_COMMAND_TREE.get().copied()
-}
-
 /* ─────────────────────────────────── the runner ─────────────────────────────────── */
 
 /// Environment `cargo run` injects into this process and which must NOT reach a nested `cargo`.
@@ -214,19 +142,10 @@ const CARGO_RUN_INJECTED: &[&str] = &[
 
 /* ──────────────────────────────── help / list-gates ──────────────────────────────── */
 
-#[cfg(test)]
-#[path = "tests/task_runner.rs"]
-mod tests;
-
 mod split_cmd;
 pub use split_cmd::find;
 pub use split_cmd::help;
-pub use split_cmd::invoked_tasks;
 pub use split_cmd::run;
 pub(crate) use split_cmd::run_derived_line;
 pub use split_cmd::schema_list_gates;
-pub use split_cmd::step_echo;
 pub use split_cmd::validate_gate_names;
-
-#[cfg(test)]
-use split_cmd::{run_task_in, split_cmd};

@@ -3,8 +3,7 @@
 //! **Role:** [`documentation_command_vocabulary`] hands the link check this binary's own clap
 //! command tree, the build recipe names `mk` looks up and the CI task names `ci` looks up.
 //! **Position:** the binary's side of the injection: `verify link-check` passes the vocabulary to
-//! the gate, and the `ci` lane hands the tree to the task runner for its in-process link-check
-//! step, so the documentation checks never read the command line themselves.
+//! the gate, so the documentation checks never read the command line themselves.
 //! **Signals & state:** none; it builds a value per call.
 //! **Invariants:** the tree is [`Cli`]'s as clap derives it, and the names are the live recipe and
 //! task tables, so a cited command is judged against exactly what this binary accepts.

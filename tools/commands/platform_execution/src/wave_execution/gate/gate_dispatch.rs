@@ -1,11 +1,11 @@
 //! The full wave gate.
 //!
 //! **Role:** `cmd_gate` resolves and verifies the wave's base, takes the gate lock, invalidates
-//! fingerprints and runs the wave gate's steps in order: cargo check, wasm32, format, the clippy
-//! steps (the applications and library crates, the wasm32 members, the frontend family twice,
-//! every tool crate), the migration and test steps, the trunk build when the SPA's scope changed,
-//! the schema, catalogue, ticket and wave-lock steps, the shared verify steps and the language
-//! gates.
+//! fingerprints and runs the wave gate's steps in order: format, the clippy steps (the
+//! applications and library crates, the wasm32 members, the frontend family twice), the migration
+//! and test steps, the tool-crate clippy, the trunk build when the SPA's scope changed, the
+//! generated-code freshness and schema steps, and the shared verify steps (the enforced workspace
+//! laws and the language bans).
 //!
 //! **Position:** re-exported by the parent `gate` module and reached through `wave gate [<base>]`;
 //! `wave --close` runs it before writing a marker.
@@ -17,12 +17,12 @@
 //! verdict describes one tree; each clippy step lints with the flags of its CI job and `-D
 //! warnings`, and the clippy steps together name every workspace member, derived from the root
 //! manifest; the API and frontend family tests run in private target folders, and every other
-//! workspace member is tested by `test workspace members`, one `cargo test -p` per package.
+//! workspace member is tested by `test workspace members`, one `cargo test --workspace` run.
 
 use super::clippy_package_sets::{native_clippy_packages, wasm32_clippy_packages};
 use super::*;
 use crate::wave_execution::gate_folder;
-use ci_task_catalog::frontend_package_lane::{frontend_family_argv, frontend_packages};
+use ci_task_catalog::frontend_package_lane::frontend_family_argv;
 use ci_task_catalog::wasm32_lint_lane::wasm32_clippy_argv;
 use repository_layout::build_output;
 
@@ -146,10 +146,6 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
         r.fail = true;
     }
 
-    r.run("cargo check", || {
-        checkrun(ctx, &["cargo", "check", "--workspace", "--quiet"])
-    });
-    r.run("wasm32 (frontend)", || changed::wasm_changed(ctx, &range));
     r.run("fmt (changed)", || changed::fmt_changed(ctx, &range));
     // Clippy is scoped per lane, NOT --workspace: each lane is linted with the flags its ci.yml
     // job uses (host target with every target, wasm32, the frontend job on wasm32 and natively),
@@ -223,10 +219,6 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     if db::ensure_gate_db(ctx, &state) != 0 {
         r.fail = true;
     }
-    // Adjacent to migrate DB prep: Class-R pins migration 0016's claim UPDATE body on disk.
-    r.run("db_migrate claim body", || {
-        migrate::gate_db_migrate_claim_body(ctx)
-    });
     // ADVANCE mode — the wave gate is the only caller allowed to move the persist DB
     // forward, because only merged main is history that will not be abandoned. Deliberately placed
     // AFTER ensure_gate_db (which owns the throwaway forward-from-empty DB) and BEFORE `test api`.
@@ -250,10 +242,9 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
             &["--quiet"],
         )
     });
-    // Every workspace member the three test steps above do not run, derived from the root
+    // Every workspace member the two test steps above do not run, derived from the root
     // manifest: a member the workspace gains is tested here from the moment the manifest names
-    // it, never only once someone extends a list. One `cargo test -p` per package, so features
-    // never unify across packages.
+    // it, in one `cargo test --workspace` run.
     // PRIVATE TARGET DIR, same reason and not negotiable: this step BUILDS AND RUNS test binaries.
     let tools_dir = format!(
         "CARGO_TARGET_DIR={}",
@@ -275,7 +266,7 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
         };
         checkrun(ctx, &native_clippy_argv(&packages))
     });
-    // The Leptos build is the single most expensive gate (2-6 min warm). Wave-level only, and only
+    // The Leptos build is the single most expensive step (2-6 min warm). Wave-level only, and only
     // when the wave actually touched the frontend — measured across the WHOLE wave, not the last
     // merge. NOTE: committed diff only, no working-tree union.
     // The scope is the frontend crate AND every workspace crate it compiles in, derived from the
@@ -291,60 +282,10 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
             changed::wasm_scope_prefixes(&ctx.root).join(" ")
         );
     }
-    // Placed next to `ticket registry` rather than up with the compile steps because the two are
-    // the gate's repo-artifact validators. Unconditional, never behind the frontend `if`: a
-    // backend-only schema change would skip a conditional step.
-    r.run("schema", || schema::gate_schema(ctx));
-    // Cold-path twin of the gate_slice step: a step wired into only one half drifts green.
-    r.run("catalogue drift", || {
-        checkrun(
-            ctx,
-            &[
-                "cargo",
-                "run",
-                "-q",
-                "-p",
-                "developer_tools",
-                "--bin",
-                "world",
-                "--",
-                "reclassify",
-                "--terrain",
-                "everon",
-            ],
-        )
-    });
-    r.run("ticket registry", || {
-        checkrun(
-            ctx,
-            &["cargo", "run", "-q", "-p", "xtask", "--", "ticket", "check"],
-        )
-    });
-    // The committed wave.lock must match the tickets. `ticket check` above already embeds this,
-    // but the explicit step survives refactors of either side — a plan the gate never validates
-    // drifts from the tickets it claims to describe.
-    r.run("wave lock", || {
-        checkrun(
-            ctx,
-            &["cargo", "run", "-q", "-p", "xtask", "--", "wave", "check"],
-        )
-    });
-    for (label, name) in VERIFY_STEPS {
-        r.run(label, || {
-            checkrun(
-                ctx,
-                &["cargo", "run", "-q", "-p", "xtask", "--", "verify", name],
-            )
-        });
-    }
-    // THE LANGUAGE GATES, AND WHY THEY ARE HERE RATHER THAN ONLY IN ci.yml. A gate wired only
-    // into a composite this driver deliberately does not run is in no path that runs, and can be
-    // red for waves while the gate prints PASS.
-    //
-    // `verify no-python` and `verify no-shell` run the same TrackedLanguageBan table (hard zero),
-    // so they cannot disagree; both CLI names stay because CI job names use them. xtask is already
-    // built by `test workspace members` above.
-    r.run("no-python", || {
+    // The generated contract types match the schemas byte for byte, then the contract sub-gates.
+    // Unconditional, never behind the frontend `if`: a backend-only schema change would skip a
+    // conditional step.
+    r.run("codegen fresh", || {
         checkrun(
             ctx,
             &[
@@ -354,35 +295,20 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 "-p",
                 "xtask",
                 "--",
-                "verify",
-                "no-python",
+                "ci",
+                "verify-codegen-fresh",
             ],
         )
     });
-    r.run("no-node", || {
-        hostrun(
-            ctx,
-            &[
-                "cargo", "run", "-q", "-p", "xtask", "--", "verify", "no-node",
-            ],
-        )
-    });
-    r.run("no-shell", || {
-        hostrun(
-            ctx,
-            &[
-                "cargo", "run", "-q", "-p", "xtask", "--", "verify", "no-shell",
-            ],
-        )
-    });
-    r.run("ci-shell", || {
-        hostrun(
-            ctx,
-            &[
-                "cargo", "run", "-q", "-p", "xtask", "--", "verify", "ci-shell",
-            ],
-        )
-    });
+    r.run("schema", || schema::gate_schema(ctx));
+    for (label, name) in VERIFY_STEPS {
+        r.run(label, || {
+            checkrun(
+                ctx,
+                &["cargo", "run", "-q", "-p", "xtask", "--", "verify", name],
+            )
+        });
+    }
 
     wprintln!();
     if r.fail {
@@ -391,24 +317,6 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     }
     state.verdict("PASS", "GATE");
     0
-}
-
-/// The package `test api` tests against the gate database, with every API crate, which the step
-/// derives.
-pub(super) const WAVE_GATE_API_TEST_PACKAGE: &str = "api_server";
-
-/// The members whose tests a step of [`cmd_gate`] other than `test workspace members` runs:
-/// [`WAVE_GATE_API_TEST_PACKAGE`] and the frontend family `test frontend` tests, derived from the
-/// workspace under `root`.
-///
-/// # Errors
-/// The frontend family cannot be derived.
-pub(super) fn wave_gate_dedicated_test_packages(
-    root: &std::path::Path,
-) -> ci_task_catalog::Result<Vec<String>> {
-    let mut packages = vec![WAVE_GATE_API_TEST_PACKAGE.to_string()];
-    packages.extend(frontend_packages(root)?);
-    Ok(packages)
 }
 
 /// Derives `leading -p <package>… trailing` over the frontend family and runs it through `run`
@@ -432,46 +340,21 @@ fn frontend_family_step(
     }
 }
 
-/// `test workspace members`: `cargo test -p <package>` in `target_dir_assignment`'s private target
-/// directory for every workspace member outside [`wave_gate_dedicated_test_packages`] and the API
-/// family `test api` covers, each its own run; the first red package's code, after every package ran. A workspace whose members
-/// cannot be derived is red, never an empty step.
+/// `test workspace members`: the one `cargo test --workspace` the `workspace-member-tests` CI task
+/// runs, excluding the API and frontend families the steps above test
+/// ([`ci_task_catalog::workspace_member_tests::workspace_test_argv`]), in
+/// `target_dir_assignment`'s private target directory. A workspace whose members cannot be derived
+/// is red, never an empty step.
 fn test_workspace_members(ctx: &Ctx, target_dir_assignment: &str) -> i32 {
-    let dedicated = match wave_gate_dedicated_test_packages(&ctx.root) {
-        Ok(dedicated) => dedicated,
+    let argv = match ci_task_catalog::workspace_member_tests::workspace_test_argv(&ctx.root) {
+        Ok(argv) => argv,
         Err(error) => {
             wprintln!("    {error:#}");
             return 1;
         }
     };
-    let dedicated: Vec<&str> = dedicated.iter().map(String::as_str).collect();
-    let packages = match ci_task_catalog::workspace_member_tests::member_packages_outside_api_family(
-        &ctx.root, &dedicated,
-    ) {
-        Ok(packages) => packages,
-        Err(error) => {
-            wprintln!("    {error:#}");
-            return 1;
-        }
-    };
-    let mut first_red = 0;
-    for package in &packages {
-        let rc = hostrun(
-            ctx,
-            &[
-                "env",
-                target_dir_assignment,
-                "CARGO_INCREMENTAL=0",
-                "cargo",
-                "test",
-                "-p",
-                package,
-                "--quiet",
-            ],
-        );
-        if rc != 0 && first_red == 0 {
-            first_red = rc;
-        }
-    }
-    first_red
+    let mut words: Vec<&str> = vec!["env", target_dir_assignment, "CARGO_INCREMENTAL=0"];
+    words.extend(argv.iter().map(String::as_str));
+    words.push("--quiet");
+    hostrun(ctx, &words)
 }

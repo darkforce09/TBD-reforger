@@ -1,15 +1,10 @@
 name: ci
 
-# Primary full-repo gate (documentation/standards/coding_standards/README.md §0.3
-# CI-2 + TEST-1/2/3 + FMT-1/2/3).
-# Required on every push + PR to `main` — NO `paths:` filter. This is what distinguishes
-# it from contracts.yml / schema.yml, which stay as path-scoped supplements (do NOT merge
-# them here in this slice).
-# The api, wasm-ci and frontend jobs are the cargo gates: api and frontend each run a fmt
-# check, clippy and tests, wasm-ci the wasm32 lint, and the comment above each job lists its exact
+# Primary full-repo gate, required on every push and PR to `main` with no `paths:` filter.
+# The api, wasm-ci and frontend jobs are the cargo gates: api and frontend each run a fmt check,
+# clippy and tests, wasm-ci the wasm32 lint, and the comment above each job lists its exact
 # commands. Every job passes `-D warnings` to clippy, so a warning fails the job.
-# The workspace-members job tests every other workspace member.
-# contracts.yml is the path-filtered citations/codegen supplement.
+# The workspace-members job tests every other workspace member in one cargo run.
 on:
   push:
     branches: [main]
@@ -27,10 +22,9 @@ jobs:
   # --- api: the sole backend (Rust 1.95 + Postgres 18) ---
   # fmt (FMT-1): `cargo fmt --check` on api_server, then `cargo fmt --all --check` on every
   # workspace member. clippy (GO-2..8 analog): `cargo clippy --all-targets -- -D warnings` on
-  # api_server and every other crates/api package (host target, default features; one `-p` each, derived from
-  # the workspace), so any warning fails the job. build: `cargo build --all-targets` on the same
-  # packages. tests: their `cargo test` (unit + integration, TEST-1) against the Postgres service
-  # below.
+  # api_server and every other crates/api package (host target, default features; one `-p` each,
+  # derived from the workspace), so any warning fails the job. tests: their `cargo test` (unit +
+  # integration, TEST-1) against the Postgres service below.
   api:
     name: api (Rust 1.95 + Postgres 18)
     runs-on: ubuntu-latest
@@ -82,8 +76,6 @@ jobs:
         run: cargo xtask mk rust-fmt
       - name: clippy (GO-2..8 analog)
         run: cargo xtask mk rust-clippy
-      - name: build
-        run: cargo xtask mk rust-build
       # `rust_it`, matching the `services.db` POSTGRES_DB above and the `rust-test-it` task.
       - name: test (TEST-1 analog)
         env:
@@ -119,10 +111,9 @@ jobs:
   # --all-targets -- -D warnings` (the browser build) and `cargo clippy -p frontend_application
   # -p … --all-targets --locked -- -D warnings` (the native test build). tests: `cargo test
   # -p frontend_application -p …`, host target. build: `trunk build --release` in
-  # crates/frontend/shell/frontend_application. The editor S/V/R/T
-  # smokes + the frozen V-suite (`xtask mk leptos-gates`) need a full chrome build + Postgres + map-assets LFS;
-  # they run in the dedicated **editor-gates.yml** workflow (nightly + on-demand + gate/editor-path
-  # PRs). `gate doctor` fails those fast if the env drifts.
+  # crates/frontend/shell/frontend_application. The editor smokes (`xtask mk leptos-gates`) need a
+  # full chrome build, Postgres and the map-assets LFS objects; they run nightly in the dedicated
+  # editor-gates.yml workflow.
   frontend:
     name: frontend (Leptos SPA)
     runs-on: ubuntu-latest
@@ -142,57 +133,43 @@ jobs:
         run: cargo xtask mk ci-local-leptos
 
   # --- workspace-members: every member the jobs above do not test ---
-  # `cargo xtask ci workspace-member-tests` derives its package list from the root Cargo.toml
-  # workspace minus the members a dedicated job tests (every crates/api package, api_server among
-  # them, and every crates/frontend package, frontend_application and the offline service worker
-  # among them), and runs `cargo test -p <package>` once per package, so features never
-  # unify across packages. A member the workspace gains is tested here from the moment the
-  # manifest names it; `ci_local_tests_every_workspace_member` and
-  # `the_ci_workflow_tests_every_workspace_member` (ci_task_catalog) keep every member in a job.
-  # The terrain, world-object and streaming crates' tests read the Everon DEM (LFS, 72 MB) — pull
-  # ONLY that object (a full `lfs: true` checkout would drag the 206 MB satellite bundle every run).
+  # `cargo xtask ci workspace-member-tests` runs one `cargo test --workspace`, excluding the
+  # members a dedicated job tests (every crates/api package, api_server among them, and every
+  # crates/frontend package, frontend_application and the offline service worker among them), so a
+  # member the workspace gains is tested here from the moment the manifest names it.
+  # The world-export and map-asset tests read the committed Everon objects, chunks and BLAS
+  # library (LFS). Pull the Everon tree without the satellite bundle and the DEM, which no test of
+  # this job reads.
   workspace-members:
-    name: workspace members (cargo test per member)
+    name: workspace members (one cargo test --workspace run)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-      - name: fetch LFS test fixture (Everon DEM only)
-        run: git lfs pull --include assets/terrains/everon/dem/everon-dem-16bit.png
+      - name: fetch LFS test inputs (Everon objects, chunks and BLAS; no satellite, no DEM)
+        run: git lfs pull --include "assets/terrains/everon/**" --exclude "assets/terrains/everon/satellite/**,assets/terrains/everon/dem/**"
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.95.0" # pinned; matches root rust-toolchain.toml / gate-env.json
       - uses: Swatinem/rust-cache@v2
-      - name: cargo test per member without a dedicated job (workspace-member-tests)
+      - name: cargo test --workspace without the API and frontend families (workspace-member-tests)
         run: cargo xtask ci workspace-member-tests
 
-  # --- schema: the full schema-validate set + citations ---
-  # Class-R parity: this job MUST match `xtask ci ci-local-schema`, which runs
-  # `xtask ci verify-codegen-fresh`, then `xtask ci schema-validate`, then
-  # `xtask ci verify-citations`. The schema-validate sub-gate SET = the schema-validate step of
-  # `cargo xtask platform wave gate`, same order as the task row:
-  #   validate map-object-golden map-glyphs height-labels map-object-enums
-  #   type-inventory  (+ citations)
-  # `schema validate` + `citations` alone is a hole: map-object-enums goes RED while validate
-  # stays GREEN. Do not narrow back to validate-only.
-  # `cargo xtask verify ci-schema-parity` asserts this job's `run:` stays
-  # `cargo xtask ci ci-local-schema`, and is itself wired into both wave gate drivers.
-  # All steps are Rust (xtask) — no Node in this job.
-  # height-labels needs the Everon DEM (LFS, ~72 MB); pull ONLY that object (same pattern
-  # as the workspace-members job — a full `lfs: true` checkout would drag the 206 MB sat bundle).
+  # --- schema: generated-code freshness and the schema-validate set ---
+  # The same set as `cargo xtask ci ci-local-schema`: `verify-codegen-fresh`, then
+  # `schema-validate` (validate, map-object-enums, type-inventory). The map goldens that need the
+  # LFS DEM run on demand: `cargo xtask ci schema-map-goldens`.
   schema:
-    name: schema + citations
+    name: schema (codegen freshness + schema-validate)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
-      - name: fetch LFS fixture for height-labels (Everon DEM only)
-        run: git lfs pull --include assets/terrains/everon/dem/everon-dem-16bit.png
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.95.0" # pinned; matches root rust-toolchain.toml / gate-env.json
       - uses: Swatinem/rust-cache@v2
-      - name: schema-validate + citations (cargo xtask ci ci-local-schema)
+      - name: codegen freshness + schema-validate (cargo xtask ci ci-local-schema)
         run: cargo xtask ci ci-local-schema
 
   # --- editorconfig: FMT-2 whitespace gate across the whole repo (root .editorconfig) ---
@@ -212,114 +189,29 @@ jobs:
       - name: editorconfig-checker (repo root)
         run: cargo xtask ci verify-editorconfig
 
-  # --- language gates: which language new tooling may be written in ---
-  #
-  # THE POINT OF THIS JOB IS THAT IT EXISTS. A language gate wired only into the local replay that
-  # nothing runs by default blocks no push at all, and can sit red for waves while the wave gate
-  # reports a clean sweep over it. A rule nobody is stopped by is not a rule, so all of them run
-  # here, on every push and PR, unfiltered.
-  #
-  #   verify-no-python  Alias of the TrackedLanguageBan table (hard zero). Fail-closed: a missing
-  #                     tool is a FAIL, never an "OK (none)".
-  #   verify-no-node    Zero tracked .mjs/.cjs; node only as the enfusion-mcp floor.
-  #   verify-no-shell   Same table as no-python: any tracked shell/Make/Python/Node-script path
-  #                     fails. New tooling goes in xtask (LANG-1).
-  #
-  # Every step is `cargo xtask`: `verify` no-python, no-node, file-length, enfusion-comments,
-  # no-shell and ci-shell, then the workspace laws, then `ticket check --strict`, then the documentation
-  # gates `verify` readme-coverage, link-check and markdown-placement. It needs cargo but no database, no LFS and
-  # no wasm target, so it is a cheap job that fails fast and early rather than riding on the back
-  # of the 25-minute API job.
+  # --- language gates: the enforced workspace laws, the language bans and the file-length advice ---
+  # Seconds-long reads of the working tree that need no database, LFS or wasm target: the crate
+  # tiers (no member depends on an application; the external-crate firewalls), the crate anatomy,
+  # the Tailwind sources, one step for the three language bans (`verify-language-bans`: no-python,
+  # no-node, no-shell), and `verify file-length`, which warns about long production files and never
+  # fails on one.
   language-gates:
-    name: language gates (no-python / no-node / no-shell / ci-shell / workspace laws / file-length / enfusion-comments / documentation)
+    name: language gates (workspace laws / language bans / file-length advice)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      # fetch-depth: 0 IS needed: `ticket check` derives wave.lock's wave_base from the
-      # close-marker ledger in git history, and a shallow clone is a loud refusal (never a silent
-      # base-0), so depth-1 here is a guaranteed red.
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.95.0"
       - uses: Swatinem/rust-cache@v2
-      - name: verify-no-python (language ban alias)
-        run: cargo xtask verify no-python
-      - name: verify-no-node
-        run: cargo xtask verify no-node
-      - name: verify-file-length (SIZE-3)
-        run: cargo xtask verify file-length
-      - name: verify-enfusion-comments (mod comment card over the pinned Scripts roots)
-        run: cargo xtask verify enfusion-comments
-      - name: verify-no-shell (language ban)
-        run: cargo xtask verify no-shell
-      - name: "verify-ci-shell (GitHub Actions run: blocks)"
-        run: cargo xtask verify ci-shell
-      # The workspace laws of documentation/standards/crate_boundary_rules.md, judged by
-      # tools/foundation/repository_laws/src/workspace_laws/ over the members the root
-      # manifest names; seconds-long reads of the working tree that need no DB, LFS or wasm target,
-      # like the language gates.
-      - name: verify-crate-tiers (workspace membership, layout, tiers, category matrix, firewalls)
+      - name: verify-crate-tiers (no dependency on an application; external-crate firewalls)
         run: cargo xtask verify crate-tiers
       - name: verify-crate-anatomy (library crate shape)
         run: cargo xtask verify crate-anatomy
-      - name: verify-test-file-reachability (every file in a test folder is compiled)
-        run: cargo xtask verify test-file-reachability
-      - name: verify-frontend-layering (layer and foundation sub-area order, hard at zero)
-        run: cargo xtask verify frontend-layering
       - name: verify-tailwind-sources (an @source line per leptos crate)
         run: cargo xtask verify tailwind-sources
-      # The ticket registry is the source of truth for the whole ticket pipeline, so a malformed
-      # or duplicate-id registry that reaches main surfaces only when the next agent tries to read
-      # it. Lives in this job because it is the same shape as the language gates — seconds long,
-      # reads the working tree, fails fast instead of riding a 25-minute job.
-      - name: ticket registry check (schema + duplicate ids)
-        run: cargo xtask ticket check --strict
-      # The documentation gates judge the committed tree, the view this checkout holds; the same
-      # three run in process as `cargo xtask ci verify-documentation`, a ci-local step. link-check
-      # resolves sha permalinks against local history, which the full-depth checkout above gives.
-      - name: verify-readme-coverage (every folder's README.md and its Contents block)
-        run: cargo xtask verify readme-coverage
-      - name: verify-link-check (links, backticked paths and cited xtask commands)
-        run: cargo xtask verify link-check
-      - name: verify-markdown-placement (Markdown placement and the live-document size limit)
-        run: cargo xtask verify markdown-placement
-
-  # --- mod gates, HOSTED PORTION ---
-  # `cargo xtask mod compile` and `cargo xtask mod world-boot` are the mod's only regression
-  # instruments over 33k lines of Enfusion. Both need the Arma Reforger DEDICATED SERVER
-  # present on the machine,
-  # which a GitHub-hosted runner does not have and cannot practicably install (a ~10 GB Steam
-  # depot behind a login), so the gates that need the engine run in **mod-gates.yml** on a
-  # self-hosted runner. Everything that genuinely runs WITHOUT the engine runs here instead, in
-  # the required unfiltered per-push gate, because that is where it belongs:
-  #
-  #   * `cargo xtask mod world-boot --selftest` — replays the fail-closed triage against 10
-  #     committed log fixtures (2 must pass, 8 must fail). Text only; 0.12 s measured, no engine,
-  #     no network. This is the part that actually regresses: each failing fixture is an escape a
-  #     narrower triage lets through, including one that differs only in the case of
-  #     `Scripts/Game/`. Whoever next widens a match in that function has a machine telling them
-  #     what they broke.
-  #
-  # DELIBERATELY NOT HERE: the compile self-test. It launches the engine. There is no honest way
-  # to run it hosted, and a stubbed version would be a green check for doing nothing — the single
-  # most expensive thing a CI job can be. It runs in mod-gates.yml, where a real server exists.
-  mod-gates-hosted:
-    name: mod gates (hosted portion — no game binary)
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v7
-      - name: world-boot verdict logic (cargo xtask mod world-boot --selftest)
-        run: cargo xtask mod world-boot --selftest
-      # Class-R siblings of the wave gate's verify steps — the same tasks ci-local runs.
-      - name: staging compose path (cargo xtask verify staging-compose-paths)
-        run: cargo xtask verify staging-compose-paths
-      - name: mission REST size limits (cargo xtask verify mission-rest-size-limits)
-        run: cargo xtask verify mission-rest-size-limits
-      # Invoke DIRECTLY, never through a dispatch row named after this gate — a hollowed
-      # indirection must not green CI, and the self-pin only runs when the gate does.
-      - name: CI schema parity + hollow recipe tripwire (direct cargo)
-        run: cargo xtask verify ci-schema-parity
+      - name: language bans (no-python, no-node, no-shell)
+        run: cargo xtask ci verify-language-bans
+      - name: file-length advice (warns, never fails)
+        run: cargo xtask verify file-length

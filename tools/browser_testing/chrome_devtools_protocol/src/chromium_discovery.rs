@@ -122,7 +122,3 @@ pub fn is_headless_shell(bin: &Path) -> bool {
     bin.to_string_lossy().contains("chrome-headless-shell")
         || bin.file_name().is_some_and(|name| name == "headless_shell")
 }
-
-#[cfg(test)]
-#[path = "tests/chromium_discovery.rs"]
-mod tests;

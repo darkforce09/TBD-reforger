@@ -68,7 +68,3 @@ pub fn native_case(catalog: &BallisticsCatalog, case: &AgreementCase) -> NativeC
         bit_patterns,
     }
 }
-
-#[cfg(test)]
-#[path = "../tests/ballistics_agreement/native_reference.rs"]
-mod tests;

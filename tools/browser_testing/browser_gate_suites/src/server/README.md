@@ -42,8 +42,7 @@ server over another corpus is never affected; `is_api_down` reads it.
   (`tools/browser_testing/browser_gate_suites/src/mortar_offline/`), which serves the recorded
   catalog reads through it, names them with `corpus_file_name` and marks the API down for its
   proxy step.
-- Rules: the route and the naming are pinned by
-  `tools/browser_testing/browser_gate_suites/src/tests/server/api_fixture_corpus.rs`.
+- Rules: a request the corpus does not hold answers 404 with a JSON error naming the file looked for.
 
 ## Related documentation
 

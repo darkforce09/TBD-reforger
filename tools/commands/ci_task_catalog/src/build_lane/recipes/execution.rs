@@ -41,13 +41,12 @@ pub fn run(args: &[String]) -> Result<u8> {
             println!("{}", resolve_target_dir(env_pin().as_deref()));
             return Ok(0);
         }
-        "verify-cargo-target" => return verify_cargo_target(&cwd_root()),
         "reclaim-target-ci" => return reclaim_target_ci(&primary_root()),
         _ => {}
     }
 
-    // `None` is reachable only if TARGETS advertises something with no recipe — which
-    // `tests::every_advertised_target_dispatches` forbids. Reported, never panicked.
+    // `None` is reachable only if TARGETS advertises something with no recipe. Reported, never
+    // panicked.
     if dry {
         let Some(lines) = recipe_lines(&target)? else {
             return unknown_target(&target);

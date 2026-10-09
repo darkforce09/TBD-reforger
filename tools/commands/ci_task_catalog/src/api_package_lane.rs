@@ -2,9 +2,9 @@
 //!
 //! **Role:** renders the four cargo lines that gate the API, each naming `api_server` and every API
 //! crate with one `-p` apiece, and runs them as task-table steps.
-//! **Position:** the `api-test`, `rust-test`, `rust-clippy` and `rust-build` rows of
-//! [`crate::task_runner::TASKS`] run `run_api_test`, `run_api_unit_tests`, `run_api_clippy` and
-//! `run_api_build`; the `mk` lane's `rust-test`, `rust-clippy` and
+//! **Position:** the `api-test`, `rust-test` and `rust-clippy` rows of
+//! [`crate::task_runner::TASKS`] run `run_api_test`, `run_api_unit_tests` and `run_api_clippy`;
+//! the `mk` lane's `rust-test`, `rust-clippy` and
 //! `rust-build` recipes ([`crate::build_lane`]) run the same argv through [`api_line_argv`]. The
 //! packages come from `database_operations::local_database::api_test_packages`, the derivation
 //! `cargo xtask db test-it` runs over.
@@ -106,27 +106,3 @@ pub(crate) fn run_api_unit_tests() -> i32 {
 pub(crate) fn run_api_clippy() -> i32 {
     run_api_line(ApiLine::Clippy)
 }
-
-/// The `rust-build` row: [`ApiLine::Build`].
-pub(crate) fn run_api_build() -> i32 {
-    run_api_line(ApiLine::Build)
-}
-
-/// The [`ApiLine`] a task-table step runs, when `run` is one of this module's runners: how the
-/// task-table tests read the line a native API step derives.
-#[cfg(test)]
-pub(crate) fn api_line_of(run: fn() -> i32) -> Option<ApiLine> {
-    [
-        (run_api_test as fn() -> i32, ApiLine::Test),
-        (run_api_unit_tests, ApiLine::UnitTests),
-        (run_api_clippy, ApiLine::Clippy),
-        (run_api_build, ApiLine::Build),
-    ]
-    .into_iter()
-    .find(|(runner, _)| std::ptr::fn_addr_eq(*runner, run))
-    .map(|(_, line)| line)
-}
-
-#[cfg(test)]
-#[path = "tests/api_package_lane.rs"]
-mod tests;

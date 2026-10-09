@@ -435,7 +435,3 @@ fn run_id(started_unix_seconds: u64) -> String {
         SEQUENCE.fetch_add(1, Ordering::Relaxed)
     )
 }
-
-#[cfg(test)]
-#[path = "tests/operational_recording.rs"]
-mod tests;

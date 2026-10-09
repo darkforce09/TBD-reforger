@@ -41,7 +41,8 @@ mask; a key chord is `rawKeyDown` plus `keyUp` only), and assertions read the ed
 `__selfChecks`). Each smoke prints a JSON verdict of named checks, most of them including a
 no-panic check, and shuts Chromium's process group down before the next one starts.
 
-`gate editor-suite` runs `EDITOR_SUITE` in order and stops at the first non-zero exit:
+`gate editor-suite` runs `EDITOR_SUITE` (`selfcheck`, `editor`, `save-export`, `undo`) in order and
+stops at the first non-zero exit; every smoke below also runs alone through `gate smoke <name>`:
 
 | Smoke | What it asserts |
 |---|---|
@@ -89,18 +90,15 @@ smoke name and a driver fault surface as errors, which the `gate` binary exits 3
 
 - Depends on: `tools/browser_testing/chrome_devtools_protocol/src/browser_session.rs`, `server.rs`,
   `session_tokens.rs`, `fixture_injection.rs` (`FREEZE_SRC` for `render-check`) and
-  `dom_oracle/` (`seed_script`, `js_len`); `crate::gate_layout` for the map assets; the
+  `session_tokens.rs` (`admin_session_seed_script`); `crate::gate_layout` for the map assets; the
   fixture corpus in `contracts/fixtures/api_goldens/`; the Mission Creator's window hooks
   in `crates/frontend/workspaces/mission_creator_workspace/src/`; a live API for `hydrate` and `mutations`.
 - Used by: the `gate` command line in `tools/browser_testing/browser_gate_suites/src/command_lines/gate.rs`;
   `cargo xtask mk leptos-gates`, which runs `gate editor-suite`, and
   `.github/workflows/editor-gates.yml` through it.
 - Rules:
-  - `selfcheck` stays first in `EDITOR_SUITE`, and a new smoke joins both `EDITOR_SUITE` and
-    `run_smoke`;
-  - `--assert-js` never passes on truthiness (`pass_false_object_fails`,
-    `diagnostic_string_is_echoable_not_pass` and the rest of
-    `tools/browser_testing/browser_gate_suites/src/tests/editor_smoke_tests/assert_js_ok_tests.rs`);
+  - `selfcheck` stays first in `EDITOR_SUITE`, and a new smoke joins `run_smoke`;
+  - `--assert-js` never passes on truthiness;
   - smokes run one at a time on fixed server and debug ports, and each reaps Chromium's process
     group before returning.
 

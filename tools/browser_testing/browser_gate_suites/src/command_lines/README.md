@@ -15,8 +15,8 @@ tools/browser_testing/browser_gate_suites/src/command_lines/
 ## How it works
 
 ```text
-bin/gate.rs    ──▶ gate::run    ──▶ diagnostics · dom_oracle · route_drift · editor_smoke_tests
-                                    · server · equipment_data_viewer · mortar_offline
+bin/gate.rs    ──▶ gate::run    ──▶ diagnostics · editor_smoke_tests · server
+                                    · equipment_data_viewer · mortar_offline
                                     · ballistics_agreement
 bin/capture.rs ──▶ capture::run ──▶ screen_capture::{shot, zoomsweep, crop}
 ```
@@ -30,7 +30,7 @@ commands and what each asserts are listed in the
 exits 2 on a clap usage error.
 
 `cargo xtask mk leptos-gates` runs `trunk build --release` in `crates/frontend/shell/frontend_application/`, then
-`gate doctor`, `gate editor-suite` and `gate v-suite verify`, each through
+`gate doctor` and `gate editor-suite`, each through
 `cargo run -q -p developer_tools --bin gate`, stopping at the first failure;
 `cargo xtask mk gate-doctor` runs the build and the doctor alone. The `hydrate` smoke in the suite
 needs the API on `127.0.0.1:8080`. `cargo xtask mk mortar-offline-gate` runs the build, then

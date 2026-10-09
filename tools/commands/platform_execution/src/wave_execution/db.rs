@@ -365,7 +365,3 @@ pub(super) fn gate_test_api_argv(target_folder: &str, api_test_line: &[String]) 
     argv.extend(host::v(&["--quiet", "--", "--nocapture"]));
     argv
 }
-
-#[cfg(test)]
-#[path = "tests/db/tests.rs"]
-mod tests;

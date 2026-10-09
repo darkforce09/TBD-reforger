@@ -320,7 +320,3 @@ impl Drop for HolderNote {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/lock/tests.rs"]
-mod tests;

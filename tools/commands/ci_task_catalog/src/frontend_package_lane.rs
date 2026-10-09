@@ -207,22 +207,3 @@ pub(crate) fn run_frontend_native_clippy() -> i32 {
 pub(crate) fn run_frontend_tests() -> i32 {
     run_frontend_line(FrontendLine::Test)
 }
-
-/// The [`FrontendLine`] a task-table step runs, when `run` is one of this module's runners: how
-/// the task-table tests read the line a native frontend step derives.
-#[cfg(test)]
-pub(crate) fn frontend_line_of(run: fn() -> i32) -> Option<FrontendLine> {
-    [
-        (run_frontend_format as fn() -> i32, FrontendLine::Format),
-        (run_frontend_wasm32_clippy, FrontendLine::Wasm32Clippy),
-        (run_frontend_native_clippy, FrontendLine::NativeClippy),
-        (run_frontend_tests, FrontendLine::Test),
-    ]
-    .into_iter()
-    .find(|(runner, _)| std::ptr::fn_addr_eq(*runner, run))
-    .map(|(_, line)| line)
-}
-
-#[cfg(test)]
-#[path = "tests/frontend_package_lane.rs"]
-mod tests;

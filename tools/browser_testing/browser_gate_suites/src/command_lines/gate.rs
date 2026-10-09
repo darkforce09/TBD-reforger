@@ -1,8 +1,6 @@
 //! The `gate` command line: every headless browser gate of the single-page app behind one binary.
 //!
 //! ```text
-//!   gate v-suite <verify|accept> [--leptos-dir d] [--only slug] [--note why]
-//!   gate s-routes
 //!   gate serve --dir <dist> [--port 5198] [--api-proxy http://127.0.0.1:8080] [--map-assets dir]
 //!   gate mortar-offline [--dist d] [--port 5402] [--debug-port 9402] [--api-corpus dir]
 //!   gate ballistics-agreement [--dist d] [--seed 1] [--count 32] [--catalog f] [--api-goldens d] [--timeout-s 600]
@@ -21,10 +19,8 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use crate::diagnostics as doctor;
-use crate::dom_oracle as vsuite;
 use crate::editor_smoke_tests;
 use crate::gate_layout::{FRONTEND_APPLICATION_DIST, MapAssetMounts};
-use crate::route_drift as sroutes;
 use crate::server as serve;
 use clap::{Parser, Subcommand};
 
@@ -49,21 +45,6 @@ enum Cmd {
         )]
         output: PathBuf,
     },
-    /// V-suite frozen-oracle DOM gate
-    #[command(name = "v-suite")]
-    VSuite {
-        /// verify | accept  (there is no freeze mode: the reference oracle is non-regenerable)
-        mode: String,
-        #[arg(long, default_value = FRONTEND_APPLICATION_DIST)]
-        leptos_dir: PathBuf,
-        #[arg(long, default_value = "")]
-        only: String,
-        #[arg(long, default_value = "")]
-        note: String,
-    },
-    /// Route-table drift gate
-    #[command(name = "s-routes")]
-    SRoutes,
     /// One editor/live smoke by name (see EDITOR_SUITE)
     Smoke {
         /// selfcheck|arsenal|attributes|cur|doc|editor|fullmap|hillshade|hydrate|keyboard-settings|
@@ -74,7 +55,7 @@ enum Cmd {
         #[arg(long)]
         path: Option<String>,
     },
-    /// The whole editor suite in EDITOR_SUITE order (first failure stops)
+    /// The editor suite in EDITOR_SUITE order: selfcheck, editor, save-export, undo (first failure stops)
     #[command(name = "editor-suite")]
     EditorSuite {
         #[arg(long)]
@@ -106,7 +87,7 @@ enum Cmd {
         expect: String,
         #[arg(long)]
         assert_js: Option<String>,
-        /// Inject the v-suite admin localStorage seed before boot (auth-gated pages).
+        /// Inject the admin localStorage seed before boot (auth-gated pages).
         #[arg(long, default_value_t = false)]
         seed_auth: bool,
         #[arg(long, default_value_t = 5197)]
@@ -215,19 +196,6 @@ async fn run_command(command: Cmd) -> Result<u8> {
         Cmd::EquipmentDataViewer { website, output } => {
             Ok(crate::equipment_data_viewer::run(&website, &output).await?)
         }
-        Cmd::VSuite {
-            mode,
-            leptos_dir,
-            only,
-            note,
-        } => Ok(vsuite::run(&vsuite::VSuiteArgs {
-            mode,
-            leptos_dir,
-            only,
-            note,
-        })
-        .await?),
-        Cmd::SRoutes => Ok(sroutes::run()?),
         Cmd::Smoke { name, dist, path } => {
             Ok(editor_smoke_tests::run_smoke(&name, dist, path).await?)
         }

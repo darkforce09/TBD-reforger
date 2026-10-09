@@ -225,7 +225,3 @@ pub(crate) fn cmd_push(_ctx: &Ctx) -> u8 {
     super::flush();
     super::host::status_code(Run::new("git").args(argv).terminal()) as u8
 }
-
-#[cfg(test)]
-#[path = "tests/push/tests.rs"]
-mod tests;

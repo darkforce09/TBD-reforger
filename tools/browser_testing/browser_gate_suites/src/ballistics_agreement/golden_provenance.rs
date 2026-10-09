@@ -105,7 +105,3 @@ fn read_golden(path: &Path) -> Result<Vec<u8>, String> {
         )
     })
 }
-
-#[cfg(test)]
-#[path = "../tests/ballistics_agreement/golden_provenance.rs"]
-mod tests;

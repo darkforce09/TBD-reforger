@@ -295,7 +295,3 @@ impl TelemetryWatch {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/telemetry_check/tests.rs"]
-mod tests;

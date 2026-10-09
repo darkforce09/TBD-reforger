@@ -1,7 +1,6 @@
 # `cargo xtask ci`, `cargo xtask help` and `cargo xtask mk`: the CI task table and its runner, the
-# build lane's recipes, the shared cargo target pin and its checks, the workflow and CI schema
-# parity checks, and the map asset checks the schema and terrain tasks run. `thiserror` carries
-# its errors.
+# build lane's recipes, the shared cargo target pin, and the map asset checks the schema and terrain
+# tasks run. `thiserror` carries its errors.
 [package]
 name = "ci_task_catalog"
 version = "0.1.0"
@@ -9,7 +8,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
-description = "The CI task table and runner, the build lane recipes, the cargo target pin and the CI workflow checks"
+description = "The CI task table and runner, the build lane recipes and the cargo target pin"
 
 [package.metadata.layout]
 category = "tools/commands"
@@ -17,23 +16,14 @@ tier = 8
 targets = "any"
 
 [dependencies]
-# The binary hands the runner its command tree for the in-process link check.
-clap = { workspace = true }
-# The database lane's integration suite, its lane commands and the `no-select-star` check.
+# The database lane's integration suite and the API package list.
 database_operations = { workspace = true }
-# The `verify-staging-compose-paths` task.
-deployment = { workspace = true }
-# The three documentation gates of `verify-documentation`.
-documentation_checks = { workspace = true }
 # The glibc version the target-directory stamp records.
 libc = { workspace = true }
-# The map asset checks (map-object goldens, terrain manifest, labels, BLAS manifest).
+# The map asset checks (map-object goldens, terrain manifest, labels).
 map_asset_verification = { workspace = true }
-# The Enfusion comment card and the mission REST size check.
-mod_script_checks = { workspace = true }
 process_runner = { workspace = true }
-regex = { workspace = true }
-# The language bans, the workspace laws, the route tags, the engine layers and the wave gate sources.
+# The language bans and the workspace laws.
 repository_checks = { workspace = true }
 # The workspace member list the member test lane derives.
 repository_laws = { workspace = true }
@@ -43,14 +33,8 @@ repository_root = { workspace = true }
 schema_tooling = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-# The GitHub Actions workflows the `verify ci-shell` gate parses.
-serde_norway = { workspace = true }
 thiserror = { workspace = true }
 verification_core = { workspace = true }
-
-[dev-dependencies]
-# The test checkout root.
-tool_test_support = { workspace = true }
 
 [lints]
 workspace = true

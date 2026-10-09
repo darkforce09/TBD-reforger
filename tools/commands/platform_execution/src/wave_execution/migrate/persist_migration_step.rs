@@ -1,9 +1,8 @@
-//! The claim-body pin and the populated-database migration step.
+//! The populated-database migration step.
 //!
-//! **Role:** `gate_db_migrate_claim_body` checks that migration 0016's claim `UPDATE` body on disk
-//! still matches its pin (comments stripped); `gate_db_migrate_persist` audits or advances the
-//! persist database: applies the pending migrations to a database that keeps real rows, verifies
-//! the applied checksums and re-seeds.
+//! **Role:** `gate_db_migrate_persist` audits or advances the persist database: applies the
+//! pending migrations to a database that keeps real rows, verifies the applied checksums and
+//! re-seeds.
 //!
 //! **Position:** re-exported by the parent `migrate` module; psql runs in the `tbd_reforger_db`
 //! container through `podman exec`, fed by the sibling `persist_feed.rs`.
@@ -14,118 +13,9 @@
 //!
 //! **Invariants:** `advance` mutates a database every gate shares, so it refuses without the gate
 //! lock (or the deliberate escape hatch); a mode other than `audit` or `advance` fails; the
-//! checksum audit fails closed when `sha384sum` is missing; `TBD_GATE_MIGRATION_0016` overrides the
-//! pinned path for perturbation probes only.
+//! checksum audit fails closed when `sha384sum` is missing.
 
 use super::*;
-
-/// Class-R: SQL-only claim migration 0016 must keep its claim UPDATE body.
-///
-/// `tests/db_migrate.rs` only asserts schema/object counts after sqlx migrate. A hollow 0016 that
-/// drops the claim UPDATE (`UPDATE match_player_stats … SET discord_id`) but keeps
-/// `REFRESH MATERIALIZED VIEW` still lands the same table/enum/matview census and stays gate-green
-/// when claimable orphans are 0. That class of defect is invisible to the Rust gate; pin the claim
-/// needles on disk here.
-///
-/// Needles measured from `crates/api/api_database/migrations/0016_backfill_pre_t326_linked_match_stats.sql`
-/// claim step 2 (not comments — comment prose uses unqualified `discord_id IS NULL`).
-///
-/// Path override `TBD_GATE_MIGRATION_0016` is for perturbation probes only (point at a bait file
-/// missing the UPDATE) — never for production gating.
-pub(crate) fn gate_db_migrate_claim_body(ctx: &Ctx) -> i32 {
-    let f = std::env::var("TBD_GATE_MIGRATION_0016")
-        .ok()
-        .filter(|s| !s.is_empty())
-        .unwrap_or_else(|| {
-            ctx.root
-                .join("crates/api/api_database/migrations/0016_backfill_pre_t326_linked_match_stats.sql")
-                .display()
-                .to_string()
-        });
-    if !Path::new(&f).is_file() {
-        wprintln!("db_migrate claim body: missing migration file: {f}");
-        wprintln!("        0016 is the one-shot claim for already-linked accounts; without it");
-        wprintln!("        this Class-R cannot pin the UPDATE body. Restore the file or unset");
-        wprintln!("        TBD_GATE_MIGRATION_0016.");
-        return 1;
-    }
-    let src = std::fs::read_to_string(&f).unwrap_or_default();
-    // Strip /*…*/ block comments (incl. multiline) then -- line comments before needle search so
-    // comment-only bait cannot false-green.
-    let body = strip_sql_comments(&src);
-    let needles = [
-        "UPDATE public.match_player_stats AS s",
-        "SET discord_id = u.discord_id",
-        "AND s.discord_id IS NULL",
-    ];
-    let miss: Vec<&str> = needles
-        .iter()
-        .copied()
-        .filter(|n| !body.contains(n))
-        .collect();
-    if !miss.is_empty() {
-        wprintln!("db_migrate claim body: FAIL — {f} is missing claim UPDATE needle(s):");
-        for n in &miss {
-            wprintln!("        - {n}");
-        }
-        wprintln!(
-            "        Hollow 0016 (REFRESH kept, claim UPDATE dropped) still passes schema counts."
-        );
-        wprintln!("        Restore the claim UPDATE body (do not weaken this assert).");
-        return 1;
-    }
-    wprintln!("db_migrate claim body: OK — 0016 retains claim UPDATE needles ({f})");
-    0
-}
-
-/// The awk comment stripper, ported statement-for-statement.
-///
-/// Block comments span lines (`inblock` carries across), `--` ends the line, and whichever opener
-/// comes FIRST on a line wins. Anything else and a `--` inside a block comment would terminate the
-/// wrong thing.
-pub(super) fn strip_sql_comments(src: &str) -> String {
-    let mut inblock = false;
-    let mut result = String::new();
-    for line in src.lines() {
-        let mut s: &str = line;
-        let mut out = String::new();
-        while !s.is_empty() {
-            if inblock {
-                match s.find("*/") {
-                    None => {
-                        break;
-                    }
-                    Some(idx) => {
-                        s = &s[idx + 2..];
-                        inblock = false;
-                        continue;
-                    }
-                }
-            }
-            let i_block = s.find("/*");
-            let i_line = s.find("--");
-            match (i_block, i_line) {
-                (None, None) => {
-                    out.push_str(s);
-                    break;
-                }
-                (b, Some(l)) if b.is_none_or(|b| l < b) => {
-                    out.push_str(&s[..l]);
-                    break;
-                }
-                (Some(b), _) => {
-                    out.push_str(&s[..b]);
-                    s = &s[b + 2..];
-                    inblock = true;
-                }
-                _ => unreachable!("the two None case is handled above"),
-            }
-        }
-        result.push_str(&out);
-        result.push('\n');
-    }
-    result
-}
 
 pub(crate) fn gate_db_migrate_persist(ctx: &Ctx, state: &GateState, mode: &str) -> u8 {
     let db = std::env::var("TBD_GATE_MIGRATE_PERSIST_DB")

@@ -18,7 +18,7 @@ tools/commands/mod_operations/src/playtest_server/
 ├── platform_deployment.rs  provision, confirm and release the deployment, or stage the offline artifact
 ├── render.rs               profile seeding, backend-config patch, admin list and server.json render
 ├── telemetry_check.rs      the runtime's telemetry queue reading, the seen matches' events, the verdict
-├── tests/                  unit tests for boot, lifecycle, log reading, rendering and the telemetry check
+├── tests/                  unit tests for the lifecycle: the group probe, kill_run and the run lock
 └── usage_fail.rs           flag parsing, preflight checks and the run order from staging to boot
 ```
 
@@ -99,15 +99,9 @@ usage_fail::run ─ parse flags (a token acts where it stands: `--help` exits 0 
   [API](/documentation/glossary/a_to_f.md#api) for `--mission`.
 - Used by: `cargo xtask mod playtest` and `cargo xtask mod dev-server`; people running a local
   two-client playtest.
-- Rules: the help lists exactly the flags the parser accepts
-  (`help_text_matches_the_options_we_parse` in
-  `tools/commands/mod_operations/src/tests/playtest_server/tests.rs`); admin ids follow the
-  engine's two patterns (`admin_schema_matches_the_engines_two_patterns`); the addon GUID is read
-  from the gproj, never hard-coded (`guid_is_read_out_of_a_real_gproj_shape`); the local addon must
-  win (`the_local_addon_must_win_or_the_gate_fails` in `tests/logread/tests.rs`); a failed
-  telemetry check fails only a successful run and only under `--require-telemetry`
-  (`a_failed_check_fails_a_successful_run_only_when_required` in
-  `tests/telemetry_check/tests.rs`); every exit returns through the lock guard so its drop always
+- Rules: the help lists exactly the flags the parser accepts; admin ids follow the engine's two
+  patterns; the addon GUID is read from the gproj, never hard-coded; the local addon must win; a
+  failed telemetry check fails only a successful run and only under `--require-telemetry`; every exit returns through the lock guard so its drop always
   runs.
 
 ## Related documentation

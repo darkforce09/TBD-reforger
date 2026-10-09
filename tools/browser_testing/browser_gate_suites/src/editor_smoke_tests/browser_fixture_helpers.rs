@@ -12,11 +12,11 @@ use crate::session_tokens::gate_refresh_answer;
 
 /// Editor route requires `mission_maker`: a guest is bounced to
 /// `?role_notice=mission_maker` before `__editorCam` appears.
-/// Seed the v-suite admin fixture into `tbd-auth` on every new document so the suite (and
+/// Seed the admin fixture session into `tbd-auth` on every new document so the suite (and
 /// doctor liveness) can enter `/missions/smoke/edit`. Prefer **no** live `/api` proxy for the
 /// pure UI smokes: a dead refresh against :8080 clears the seeded session (measured).
 pub(super) fn editor_auth_seed() -> Result<String> {
-    crate::dom_oracle::seed_script()
+    crate::session_tokens::admin_session_seed_script()
 }
 
 /// The auth-interception pattern used by the arsenal + outliner smokes: /registry →

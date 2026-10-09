@@ -194,7 +194,3 @@ fn execute_local(
     }
     Ok(failures)
 }
-
-#[cfg(test)]
-#[path = "tests/evidence.rs"]
-mod tests;

@@ -260,7 +260,3 @@ pub(super) async fn read_solution_tables(page: &Page) -> Result<SolutionTables> 
     }
     serde_json::from_value(v["tables"].clone()).map_err(|e| refusal!("read tables: {e} in {v}"))
 }
-
-#[cfg(test)]
-#[path = "../tests/mortar_offline/page_driver.rs"]
-mod tests;

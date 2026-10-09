@@ -267,7 +267,3 @@ fn same_patterns_under(
 fn same_summary(left: (Option<u32>, Option<f64>), right: (Option<u32>, Option<f64>)) -> bool {
     left.0 == right.0 && left.1.map(f64::to_bits) == right.1.map(f64::to_bits)
 }
-
-#[cfg(test)]
-#[path = "../tests/ballistics_agreement/case_verdict.rs"]
-mod tests;

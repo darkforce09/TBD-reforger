@@ -18,7 +18,7 @@ tools/commands/mod_operations/src/compile/
 templates, and declares both files with `mod`.
 
 ```text
-run / run_selftest / run_preflight            (execution.rs)
+run / run_preflight                           (execution.rs)
   └─ run_with_root
        ├─ env checks: host bridge, server binary, tbd-framework addon.gproj  ── exit 3
        └─ compile_inner
@@ -38,20 +38,16 @@ run / run_selftest / run_preflight            (execution.rs)
   throwaway addon, then up to ten cascaded vanilla errors.
 - `load_count_guard` calibrates the vanilla-only file count once, into `.compile-vanilla-baseline`
   at the repository root, by booting the server with no addons.
-- `run_selftest` passes only when the deliberately broken selftest addon makes the gate exit 1;
-  `run_preflight` checks only that the server binary and a non-empty
+- `run_preflight` checks only that the server binary and a non-empty
   `mod/tbd-framework/resourceDatabase.rdb` exist.
 
 ## Boundaries
 
 - Depends on: `crate::compile_host` (host bridge, process-group kill, run-dir
-  cleanup on a signal), `tool_test_support`, the `regex` crate, and the Arma Reforger
+  cleanup on a signal), the `regex` crate, and the Arma Reforger
   dedicated server under `$HOME/.local/share/Steam/steamapps/common/Arma Reforger Server`.
-- Used by: `tools/commands/mod_operations/src/compile.rs`, which re-exports `run`,
-  `run_selftest` and `run_preflight` to the `mod` dispatch.
+- Used by: `tools/commands/mod_operations/src/compile.rs`, which re-exports `run` and
+  `run_preflight` to the `mod` dispatch.
 - Rules: an environment fault exits 3 and never 1, so a machine problem cannot read as broken mod
-  code (`no_server_is_rc3` and `no_addon_is_rc3` in
-  `tools/commands/mod_operations/src/tests/compile/tests.rs`); the Game-module count takes only
-  `.c` files and refuses a missing `Scripts/Game`
-  (`count_game_scripts_counts_only_c_and_refuses_a_missing_tree`); the Workbench-tooling guard
-  names the folder and what it holds (`workbench_tooling_guard_reports_the_dir_and_what_is_in_it`).
+  code; the Game-module count takes only `.c` files and refuses a missing `Scripts/Game`; the
+  Workbench-tooling guard names the folder and what it holds.

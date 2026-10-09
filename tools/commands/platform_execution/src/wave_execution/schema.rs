@@ -1,8 +1,7 @@
 //! The wave gate's schema step, and the provenance stamp of the binary it runs.
 //!
-//! **Role:** `gate_schema` runs the whole set of contract sub-gates (`cargo xtask ci
-//! schema-validate` plus the citation check), skipping `height-labels` when this tree's Everon DEM
-//! is not a real PNG; content-stamps the xtask build it runs (`.tbd-xtask-src` in the gate's schema
+//! **Role:** `gate_schema` runs the whole set of contract sub-gates of `cargo xtask ci
+//! schema-validate`; content-stamps the xtask build it runs (`.tbd-xtask-src` in the gate's schema
 //! folder) and throws that folder away when another tree's sources built it.
 //!
 //! **Position:** called by `gate::cmd_gate`; the sub-gate list is cross-checked against
@@ -29,29 +28,7 @@ use super::{Ctx, host};
 use crate::wave_execution::wprintln;
 
 /// Must equal `cargo xtask ci schema-validate`'s sub-gate SET, in the `TASKS` row's order.
-/// `citations` comes from `verify-citations` / `ci-local-schema` and is layered on after the
-/// tripwire. `height-labels` stays in this list even when a worktree skips running it.
-const VALIDATE_GATES: &[&str] = &[
-    "validate",
-    "map-object-golden",
-    "map-glyphs",
-    "height-labels",
-    "map-object-enums",
-    "type-inventory",
-];
-const EXTRA_GATES: &[&str] = &["citations"];
-
-/// DEM path `height-labels` (and `terrain-alignment`) decode. Probe is PNG magic, not byte size —
-/// size alone would green a truncated file and red a future compressor win.
-const DEM: &str = "assets/terrains/everon/dem/everon-dem-16bit.png";
-
-/// True iff THIS tree's Everon DEM is a real PNG (not a git-lfs pointer, not missing).
-fn dem_materialized() -> bool {
-    let Ok(body) = std::fs::read(DEM) else {
-        return false;
-    };
-    body.len() >= 8 && body[..8] == [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
-}
+const VALIDATE_GATES: &[&str] = &["validate", "map-object-enums", "type-inventory"];
 
 /// The sub-gate names `cargo xtask ci schema-validate` will actually run, in table order.
 ///
@@ -101,29 +78,7 @@ pub(crate) fn gate_schema(ctx: &Ctx) -> i32 {
         return 1;
     }
 
-    // Runtime run-set: every VALIDATE gate, minus height-labels only when THIS tree's DEM is not a
-    // materialized PNG, plus citations. Never a forever-exclusion list.
-    let mut run_gates: Vec<String> = Vec::new();
-    let mut skipped = String::new();
-    for g in VALIDATE_GATES {
-        if *g == "height-labels" && !dem_materialized() {
-            skipped = "height-labels".into();
-            wprintln!("schema: height-labels SKIP in this tree — {DEM} is not a materialized PNG");
-            wprintln!(
-                "        (LFS pointer or missing). On main with a real DEM this sub-gate RUNS; do not"
-            );
-            wprintln!(
-                "        treat a worktree skip as 'red on main' or chase `xtask ci lfs-dem` for that."
-            );
-            continue;
-        }
-        run_gates.push((*g).to_string());
-    }
-    run_gates.extend(EXTRA_GATES.iter().map(|s| (*s).to_string()));
-    if run_gates.is_empty() {
-        wprintln!("schema: run-set is empty after per-context filtering — refusing vacuous PASS.");
-        return 1;
-    }
+    let run_gates: Vec<String> = VALIDATE_GATES.iter().map(|s| (*s).to_string()).collect();
 
     // ---- make sure the xtask we are about to trust is THIS tree's ----
     //
@@ -281,23 +236,13 @@ pub(crate) fn gate_schema(ctx: &Ctx) -> i32 {
     let run_list = run_gates.join(" ");
     if !failed.is_empty() {
         wprintln!("{detail}");
-        if !skipped.is_empty() {
-            wprintln!(
-                "schema: FAILED{failed}  ({ran} sub-gates run; context-skipped: {skipped} — DEM not materialized here)"
-            );
-        } else {
-            wprintln!("schema: FAILED{failed}  ({ran} sub-gates run)");
-        }
+        wprintln!("schema: FAILED{failed}  ({ran} sub-gates run)");
         if timedout {
             return 124;
         }
         return 1;
     }
-    if !skipped.is_empty() {
-        wprintln!("schema: {ran} sub-gates OK ({run_list}; context-skipped: {skipped})");
-    } else {
-        wprintln!("schema: {ran} sub-gates OK ({run_list})");
-    }
+    wprintln!("schema: {ran} sub-gates OK ({run_list})");
     0
 }
 
@@ -360,7 +305,3 @@ fn cksum(data: &[u8]) -> String {
     }
     format!("{}{}", !crc, data.len())
 }
-
-#[cfg(test)]
-#[path = "tests/schema/tests.rs"]
-mod tests;

@@ -3,7 +3,7 @@
 //! **Role:** holds the options, the run state and its cleanup; `world_boot/execution.rs` parses the
 //! flags and runs the boot, `world_boot/compiled_lane.rs` runs `--compiled` (a seeded fixture
 //! mission through the platform), `world_boot/boot_environment.rs` reads the machine; the log
-//! verdict and `--selftest` live in [`crate::world_boot_verdict`].
+//! verdict lives in [`crate::world_boot_verdict`].
 //! **Position:** called by [`crate::mod_dispatch`]; launches the server through
 //! [`crate::server_launcher`] and drives the platform through [`crate::website_api_client`].
 //! **Signals & state:** `RunState` owns the run folder, the server child and the fixture missions'
@@ -38,7 +38,6 @@ const SERVER_REL: &str = ".local/share/Steam/steamapps/common/Arma Reforger Serv
 
 struct Opts {
     keep_logs: bool,
-    selftest: bool,
     mission: Option<String>,
     compiled: bool,
     compiled_uuid: Option<String>,
@@ -83,7 +82,7 @@ impl Drop for RunState {
 }
 
 #[rustfmt::skip]
-const EXPECTED_EQUIP_OK: usize = 4; // perturb to 3 → `mod world-boot --selftest` RED
+const EXPECTED_EQUIP_OK: usize = 4;
 
 mod execution;
 use execution::api_doc_fail;
@@ -93,7 +92,6 @@ pub(crate) use execution::run;
 mod compiled_lane;
 use compiled_lane::assert_four_weapon_equip;
 use compiled_lane::compiled_lane;
-use compiled_lane::four_weapon_equip_selftest;
 use compiled_lane::kill_run;
 use compiled_lane::poll_for_log;
 use compiled_lane::spawn_server;

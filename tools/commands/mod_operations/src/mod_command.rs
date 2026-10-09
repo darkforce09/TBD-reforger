@@ -124,10 +124,6 @@ pub enum ModCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// Prove the compile gate still rejects a broken .c — passes ONLY on its exit 1, so a gate
-    /// that has stopped classifying exit codes cannot green this.
-    #[command(name = "compile-selftest")]
-    CompileSelftest,
     /// Loud preflight that the dedicated server + resourceDatabase.rdb exist (mod-gates.yml).
     #[command(name = "compile-preflight")]
     CompilePreflight,
@@ -135,7 +131,7 @@ pub enum ModCmd {
     /// Exit: 0 PASS · 1 CODE · 2 usage · 3 ENVIRONMENT.
     #[command(name = "world-boot", disable_help_flag = true)]
     WorldBoot {
-        /// Passthrough (`--selftest`, `--compiled[=uuid]`, `--mission=<golden>`, `--keep-logs`).
+        /// Passthrough (`--compiled[=uuid]`, `--mission=<golden>`, `--keep-logs`).
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },

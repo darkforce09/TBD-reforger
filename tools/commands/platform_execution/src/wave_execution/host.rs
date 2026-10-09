@@ -212,7 +212,3 @@ pub(crate) fn status_code(outcome: Result<i32, NotRun>) -> i32 {
 pub(crate) fn v(parts: &[&str]) -> Vec<String> {
     parts.iter().map(|s| (*s).to_string()).collect()
 }
-
-#[cfg(test)]
-#[path = "tests/host/tests.rs"]
-mod tests;

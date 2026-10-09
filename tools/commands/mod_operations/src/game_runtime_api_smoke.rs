@@ -120,7 +120,3 @@ fn artifact_is_intact(answer: &ApiAnswer, expected: &str) -> bool {
     let tag = answer.header("etag").map(|tag| tag.trim_matches('"'));
     answer.status == 200 && !expected.is_empty() && actual == expected && tag == Some(expected)
 }
-
-#[cfg(test)]
-#[path = "tests/game_runtime_api_smoke/tests.rs"]
-mod tests;

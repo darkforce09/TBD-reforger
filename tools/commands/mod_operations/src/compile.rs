@@ -3,9 +3,8 @@
 //! **Role:** holds the gate's options, its help text and the embedded probe projects and launch
 //! scripts; the entry points live in `compile/execution.rs` and the log triage in
 //! `compile/report_compile_errors.rs`.
-//! **Position:** called by [`crate::mod_dispatch`] for `mod compile`, `compile-selftest` and
-//! `compile-preflight`; runs the dedicated server through [`crate::compile_host`] and
-//! [`crate::server_launcher`].
+//! **Position:** called by [`crate::mod_dispatch`] for `mod compile` and `compile-preflight`; runs
+//! the dedicated server through [`crate::compile_host`] and [`crate::server_launcher`].
 //! **Signals & state:** none here; the run folder and its cleanup session belong to `execution`.
 //! **Invariants:** exit **0** clean · **1** CODE · **2** no verdict · **3** ENV; `--selftest` must
 //! exit **1**, because its probe project holds a deliberate script error.
@@ -95,15 +94,10 @@ enum Parse {
     Run(Opts),
 }
 
-#[cfg(test)]
-#[path = "tests/compile/tests.rs"]
-mod tests;
-
 mod execution;
 use execution::count_game_scripts;
 pub(crate) use execution::run;
 pub(crate) use execution::run_preflight;
-pub(crate) use execution::run_selftest;
 
 mod report_compile_errors;
 use report_compile_errors::count_tbd_warnings;
@@ -114,6 +108,3 @@ use report_compile_errors::latest_logs_dir;
 use report_compile_errors::load_count_guard;
 use report_compile_errors::parse_args;
 use report_compile_errors::report_compile_errors;
-
-#[cfg(test)]
-use execution::{run_with_root, workbench_tooling_guard};

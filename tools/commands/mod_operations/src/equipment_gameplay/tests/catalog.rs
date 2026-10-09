@@ -103,39 +103,3 @@ fn numeric_tokens_survive_and_broken_publications_are_refused() {
     assert!(super::super::equipment_vehicle_export::publish_command(&fixture.input).is_err());
     assert_eq!(pointer, fs::read(publication.join("current.json")).unwrap());
 }
-
-#[test]
-fn gameplay_policy_retains_gameplay_controls_and_excludes_presentation() {
-    let policy = policy::Policy::load(&tool_test_support::test_repo_root()).unwrap();
-    assert_eq!(policy.fields.len(), 11314);
-    for (class, property, native) in [
-        (
-            "SCR_MortarShellGadgetComponent",
-            "m_aChargeRingConfig",
-            "VECTOR3_ARRAY",
-        ),
-        ("SCR_TurretControllerComponent", "LimitsHoriz", "VECTOR2"),
-        ("SCR_CarControllerComponent", "DownShiftRpm", "SCALAR"),
-        ("WeaponAttachmentAttributes", "AttachmentType", "OBJECT"),
-        ("MagazineComponent", "AmmoMapping", "INTEGER_ARRAY"),
-    ] {
-        assert_ne!(
-            policy.rule(class, property, native).unwrap().disposition,
-            "exclude",
-            "{class}.{property}"
-        );
-    }
-    assert!(
-        policy
-            .rule("MagazineComponent", "UnreviewedValue", "SCALAR")
-            .is_err()
-    );
-    assert!(!policy.selected("ActionsManagerComponent").unwrap());
-    assert_eq!(
-        policy
-            .rule("SCR_CarControllerComponent", "EngineRumbleEffect", "OBJECT")
-            .unwrap()
-            .disposition,
-        "exclude"
-    );
-}

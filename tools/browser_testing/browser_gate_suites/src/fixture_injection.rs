@@ -1,18 +1,14 @@
-//! The browser-injected JS payloads.
+//! The determinism payload the browser runs on document start.
 //!
-//! HARD RULE — byte parity with the frozen goldens: these two consts ARE the source of truth for
-//! what the browser runs. They execute inside V8 via `Page.addScriptToEvaluateOnNewDocument`; the
-//! harness only ferries them. The goldens under
-//! `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/oracle-freeze/` were serialized by THIS exact
-//! serializer source, so never re-implement or "clean up" these payloads natively: a native
-//! rewrite breaks the byte-identity contract with goldens that cannot be regenerated.
+//! `FREEZE_SRC` executes inside V8 through `Page.addScriptToEvaluateOnNewDocument`; the harness only
+//! ferries it. It fixes the clock, seeds the random sources and disables animations and
+//! transitions, so a screenshot or a timing-free probe sees the same page on every run.
 //!
-//! **Role:** `FREEZE_SRC` and `DOM_SERIALIZER_SRC`, the scripts every captured page runs on
-//! document start.
-//! **Position:** injected by the DOM oracle and the smokes through `new_page`'s init scripts.
-//! **Signals & state:** none; two constants.
-//! **Invariants:** the bytes are the ones the goldens were captured with; their SHA-256 is pinned
-//! by the tests.
+//! **Role:** `FREEZE_SRC`, the script a frozen page runs on document start.
+//! **Position:** injected by `gate render-check` (unless `--no-freeze`) through `new_page`'s init
+//! scripts.
+//! **Signals & state:** none; one constant.
+//! **Invariants:** the clock reads one fixed epoch and the random sources one fixed seed.
 
 /// The determinism payload — fixed clock, seeded RNG, animation kill — injected at document start.
 pub const FREEZE_SRC: &str = r#"
@@ -49,72 +45,3 @@ pub const FREEZE_SRC: &str = r#"
   else document.addEventListener('DOMContentLoaded', inject);
 })();
 "#;
-
-/// The normalized-DOM and computed-style serializer the oracle calls as
-/// `window.__domOracleSerialize`. Its normalization contract is stated in the payload itself:
-/// the style properties it records, the tags it skips, and the whitespace collapse.
-///
-/// NOTE on escapes: this raw string holds the bytes V8 receives, so a whitespace class is the
-/// single-backslash `\s+` and `/\s+/g`. Anything that double-escapes them changes the wire bytes
-/// and therefore every golden.
-pub const DOM_SERIALIZER_SRC: &str = r#"
-window.__domOracleSerialize = function (selector, exclude) {
-  const STYLE_PROPS = [
-    'display', 'position', 'visibility', 'opacity',
-    'color', 'background-color',
-    'border-top-color', 'border-top-width', 'border-top-style', 'border-radius',
-    'font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing',
-    'text-align', 'text-transform', 'white-space',
-    'flex-direction', 'justify-content', 'align-items', 'gap',
-  ];
-  const ID_REF_ATTRS = new Set([
-    'id', 'for', 'aria-controls', 'aria-labelledby', 'aria-describedby',
-    'aria-owns', 'aria-activedescendant', 'aria-details', 'headers',
-    'list', 'form', 'popovertarget',
-  ]);
-  const SKIP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'LINK', 'META', 'TEMPLATE']);
-  // Provably non-visual framework artifacts stripped from BOTH sides — no CSS targets them, no
-  // layout/paint effect. data-discover is React Router v7's prefetch hint; carrying it into the
-  // Leptos DOM would be dead cruft. Equality is defined modulo these.
-  const SKIP_ATTRS = new Set(['data-discover']);
-
-  // Positional id map (document order) → '#0', '#1', …
-  const ids = [];
-  document.querySelectorAll('[id]').forEach((el) => { if (!ids.includes(el.id)) ids.push(el.id); });
-  const idx = (v) => { const i = ids.indexOf(v); return i >= 0 ? '#' + i : v; };
-  const rewriteRefs = (v) => v.split(/\s+/).filter(Boolean).map(idx).join(' ');
-
-  function walk(el) {
-    if (SKIP.has(el.tagName) || el.getAttribute('data-dom-oracle-freeze') === '1') return null;
-    const cs = getComputedStyle(el);
-    const style = {};
-    for (const p of STYLE_PROPS) style[p] = cs.getPropertyValue(p);
-    const attrs = {};
-    for (const a of [...el.attributes].sort((x, y) => x.name.localeCompare(y.name))) {
-      if (SKIP_ATTRS.has(a.name)) continue;
-      attrs[a.name] = a.name === 'id' ? idx(a.value) : ID_REF_ATTRS.has(a.name) ? rewriteRefs(a.value) : a.value;
-    }
-    const children = [];
-    // An excluded element is serialized as a leaf (tag/attrs/style kept, subtree opaque) — used to
-    // compare the chrome skeleton while a not-yet-ported page region inside <main> is ignored.
-    if (!(exclude && el.matches(exclude))) {
-      for (const node of el.childNodes) {
-        if (node.nodeType === 3) {
-          const t = node.textContent.replace(/\s+/g, ' ').trim();
-          if (t) children.push(t);
-        } else if (node.nodeType === 1) {
-          const c = walk(node);
-          if (c) children.push(c);
-        }
-      }
-    }
-    return { tag: el.tagName.toLowerCase(), attrs, style, children };
-  }
-  var root = selector ? document.querySelector(selector) : document.body;
-  return JSON.stringify(root ? walk(root) : null);
-};
-"#;
-
-#[cfg(test)]
-#[path = "tests/fixture_injection/tests.rs"]
-mod tests;

@@ -11,8 +11,7 @@ groups of xtask call it.
 ```text
 tools/tickets/ticket_metrics/
 ├── Cargo.toml  the `ticket_metrics` library package: `ticket_model`, `jsonschema`, `time`, layout tier 3
-├── src/        the receipt model, writer, land stamp, summary and check, and the token estimates
-└── tests/      the recorded agent CLI outputs the token parser is pinned against
+└── src/        the receipt model, writer, land stamp, summary and check, and the token estimates
 ```
 
 ## How it works
@@ -77,15 +76,12 @@ from `PATH`.
   variant of its `Error`); xtask's `ticket metrics`
   (`tools/xtask/src/commands/ticket/dispatch.rs`), `platform slice-run`
   (`tools/commands/platform_execution/src/slice_execution.rs`) and the wave landing
-  (`tools/commands/platform_execution/src/wave_execution/land/merge_execution.rs`). The xtask test
-  `tools/commands/platform_execution/src/tests/slice_execution/tests.rs` replays the fixtures in
-  `tests/fixtures/execution_receipts/`. The ticketboard reads both trees with its own copies of
-  the record checks (`tools/tickets/ticketboard_desktop/src/execution_metrics/`).
+  (`tools/commands/platform_execution/src/wave_execution/land/merge_execution.rs`). The ticketboard
+  reads both trees with its own copies of the record checks (`tools/tickets/ticketboard_desktop/src/execution_metrics/`).
 - Rules: tier 3 of `tools/tickets`, depending on no ticket crate but `ticket_model`
   (`cargo xtask verify crate-tiers`); a receipt total is the four-way sum and a usage block in
   neither recorded dialect fails rather than reading as zero; a ticket never carries both a
-  receipt and an estimate; the files under `tests/fixtures/` are recorded data, which the xtask
-  prose rules skip (`tools/checks/repository_checks/src/tests/tooling_prose_rules.rs`).
+  receipt and an estimate.
 
 ## Related documentation
 

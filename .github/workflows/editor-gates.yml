@@ -1,9 +1,8 @@
 name: editor-gates
 
-# CI coverage for the editor CDP smokes + frozen V-suite (`cargo xtask mk leptos-gates`).
-# Kept OUT of the required per-PR ci.yml (heavy: full map-assets LFS + a real Postgres + API + a
-# software-GL headless chrome), so it runs nightly + on demand, and on PRs that touch the gate or the
-# editor. This exists so gate-infra regressions are caught by machines, not by a person mid-change.
+# The editor CDP smokes (`cargo xtask mk leptos-gates`: the gate doctor, then `gate editor-suite` —
+# selfcheck, editor, save-export, undo). Kept OUT of the required ci.yml (heavy: full map-assets LFS
+# + a real Postgres + API + a software-GL headless chrome), so it runs nightly and on demand.
 #
 # The pinned chromium version stays in lockstep with tools/browser_testing/browser_gate_suites/gate-env.json (single
 # source of truth for the dev box; mirrored here because CI installs Chrome-for-Testing directly,
@@ -13,18 +12,6 @@ on:
   schedule:
     - cron: "0 6 * * *" # nightly ~06:00 UTC
   workflow_dispatch: {}
-  pull_request:
-    branches: [main]
-    paths:
-      - "tools/developer_tools/**"
-      - "tools/browser_testing/**"
-      - "crates/streaming/**"
-      - "crates/map_rendering/**"
-      - "crates/paper_doll/**"
-      - "crates/graphics/**"
-      - "crates/frontend/**"
-      - "crates/mission_editing/**"
-      - ".github/workflows/editor-gates.yml"
 
 concurrency:
   group: editor-gates-${{ github.ref }}
@@ -83,7 +70,7 @@ jobs:
         run: cargo xtask ci editor-api-boot
       - name: gate doctor (fail-fast preflight)
         run: cargo xtask mk gate-doctor
-      - name: editor-suite + v-suite (cargo xtask mk leptos-gates)
+      - name: editor-suite smokes (cargo xtask mk leptos-gates)
         run: cargo xtask mk leptos-gates
       - name: upload smoke verdicts on failure
         if: failure()

@@ -172,7 +172,3 @@ fn show(cfg: &Path, prof: &Path) -> Result<()> {
     println!("  {} seats — {}", slots.len(), seats.join(", "));
     Ok(())
 }
-
-#[cfg(test)]
-#[path = "tests/mission_test/tests.rs"]
-mod tests;

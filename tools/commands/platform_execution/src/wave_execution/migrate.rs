@@ -1,10 +1,9 @@
-//! The migration gates: the pin on migration 0016's claim body, and the populated-database step.
+//! The migration gate: the populated-database step.
 //!
-//! **Role:** re-exports `gate_db_migrate_claim_body` and `gate_db_migrate_persist`, and holds the
-//! populated-database step's label.
+//! **Role:** re-exports `gate_db_migrate_persist` and holds the populated-database step's label.
 //!
 //! **Position:** called by `gate::cmd_gate` after `db::ensure_gate_db` and before `test api`; the
-//! bodies live in `migrate/gate_db_migrate_claim_body.rs` and `migrate/persist_feed.rs`.
+//! bodies live in `migrate/persist_migration_step.rs` and `migrate/persist_feed.rs`.
 //!
 //! **Signals & state:** none; module declarations and re-exports.
 //!
@@ -107,13 +106,8 @@ use crate::wave_execution::wprintln;
 
 const LABEL: &str = "db_migrate persist";
 
-#[cfg(test)]
-#[path = "tests/migrate/tests.rs"]
-mod tests;
-
-mod gate_db_migrate_claim_body;
-pub(crate) use gate_db_migrate_claim_body::gate_db_migrate_claim_body;
-pub(crate) use gate_db_migrate_claim_body::gate_db_migrate_persist;
+mod persist_migration_step;
+pub(crate) use persist_migration_step::gate_db_migrate_persist;
 
 mod persist_feed;
 use persist_feed::base_name;
@@ -122,9 +116,3 @@ use persist_feed::on_path;
 use persist_feed::persist_apply_one;
 use persist_feed::persist_seed;
 use persist_feed::sha384;
-
-#[cfg(test)]
-use persist_feed::mig_desc;
-
-#[cfg(test)]
-use gate_db_migrate_claim_body::strip_sql_comments;

@@ -44,9 +44,8 @@ The commands themselves are described in the
   `walkdir`; the Arma Reforger dedicated server and Workbench, `curl`, `git`, `npm` and `cargo`
   as subprocesses.
 - Used by: the xtask binary's `mod` group.
-- Rules: tier 10 of `tools/commands` (`cargo xtask verify crate-tiers`); `compile-selftest`
-  passes only on the gate's exit 1 (`run_selftest` in `src/compile/execution.rs`); an
-  environment fault never exits 1 (`no_server_is_rc3` in `src/tests/compile/tests.rs`).
+- Rules: tier 10 of `tools/commands` (`cargo xtask verify crate-tiers`); an environment fault
+  never exits 1.
 
 ## Related documentation
 

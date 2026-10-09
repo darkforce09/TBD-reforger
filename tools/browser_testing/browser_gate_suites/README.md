@@ -1,8 +1,7 @@
 # Browser gate suites
 
 The `browser_gate_suites` crate: the headless browser gates of the single-page app. A static server
-for the built app, and the gates that hold it to its frozen DOM, its route table and the
-[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) smokes, plus the gate doctor
+for the built app, the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) smokes, the gate doctor,
 the two ballistics gates (the fire-mission solver's browser build against its native build, and
 the mortar calculator's offline pack), the capture rig that photographs the running Mission
 Creator, and the `gate` and `capture` command lines that run them all. Every browser is driven
@@ -13,16 +12,15 @@ through `chrome_devtools_protocol`.
 ```text
 tools/browser_testing/browser_gate_suites/
 ├── Cargo.toml     the `browser_gate_suites` library package: `chrome_devtools_protocol`, `repository_layout`, `process_runner`, `content_digest`, `newtype_ids`, the ballistics crates, `tokio`, `axum`, `reqwest`, `rustls` (ring), `clap`, `image`, `regex`; layout tier 5
-├── fixtures/      the DOM oracle goldens and the committed route table the gates compare against
 ├── gate-env.json  the pinned Chromium build, toolchain and resource floors `gate doctor` checks and `cargo xtask ci ci-chrome` installs from
-└── src/           the static server, the DOM oracle, the route drift check, the editor smokes, the data viewer gate, the ballistics gates, the capture harness, the doctor, the command lines
+└── src/           the static server, the editor smokes, the data viewer gate, the ballistics gates, the capture harness, the doctor, the command lines
 ```
 
 ## How it works
 
 ```text
-bin gate (developer_tools)    ──▶ command_lines::gate::run    ──▶ diagnostics · dom_oracle · route_drift
-                                    · editor_smoke_tests · server · equipment_data_viewer
+bin gate (developer_tools)    ──▶ command_lines::gate::run    ──▶ diagnostics · editor_smoke_tests · server
+                                    · equipment_data_viewer
                                     · mortar_offline · ballistics_agreement
 bin capture (developer_tools) ──▶ command_lines::capture::run ──▶ screen_capture::{shot, zoomsweep, crop}
 
@@ -39,10 +37,7 @@ frame by frame, and serves `/map-assets/` from the terrain and glyph folders wit
 | Command | Module | What it asserts | Exit |
 |---|---|---|---|
 | `gate doctor` | `diagnostics/` | Chromium, pins, memory, stray processes and fonts, then a 15 s Mission Creator liveness probe | 0, 1 |
-| `gate v-suite verify` | `dom_oracle/` | each of 26 routes' normalised DOM equals its golden, with every [API](/documentation/glossary/a_to_f.md#api) call fed from fixtures | 0, 1, 2 |
-| `gate v-suite accept` | `dom_oracle/` | replaces one route's golden, with a note | 0, 2 |
-| `gate s-routes` | `route_drift.rs` | the `static ROUTES` table of the file `ROUTE_TABLE_SOURCE` names (`crates/frontend/foundation/frontend_route_table/src/routes.rs`) equals `manifests/routes.csv`; a source without the table is an error | 0, 1 |
-| `gate smoke <name>`, `gate editor-suite` | `editor_smoke_tests/` | the Mission Creator smokes, one or all in `EDITOR_SUITE` order | 0, 1, 2 |
+| `gate smoke <name>`, `gate editor-suite` | `editor_smoke_tests/` | the Mission Creator smokes, one by name, or the `EDITOR_SUITE` (selfcheck, editor, save-export, undo) in order | 0, 1, 2 |
 | `gate r-auth` | `editor_smoke_tests/` | a refused session refreshes exactly once | 0, 1, 2 |
 | `gate render-check` | `editor_smoke_tests/` | a path renders, contains `--expect` and passes `--assert-js` | 0, 1 |
 | `gate serve` | `server.rs` | none: serves a dist on port 5198 until Ctrl-C | 0 |
@@ -52,13 +47,12 @@ frame by frame, and serves `/map-assets/` from the terrain and glyph folders wit
 
 Every command also exits 2 on a usage error and 3 on a driver error (an `Error` returned by this
 crate, printed as `gate: driver error: ` and the error with every cause). `capture` exits 0 when
-the capture is written, 1 when it produced nothing or could not run, and 2 on a usage error. `gate s-routes` writes the router's rows as `path,component,fullBleed,chromeless,router_auth`,
-sorted by path, and prints each differing row. `fixture_injection.rs` holds the two scripts that
-make a capture deterministic: `FREEZE_SRC` fixes the clock at 1 700 000 000 000 ms, seeds
-`Math.random` and `crypto.getRandomValues`, and stops animations; `DOM_SERIALIZER_SRC` defines
-`window.__domOracleSerialize`, which the goldens were serialised with.
+the capture is written, 1 when it produced nothing or could not run, and 2 on a usage error.
+`fixture_injection.rs` holds `FREEZE_SRC`, the script that makes a `render-check` page
+deterministic: it fixes the clock at 1 700 000 000 000 ms, seeds `Math.random` and
+`crypto.getRandomValues`, and stops animations.
 
-The doctor's probe, the editor smokes, `render-check`, `r-auth` and the DOM oracle open their pages
+The doctor's probe, the editor smokes, `render-check` and `r-auth` open their pages
 with `Page::bypass_service_worker` (`Network.setBypassServiceWorker`), so the app's offline service
 worker never answers in place of the gate's server, its fixtures or its request interception.
 `src/README.md` describes each module.
@@ -68,15 +62,13 @@ worker never answers in place of the gate's server, its fixtures or its request 
 Run from the repository root:
 
 ```bash
-cargo test -p browser_gate_suites             # the fixture router, accept floor, payload pins, server, API corpus, tokens, the ballistics gates' verdicts
 cargo run -q -p developer_tools --bin gate -- doctor   # the gate environment and a liveness probe of the built app
-cargo xtask mk leptos-gates                    # build the app, then doctor, editor-suite and v-suite verify
+cargo xtask mk leptos-gates                    # build the app, then doctor and editor-suite
 cargo xtask mk mortar-offline-gate             # build the app, then gate mortar-offline
 cargo xtask mk ballistics-wasm-agreement       # build the app, then gate ballistics-agreement
 ```
 
-The unit tests start the static server on loopback ports and need no browser; the ballistics
-gates' tests read the committed catalog and the API goldens under `contracts/`.
+The crate has no unit tests; its gates are the tests, run against the built app.
 
 ## Configuration
 
@@ -87,9 +79,8 @@ gates' tests read the committed catalog and the API goldens under `contracts/`.
 
 ## Public surface
 
-The modules `ballistics_agreement`, `diagnostics`, `dom_oracle`, `editor_smoke_tests`,
-`equipment_data_viewer`, `fixture_injection`, `gate_layout`, `mortar_offline`, `route_drift`,
-`screen_capture`, `server` and `session_tokens`, each entry returning this crate's `Result`;
+The modules `ballistics_agreement`, `diagnostics`, `editor_smoke_tests`,
+`equipment_data_viewer`, `fixture_injection`, `gate_layout`, `mortar_offline`, `screen_capture`, `server` and `session_tokens`, each entry returning this crate's `Result`;
 `command_lines::gate::run` and `command_lines::capture::run`, the whole of the `gate` and
 `capture` binaries; `Error` (with `Error::with_causes`, the printed chain) and `Result` at the
 root; the `prelude` module re-exports the server and the map-asset mounts.
@@ -99,13 +90,13 @@ root; the `prelude` module re-exports the server and the map-asset mounts.
 - Depends on: `chrome_devtools_protocol` (every browser); `repository_root` (the checkout root,
   from the working directory); `repository_layout` (the map asset and glyph folders and the gate
   pin); `process_runner`
-  (the toolchain version probes of the doctor); `content_digest` (the DOM digests);
+  (the toolchain version probes of the doctor); `content_digest` (the catalog digests);
   `newtype_ids` (the captured mission's id); `ballistics_model`, `fire_mission_planning` and
   `ballistics_agreement_cases` (the native solves and the seeded cases of the ballistics gates);
   `map_coordinates` (the grid references the offline mortar gate types); `tokio`, `axum`,
   `reqwest`, `rustls` (the ring provider), `url`, `clap`, `image`, `regex`, `serde`, `serde_json`, `base64`, `futures-util`,
   `libc`, `thiserror`; the built app in `crates/frontend/shell/frontend_application/dist`, the fixtures and the committed
-  catalog in `contracts/`, and the goldens in `fixtures/dom_oracle/`.
+  catalog in `contracts/`.
 - Used by: the `gate` and `capture` binaries of `tools/developer_tools/src/bin/`, one call each
   into `command_lines`; through them, `cargo xtask mk gate-doctor`, `cargo xtask mk leptos-gates`,
   `cargo xtask mk mortar-offline-gate`, `cargo xtask mk ballistics-wasm-agreement` and
@@ -114,13 +105,8 @@ root; the `prelude` module re-exports the server and the map-asset mounts.
   - tier 5 of `tools/browser_testing`; a gate's verdict is its exit code, an error means it could
     not run, only `command_lines` turns either into the process exit code, and nothing calls
     `std::process::exit`;
-  - `FREEZE_SRC` and `DOM_SERIALIZER_SRC` are the exact bytes the goldens were captured with, and
-    their SHA-256 is pinned (`payloads_are_pinned` in
-    `src/tests/fixture_injection/tests.rs`); a change re-pins both and re-accepts every affected
-    golden;
-  - the API proxy streams and `RunningServer::close` never waits on an open stream
-    (`sse_frames_arrive_incrementally_not_buffered`, `close_does_not_hang_on_a_still_open_stream`);
-  - every harness token names the one gate session (`every_rotation_names_the_same_gate_session`);
+  - the API proxy streams and `RunningServer::close` never waits on an open stream;
+  - every harness token names the one gate session;
   - the gates run on SwiftShader, so they need no GPU; only the capture rig uses the real device.
 
 ## Related documentation
@@ -135,5 +121,3 @@ root; the `prelude` module re-exports the server and the map-asset mounts.
   and the wedge modes.
 - [Editor capture](/documentation/runbooks/editor_capture.md) — capturing a running Mission
   Creator.
-- [DOM oracle fixtures](/tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/README.md) —
-  the goldens and the route table the gates compare against.

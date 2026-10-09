@@ -1,5 +1,4 @@
-//! The structural gates: the workspace laws and the wave gate's source readers.
+//! The structural gates: the workspace laws.
 
-pub mod wave_gate_sources;
 mod workspace_law_locations;
 pub mod workspace_laws;
