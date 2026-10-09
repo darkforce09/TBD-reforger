@@ -290,13 +290,13 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](/documentation/standards/commit_checklist
 | Doc | Change |
 |-----|--------|
 | [`docs/website/frontend/pages/mission-library.md`](/documentation/crates/frontend/pages/mission_hub_pages/library/mission_library_page.md) | Status → `doc-complete`; M3/M4 milestones checked |
-| [`docs/website/frontend/shell/sidebar.md`](/documentation/apps/frontend/shell/app_layout_and_navigation.md) | Check off T-048 milestone |
-| [`docs/website/frontend/ROADMAP.md`](/documentation/apps/frontend/README.md) | Move T-048 from IN PROGRESS → DONE shipped table |
+| [`docs/website/frontend/shell/sidebar.md`](/documentation/crates/frontend/shell/frontend_application/shell/app_layout_and_navigation.md) | Check off T-048 milestone |
+| [`docs/website/frontend/ROADMAP.md`](/documentation/crates/frontend/shell/frontend_application/README.md) | Move T-048 from IN PROGRESS → DONE shipped table |
 | [`docs/specs/.../ROADMAP.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md) | Move T-048 from IN PROGRESS → DONE (or remove IN PROGRESS block) |
 | [`t048_library_create_dialog.md`](t048_library_create_dialog.md) | Status → **shipped** |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-048 Done bullet; bump latest-feature line |
 | [`agent_execution.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md) | **Update stale `/missions/create` refs** in repository map (lines ~92, ~151), phase table (~207), DEFERRED table (~448) — Decisions log already correct |
-| [`docs/website/frontend/TRACKING.md`](/documentation/apps/frontend/README.md) | Points to `docs/TICKET_LEAD.md`; mission editor doc lives under `pages/mission-editor.md` |
+| [`docs/website/frontend/TRACKING.md`](/documentation/crates/frontend/shell/frontend_application/README.md) | Points to `docs/TICKET_LEAD.md`; mission editor doc lives under `pages/mission-editor.md` |
 | `.cursor/rules/tbd-documentation.mdc` (gitignored — local only) | Create Cursor rule (optional but recommended) |
 | [`docs/backend/architecture.md`](/documentation/archive/go_and_react_era_design/go_backend_architecture_plan.md) | Optional: "Mission Creator wizard" → "Library create dialog" (line ~547) |
 
@@ -326,5 +326,5 @@ Docs are PRE-STAGED — do not revert target-state docs; FINALIZE per spec §Doc
 ## Related
 
 - Surface spec (target): [`docs/website/frontend/pages/mission-library.md`](/documentation/crates/frontend/pages/mission_hub_pages/library/mission_library_page.md)
-- Frontend ROADMAP: [`docs/website/frontend/ROADMAP.md`](/documentation/apps/frontend/README.md)
+- Frontend ROADMAP: [`docs/website/frontend/ROADMAP.md`](/documentation/crates/frontend/shell/frontend_application/README.md)
 - MC ROADMAP: [`ROADMAP.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md)

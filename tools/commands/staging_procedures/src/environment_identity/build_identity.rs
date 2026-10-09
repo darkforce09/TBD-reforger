@@ -20,14 +20,14 @@ const MAIN_GUILD_KEY: &str = "DISCORD_GUILD_ID";
 
 /// The read of the binaries' digests and the main guild id, as `key=value` lines.
 pub(crate) fn host_files(settings: &StagingSettings) -> RemoteCommand {
-    let api = shell_quote(&format!("{}/target/release/api", settings.checkout));
+    let api = shell_quote(&format!("{}/target/release/api-server", settings.checkout));
     let env_file = shell_quote(&settings.api_env_file());
     RemoteCommand::read_script(
         "build identity",
         format!(
             "set -uo pipefail\n\
              echo \"api_binary_sha256=$(sha256sum {api} 2>/dev/null | cut -d ' ' -f 1)\"\n\
-             echo \"host_agent_binary_sha256=$(sha256sum \"$HOME/.local/bin/fleet_host_agent\" 2>/dev/null | cut -d ' ' -f 1)\"\n\
+             echo \"host_agent_binary_sha256=$(sha256sum \"$HOME/.local/bin/game_server_host_agent\" 2>/dev/null | cut -d ' ' -f 1)\"\n\
              echo \"main_guild_id=$(sed -n 's/^{MAIN_GUILD_KEY}=//p' {env_file} 2>/dev/null | tail -n 1 | tr -d '\"\\r')\"\n"
         ),
     )

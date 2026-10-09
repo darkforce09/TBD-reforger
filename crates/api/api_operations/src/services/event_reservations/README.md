@@ -74,7 +74,7 @@ lock the scope ──▶ scope_snapshot ──▶ reservation_planning (no datab
   `crates/api/api_identity_and_access/src/services/discord_membership_cache.rs`, which queue
   re-evaluations; the `event_reservation_reevaluator` worker in
   `crates/api/api_background_workers/src/`; the test
-  `apps/api/tests/reservation_quota_allocations.rs`.
+  `crates/api/api_server/tests/reservation_quota_allocations.rs`.
 - Rules: planned promotions respect quota, capacity, eligibility and seatability
   (`planned_promotions_respect_quota_capacity_eligibility_and_seatability`) whatever the input
   order (`promotion_order_is_independent_of_input_permutation`), both in
@@ -86,8 +86,8 @@ lock the scope ──▶ scope_snapshot ──▶ reservation_planning (no datab
 
 ## Related documentation
 
-- [Event eligibility and allocation](/documentation/apps/api/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
   — pools, allocations, promotion, re-evaluation and the lock order.
-- [Reservation transaction design](/documentation/apps/api/verification_evidence/reservation_transaction_design.md)
-  and [Reservation mutation authority and capacity](/documentation/apps/api/verification_evidence/reservation_mutation_guards.md)
+- [Reservation transaction design](/documentation/crates/api/api_server/verification_evidence/reservation_transaction_design.md)
+  and [Reservation mutation authority and capacity](/documentation/crates/api/api_server/verification_evidence/reservation_mutation_guards.md)
   — the transaction and authority design of the reservation writers.

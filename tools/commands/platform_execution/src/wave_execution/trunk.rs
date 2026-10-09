@@ -23,7 +23,7 @@ use super::{Ctx, host};
 use crate::wave_execution::{wprint, wprintln};
 
 pub(crate) fn gate_trunk_build(ctx: &Ctx) -> i32 {
-    let fdir = ctx.root.join("apps/frontend");
+    let fdir = ctx.root.join("crates/frontend/shell/frontend_application");
     // Refuse to build UN-ISOLATED rather than race. Once either private path is collapsed onto a
     // shared one, every trunk failure past this line is an environment race wearing a compile
     // error's clothes, and the agent reading it has no way to tell.
@@ -31,8 +31,8 @@ pub(crate) fn gate_trunk_build(ctx: &Ctx) -> i32 {
     // TWO CORRECTIONS, both measured 2026-07-26:
     //   * The dist this guard must protect is the one `trunk serve` OWNS, which is MAIN's — but
     //     $ROOT inside a worktree is the WORKTREE, so the old compare checked
-    //     .ai/artifacts/worktrees/T-nnn/apps/frontend/dist and never looked at the path the
-    //     dev server actually writes. Check both: main's (the collision that matters) and this
+    //     .ai/artifacts/worktrees/T-nnn/crates/frontend/shell/frontend_application/dist and never
+    //     looked at the path the dev server actually writes. Check both: main's (the collision that matters) and this
     //     tree's (still not somewhere a gate should be writing).
     //   * Both compares were plain strings, so a symlink or a `./` spelling of the same directory
     //     walked straight through a guard whose entire job is "are these two the same place".
@@ -45,7 +45,7 @@ pub(crate) fn gate_trunk_build(ctx: &Ctx) -> i32 {
     let c_shared = canon(&ctx.cargo_target_dir);
     let c_serve = canon(
         &ctx.main_root
-            .join("apps/frontend/dist")
+            .join("crates/frontend/shell/frontend_application/dist")
             .display()
             .to_string(),
     );

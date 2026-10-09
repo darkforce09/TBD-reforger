@@ -4,7 +4,9 @@ use super::*;
 
 #[test]
 fn uncapped_grep_is_denied() {
-    assert!(guard_bash("rg 'fn place_at' apps/frontend/src").is_some());
+    assert!(
+        guard_bash("rg 'fn place_at' crates/frontend/shell/frontend_application/src").is_some()
+    );
     assert!(guard_bash("grep -rn TODO .").is_some());
 }
 

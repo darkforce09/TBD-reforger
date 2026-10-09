@@ -56,7 +56,7 @@ read. Its `outcome` is the reconciliation outcome the metrics registry counts.
   them;
   the OAuth handlers, the account registration and the REST membership reconciliation of
   `api_identity_and_access`; the announcement push of `api_community_content`; the `staging-fixtures` host
-  tool; the integration suites in `apps/api/tests/` (`discord_http_clients.rs`,
+  tool; the integration suites in `crates/api/api_server/tests/` (`discord_http_clients.rs`,
   `discord_embed_sanitisation.rs` and the other Discord suites).
 - Rules: no file here names a domain; no variant carries a token, a secret or an authorization
   code; the embed is sanitised here, at the sink, and nowhere else.

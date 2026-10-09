@@ -6,8 +6,8 @@
 //! projection, filter and sort; [`WorkspaceState::reload`](workspace_state::WorkspaceState::reload),
 //! which keeps selections by id; [`window_layout::right_pane`]; and
 //! [`background_loading::spawn_load`], which reads everything a board needs on one worker thread.
-//! **Position:** over every feature module; `apps/ticketboard`'s `TicketboardApp` owns a
-//! [`workspace_state::State`], paints it and applies the [`events::Action`]s its views emit.
+//! **Position:** over every feature module; `tools/tickets/ticketboard_desktop`'s `TicketboardApp`
+//! owns a [`workspace_state::State`], paints it and applies the [`events::Action`]s its views emit.
 //! **Signals & state:** [`workspace_state::WorkspaceState`] is the mutable board session;
 //! [`background_loading::spawn_load`] runs one worker thread per load and reports over a channel.
 //! **Invariants:** no feature imports this module; filters and sorts survive a reload while raw

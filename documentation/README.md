@@ -14,12 +14,12 @@ it stands.
 
 ```text
 documentation/
-├── apps/                    documents on the products in apps/: the API, the app, the host agent, ticketboard, the mod
+├── apps/                    documents on the game mod in apps/mod/
 ├── architecture/            the workspace as it stands: top-level folders, members, where everything lives
 ├── archive/                 frozen history, one folder per topic
 ├── assets/                  documents on the terrain export and the map data in assets/
 ├── contracts/               documents on the contracts in contracts/
-├── crates/                  documents on the library crates in crates/
+├── crates/                  documents on the crates in crates/: the API server, the app, the host agent, the libraries
 ├── design_system/           design tokens, symbology and interaction patterns the website and mod share
 ├── glossary/                the project's terms and abbreviations, split by first letter
 ├── known_bugs/              the live registry of known bugs
@@ -36,11 +36,13 @@ documentation/
 Two layers document the code. The README.md in each code folder says what the folder holds, how
 it fits together and where it stops; the documents here go deeper, and each code README links
 them. A document about code sits here at the code's path without `src/`: the documents on
-`tools/developer_tools/` are in `documentation/tools/developer_tools/`, and the
-[fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) in `apps/fleet_host_agent/` is
-documented in `apps/fleet_host_agent/`; the [event](/documentation/glossary/a_to_f.md#event)
+`tools/developer_tools/` are in `documentation/tools/developer_tools/`, the
+[game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) in
+`crates/fleet/game_server_host_agent/` is documented in
+`documentation/crates/fleet/game_server_host_agent/`, the
+[event](/documentation/glossary/a_to_f.md#event)
 schedule page in `crates/frontend/pages/operations_pages/src/schedule/` is documented in
-`documentation/crates/frontend/pages/operations_pages/schedule/` and all
+`documentation/crates/frontend/pages/operations_pages/schedule/`, and all
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) material sits in
 `documentation/crates/frontend/workspaces/mission_creator_workspace/`. The mod's scripts have no
 `src/`, and a document about them leaves out `Scripts/Game/TBD/` instead: the screens of
@@ -85,14 +87,14 @@ When two sources disagree, the higher one wins and the lower one is corrected:
 |---|---|
 | what a code folder holds and how to use it | the README.md in that folder |
 | the top-level folders, the workspace members and where code, contracts, assets and documents live | the [workspace layout](/documentation/architecture/workspace_layout.md) |
-| a web page's behaviour, design, open work and decisions | `crates/frontend/pages/<area>_pages/<page>/`, indexed by the [frontend README](/documentation/apps/frontend/README.md) |
+| a web page's behaviour, design, open work and decisions | `crates/frontend/pages/<area>_pages/<page>/`, indexed by the [frontend README](/documentation/crates/frontend/shell/frontend_application/README.md) |
 | the Mission Creator: features, roadmap, UX decisions, Eden reference | [crates/frontend/workspaces/mission_creator_workspace/](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md) |
-| the [API](/documentation/glossary/a_to_f.md#api)'s areas and its verification evidence | [apps/api/](/documentation/apps/api/README.md), starting at the [API overview](/documentation/apps/api/api_overview.md) |
+| the [API](/documentation/glossary/a_to_f.md#api)'s areas and its verification evidence | [crates/api/api_server/](/documentation/crates/api/api_server/README.md), starting at the [API overview](/documentation/crates/api/api_server/api_overview.md) |
 | the map's streaming, rendering and GPU crates, the paper doll and the editing layer | [crates/](/documentation/crates/README.md) |
 | the [mod](/documentation/glossary/g_to_m.md#mod)'s design, screens and export evidence | [apps/mod/](/documentation/apps/mod/README.md) |
 | how a terrain becomes the map data the platform serves | [assets/](/documentation/assets/README.md) |
-| how a game host carries out server commands | [apps/fleet_host_agent/](/documentation/apps/fleet_host_agent/README.md) |
-| the ticket viewer | [apps/ticketboard/](/documentation/apps/ticketboard/README.md) |
+| how a game host carries out server commands | [crates/fleet/game_server_host_agent/](/documentation/crates/fleet/game_server_host_agent/README.md) |
+| the ticket viewer | [tools/tickets/ticketboard_desktop/](/documentation/tools/tickets/ticketboard_desktop/README.md) |
 | the developer tools and the contracts | [tools/](/documentation/tools/README.md) and [contracts/](/documentation/contracts/README.md) |
 | how to run, test, deploy or play-test anything | [runbooks/](/documentation/runbooks/README.md), starting at [local development](/documentation/runbooks/local_development.md) |
 | the rules for code, comments, documents and commits | [standards/](/documentation/standards/README.md) |
@@ -106,11 +108,12 @@ When two sources disagree, the higher one wins and the lower one is corrected:
 
 ## Code
 
-- [Applications](/apps/README.md) — the API, the app, the service worker, the host agent and
-  ticketboard, documented under `apps/`.
-- [Library crates](/crates/README.md) — documented under `documentation/crates/`.
-- [Mod suite](/apps/mod/README.md) — documented under `documentation/apps/mod/`.
-- [Developer tools](/tools/README.md) — documented under `documentation/tools/`.
+- [Crates](/crates/README.md) — the API server, the single-page app, the service worker, the game
+  server host agent and the library crates, documented under `documentation/crates/`.
+- [Game mod](/apps/README.md) and its [mod suite](/apps/mod/README.md) — documented under
+  `documentation/apps/mod/`.
+- [Developer tools](/tools/README.md) — the tool crates, the ticketboard desktop viewer among them,
+  documented under `documentation/tools/`.
 - [Contracts](/contracts/README.md) — documented under `documentation/contracts/`.
 - [Assets](/assets/README.md) — documented under `documentation/assets/`.
 

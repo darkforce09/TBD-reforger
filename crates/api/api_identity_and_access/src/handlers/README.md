@@ -67,17 +67,17 @@ crates/api/api_identity_and_access/src/handlers/
   `api_caller_identity` (`MachineCaller`, `arma_id_is_linked`) and `fleet_wire_contract`
   (`ExecutorKind`) for the link confirmation's caller and the link flags.
 - Used by: the domain's `routes.rs`; over HTTP, the account pages (login, auth callback, settings)
-  in `crates/frontend/pages/account_pages/` and the navigation frame in `apps/frontend/src/shell/`, the
+  in `crates/frontend/pages/account_pages/` and the navigation frame in `crates/frontend/shell/frontend_application/src/shell/`, the
   [API](/documentation/glossary/a_to_f.md#api) client's token refresh in
   `crates/frontend/foundation/frontend_transport/src/client/refresh.rs`, and the mod's
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/Identity/TBD_IdentityLink.c`, which confirms link codes.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
-  imports another domain's handlers (`apps/api/src/tests/architecture_rules.rs`); tokens
+  imports another domain's handlers (`crates/api/api_server/src/tests/architecture_rules.rs`); tokens
   leave the API only in a URL fragment or a JSON body, never in a query string.
 
 ## Related documentation
 
-- [Identity transactions](/documentation/apps/api/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
   — session authorization, linking and their transactions.
 - [Local development](/documentation/runbooks/local_development.md) — the dev login and the
   Discord OAuth2 round trip.

@@ -10,9 +10,9 @@
 
 - [`crates/map-engine-core/src/mission/orbat.rs`](../../crates/map-engine-core/src/mission/orbat.rs) — `Sl.loadout: Option<Value>`; `loadout_summary_from_value` (summary → else primary+launcher `" + "` + basename strip `.et`); derive map uses helper (no `String::new()` hardcode)
 - [`crates/map-engine-core/src/mission/compile.rs`](../../crates/map-engine-core/src/mission/compile.rs) — `compile_export_orbat_loadout` (I6); sort golden empty loadouts kept (slots lack loadout)
-- [`apps/frontend/src/editor_ops.rs`](../../apps/frontend/src/editor_ops.rs) — `OpsCtx.attrs_tab`; `open_arsenal` sets tab **3** + `attrs_open`
-- [`apps/frontend/src/attributes.rs`](../../apps/frontend/src/attributes.rs) / [`mission_editor.rs`](../../apps/frontend/src/mission_editor.rs) — lift tab signal
-- [`apps/frontend/src/orbat_manager.rs`](../../apps/frontend/src/orbat_manager.rs) — OPEN ARSENAL → `open_arsenal`; I7 test
+- [`crates/frontend/shell/frontend_application/src/editor_ops.rs`](../../crates/frontend/shell/frontend_application/src/editor_ops.rs) — `OpsCtx.attrs_tab`; `open_arsenal` sets tab **3** + `attrs_open`
+- [`crates/frontend/shell/frontend_application/src/attributes.rs`](../../crates/frontend/shell/frontend_application/src/attributes.rs) / [`mission_editor.rs`](../../crates/frontend/shell/frontend_application/src/mission_editor.rs) — lift tab signal
+- [`crates/frontend/shell/frontend_application/src/orbat_manager.rs`](../../crates/frontend/shell/frontend_application/src/orbat_manager.rs) — OPEN ARSENAL → `open_arsenal`; I7 test
 
 ## Gates
 
@@ -70,8 +70,8 @@ test orbat_manager::tests::open_arsenal_selects_arsenal_tab ... ok
 
 ```text
 $ rg -ni 'standardization|IFAK|Grenade Complement' \
-    apps/frontend/src/orbat_manager.rs \
-    apps/frontend/src/eden_chrome.rs
+    crates/frontend/shell/frontend_application/src/orbat_manager.rs \
+    crates/frontend/shell/frontend_application/src/eden_chrome.rs
 # (no matches) → I8 PASS
 ```
 

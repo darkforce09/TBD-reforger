@@ -30,9 +30,9 @@ decide in an access sheet who may join, from which pools, and why each participa
   where members see and join what this page schedules; the
   [API](/documentation/glossary/a_to_f.md#api)'s
   [operations domain](/crates/api/api_operations/src/README.md); the
-  [event administration evidence](/documentation/apps/api/verification_evidence/event_administration.md),
-  [eligibility and allocation evidence](/documentation/apps/api/verification_evidence/event_eligibility_allocation.md)
-  and [reservation and attendance evidence](/documentation/apps/api/verification_evidence/reservation_attendance.md).
+  [event administration evidence](/documentation/crates/api/api_server/verification_evidence/event_administration.md),
+  [eligibility and allocation evidence](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
+  and [reservation and attendance evidence](/documentation/crates/api/api_server/verification_evidence/reservation_attendance.md).
 
 ## Behaviour
 

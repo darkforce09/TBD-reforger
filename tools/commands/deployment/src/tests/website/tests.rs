@@ -40,7 +40,7 @@ fn rsync_excludes_the_secrets_asset_and_scratch_trees() {
     for needed in [
         ".git/",
         "target/",
-        "apps/api/.env",
+        "crates/api/api_server/.env",
         repository_layout::DEPLOY_ENV,
         // The served terrain tree, and the 1.5 GB of gitignored export intermediates beside it.
         "assets/terrains/",
@@ -182,8 +182,8 @@ fn the_remediation_names_every_directory_that_must_move() {
     }
 }
 
-fn plan_for(skip_compose: bool, skip_api: bool, skip_spa: bool) -> Vec<String> {
-    let cfg = DeployCfg {
+fn cfg_for(skip_compose: bool, skip_api: bool, skip_spa: bool) -> DeployCfg {
+    DeployCfg {
         root: PathBuf::from("/tmp/repo"),
         host: "deploy@192.0.2.10".into(),
         remote_dir: "/home/deploy/tbd/repo".into(),
@@ -195,12 +195,19 @@ fn plan_for(skip_compose: bool, skip_api: bool, skip_spa: bool) -> Vec<String> {
         ssh_pass: None,
         ssh_identity: None,
         dry_run: true,
-    };
-    cfg.remote_plan().into_iter().map(|s| s.title).collect()
+    }
 }
 
-/// The checksum repair and the state move follow every build and precede the restart, which
-/// `execute` issues only after the plan drains. With every build skipped they are the whole plan.
+fn plan_for(skip_compose: bool, skip_api: bool, skip_spa: bool) -> Vec<String> {
+    cfg_for(skip_compose, skip_api, skip_spa)
+        .remote_plan()
+        .into_iter()
+        .map(|s| s.title)
+        .collect()
+}
+
+/// The checksum repair follows every build and precedes the restart, which `execute` issues only
+/// after the plan drains. With every build skipped it is the whole plan.
 #[test]
 fn the_remote_plan_ends_with_the_checksum_repair() {
     let full = plan_for(false, false, false);
@@ -242,7 +249,7 @@ fn the_staging_host_tools_build_after_the_api_and_skip_with_it() {
     let full = plan_for(false, false, false);
     let api = full
         .iter()
-        .position(|title| title.contains("--bin api"))
+        .position(|title| *title == remote_steps::api_build_title())
         .expect("the API build");
     let tools = &full[api + 1];
     for tool in &remote_steps::STAGING_HOST_TOOLS {
@@ -283,18 +290,21 @@ fn the_staging_host_tools_step_builds_and_proves_every_executable() {
     assert!(command.ends_with("test -x target/release/acknowledgement-dropping-relay"));
 }
 
-/// Every tool the deploy builds is a `[[bin]]` of the package it names, and the relay unit that
-/// `cargo xtask deploy staging` installs runs the relay under the same executable name, so the
-/// host never builds or runs a name that no longer exists.
+/// Every executable the deploy builds is a `[[bin]]` of the package it names, and the units that
+/// run them (the API unit, and the relay unit `cargo xtask deploy staging` installs) run them under
+/// the same executable name, so the host never builds or runs a name that no longer exists.
 #[test]
-fn every_staging_host_tool_is_an_executable_its_package_declares() {
+fn every_built_executable_is_one_its_package_declares() {
+    const API_SERVER: &str = include_str!("../../../../../../crates/api/api_server/Cargo.toml");
     const STAGING_FIXTURES: &str =
         include_str!("../../../../../staging/staging_fixtures/Cargo.toml");
     const DEVELOPER_TOOLS: &str = include_str!("../../../../../developer_tools/Cargo.toml");
     const RELAY_UNIT: &str =
         include_str!("../../../../../../deploy/systemd/acknowledgement-dropping-relay@.service");
-    for tool in &remote_steps::STAGING_HOST_TOOLS {
-        let manifest: toml::Table = [STAGING_FIXTURES, DEVELOPER_TOOLS]
+    const API_UNIT: &str = include_str!("../../../../../../deploy/systemd/tbd-website-api.service");
+    let built = std::iter::once(&remote_steps::API_SERVER).chain(&remote_steps::STAGING_HOST_TOOLS);
+    for tool in built {
+        let manifest: toml::Table = [API_SERVER, STAGING_FIXTURES, DEVELOPER_TOOLS]
             .iter()
             .map(|text| text.parse::<toml::Table>().expect("a manifest parses"))
             .find(|manifest| manifest["package"]["name"].as_str() == Some(tool.package))
@@ -315,6 +325,80 @@ fn every_staging_host_tool_is_an_executable_its_package_declares() {
         RELAY_UNIT.contains("ExecStart=%h/.local/bin/acknowledgement-dropping-relay serve "),
         "{RELAY_UNIT}"
     );
+    assert!(
+        API_UNIT.contains(&format!(
+            "\nExecStart=/TBD_REPO_DIR_PLACEHOLDER/target/release/{}\n",
+            remote_steps::API_SERVER.executable
+        )),
+        "{API_UNIT}"
+    );
+}
+
+/// The API build names the API server's package and executable and proves the executable, and the
+/// app build runs trunk in the app's crate folder.
+#[test]
+fn the_api_and_app_builds_name_the_server_package_and_the_app_folder() {
+    assert_eq!(
+        remote_steps::api_build("/home/deploy/tbd/repo"),
+        format!(
+            "cd '/home/deploy/tbd/repo' &&     {} &&     cargo build --release -p api_server \
+             --bin api-server &&     test -x target/release/api-server",
+            crate::remote_rust_toolchain::PUT_RUST_TOOLCHAIN_ON_PATH
+        )
+    );
+    assert!(
+        remote_steps::spa_build("/home/deploy/tbd/repo").starts_with(
+            "cd '/home/deploy/tbd/repo/crates/frontend/shell/frontend_application' && "
+        )
+    );
+    let titles = plan_for(false, false, false);
+    assert!(titles.contains(&"cargo build --release -p api_server --bin api-server".to_string()));
+    assert!(titles.contains(
+        &"trunk build --release (Leptos SPA → crates/frontend/shell/frontend_application/dist/)"
+            .to_string()
+    ));
+}
+
+/// The API unit runs in the API server's crate folder and loads the `.env` the preflight proves
+/// and both rsyncs exclude.
+#[test]
+fn the_api_unit_runs_in_the_server_folder_with_the_env_the_preflight_proves() {
+    const UNIT: &str = include_str!("../../../../../../deploy/systemd/tbd-website-api.service");
+    use crate::host_owned_paths::{API_ENVIRONMENT_FILE, API_SERVER_FOLDER};
+    assert!(UNIT.contains(&format!(
+        "\nWorkingDirectory=/TBD_REPO_DIR_PLACEHOLDER/{API_SERVER_FOLDER}\n"
+    )));
+    assert!(UNIT.contains(&format!(
+        "\nEnvironmentFile=/TBD_REPO_DIR_PLACEHOLDER/{API_ENVIRONMENT_FILE}\n"
+    )));
+}
+
+/// The `.env` probe goes to the host as the one `bash -lc` word of every remote step, on the same
+/// ssh base, so its exit status is the probe's own or ssh's.
+#[test]
+fn the_api_environment_file_probe_reaches_the_host_as_one_login_shell_word() {
+    let cfg = cfg_for(false, false, false);
+    let probe = crate::api_environment_file_preflight::probe_script(&cfg.remote_dir);
+    let (program, args) = cfg.ssh_login_shell_argv(&probe);
+    assert_eq!(program, "ssh");
+    assert_eq!(
+        args,
+        [
+            "-o".to_string(),
+            "StrictHostKeyChecking=no".to_string(),
+            "deploy@192.0.2.10".to_string(),
+            "bash -lc 'if [ -f '\\''/home/deploy/tbd/repo/crates/api/api_server/.env'\\'' ] && \
+             [ -r '\\''/home/deploy/tbd/repo/crates/api/api_server/.env'\\'' ]; then exit 0; fi; \
+             exit 20'"
+                .to_string(),
+        ]
+    );
+    let mut identity = cfg_for(false, false, false);
+    identity.ssh_identity = Some("/k/id".into());
+    let (program, args) = identity.ssh_login_shell_argv(&probe);
+    assert_eq!(program, "ssh");
+    assert_eq!(&args[..2], ["-i", "/k/id"]);
+    assert_eq!(args.last(), Some(&remote_steps::login_shell(&probe)));
 }
 
 /// Both compose steps run the staging compose file from the checkout root with the configured
@@ -421,7 +505,7 @@ fn the_caddy_service_serves_what_the_caddyfile_and_the_reload_name() {
             "    command: [\"caddy\", \"run\", \"--config\", \"{in_container}\", \"--adapter\", \"caddyfile\"]\n"
         ),
         format!("      - ./{from_compose}:{mount}:ro\n"),
-        "      - ../apps/frontend:/srv/tbd-frontend:ro\n".to_string(),
+        "      - ../crates/frontend/shell/frontend_application:/srv/tbd-frontend:ro\n".to_string(),
     ] {
         assert!(COMPOSE.contains(&line), "the compose file lacks {line:?}");
     }
@@ -559,7 +643,7 @@ fn the_unit_template_keeps_the_runtime_files_in_its_state_directory() {
 #[test]
 fn the_env_template_sets_none_of_the_variables_the_unit_pins() {
     const UNIT: &str = include_str!("../../../../../../deploy/systemd/tbd-website-api.service");
-    const ENV_TEMPLATE: &str = include_str!("../../../../../../apps/api/.env.example");
+    const ENV_TEMPLATE: &str = include_str!("../../../../../../crates/api/api_server/.env.example");
     let pinned: Vec<&str> = UNIT
         .lines()
         .filter_map(|line| line.strip_prefix("Environment="))

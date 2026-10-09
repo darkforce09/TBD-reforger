@@ -49,7 +49,7 @@ fn the_api_app_comes_first_then_every_api_crate_and_nothing_else() {
     workspace(
         &root,
         &[
-            ("apps/api", "api"),
+            ("crates/api/api_server", "api_server"),
             ("apps/agent", "agent"),
             ("crates/api/api_state", "api_state"),
             ("crates/api/api_database", "api_database"),
@@ -58,8 +58,9 @@ fn the_api_app_comes_first_then_every_api_crate_and_nothing_else() {
     );
     assert_eq!(
         api_test_packages(&root).expect("the fixture reads"),
-        ["api", "api_database", "api_state"],
-        "a crate the glob finds under crates/api is covered without a list naming it"
+        ["api_server", "api_database", "api_state"],
+        "a crate the glob finds under crates/api is covered without a list naming it, and the \
+         API server, itself under crates/api, comes first and once"
     );
     let _ = std::fs::remove_dir_all(&root);
 }
@@ -68,15 +69,19 @@ fn the_api_app_comes_first_then_every_api_crate_and_nothing_else() {
 fn a_workspace_without_the_api_package_is_an_error() {
     let root = fixture_root("no-api");
     workspace(&root, &[("crates/api/api_state", "api_state")]);
-    let error = api_test_packages(&root).expect_err("no api member");
-    assert!(error.to_string().contains("`api`"), "{error}");
+    let error = api_test_packages(&root).expect_err("no api_server member");
+    assert!(error.to_string().contains("`api_server`"), "{error}");
     let _ = std::fs::remove_dir_all(&root);
 }
 
 #[test]
 fn an_unreadable_workspace_is_an_error_not_an_api_only_lane() {
     let root = fixture_root("unreadable");
-    write(&root, "apps/api/Cargo.toml", "[package]\nname = \"api\"\n");
+    write(
+        &root,
+        "crates/api/api_server/Cargo.toml",
+        "[package]\nname = \"api_server\"\n",
+    );
     let error = api_test_packages(&root).expect_err("no root manifest");
     assert!(error.to_string().contains("Cargo.toml"), "{error}");
     let _ = std::fs::remove_dir_all(&root);
@@ -84,10 +89,10 @@ fn an_unreadable_workspace_is_an_error_not_an_api_only_lane() {
 
 #[test]
 fn package_arguments_pair_each_package_with_its_flag() {
-    let packages = ["api".to_string(), "api_state".to_string()];
+    let packages = ["api_server".to_string(), "api_state".to_string()];
     assert_eq!(
         package_arguments(&packages),
-        ["-p", "api", "-p", "api_state"]
+        ["-p", "api_server", "-p", "api_state"]
     );
     assert!(package_arguments(&[]).is_empty());
 }
@@ -98,7 +103,7 @@ fn a_member_that_uses_an_api_crate_follows_the_api_crates() {
     workspace(
         &root,
         &[
-            ("apps/api", "api"),
+            ("crates/api/api_server", "api_server"),
             ("apps/agent", "agent"),
             ("crates/api/api_state", "api_state"),
             ("crates/foundation/guard", "guard"),
@@ -129,34 +134,85 @@ fn a_member_that_uses_an_api_crate_follows_the_api_crates() {
     );
     assert_eq!(
         api_test_packages(&root).expect("the fixture reads"),
-        ["api", "api_state", "fixtures_tool", "probe_tool"],
+        ["api_server", "api_state", "fixtures_tool", "probe_tool"],
         "a member whose build or tests use an API crate is covered after the API crates, in \
          member-path order; a build-script edge alone is not a use"
     );
     let _ = std::fs::remove_dir_all(&root);
 }
 
-/// The live checkout: every `crates/api/<crate>/Cargo.toml` on disk is one derived package, and
-/// the staging fixtures tool, which writes through the API's services, follows them.
+/// Every package the derivation names, once: a `-p` pair named twice makes cargo build and run
+/// the package's tests twice.
+fn assert_each_package_once(derived: &[String]) {
+    let mut seen = std::collections::BTreeSet::new();
+    let repeated: Vec<&String> = derived
+        .iter()
+        .filter(|package| !seen.insert(package.as_str()))
+        .collect();
+    assert!(
+        repeated.is_empty(),
+        "the derived list names {repeated:?} more than once: {derived:?}"
+    );
+}
+
+#[test]
+fn every_package_appears_once_although_the_api_server_sits_under_crates_api() {
+    let root = fixture_root("once");
+    workspace(
+        &root,
+        &[
+            ("crates/api/api_database", "api_database"),
+            ("crates/api/api_server", "api_server"),
+            ("crates/api/api_state", "api_state"),
+            ("tools/staging/fixtures_tool", "fixtures_tool"),
+        ],
+    );
+    depend(&root, "crates/api/api_server", "dependencies", "api_state");
+    depend(
+        &root,
+        "tools/staging/fixtures_tool",
+        "dependencies",
+        "api_state",
+    );
+    let derived = api_test_packages(&root).expect("the fixture reads");
+    assert_each_package_once(&derived);
+    assert_eq!(
+        derived,
+        ["api_server", "api_database", "api_state", "fixtures_tool"]
+    );
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+/// The live checkout: every `crates/api/<crate>/Cargo.toml` on disk, the API server among them,
+/// is one derived package, and the staging fixtures tool, which writes through the API's
+/// services, follows them; no package is named twice.
 #[test]
 fn this_checkout_derives_every_api_crate_on_disk_and_the_staging_fixtures_tool() {
     let root = tool_test_support::test_repo_root();
     let derived = api_test_packages(&root).expect("this checkout's workspace reads");
+    assert_each_package_once(&derived);
     let on_disk = std::fs::read_dir(root.join(API_CRATES_FOLDER))
         .expect("crates/api exists")
         .filter_map(|entry| entry.ok())
         .filter(|entry| entry.path().join("Cargo.toml").is_file())
         .count();
     assert!(on_disk > 0, "crates/api holds no crate");
+    assert!(
+        root.join(API_CRATES_FOLDER)
+            .join(API_APPLICATION_PACKAGE)
+            .join("Cargo.toml")
+            .is_file(),
+        "the API server sits under crates/api"
+    );
     assert_eq!(derived[0], API_APPLICATION_PACKAGE);
     assert!(
-        derived[1..=on_disk]
+        derived[1..on_disk]
             .iter()
             .all(|package| package.starts_with("api_")),
         "{derived:?}"
     );
     assert_eq!(
-        &derived[on_disk + 1..],
+        &derived[on_disk..],
         ["staging_fixtures"],
         "the members outside crates/api that use an API crate: {derived:?}"
     );

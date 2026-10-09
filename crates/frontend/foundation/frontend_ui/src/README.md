@@ -79,7 +79,7 @@ server intel page's copy button and the
 - Depends on: `leptos`; `http_url_guard`, for `sanitize.rs`; `js-sys` for the browser's dates;
   `web-sys`, `wasm-bindgen` and `wasm-bindgen-futures` for the overlay stack's key listeners and
   timer and for the clipboard, in the wasm32 build only; the Material Symbols Outlined font
-  `apps/frontend/index.html` loads.
+  `crates/frontend/shell/frontend_application/index.html` loads.
 - Used by: the single-page app's route guard, content gates, app frame, features and pages, and
   the Mission Creator, whose dialogs and menus join the overlay stack and whose exporters call
   `write_clipboard`.

@@ -82,7 +82,7 @@ and a create selects the new pack. Sizes print through `format_download_size` of
   (`has_min_role_authed`, `Role`, the `AuthStore` context), `frontend_ui` (`AuthGate`,
   the `split_pane` primitives, `MaterialIcon`, the toast queue) and `frontend_ui`
   (`format_download_size` for the pack and addon sizes).
-- Used by: the `/modpacks` route in `apps/frontend/src/app_routes.rs` and
+- Used by: the `/modpacks` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Modpacks" link in
   `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; `modpacks_source` in
   `crates/frontend/pages/doctrine_pages/src/tests/source_pins.rs`, which joins the seven source files for

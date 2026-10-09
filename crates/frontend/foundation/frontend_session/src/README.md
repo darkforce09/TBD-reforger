@@ -77,8 +77,8 @@ poll never remounts the page under it.
   `wasm-bindgen-futures` for the router hooks, local storage, Web Locks, the broadcast channel
   and the refresh request. Nothing above the foundation: the layers above reach the session's end
   only through the hooks they register.
-- Used by: `apps/frontend/src/main.rs`, which registers the sign-out hook; the app layout and the
-  top bar under `apps/frontend/src/shell/`; the auth callback page in
+- Used by: `crates/frontend/shell/frontend_application/src/main.rs`, which registers the sign-out hook; the app layout and the
+  top bar under `crates/frontend/shell/frontend_application/src/shell/`; the auth callback page in
   `crates/frontend/pages/account_pages/`, and every feature, page and Mission Creator panel under
   `crates/frontend/` that reads the session, gates on a role or wraps its body in a content
   gate.
@@ -98,9 +98,9 @@ poll never remounts the page under it.
 
 - [Account pages](/documentation/crates/frontend/pages/account_pages/account_pages.md) — sign-in,
   the auth callback and settings.
-- [Identity transactions](/documentation/apps/api/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
   — sessions, refresh rotation and replay revocation in the API, and the browser's generations.
 - [Frontend session](../README.md) — the crate: its targets, its public surface and how to test
   it.
-- [Frontend documentation](/documentation/apps/frontend/README.md#route-table) — the route table
+- [Frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md#route-table) — the route table
   whose access tiers the route guard enforces.

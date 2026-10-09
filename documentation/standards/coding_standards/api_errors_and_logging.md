@@ -51,7 +51,7 @@ defaulting to 20 and capped at 100 (`PageParams` in
   | `503 Service Unavailable` | a dependency is down | the durable rate limiter cannot reach its store; `GET /healthz` with a failing check |
 
   Status: live, unenforced: no gate compares the answers with the table; the integration tests
-  under `apps/api/tests/` pin the statuses of the routes they cover.
+  under `crates/api/api_server/tests/` pin the statuses of the routes they cover.
 - **ERR-5 (Usability) — Each status class a resource answers with has a named integration test.**
   Status: live, unenforced: the integration suites cover many routes, and no gate checks that
   every class of every resource has its test.
@@ -61,7 +61,7 @@ defaulting to 20 and capped at 100 (`PageParams` in
 - **LOG-3 (Debuggability) — A request that fails is logged with its path, status and duration.**
   The `logging` middleware in
   [tracing_correlation.rs](/crates/api/api_http_layer/src/middleware/tracing_correlation.rs), which
-  `apps/api/src/router.rs` mounts on every route, writes one structured
+  `crates/api/api_server/src/router.rs` mounts on every route, writes one structured
   `access` line per request with the request id, method, path, status and elapsed milliseconds,
   so every `4xx` and `5xx` is logged without handler code. A database error is logged a second
   time, at error level, where it converts into `ApiError`. An operation that fails on the side of

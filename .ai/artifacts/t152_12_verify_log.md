@@ -39,7 +39,7 @@ cargo test -p map-engine-core                                        # → 0 (85
 cargo test -p map-engine-render                                      # → 0 (35)
 make wasm                                                            # → 0 (4,343,798 B)
 node scripts/website/verify-wgpu-gpu.mjs                             # → 0 (allPass:true incl. text 4/4 probes)
-cd apps/frontend && npm test && npm run build && npm run lint # → 0 (355/355)
+cd crates/frontend/shell/frontend_application && npm test && npm run build && npm run lint # → 0 (355/355)
 ```
 
 ## Notes / decisions

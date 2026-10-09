@@ -70,7 +70,7 @@ owns = [
     "scripts/platform/wave.sh",
     "scripts/mod/verify-t439-objects-registry-aliases.sh",
     "scripts/mod/verify-t444-wiki-seed.sh",
-    "apps/frontend/src/event_hub.rs",
+    "crates/frontend/shell/frontend_application/src/event_hub.rs",
 ]
 
 [scope]

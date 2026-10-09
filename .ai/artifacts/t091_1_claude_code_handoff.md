@@ -47,9 +47,9 @@ DO NOT edit docs/**.
 
 Verify (all exit 0):
   make map-assets-link
-  cd apps/frontend && npm install && npm run build && npm run lint && npm test
+  cd crates/frontend/shell/frontend_application && npm install && npm run build && npm run lint && npm test
   make verify-terrain-strict
-  ! rg 'map-assets|dem/|sampleElevation' apps/frontend/src/features/mission-creator/compiler/
+  ! rg 'map-assets|dem/|sampleElevation' crates/frontend/shell/frontend_application/src/features/mission-creator/compiler/
 
 Unit tests (real PNG @ 6d96339, ±0.01 m) — ALL 11 anchors required:
   bridgehead-sl 4839.2,6620.8 → 121.784

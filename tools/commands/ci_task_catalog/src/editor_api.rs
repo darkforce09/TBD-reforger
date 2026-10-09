@@ -53,7 +53,7 @@ fn run_inner() -> Result<(), String> {
 
     // On the inherited terminal: the build's progress streams as it happens.
     let code = match Run::new("cargo")
-        .args(["build", "-p", "api", "--bin", "api"])
+        .args(["build", "-p", "api_server", "--bin", "api-server"])
         .cwd(&root)
         .terminal()
     {
@@ -71,10 +71,10 @@ fn run_inner() -> Result<(), String> {
     // A detached child in a new session, so the Actions step's process-group kill does not reap
     // the API before leptos-gates runs. The YAML used `(cmd &)` for the same reason.
     let pid = Run::new("cargo")
-        .args(["run", "-q", "-p", "api", "--bin", "api"])
+        .args(["run", "-q", "-p", "api_server", "--bin", "api-server"])
         .cwd(&root)
         .spawn_detached_to_files(log, log_err)
-        .map_err(|e| format!("cargo run api: {e}"))?;
+        .map_err(|e| format!("cargo run api-server: {e}"))?;
     println!("editor-api-boot: spawned pid {pid}, waiting on :{port}/healthz");
 
     let deadline = Instant::now() + Duration::from_secs(TRIES as u64);

@@ -19,9 +19,9 @@ assets/terrains/
 
 The API mounts this folder at `/map-assets` from `MAP_ASSETS_DIR`, whose default
 `../../../assets/terrains` resolves here from the API's working directory
-`apps/api/` (`apps/api/src/router.rs`). The mount sits below the
+`crates/api/api_server/` (`crates/api/api_server/src/router.rs`). The mount sits below the
 rate limiter, so streaming a terrain spends no request tokens, and in development the app's Trunk
-server proxies `/map-assets` to the API (`apps/frontend/Trunk.toml`).
+server proxies `/map-assets` to the API (`crates/frontend/shell/frontend_application/Trunk.toml`).
 
 ```text
 tbd-export plugins in Workbench ──raw exports──▶ developer tools ──write──▶ <terrain>/
@@ -84,7 +84,7 @@ check branches on `status`, which records how far a terrain's export has come.
   [Workbench](/documentation/glossary/n_to_z.md#workbench) plugins.
 - Consumers:
   - the API's `/map-assets` mount, and its test
-    `apps/api/tests/map_assets_rate_limit_exemption.rs`, which fetches
+    `crates/api/api_server/tests/map_assets_rate_limit_exemption.rs`, which fetches
     `terrain-registry.json` to prove the mount is outside the rate limiter;
   - the map engine in the browser, per terrain, over `/map-assets/<terrain>/…`;
   - the world export steps above (`tools/map_assets/world_export_pipeline/src/`) and

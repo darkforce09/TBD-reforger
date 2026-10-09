@@ -34,7 +34,7 @@ documentation/crates/frontend/pages/administration_pages/ballistics_catalogs/
 
 ## Related documentation
 
-- [Game ballistics design note](/documentation/apps/api/verification_evidence/game_ballistics.md)
+- [Game ballistics design note](/documentation/crates/api/api_server/verification_evidence/game_ballistics.md)
   — the upload lifecycle, the calibration criterion and the fixtures.
 - [Ballistics oracle run](/documentation/runbooks/ballistics_oracle_run.md) — producing a new
   catalog version and its calibration bundle.

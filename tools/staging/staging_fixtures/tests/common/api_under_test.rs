@@ -1,18 +1,19 @@
 //! The API under test: the production services and the route tables the suites call, behind the
 //! API binary's middleware chain.
 //!
-//! **Role:** builds the application state with the services the `api` binary runs, and the router
-//! that serves the identity and access, operations and missions route tables under `/api/v1`.
+//! **Role:** builds the application state with the services the `api-server` binary runs, and the
+//! router that serves the identity and access, operations and missions route tables under
+//! `/api/v1`.
 //! **Position:** the `staging_fixtures` suites that check what the tool seeded through the API (a
 //! seeded member signs in and registers for a slot of a fixture event) call it; the tool crate
-//! never depends on the `api` application, so the suites compose the API from the api crates the
-//! application itself composes it from.
+//! never depends on the `api_server` application, so the suites compose the API from the api
+//! crates the application itself composes it from.
 //! **Signals & state:** none of its own; the state owns the pool and the services it builds.
-//! **Invariants:** the services are the ones `apps/api/src/composition.rs` builds (the database
-//! session authority over the same configuration, the Discord and webhook clients, the equipment
-//! datasets); the route tables nest under `/api/v1` and pass through the layers of
-//! `apps/api/src/router.rs` in the same order: the per-address rate limit, the JSON body limit,
-//! cross-origin, panic capture, the request observer, logging and the request id.
+//! **Invariants:** the services are the ones `crates/api/api_server/src/composition.rs` builds
+//! (the database session authority over the same configuration, the Discord and webhook clients,
+//! the equipment datasets); the route tables nest under `/api/v1` and pass through the layers of
+//! `crates/api/api_server/src/router.rs` in the same order: the per-address rate limit, the JSON
+//! body limit, cross-origin, panic capture, the request observer, logging and the request id.
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -31,8 +32,8 @@ use axum::middleware::{from_fn, from_fn_with_state};
 use sqlx::PgPool;
 use tower_http::catch_panic::CatchPanicLayer;
 
-/// The application state of an open `pool` and a loaded `cfg`, with the services the `api`
-/// binary runs.
+/// The application state of an open `pool` and a loaded `cfg`, with the services the
+/// `api-server` binary runs.
 pub(crate) fn application_state(pool: PgPool, cfg: Config) -> AppState {
     let cfg = Arc::new(cfg);
     let session_authority = Arc::new(DatabaseSessionAuthority {

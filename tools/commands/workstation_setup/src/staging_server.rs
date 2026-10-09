@@ -111,7 +111,10 @@ fn next_steps() -> Vec<String> {
             repository_layout::STAGING_SERVER_RUNBOOK
         ),
         "  1. steamcmd +app_update 1890870 on server".into(),
-        "  2. Create apps/api/.env on server (JWT_SECRET + OBSERVABILITY_TOKEN)".into(),
+        format!(
+            "  2. Create {} on server (JWT_SECRET + OBSERVABILITY_TOKEN)",
+            repository_layout::workspace_folders::API_SERVER_ENVIRONMENT_FILE
+        ),
         "  3. sudo loginctl enable-linger \"$USER\"   (on the host, as the deploy user)".into(),
         "  4. Register one game server per fleet instance N in Server Control, issue each its".into(),
         "     mod_runtime and host_agent credentials, and write them on the host to".into(),

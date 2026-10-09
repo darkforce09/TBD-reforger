@@ -67,7 +67,7 @@ None: no feature and no environment variable. The GPU layers are selected by the
   `unit_symbology`, `map_draw_lanes`, `spatial_indexes`, `map_coordinates`, `camera_math`,
   `bytemuck`, `thiserror`; `wgpu` in the WebAssembly build.
 - Used by: `map_renderer`, whose render engine holds the layers, and `map_render_diagnostics`;
-  the Mission Creator and the mortar map picker under `apps/frontend/src/` through
+  the Mission Creator and the mortar map picker under `crates/frontend/shell/frontend_application/src/` through
   `RenderEngine::with_symbology`.
 - Rules: map rendering tier 4 (`cargo xtask verify crate-tiers`); no layer names the renderer;
   the bind bodies are pinned by `map_renderer`'s lane-bind source pins

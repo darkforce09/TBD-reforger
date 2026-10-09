@@ -1,4 +1,4 @@
-**Status:** archived — see [frontend documentation](/documentation/apps/frontend/README.md)
+**Status:** archived — see [frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md)
 
 # Frontend — ROADMAP
 
@@ -6,7 +6,7 @@
 
 **Queue:** [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md) · **Full registry:** [`docs/TICKET_REGISTRY.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_REGISTRY.md)
 
-**Code:** [`apps/website/frontend/src/`](/apps/frontend/src/) · **Routes:** [`apps/website/frontend/src/router.rs`](/crates/frontend/foundation/frontend_route_table/src/routes.rs) · Conventions: [`WHERE_DOES_X_GO.md`](/documentation/standards/where_does_x_go.md)
+**Code:** [`apps/website/frontend/src/`](/crates/frontend/shell/frontend_application/src/) · **Routes:** [`apps/website/frontend/src/router.rs`](/crates/frontend/foundation/frontend_route_table/src/routes.rs) · Conventions: [`WHERE_DOES_X_GO.md`](/documentation/standards/where_does_x_go.md)
 
 ---
 
@@ -14,7 +14,7 @@
 
 | Doc | When to open it |
 |-----|-----------------|
-| **[`documentation_v2/website/frontend/README.md`](/documentation/apps/frontend/README.md)** | Per-route surface specs (28 pages) |
+| **[`documentation_v2/website/frontend/README.md`](/documentation/crates/frontend/shell/frontend_application/README.md)** | Per-route surface specs (28 pages) |
 | **[`documentation_v2/design_system/design_tokens.md`](/documentation/design_system/design_tokens.md)** | Aegis tokens in use |
 | **[`documentation_v2/archive/go_and_react_era_design/frontend_page_spec_template.md`](/documentation/archive/go_and_react_era_design/frontend_page_spec_template.md)** | Template for new page docs |
 | **[Mission Creator ROADMAP](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md)** | 2D editor ticket queue |
@@ -56,8 +56,8 @@ All routes below have a surface spec unless noted. Live UI = `apps/website/front
 | `/admin/personnel` | [personnel-roster.md](/documentation/crates/frontend/pages/administration_pages/personnel/personnel_roster_page.md) | Live API |
 | `/admin/content` | [content-manager.md](/documentation/crates/frontend/pages/administration_pages/content_manager/content_manager_page.md) | Nav: Comms Broadcaster |
 | `/admin/audit` | [audit-logs.md](/documentation/crates/frontend/pages/administration_pages/audit_logs/audit_logs_page.md) | Live API |
-| `*` | [not-found.md](/documentation/apps/frontend/shell/app_layout_and_navigation.md) | |
-| (shell) | [sidebar.md](/documentation/apps/frontend/shell/app_layout_and_navigation.md), [topnav.md](/documentation/apps/frontend/shell/app_layout_and_navigation.md), [app-layout.md](/documentation/apps/frontend/shell/app_layout_and_navigation.md) | |
+| `*` | [not-found.md](/documentation/crates/frontend/shell/frontend_application/shell/app_layout_and_navigation.md) | |
+| (shell) | [sidebar.md](/documentation/crates/frontend/shell/frontend_application/shell/app_layout_and_navigation.md), [topnav.md](/documentation/crates/frontend/shell/frontend_application/shell/app_layout_and_navigation.md), [app-layout.md](/documentation/crates/frontend/shell/frontend_application/shell/app_layout_and_navigation.md) | |
 
 ---
 
@@ -111,7 +111,7 @@ Full deferred table: [`docs/TICKET_REGISTRY.md`](https://github.com/darkforce09/
 
 ## Design system
 
-- **Live tokens:** [`apps/website/frontend/style/aegis.css`](/apps/frontend/style/aegis.css)
+- **Live tokens:** [`apps/website/frontend/style/aegis.css`](/crates/frontend/shell/frontend_application/style/aegis.css)
 - **Reference YAML:** [`documentation_v2/design_system/token_exports/aegis_design_tokens.md`](/documentation/design_system/token_exports/aegis_design_tokens.md)
 - **Methodology:** [`docs/platform/macos_ux_architecture.md`](/documentation/archive/go_and_react_era_design/macos_ux_architecture.md)
 

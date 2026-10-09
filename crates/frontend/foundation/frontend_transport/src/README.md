@@ -124,7 +124,7 @@ paths, the event-stream parser and the audit stream's bookkeeping compile on eve
 
 ## Related documentation
 
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
 - [Server intel page](/documentation/crates/frontend/pages/command_center_pages/server_intel/server_intel_page.md)
   — the page that reads the live status stream.
 - [Audit logs page](/documentation/crates/frontend/pages/administration_pages/audit_logs/audit_logs_page.md)

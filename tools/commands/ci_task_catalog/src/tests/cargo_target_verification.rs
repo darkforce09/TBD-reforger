@@ -3,7 +3,7 @@
 //! the private-directory rule over the recipes, the reclaim refusals and the glibc stamp guard.
 
 use super::*;
-use crate::build_lane::recipes::{Step, WEB, rust_api, rust_build};
+use crate::build_lane::recipes::{API_SERVER_FOLDER, Step, rust_api, rust_build};
 use crate::cargo_target_pin::*;
 
 /// The source pin, held. The fixture is `include_str!` of the pin's own file, and the needle is
@@ -98,12 +98,12 @@ fn private_target_dir_violation_bites() {
     );
     let bad = vec![
         Step::new(&["cargo", "build", "--all-targets"])
-            .cd(WEB)
+            .cd(API_SERVER_FOLDER)
             .env("CARGO_TARGET_DIR", "/tmp/private"),
     ];
     assert_eq!(
         private_target_dir_violation(&bad).as_deref(),
-        Some("cd apps/api && CARGO_TARGET_DIR=/tmp/private cargo build --all-targets")
+        Some("cd crates/api/api_server && CARGO_TARGET_DIR=/tmp/private cargo build --all-targets")
     );
 }
 

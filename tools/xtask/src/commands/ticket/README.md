@@ -130,7 +130,7 @@ other error (`xtask: <cause>`); 2 a clap usage error.
     `platform slice-run`;
   - the platform preflight and wave gate and the mod wave gate, which run `ticket check`;
   - the `language-gates` job of `.github/workflows/ci.yml` (`ticket check --strict`);
-  - the ticketboard (`apps/ticketboard/`), whose every change is a `cargo xtask ticket` command;
+  - the ticketboard (`tools/tickets/ticketboard_desktop/`), whose every change is a `cargo xtask ticket` command;
     agents, the command center and people.
 - Rules:
   - Ticket storage, validation, sync and wave packing stay in the ticket crates; `mod.rs` must

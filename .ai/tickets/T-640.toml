@@ -48,7 +48,7 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 owns = [
-    "apps/frontend/src/world_assets/dem_vectors.rs",
+    "crates/frontend/shell/frontend_application/src/world_assets/dem_vectors.rs",
     "crates/map-engine-core/src/geometry/contours.rs",
     "crates/map-engine-core/src/geometry/vector_compose.rs",
 ]

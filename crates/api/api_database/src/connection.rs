@@ -27,7 +27,7 @@ const CONNECT_ATTEMPTS: u32 = 10;
 /// A variable that does not parse fails HERE, before any connection attempt, as
 /// [`sqlx::Error::Configuration`] wrapping the [`ConfigError`] that names it — so the API
 /// binary's `connect(&cfg.database_url)?` stops startup with that message, and every caller
-/// that opens a pool without loading [`Config`] (`import-registry`, the integration suites)
+/// that opens a pool without loading [`Config`] (`import-item-registry`, the integration suites)
 /// gets the same guard.
 ///
 /// [`ConfigError`]: api_configuration::configuration::ConfigError

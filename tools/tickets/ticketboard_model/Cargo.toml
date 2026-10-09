@@ -2,8 +2,8 @@
 # the recorded wave lanes, the measured run receipts and historical estimates, the document reads,
 # the ticket-command queue and guards, the strict-check and git-status models, the file watch, the
 # streamed subprocesses and the egui-free application state. No egui or eframe: the desktop
-# application in apps/ticketboard paints these models. `notify` arms the registry watch (inotify on
-# Linux; no async runtime); `process_runner` runs the streamed and the detached children and
+# application in tools/tickets/ticketboard_desktop paints these models. `notify` arms the
+# registry watch (inotify on Linux; no async runtime); `process_runner` runs the streamed and the detached children and
 # `verification_core` names why one did not run; `serde`, `serde_json` and `toml` read the wave
 # lock, the receipts and the estimates; `time` parses their RFC 3339 stamps; `thiserror` derives
 # the crate error.

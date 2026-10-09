@@ -23,7 +23,7 @@ crates/api/api_server_infrastructure/
 
 Operators never reach a game host directly. An administrator's command becomes a durable row in
 the ledger, and the program that performs it, the
-[fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) or the game runtime, polls
+[game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) or the game runtime, polls
 the API outbound with its own machine credential, claims the command under a lease and reports
 its start and its outcome. A reconciliation pass returns a command whose lease lapsed to the
 queue, expires one nobody completed, and leaves a non-idempotent command whose executor went
@@ -53,7 +53,7 @@ the sessions and the routes are proved against Postgres by the API's integration
 
 No feature and no variable of its own. The scheduled status publisher's interval
 (`SERVER_STATUS_PUBLISH_INTERVAL_SECS`) belongs to the API's background workers;
-[API environment variables](/documentation/apps/api/environment_variables.md) lists it. The
+[API environment variables](/documentation/crates/api/api_server/environment_variables.md) lists it. The
 `fail_point!` sites at the command claim and result commits compile to nothing outside test builds
 (`api_failpoints`).
 
@@ -75,22 +75,22 @@ No feature and no variable of its own. The scheduled status publisher's interval
   requires), `api_http_layer`, `api_audit_log`, `api_failpoints`, `api_foundation`,
   `api_identifiers`, `api_mission_vocabulary`, `fleet_wire_contract`, sqlx, axum, async-stream,
   serde, chrono, tokio, thiserror and uuid. It names no other domain.
-- Used by: the API application (`apps/api`): its router merges `routes`, its background workers
+- Used by: the API application (`crates/api/api_server`): its router merges `routes`, its background workers
   run the status publisher, the session expiry and the command reconciliation, the match
   telemetry, missions, operations and command center domains call the services, and the
   `staging-fixtures` host tool and the integration suites reach the services directly. Over HTTP:
-  the fleet host agent, the game runtime and the server control and server intel pages.
+  the game server host agent, the game runtime and the server control and server intel pages.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md);
-  `apps/api/src/tests/architecture_rules.rs` checks its route table, its handlers and its
+  `crates/api/api_server/src/tests/architecture_rules.rs` checks its route table, its handlers and its
   imports against the domain graph.
 
 ## Related documentation
 
 - [API server infrastructure source](/crates/api/api_server_infrastructure/src/README.md) — the
   files, the routes and how the fleet is controlled.
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
-- [Fleet command ledger](/documentation/apps/api/verification_evidence/fleet_command_ledger.md)
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
+- [Fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
   — the ledger's commands, states, rules and executors.
-- [Machine credentials and runtime sessions](/documentation/apps/api/verification_evidence/machine_credentials.md)
+- [Machine credentials and runtime sessions](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md)
   — credentials, the session fence and their consumers.
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.

@@ -26,7 +26,7 @@ operator stop (`Error::Stop`) that the xtask binary prints bare and answers with
 
 `is_safe_scratch_database_name` admits `rust_it`, `tbd_gate*`, `*_cold`, `*_it` and `*_probe`, and
 never `tbd_reforger`, the same list as `is_safe_test_database_name` in
-`apps/api/tests/common/database.rs`. `refuse_unsafe_restore_target` passes a plain ASCII
+`crates/api/api_server/tests/common/database.rs`. `refuse_unsafe_restore_target` passes a plain ASCII
 name on that list, or any name when the confirmation equals it, and otherwise stops with the
 refusal banner (exit 1).
 

@@ -1,9 +1,9 @@
-//! The process-wide shutdown signal: the one flag the `api` binary raises when the process is
-//! asked to stop, so work that would otherwise outlive a graceful shutdown ends with it.
+//! The process-wide shutdown signal: the one flag the `api-server` binary raises when the process
+//! is asked to stop, so work that would otherwise outlive a graceful shutdown ends with it.
 //!
 //! **Role:** [`ShutdownSignal`], a one-way flag that begins once and wakes every waiter, and
 //! [`process_shutdown`], the instance the whole process shares.
-//! **Position:** `api_configuration`. `apps/api/src/bin/api.rs` begins [`process_shutdown`] when
+//! **Position:** `api_configuration`. `crates/api/api_server/src/bin/api_server.rs` begins [`process_shutdown`] when
 //! SIGINT or SIGTERM arrives, as `axum::serve` starts its graceful drain;
 //! the API's `authorize_event_stream` middleware waits on it and
 //! closes every open SSE stream, which is what lets the drain finish.
@@ -67,7 +67,7 @@ impl Default for ShutdownSignal {
 /// The shutdown signal of this process.
 static PROCESS_SHUTDOWN: LazyLock<ShutdownSignal> = LazyLock::new(ShutdownSignal::new);
 
-/// The shutdown signal the whole process shares: the `api` binary begins it on SIGINT or
+/// The shutdown signal the whole process shares: the `api-server` binary begins it on SIGINT or
 /// SIGTERM, and every open event stream ends when it does.
 pub fn process_shutdown() -> &'static ShutdownSignal {
     &PROCESS_SHUTDOWN

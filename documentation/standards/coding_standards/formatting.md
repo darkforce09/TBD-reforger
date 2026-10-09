@@ -9,12 +9,12 @@ Rules FMT-1 to FMT-3: how source files are formatted. Code comments and help str
 
 - **FMT-1 (Readability) — Source is formatter clean.** Rust form: `rustfmt` with its defaults,
   the 100-column width included; the repository holds no rustfmt configuration file, so
-  `cargo fmt` takes each crate's edition from its manifest (2024 through the root `Cargo.toml`
-  `[workspace.package]`, 2021 for the frontend, which declares its own).
-  `cargo xtask mk rust-fmt` runs `cargo fmt --check` in `apps/api`, then
+  `cargo fmt` takes each crate's edition from its manifest, 2024 for every member through the
+  root `Cargo.toml` `[workspace.package]`.
+  `cargo xtask mk rust-fmt` runs `cargo fmt --check` in `crates/api/api_server`, then
   `cargo fmt --all --check` over every workspace member, the `tools` crates included. Gate:
-  CI-BLOCK, the "FMT-1 analog" step of the `api` job; `cargo xtask mk wasm-ci` and
-  `cargo xtask mk ci-local-leptos` also check the offline service worker and the app. The rule was first written
+  CI-BLOCK, the "FMT-1 analog" step of the `api` job; `cargo xtask mk ci-local-leptos` also
+  checks the frontend family, the single-page app and the offline service worker among it. The rule was first written
   for `gofmt`; no Go remains, and `cargo fmt` is its form now.
 - **FMT-2 (Readability) — The root `.editorconfig` governs whitespace in every file.** Every file
   is UTF-8, ends lines with LF, ends with a final newline and has no trailing whitespace; JSON and

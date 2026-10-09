@@ -37,7 +37,7 @@ page's files, calls and states.
   registry in `.ai/tickets/`, which the feature doc is written from.
 - Used by: the page's in-code README and the operations pages README, which link the feature doc;
   the deployments feature doc; the web app README's page table in
-  `documentation/apps/frontend/`.
+  `documentation/crates/frontend/shell/frontend_application/`.
 - Rules: the feature doc keeps its name, which those links use; the blueprint set stays as it was
   captured and is never edited to match the built page.
 

@@ -63,10 +63,10 @@ citations = [
 ]
 estimated = ["scope"]
 owns = [
-    "apps/frontend/src/editor/state/operations/entity.rs",
-    "apps/frontend/src/editor/mission_editor.rs",
-    "apps/frontend/src/editor/panels/context_menu.rs",
-    "apps/frontend/src/editor/panels/outliner_tree.rs",
+    "crates/frontend/shell/frontend_application/src/editor/state/operations/entity.rs",
+    "crates/frontend/shell/frontend_application/src/editor/mission_editor.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/context_menu.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/outliner_tree.rs",
 ]
 
 [scope]

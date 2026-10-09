@@ -31,9 +31,10 @@ use std::{
 /// The Git index mode of a symbolic link; its blob holds the link text.
 const GIT_SYMLINK_MODE: &str = "120000";
 
-/// The tracked folders whose source files are fingerprint inputs: the applications, the library
-/// crates the API is built from (`crates/api` among them), the tools, the contracts, the evidence
-/// register and the build and CI configuration. A path is an input when it lies under one of
+/// The tracked folders whose source files are fingerprint inputs: the applications (the Enfusion
+/// mod, whose API call sites the register cites), the library crates the API is built from
+/// (`crates/api` among them), the tools, the contracts, the evidence register and the build and
+/// CI configuration. A path is an input when it lies under one of
 /// them ([`under_input_root`]), whether or not the folder is spelled with a trailing `/`.
 const INPUT_ROOTS: &[&str] = &[
     repository_layout::workspace_folders::APPLICATIONS_DIR,
@@ -62,7 +63,14 @@ const ROOT_INPUTS: &[&str] = &[
     ".editorconfig",
     ".gitignore",
 ];
-const CONFIGURATION_FILES: &[&str] = &[".env", "apps/api/.env", repository_layout::DEPLOY_ENV];
+/// The configuration files the configuration digest covers, by their path from the repository
+/// root: the root `.env`, the API server's `.env` and `deploy.env`. Each path is hashed with the
+/// file, so a moved file is a changed configuration.
+const CONFIGURATION_FILES: &[&str] = &[
+    ".env",
+    repository_layout::workspace_folders::API_SERVER_ENVIRONMENT_FILE,
+    repository_layout::DEPLOY_ENV,
+];
 const CONFIGURATION_ENVIRONMENT: &[&str] = &[
     "APP_ENV",
     "PORT",

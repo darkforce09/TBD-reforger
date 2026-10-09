@@ -52,8 +52,8 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 owns = [
-    "apps/frontend/src/eden_help.rs",
-    "apps/frontend/src/eden_top_strip.rs",
+    "crates/frontend/shell/frontend_application/src/eden_help.rs",
+    "crates/frontend/shell/frontend_application/src/eden_top_strip.rs",
 ]
 
 [scope]

@@ -69,7 +69,7 @@ window, no archive of past events and no after-action link.
   `frontend_ui` (`AuthGate`, `SplitPane`, `SplitPaneEmpty`, `MaterialIcon`, `badge_class`,
   `cn`), `frontend_ui` (countdown and local date formatting), the `AuthStore` context,
   and `event_hub_view` from `crates/frontend/pages/operations_pages/src/event_detail/`.
-- Used by: the `/events` route in `apps/frontend/src/app_routes.rs`;
+- Used by: the `/events` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`;
   `event_schedule_source` in `crates/frontend/pages/operations_pages/src/tests/source_pins.rs` reads its
   three source files.
 - Rules: briefings render through `event_hub_view`, whose blank-briefing rule trims whitespace

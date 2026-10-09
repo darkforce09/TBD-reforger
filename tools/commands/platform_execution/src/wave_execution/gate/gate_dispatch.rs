@@ -234,9 +234,9 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     });
     r.run("test api", || db::gate_test_api(ctx));
     // Frontend tests get a PRIVATE target dir. With a shared CARGO_TARGET_DIR,
-    // `cargo test -p frontend` runs a stale `frontend-<hash>` test binary built by
-    // ANOTHER worktree, reporting that worktree's test count. Same package name + version across
-    // worktrees = same artifact hash = clobbering. The step tests the whole frontend family.
+    // `cargo test -p frontend_application` runs a stale `frontend_application-<hash>` test binary
+    // built by ANOTHER worktree, reporting that worktree's test count. Same package name + version
+    // across worktrees = same artifact hash = clobbering. The step tests the whole frontend family.
     let frontend_dir = format!(
         "CARGO_TARGET_DIR={}",
         gate_folder(&ctx.main_root, build_output::GATE_FRONTEND_SUBFOLDER)
@@ -394,7 +394,7 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
 
 /// The package `test api` tests against the gate database, with every API crate, which the step
 /// derives.
-pub(super) const WAVE_GATE_API_TEST_PACKAGE: &str = "api";
+pub(super) const WAVE_GATE_API_TEST_PACKAGE: &str = "api_server";
 
 /// The members whose tests a step of [`cmd_gate`] other than `test workspace members` runs:
 /// [`WAVE_GATE_API_TEST_PACKAGE`] and the frontend family `test frontend` tests, derived from the

@@ -58,5 +58,5 @@ remembered is dropped.
 
 - [Telemetry queue](/apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/Queue/README.md) — what is sent
   and how entries are dropped
-- [Match telemetry design](/documentation/apps/api/verification_evidence/telemetry.md) — the answer
+- [Match telemetry design](/documentation/crates/api/api_server/verification_evidence/telemetry.md) — the answer
   table this delivery applies

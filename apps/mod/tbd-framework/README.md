@@ -132,7 +132,7 @@ minute apart, so a credential pasted in later takes effect without a restart.
 - The addon GUID `B2C3D4E5F6A78901`, which the playtest and staging server configs load and
   `cargo xtask setup client-addons` passes as `-addons`.
 - The mission header resource `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf`, which the
-  dedicated-server profiles, the deploy settings, the fleet scenario seeds and the fleet host agent
+  dedicated-server profiles, the deploy settings, the fleet scenario seeds and the game server host agent
   name.
 - `Data/registry.json`, which the Mission Creator embeds and the xtask schema and registry gates
   read.
@@ -149,9 +149,9 @@ minute apart, so a credential pasted in later takes effect without a restart.
   `mod_runtime` [machine credential](/documentation/glossary/g_to_m.md#machine-credential), which
   also authenticates its ingest routes; the wire shapes in `contracts/definitions/`.
 - Used by: the dedicated servers that `cargo xtask mod playtest`, `cargo xtask deploy staging` and
-  the fleet host agent in `apps/fleet_host_agent/` boot; the gates of `cargo xtask mod` in
+  the game server host agent in `crates/fleet/game_server_host_agent/` boot; the gates of `cargo xtask mod` in
   `tools/commands/mod_operations/src/`, which `.github/workflows/mod-gates.yml` runs; and the
-  Mission Creator in `apps/frontend/`, through `Data/registry.json`.
+  Mission Creator in `crates/frontend/shell/frontend_application/`, through `Data/registry.json`.
 - Rules: `addon.gproj` names the vanilla data addon as its only dependency, and the addon carries no
   `Scripts/WorkbenchGame/` (`cargo xtask mod compile`); no upstream reference code or upstream-only
   asset GUID enters it (`cargo xtask verify no-crf-leak`); lines added stay ASCII; every resource is

@@ -13,7 +13,9 @@ fn wants_viewer_predicate() {
     assert!(wants_viewer("docs/plans/t-918_4_plan.md"));
     assert!(wants_viewer("README.md"));
     assert!(wants_viewer("docs/UPPER.MD"), "ASCII case-insensitive");
-    assert!(!wants_viewer("apps/ticketboard/src/main.rs"));
+    assert!(!wants_viewer(
+        "tools/tickets/ticketboard_desktop/src/main.rs"
+    ));
     assert!(!wants_viewer("docs/notes.md.bak"), "must END in .md");
     assert!(!wants_viewer("md"), "no extension at all");
     assert!(!wants_viewer("README"));

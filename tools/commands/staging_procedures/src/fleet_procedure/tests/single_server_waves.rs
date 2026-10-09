@@ -124,7 +124,8 @@ fn staging_fleet_ended_session_kick_must_be_refused() {
 }
 
 #[test]
-fn staging_fleet_host_agent_rotation_fails_while_the_old_credential_is_still_accepted() {
+fn staging_fleet_game_server_host_agent_rotation_fails_while_the_old_credential_is_still_accepted()
+{
     let (run, _) = run(&recorded(RecordedSingleServer {
         old_credential_still_accepted: true,
         ..RecordedSingleServer::default()

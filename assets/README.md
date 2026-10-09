@@ -17,9 +17,9 @@ assets/
 ## How it works
 
 The API mounts `terrains/` at `/map-assets` and `glyphs/` at `/map-assets/glyphs`
-(`apps/api/src/router.rs`). Their directories come from `MAP_ASSETS_DIR` and
+(`crates/api/api_server/src/router.rs`). Their directories come from `MAP_ASSETS_DIR` and
 `GLYPH_ASSETS_DIR`, and default to `../../../assets/terrains` and `../../../assets/glyphs`,
-which resolve here from the API's working directory `apps/api/`. Both mounts sit below
+which resolve here from the API's working directory `crates/api/api_server/`. Both mounts sit below
 the API's rate limiter, so streaming a terrain spends no request tokens. In development the app's
 Trunk server proxies `/map-assets` to the API.
 
@@ -67,7 +67,7 @@ reads it yet.
   `tools/foundation/repository_layout/src/map_assets.rs`. The glyph SVG sources are hand-authored.
 - Consumers:
   - the API's `/map-assets` and `/map-assets/glyphs` mounts, in
-    `apps/api/src/router.rs`;
+    `crates/api/api_server/src/router.rs`;
   - the streaming crates in `crates/streaming/` (with the terrain, world object and world format
     crates they decode through), which fetch and decode the datasets in the browser, and those
     crates' native tests, which read them from disk;

@@ -146,7 +146,7 @@ hovering an icon (no per-move hover pick). Click/dbl-click/marquee/drag picking 
 
 `CLAUDE.md` §Status (T-057 bullet + latest-feature line), MC [ROADMAP.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md)
 §Map performance (T-057 row → done), [docs/TAGS.md](/documentation/standards/ticket_identifiers.md),
-[docs/website/frontend/ROADMAP.md](/documentation/apps/frontend/README.md),
+[docs/website/frontend/ROADMAP.md](/documentation/crates/frontend/shell/frontend_application/README.md),
 [docs/website/frontend/pages/mission-editor.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/ux_spec.md),
 [agent_execution.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md) Decisions log + todo status.
 

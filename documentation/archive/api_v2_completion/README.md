@@ -25,7 +25,7 @@ now. Paths, counts and log names in the records are as they stood when each row 
 
 ## Code
 
-- [API crate](/apps/api/) — the crate the milestones completed.
+- [API crate](/crates/api/api_server/) — the crate the milestones completed.
 - [API readiness check](/tools/commands/api_readiness_checks/src/) — the verifier that
   judges the register the milestones fill.
 
@@ -38,7 +38,7 @@ now. Paths, counts and log names in the records are as they stood when each row 
 
 ## Related documentation
 
-- [Verification checkpoint](/documentation/apps/api/verification_evidence/progress_checkpoint.md)
+- [Verification checkpoint](/documentation/crates/api/api_server/verification_evidence/progress_checkpoint.md)
   — the live state of the program and the records of the milestones still in it.
-- [API verification evidence](/documentation/apps/api/verification_evidence/README.md) —
+- [API verification evidence](/documentation/crates/api/api_server/verification_evidence/README.md) —
   the register, the design notes and the program records.

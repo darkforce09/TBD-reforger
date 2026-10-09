@@ -17,7 +17,7 @@
 
 ## U1 — Conflict server load → IDB persist (MED, trust)
 
-**File:** `apps/frontend/src/features/mission-creator/hooks/useMissionEditor.ts` (~521–536)
+**File:** `crates/frontend/shell/frontend_application/src/features/mission-creator/hooks/useMissionEditor.ts` (~521–536)
 
 **Bug:** `resolveConflict('server')` calls blocking `hydrateMissionDoc(md, conflict)` under **`INIT_ORIGIN`**. v2 IDB persist only hooks **`LOCAL_ORIGIN`** updates (`useMissionEditor.ts` ~280–288). Adopted server state never hits IndexedDB → same conflict dialog next cold boot.
 
@@ -68,7 +68,7 @@
 
 ## U5 — ORBAT 409 messages (LOW, stretch)
 
-**File:** `apps/frontend/src/pages/events.tsx` (~395)
+**File:** `crates/frontend/shell/frontend_application/src/pages/events.tsx` (~395)
 
 Map backend `error` string from mutation failure to distinct toasts (`slot already taken` vs squad reserved) when axios exposes it.
 
@@ -77,7 +77,7 @@ Map backend `error` string from mutation failure to distinct toasts (`slot alrea
 ## Verify (all exit 0)
 
 ```bash
-cd apps/frontend && npm run build && npm run lint
+cd crates/frontend/shell/frontend_application && npm run build && npm run lint
 ```
 
 Deliver **`.ai/artifacts/t127_verify_log.md`** — U1–U4 (+ U5 if done) + manual notes.

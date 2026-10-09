@@ -40,7 +40,7 @@ slices under a time budget and produces the identical raster.
 - Used by: `map_editing_tools`, whose line-of-sight tool and visibility scheduler import them
   directly; `map_asset_loading`'s occluder loader and `map_streaming_host`'s queries; the Mission
   Creator's line-of-sight tool, the mortar
-  map picker and the debug benches in `apps/frontend/`; the developer tools' world check and
+  map picker and the debug benches in `crates/frontend/shell/frontend_application/`; the developer tools' world check and
   blueprint tooling.
 - Rules: a line of sight crate declares `category = "crates/line_of_sight"`, depends only on
   lower engine categories and on lower line of sight crates, and holds no browser or GPU code

@@ -33,7 +33,7 @@ confirm closure; the frontend keeps supplying the DOM one.
 
 ## D2 · Unwind the façade
 
-`apps/frontend/src/editor/state/operations.rs` is 98 lines, `#![cfg(target_arch = "wasm32")]`,
+`crates/frontend/shell/frontend_application/src/editor/state/operations.rs` is 98 lines, `#![cfg(target_arch = "wasm32")]`,
 and is a pure re-export surface: eight glob `pub use X::*` lines plus a single
 `pub use entity::{...}` naming **112 symbols**.
 
@@ -63,7 +63,7 @@ frontend**, and 3B moves them. Do not drag them across: gate rule 5 will reject 
 
 ## Done when
 
-`apps/frontend/src/editor/state/operations/` and `state/operations.rs` are gone, every
+`crates/frontend/shell/frontend_application/src/editor/state/operations/` and `state/operations.rs` are gone, every
 call site reaches the engine directly, and:
 
 ```

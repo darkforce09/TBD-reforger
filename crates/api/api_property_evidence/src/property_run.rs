@@ -3,7 +3,7 @@
 //! **Role:** [`run_property`] runs a proptest strategy with a fixed seed and case count and prints
 //! the [`PropertyRun`] record of the run; [`collect_property`] returns the record instead.
 //! **Position:** the whole of this dev-only crate; the API's operations unit tests and its
-//! property suites under `apps/api/tests/` call [`run_property`].
+//! property suites under `crates/api/api_server/tests/` call [`run_property`].
 //! **Signals & state:** none kept between runs; one run holds its completed-check count and input
 //! digest in cells for the length of the run.
 //! **Invariants:** a run with zero cases, a failed check, or fewer completed checks than requested

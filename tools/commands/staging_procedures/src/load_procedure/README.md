@@ -4,7 +4,7 @@ The `staging_load` procedure: the synthetic population, 30 measured minutes of m
 five source addresses, and the game operations measured beside it; the `seed-load` and
 `clean-load` actions; and the local rehearsal of the load path. The workload and the cases are in
 the
-[staging design note](/documentation/apps/api/verification_evidence/staging.md#load-procedure-staging_load);
+[staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md#load-procedure-staging_load);
 the operator's steps are in the
 [load procedure runbook](/documentation/runbooks/staging_verification/load_procedure.md).
 

@@ -82,7 +82,7 @@ Mission Creator itself in its read-only review mode, not a copy of it.
   `map_editing_tools`), the map crates (`map_streaming_model`, and `map_renderer` and `map_streaming_host` in the browser
   build) and `web_sys` in the browser build.
 - Used by:
-  - `apps/frontend/src/app_routes.rs`, the route table;
+  - `crates/frontend/shell/frontend_application/src/app_routes.rs`, the route table;
   - source pins that read this folder's files: the crate's own tests in
     `crates/frontend/workspaces/mission_creator_workspace/src/tests/`;
   - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, which drive the

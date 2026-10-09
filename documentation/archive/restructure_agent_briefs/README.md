@@ -28,7 +28,7 @@ the one-time host moves of the deploy folder and the snake_case names.
 
 ## Code
 
-- [API](/apps/api/), [frontend](/apps/frontend/), [deploy](/deploy/),
+- [API](/crates/api/api_server/), [frontend](/crates/frontend/shell/frontend_application/), [deploy](/deploy/),
   [library crates](/crates/), [legacy engines](https://github.com/darkforce09/TBD-reforger/tree/2a105fa4fbc0a23062fcff3dc5aedd387127c5d9/legacy) and [tooling](/tools/) — the code the
   briefs moved and changed.
 

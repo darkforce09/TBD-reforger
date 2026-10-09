@@ -50,7 +50,7 @@ against `.ai/tickets/scope-vocab.toml` when the corpus loads (`crate::vocab`).
 - Depends on: `serde`, and `crate::TicketId` for every id a ticket holds.
 - Used by: the rest of the crate (`encoding.rs`, `store.rs`, `vocab.rs`); through the crate root,
   `ticket_registry` (the operations, the checks and the verbs judge with the predicates, caps and
-  pins), `ticket_wave_lock`, `ticket_metrics`, `xtask` (`StatusName`) and `apps/ticketboard/`
+  pins), `ticket_wave_lock`, `ticket_metrics`, `xtask` (`StatusName`) and `tools/tickets/ticketboard_desktop/`
   (`StatusName`, `Status`, `Ticket`, `ScopeV2`, `CLASS_VALUES`, `ESTIMATED_VALUES`), whose tests
   hold its class list equal to `CLASS_VALUES`.
 - Rules:

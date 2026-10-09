@@ -60,7 +60,7 @@ Contents and a row in the table.
   ticket registry in `.ai/tickets/`, which the feature docs are written from.
 - Used by: the in-code READMEs of the page folders, which link their feature docs under Related
   documentation; the API READMEs that link the feature doc of the page they serve; the web app
-  README's page table in `documentation/apps/frontend/`.
+  README's page table in `documentation/crates/frontend/shell/frontend_application/`.
 - Rules: one folder per page folder of the code, spelled the same; a page's feature doc is named
   after its route component (`server_intel_page.md` for `ServerIntelPage`) and keeps its name,
   since the READMEs link it; a feature doc stays within 500 lines; design references live only in

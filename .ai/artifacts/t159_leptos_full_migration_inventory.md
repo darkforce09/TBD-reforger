@@ -1,7 +1,7 @@
 # T-159 — Full Leptos migration inventory (evidence-based)
 
 **Date:** 2026-07-14 · **Worktree:** `.ai/artifacts/worktrees/TBD-T-159` @ `t-159-leptos-ui`  
-**Oracle:** React SPA at `apps/frontend/` on the same commit as worktree HEAD  
+**Oracle:** React SPA at `crates/frontend/shell/frontend_application/` on the same commit as worktree HEAD  
 **Method:** `wc -l` + `rg` + file enumeration (not estimates). “110%” means **automated parity gates**, not eyeballing.
 
 ---
@@ -98,7 +98,7 @@ A human cannot usefully re-type 35k LOC character-by-character. This inventory i
 
 ## 3. Route manifest (Class S checklist — every path)
 
-Oracle: `apps/frontend/src/router.tsx`
+Oracle: `crates/frontend/shell/frontend_application/src/router.tsx`
 
 | # | Path | Page component | fullBleed | chromeless | Router auth | Page AuthGate |
 |--:|------|----------------|-----------|------------|-------------|---------------|

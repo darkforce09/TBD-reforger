@@ -83,8 +83,8 @@ The TS mirror is `visibleWithImportance` (`lodGates.ts` — the spec/audit's sta
 name). Zero render callers; the whole file is oracle-only; no wasm importance export exists to
 parity-check against. Per the language gate (Rust owns override policy), the dead mirror was
 **deleted** (function + its `describe` block/import in `lodGates.test.ts`; `classVisible` doc updated
-to point at the Rust engine). Grep gate: `rg visibleWithImportance apps/frontend/src` and
-`rg landmarkVisible apps/frontend/src` → **empty**.
+to point at the Rust engine). Grep gate: `rg visibleWithImportance crates/frontend/shell/frontend_application/src` and
+`rg landmarkVisible crates/frontend/shell/frontend_application/src` → **empty**.
 
 ## Acceptance gates (spec §Mathematical acceptance matrix)
 | Gate | Result |
@@ -102,10 +102,10 @@ cargo fmt --check -p map-engine-core                    → clean (exit 0)
 cargo clippy -p map-engine-core --all-targets --all-features -D warnings → clean
 cargo test -p map-engine-core --all-features            → 216 passed / 0 failed (+ camera 5, ortho 5)
 make wasm                                               → Done (exit 0). pkg is gitignored (build-verify only; no binary to commit)
-cd apps/frontend && npm test                    → 363 passed / 0 failed (49 files) [after golden + smoke-test update]
+cd crates/frontend/shell/frontend_application && npm test                    → 363 passed / 0 failed (49 files) [after golden + smoke-test update]
                               npm run build              → built in 935ms (exit 0)
                               npm run lint               → clean (exit 0)
-rg -n "landmarkVisible|visibleWithImportance" apps/frontend/src → empty (G5)
+rg -n "landmarkVisible|visibleWithImportance" crates/frontend/shell/frontend_application/src → empty (G5)
 ```
 Note: the T-152.3 badge tests live behind the `world` feature; run with `--all-features` (as
 Makefile `test-core` / CI do). The bare `cargo test -p map-engine-core` from the spec §Verify runs

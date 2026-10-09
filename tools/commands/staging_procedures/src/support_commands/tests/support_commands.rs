@@ -99,7 +99,7 @@ fn staging_status_compares_each_resting_item_with_its_expected_value() {
         .flat_map(|n| {
             [
                 format!("tbd-reforger@{n}.service"),
-                format!("fleet_host_agent@{n}.service"),
+                format!("game_server_host_agent@{n}.service"),
             ]
         })
         .chain(["acknowledgement-dropping-relay@5.service".to_string()])

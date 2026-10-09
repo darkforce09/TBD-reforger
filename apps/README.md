@@ -1,99 +1,62 @@
-# Applications
+# Game mod
 
-Every product the TBD Reforger platform ships: the website's API, single-page app and service
-worker, the
-[Enfusion](/documentation/glossary/a_to_f.md#enfusion) [mod](/documentation/glossary/g_to_m.md#mod) that
-game servers run, the agent that controls those servers, and the desktop viewer for the
-[ticket](/documentation/glossary/n_to_z.md#ticket) registry. Developer tooling lives in `tools/`,
-not here.
+The home of the Arma Reforger [mod](/documentation/glossary/g_to_m.md#mod) suite: the
+[Enfusion](/documentation/glossary/a_to_f.md#enfusion) script and data addons that the game servers
+run and that [Workbench](/documentation/glossary/n_to_z.md#workbench) opens. No Rust crate lives
+here: the website's API server, single-page app and offline service worker and the game server
+host agent are crates under [`crates/`](/crates/README.md), and the ticketboard desktop viewer and
+every other developer tool are crates under [`tools/`](/tools/README.md).
 
 ## Contents
 
 ```text
 apps/
-├── api/                     the website's REST API and realtime hub, crate `api`: the thin app over the crates in `crates/api/`
-├── fleet_host_agent/        the game-host agent for fleet commands, crate `fleet_host_agent`
-├── frontend/                the website's single-page app and Mission Creator, crate `frontend`
-├── mod/                     the Enfusion mod suite: game mod, Workbench export addon, MCP bridge
-├── offline_service_worker/  the website's service worker for offline packs, crate `offline_service_worker`
-└── ticketboard/             the native desktop viewer of the ticket registry, crate `ticketboard`
+└── mod/  the Enfusion mod suite: game mod, Workbench export addon, MCP bridge
 ```
 
 ## How it works
 
-The website's [API](/documentation/glossary/a_to_f.md#api) is the hub. Members use the single-page
-app in a browser. On each game host, the dedicated server runs the mod, which reads its
+A dedicated server loads the game mod, boots its
+[mission header](/documentation/glossary/g_to_m.md#mission-header) and fetches the
+[mission](/documentation/glossary/g_to_m.md#mission) deployed to it from the website's
+[API](/documentation/glossary/a_to_f.md#api): it reads its
 [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) and
-[event](/documentation/glossary/a_to_f.md#event) roster from the API's
-`/api/v1/game-runtime/` routes, reports server status and match results to `/api/v1/ingest/`,
-and carries out the in-game fleet commands, such as loading a
-[mission](/documentation/glossary/g_to_m.md#mission), through `/api/v1/fleet-executor/`. Beside the
-server, the [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) polls the API's
-`/api/v1/fleet-executor/` routes over outbound HTTPS, carries out each
-[fleet command](/documentation/glossary/a_to_f.md#fleet-command) (process control,
-[RCON](/documentation/glossary/n_to_z.md#rcon) commands, a switch of the server's
-[mission header](/documentation/glossary/g_to_m.md#mission-header)) and reports every step to the
-command ledger. [Ticketboard](/documentation/glossary/n_to_z.md#ticketboard) stands apart: it
-reads `.ai/tickets/` through the `ticket_model` crate in `tools/tickets/` and talks to none of
-the others.
+[event](/documentation/glossary/a_to_f.md#event) roster from the `/api/v1/game-runtime/` routes,
+reports server status and match results to `/api/v1/ingest/`, and carries out the in-game
+[fleet commands](/documentation/glossary/a_to_f.md#fleet-command), such as loading a mission,
+through `/api/v1/fleet-executor/`. The two Workbench addons run in the editor only: one exports the
+game data the platform ingests, the other lets the Enfusion MCP tools drive Workbench. The
+[mod suite README](/apps/mod/README.md) describes the three addons and their dependencies.
 
 ```text
-browser ── frontend ──▶ api ◀── HTTPS ── fleet_host_agent ─┐ controls
-   │                     ▲  ▲                               ▼
-   └ offline_service_worker  └── game-runtime, ingest ── dedicated server + mod
-                         │
-                      Postgres
-
-ticketboard ──▶ ticket_model (tools/tickets/) ──▶ .ai/tickets/
+dedicated server ── loads ──▶ apps/mod/tbd-framework ── HTTPS ──▶ crates/api/api_server
+Workbench ── opens ──▶ apps/mod/tbd-export (+ apps/mod/tbd-emcp) ◀── Net API ── cargo xtask mcp
 ```
-
-The five Rust crates (`api`, `frontend`, `offline_service_worker`, `fleet_host_agent` and
-`ticketboard`) are members of the root Cargo workspace. The API is a thin application: its router
-and composition root assemble the domain, kernel and worker crates in `crates/api/`, and its
-integration suites stay in `apps/api/tests/`. The frontend links the map rendering, streaming,
-graphics, mission and mission editing crates in `crates/`. The mod is Enfusion script and data,
-built and checked by the xtask `mod` commands.
 
 ## Getting started
 
-Run these from the repository root. The website, in this order (the full procedure is in
-[local development](/documentation/runbooks/local_development.md)):
+Run these from the repository root:
 
 ```bash
-cargo xtask db up        # Postgres on host port 5434
-cargo xtask mk rust-api  # the API on port 8080; stays in the foreground
-cargo xtask mk leptos    # the app on 127.0.0.1:3000; stays in the foreground, in a second terminal
-```
-
-The other products:
-
-```bash
-cargo xtask mod compile           # compile-checks the mod's scripts in a headless Enfusion
-cargo test -p fleet_host_agent    # the host agent's tests
-cargo run -p ticketboard          # opens the ticket registry viewer; stays in the foreground
+cargo xtask mod compile               # compile-checks the mod's scripts in a headless Enfusion
+cargo xtask verify enfusion-comments  # the Enfusion comment card over the pinned mod Scripts roots
 ```
 
 ## Boundaries
 
-- Depends on: `contracts/`, the schemas and rules shared across the API, the mod and the host
-  agent; `assets/`, the map data the API serves; `tools/tickets/ticket_model/`, which
-  ticketboard reads the registry through; Postgres, Discord and the Arma Reforger dedicated server.
-- Used by: the members' browsers and the game servers at run time; the xtask commands in
-  `tools/xtask/` that build, test, check and deploy the products; the developer tools in
-  `tools/developer_tools/`, whose `gate` and `capture` binaries drive the app in a headless
-  browser; and the `staging-fixtures` host tool in `tools/staging/staging_fixtures/`, which writes
-  through the API crates' services.
-- Rules: the products share data only over the API and through the schemas in `contracts/`: no
-  crate here depends on a crate of another product, apart from the website's three (the frontend
-  links `offline_service_worker`); the path dependencies leaving `apps/` go to `crates/` (the
-  API's crates in `crates/api/` among them) and `tools/` (`repository_layout`, `repository_laws`
-  and `verification_core` for the API's tests; `repository_layout`, `ticket_model`,
-  `ticket_wave_lock` and `ticketboard_model` for ticketboard); the crate tiers law and its
-  firewalls hold the edges between the apps and the crates (`cargo xtask verify crate-tiers`).
+- Depends on: the vanilla Arma Reforger addon; `contracts/`, the schemas the mod's JSON shapes
+  follow; the website's API at run time.
+- Used by: the dedicated game servers; Workbench; the xtask `mod`, `mcp`, `setup` and `deploy`
+  commands in `tools/xtask/` that build, check, boot and deploy the addons.
+- Rules: `apps/` holds the mod and no Rust crate: a `Cargo.toml` placed here is a finding of the
+  crate-tier law (`cargo xtask verify crate-tiers`); the mod's scripts keep the file-length ceiling
+  and the Enfusion comment card (`cargo xtask verify file-length`,
+  `cargo xtask verify enfusion-comments`).
 
 ## Related documentation
 
-- [Documentation](/documentation/README.md) — the map of every deeper document.
-- [Local development](/documentation/runbooks/local_development.md) — the full local setup.
+- [Mod suite](/apps/mod/README.md) — the three addons and their dependencies.
 - [Mod documentation](/documentation/apps/mod/README.md) — the mod's design, screens and export
   evidence.
+- [Crates](/crates/README.md) — the applications and library crates of the website and the fleet.
+- [Documentation](/documentation/README.md) — the map of every deeper document.

@@ -61,7 +61,7 @@ approach = [
 ]
 verify = [
     "cargo test -p map-engine-core --all-features",
-    "cargo test -p frontend",
+    "cargo xtask mk ci-local-leptos",
     "cargo xtask mk leptos-gates",
     "cargo xtask platform wave gate --slice T-935.15",
 ]
@@ -79,7 +79,7 @@ owns = [
     "crates/map-engine-core/src/world/manifest.rs",
     "tools/tbd-tools/src/world/build.rs",
     "tools/tbd-tools/src/world/binary_emit.rs",
-    "apps/frontend/src/editor/world_assets/world_host.rs",
+    "crates/frontend/shell/frontend_application/src/editor/world_assets/world_host.rs",
 ]
 
 [scope]

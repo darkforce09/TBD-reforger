@@ -733,7 +733,7 @@ fn transform_module_is_native_testable() {
     assert!(
         !before.contains("cfg(target_arch = \"wasm32\")"),
         "the transform module must stay ungated so its quantiser/bearing tests run on native \
-         `cargo test -p frontend` (the command the wave gate uses)"
+         `cargo test -p mission_creator_workspace` (the `cargo xtask mk ci-local-leptos` lane)"
     );
     // And the rotate commit really rides the existing field write, per the ticket.
     let ops = frontend_test_support::repository_root::repository_text(

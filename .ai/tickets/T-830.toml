@@ -59,7 +59,7 @@ citations = [
     "T-825 design session",
 ]
 estimated = ["scope"]
-owns = ["apps/frontend/src/editor/panels/outliner_tree.rs"]
+owns = ["crates/frontend/shell/frontend_application/src/editor/panels/outliner_tree.rs"]
 
 [scope]
 domain = "website"

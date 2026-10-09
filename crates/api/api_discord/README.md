@@ -34,14 +34,14 @@ cargo test -p api_discord   # the response decoding, the profile checks and the 
 cargo xtask db test-it --test discord_http_clients --test discord_embed_sanitisation
 ```
 
-The integration suites in `apps/api/tests/` drive both clients against loopback Discord stand-ins.
+The integration suites in `crates/api/api_server/tests/` drive both clients against loopback Discord stand-ins.
 
 ## Configuration
 
 No feature of its own. The API's `Config` carries the values the clients take:
 `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URL`, `DISCORD_GUILD_ID`,
 `DISCORD_BOT_TOKEN` and `DISCORD_WEBHOOK_URL` (empty disables pushing); `HTTPS_PROXY` and `NO_PROXY` apply to
-every request ([environment variables](/documentation/apps/api/environment_variables.md)).
+every request ([environment variables](/documentation/crates/api/api_server/environment_variables.md)).
 
 ## Public surface
 
@@ -56,7 +56,7 @@ every request ([environment variables](/documentation/apps/api/environment_varia
 - Depends on: `api_http_layer` (the outbound retry, the reconciliation outcome), `api_foundation`
   (the embed field caps), `api_identifiers` (the Discord snowflakes); `reqwest`, `rustls`, `serde`,
   `serde_json`, `chrono`, `url`, `tokio` and `thiserror`.
-- Used by: the API application (`apps/api`): its composition and application state, the OAuth
+- Used by: the API application (`crates/api/api_server`): its composition and application state, the OAuth
   handlers and membership reconciliation of `api_identity_and_access`, the announcement push of
   `api_community_content`, the `staging-fixtures` host tool and the integration suites.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md); nothing here names a domain;

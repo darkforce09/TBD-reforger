@@ -16,7 +16,7 @@ tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/oracle-freeze/
 
 ## How it works
 
-`gate v-suite verify` serves `apps/frontend/dist`, opens every route of the route list in
+`gate v-suite verify` serves `crates/frontend/shell/frontend_application/dist`, opens every route of the route list in
 `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs` with its API calls answered from
 `contracts/fixtures/api_goldens/`, serializes the app root until two captures in a row are
 identical, and diffs that tree against `<slug>.dom.json`. A missing golden or any difference fails

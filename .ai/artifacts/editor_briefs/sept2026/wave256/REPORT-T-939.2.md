@@ -25,7 +25,7 @@ run on the unmodified tree:
 ```
 running 1 test
 test editor::panels::attributes_modal::t939_2_batch_reassign::the_identity_tab_offers_a_faction_control_and_an_editable_squad_control ... FAILED
-thread '...the_identity_tab_offers_a_faction_control_and_an_editable_squad_control' (2115912) panicked at apps/frontend/src/editor/panels/attributes_modal.rs:3511:9:
+thread '...the_identity_tab_offers_a_faction_control_and_an_editable_squad_control' (2115912) panicked at crates/frontend/shell/frontend_application/src/editor/panels/attributes_modal.rs:3511:9:
 T-939.2: the Identity tab must render the faction/squad reassign controls; body was:
 test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1392 filtered out; finished in 0.19s
 ```
@@ -54,7 +54,7 @@ Four files, all in owns. No file outside owns was touched.
   warmed under the old sides first; the shared body still promotes the next leader and keeps
   indices dense.
 
-### `apps/frontend/src/editor/state/operations/reassign.rs` (new)
+### `crates/frontend/shell/frontend_application/src/editor/state/operations/reassign.rs` (new)
 
 `reassign_slots(ids, &ReassignTarget) -> Result<usize, String>` — moves every id into one
 destination inside **one** `with_batch("reassign-slots", …)` group, through
@@ -62,7 +62,7 @@ destination inside **one** `with_batch("reassign-slots", …)` group, through
 refusal never leaves an empty undo group behind. `reassign_rows()` exposes the live faction/squad
 rows in one doc read. One `materialize()` per batch, not per id.
 
-### `apps/frontend/src/editor/panels/attributes_modal.rs`
+### `crates/frontend/shell/frontend_application/src/editor/panels/attributes_modal.rs`
 
 * **`plan_reassign` / `faction_label`** — pure, native, *outside* the wasm block (the
   `axis_chip_class` / `nudge_step` precedent). This is where the refusal sentences live, so
@@ -79,7 +79,7 @@ rows in one doc read. One `materialize()` per batch, not per id.
   per id via `read_attrs` (which materializes the whole SoA per call — 50 full scans per render on
   a 50-slot selection).
 
-### `apps/frontend/src/editor/state/operations.rs`
+### `crates/frontend/shell/frontend_application/src/editor/state/operations.rs`
 
 `pub mod reassign;` + `pub use reassign::*;` alongside the existing registrations. (rustfmt sorted
 the glob re-export into alphabetical position after the `entity` block.) Two hunks, nothing else.
@@ -143,7 +143,7 @@ failures:
 
 ---- editor::panels::attributes_modal::t939_2_batch_reassign::the_batch_uses_the_keep_source_core_path_not_the_garbage_collecting_one stdout ----
 
-thread 'editor::panels::attributes_modal::t939_2_batch_reassign::the_batch_uses_the_keep_source_core_path_not_the_garbage_collecting_one' (2224486) panicked at apps/frontend/src/editor/panels/attributes_modal.rs:4001:9:
+thread 'editor::panels::attributes_modal::t939_2_batch_reassign::the_batch_uses_the_keep_source_core_path_not_the_garbage_collecting_one' (2224486) panicked at crates/frontend/shell/frontend_application/src/editor/panels/attributes_modal.rs:4001:9:
 T-939.2: the batch must move through move_slot_to_squad_keep_source
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 

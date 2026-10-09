@@ -63,7 +63,7 @@ None: no feature, no environment variable. Every request goes to the same-origin
 - Depends on: `frontend_api_dtos`, `leptos`, `futures`, `serde`, `serde_json`, `thiserror`;
   `gloo-net`, `gloo-timers`, `web-sys`, `js-sys`, `wasm-bindgen` and `wasm-bindgen-futures` in
   the wasm32 build only.
-- Used by: the single-page app (`apps/frontend`): the session, whose store implements
+- Used by: the single-page app (`crates/frontend/shell/frontend_application`): the session, whose store implements
   `TokenProvider` and whose refresh sends through the client; the offline pack; the pages; the
   [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator); the debug benches' public
   reads.
@@ -73,6 +73,6 @@ None: no feature, no environment variable. Every request goes to the same-origin
 
 ## Related documentation
 
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
-- [Frontend documentation](/documentation/apps/frontend/README.md#shared-foundations) — the shared
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
+- [Frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md#shared-foundations) — the shared
   foundations among the routes, pages and workspaces of the app.

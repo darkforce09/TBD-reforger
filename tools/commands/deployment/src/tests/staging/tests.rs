@@ -7,7 +7,7 @@ fn v(items: &[&str]) -> Vec<String> {
 #[test]
 fn usage_names_the_runnable_command_and_every_mode_flag() {
     let lines: Vec<&str> = USAGE.lines().collect();
-    assert_eq!(lines.len(), 2);
+    assert_eq!(lines.len(), 3);
     assert_eq!(
         lines[0],
         "Usage: cargo xtask deploy staging [--dry-run] [--migrate-single-instance] [--render-only <directory>]"
@@ -18,6 +18,41 @@ fn usage_names_the_runnable_command_and_every_mode_flag() {
             .starts_with("[--verify-boot <console.log>]")
     );
     assert!(lines[1].ends_with("[--verify-boot-selftest]"));
+    assert_eq!(
+        lines[2].trim_start(),
+        "cargo xtask deploy staging --migrate-host-agent-name [--dry-run]"
+    );
+}
+
+/// The host agent name migration runs alone: beside `--dry-run` it parses, beside any other mode
+/// flag it stops with 2 before anything reads the settings.
+#[test]
+fn the_host_agent_name_migration_runs_alone() {
+    for args in [
+        &["--migrate-host-agent-name"][..],
+        &["--migrate-host-agent-name", "--dry-run"][..],
+        &["--dry-run", "--migrate-host-agent-name"][..],
+    ] {
+        match parse(&v(args)) {
+            Parsed::Run(cli) => {
+                assert!(cli.migrate_host_agent_name, "{args:?}");
+                assert_eq!(cli.dry_run, args.contains(&"--dry-run"), "{args:?}");
+            }
+            other => panic!("{args:?}: {other:?}"),
+        }
+    }
+    for args in [
+        &["--migrate-host-agent-name", "--migrate-single-instance"][..],
+        &["--migrate-host-agent-name", "--render-only", "/tmp/x"][..],
+        &[
+            "--migrate-host-agent-name",
+            "--verify-boot",
+            "/tmp/console.log",
+        ][..],
+        &["--verify-boot-selftest", "--migrate-host-agent-name"][..],
+    ] {
+        assert_eq!(parse(&v(args)), Parsed::Stop(2), "{args:?}");
+    }
 }
 
 #[test]
@@ -68,7 +103,7 @@ fn flags_accumulate() {
     match parse(&v(&["--dry-run", "--verify-boot-selftest"])) {
         Parsed::Run(cli) => {
             assert!(cli.dry_run && cli.verify_boot_selftest);
-            assert!(!cli.migrate_single_instance);
+            assert!(!cli.migrate_single_instance && !cli.migrate_host_agent_name);
         }
         other => panic!("{other:?}"),
     }

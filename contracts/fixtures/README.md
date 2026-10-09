@@ -63,7 +63,7 @@ instead of letting malformed missions through until one reaches a live
     map-object golden gates in `tools/map_assets/map_asset_verification/src/object_goldens/`,
     which reach these folders through `tools/foundation/repository_layout/src/contracts.rs`;
   - the xtask mod commands `world-boot`, `test-mission` and `dev-server`;
-  - tests in `apps/api/`, `apps/frontend/`, the crates under `crates/` and `tools/`, named in
+  - tests in `crates/api/api_server/`, `crates/frontend/shell/frontend_application/`, the crates under `crates/` and `tools/`, named in
     each folder's README.
 
 ## Boundaries

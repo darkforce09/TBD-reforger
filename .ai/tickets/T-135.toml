@@ -27,7 +27,7 @@ approach = [
     "Perturbation: remove an alias's mod from the preset fixture; the validation test goes red; restore, touch, green.",
 ]
 verify = [
-    "cargo test -p api modpacks",
+    "cargo test -p api_server modpacks",
     "cargo xtask mk ci-local-leptos",
     "cargo xtask platform wave gate --slice T-135",
 ]
@@ -40,7 +40,7 @@ owns = [
     "apps/website/api/src/handlers/content/modpacks.rs",
     "apps/website/api/src/services/workshop_sync.rs",
     "apps/website/api/src/services/mod.rs",
-    "apps/frontend/src/pages/public/modpacks.rs",
+    "crates/frontend/shell/frontend_application/src/pages/public/modpacks.rs",
 ]
 
 [scope]

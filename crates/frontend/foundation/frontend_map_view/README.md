@@ -60,7 +60,7 @@ same-origin `/map-assets/<terrain>/`.
 - Depends on: `camera_math`, `map_streaming_model`, `terrain_elevation`, `serde`, `serde_json`,
   `thiserror`; `browser_platform`, `gpu_frame`, `map_renderer`, `map_streaming_host`, `web-sys`,
   `js-sys` and `wasm-bindgen` in the wasm32 build only.
-- Used by: the single-page app (`apps/frontend`): the Mission Creator's canvas mount, boot tasks,
+- Used by: the single-page app (`crates/frontend/shell/frontend_application`): the Mission Creator's canvas mount, boot tasks,
   input listeners and frame loop, and the mortar calculator's map picker and heights.
 - Rules: the crate depends on no frontend crate (`cargo xtask ci verify-workspace-laws`); a module
   that calls the browser or a wasm32-only crate is gated on its `pub mod` line, and every other
@@ -70,5 +70,5 @@ same-origin `/map-assets/<terrain>/`.
 
 - [Elevation model](/crates/terrain/terrain_elevation/README.md) — the full-resolution raster and
   the vector grid the heights come from.
-- [Frontend documentation](/documentation/apps/frontend/README.md#shared-foundations) — the shared
+- [Frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md#shared-foundations) — the shared
   foundations among the routes, pages and workspaces of the app.

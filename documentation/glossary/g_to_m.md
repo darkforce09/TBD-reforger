@@ -17,6 +17,23 @@ In code: the `/api/v1/game-runtime/` routes; `apps/mod/tbd-framework/Scripts/Gam
 
 See: [fleet command](/documentation/glossary/a_to_f.md#fleet-command), [deployment](/documentation/glossary/a_to_f.md#deployment).
 
+### game server host agent
+
+The program beside each Arma Reforger dedicated server of a game host, one per
+[fleet instance](/documentation/glossary/a_to_f.md#fleet-instance): it polls the API outbound over
+HTTPS for the [fleet commands](/documentation/glossary/a_to_f.md#fleet-command) addressed to its
+server, performs process control, [RCON](/documentation/glossary/n_to_z.md#rcon) commands and
+scenario switches, and reports each step; the API never connects in.
+
+In code: `crates/fleet/game_server_host_agent/`; `deploy/systemd/game_server_host_agent@.service`,
+one `game_server_host_agent@N.service` per fleet instance. The package, the binary
+`~/.local/bin/game_server_host_agent`, the configuration folder
+`~/.config/game_server_host_agent/instance-N/` and the units are all named
+`game_server_host_agent`, and so is the HTTP user agent `game_server_host_agent/<version>`;
+`cargo xtask deploy staging --migrate-host-agent-name` moves a host still on the old names to these.
+
+See: [machine credential](#machine-credential), [Game server host agent](/crates/fleet/game_server_host_agent/README.md).
+
 ### gate
 
 A check command that passes or fails a change. Most exit 0 when every check held, 1 on a violation
@@ -71,12 +88,12 @@ See: [synthetic load account](/documentation/glossary/n_to_z.md#synthetic-load-a
 ### machine credential
 
 A per-server secret that authenticates one program on a game host: `host_agent` for the
-[fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) or `mod_runtime` for the [game runtime](#game-runtime). An
+[game server host agent](#game-server-host-agent) or `mod_runtime` for the [game runtime](#game-runtime). An
 administrator issues one (its secret shows once), lists them without secrets and revokes each alone.
 
 In code: `MachineCredential` in `crates/api/api_server_infrastructure/src/models/machine_credential.rs`; `ExecutorKind` in `crates/contracts/fleet_wire_contract/src/executor_kind.rs`.
 
-See: [Machine credentials evidence](/documentation/apps/api/verification_evidence/machine_credentials.md).
+See: [Machine credentials evidence](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md).
 
 ### map engine
 

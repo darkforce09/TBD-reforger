@@ -1,6 +1,6 @@
 # Phase 3A remaining work — four briefs, eight agents
 
-Phase 3A pulls the editor's engine logic out of `apps/frontend/src/editor/` and into
+Phase 3A pulls the editor's engine logic out of `crates/frontend/shell/frontend_application/src/editor/` and into
 `legacy/map_engine/src/editing/` and `data/store/operations/`. A first agent landed eight
 commits and was stopped partway; the work left over is split here.
 

@@ -27,7 +27,7 @@ approach = [
     "Perturbation: restore the early persist; the new test must go red; restore, touch, green.",
 ]
 verify = [
-    "cargo test -p frontend",
+    "cargo xtask mk ci-local-leptos",
     "cargo xtask platform wave gate --slice T-946.81",
 ]
 acceptance = [
@@ -36,8 +36,8 @@ acceptance = [
 ]
 created_at = "2026-09-07T19:13:18Z"
 owns = [
-    "apps/frontend/src/core/auth.rs",
-    "apps/frontend/src/core/client.rs",
+    "crates/frontend/shell/frontend_application/src/core/auth.rs",
+    "crates/frontend/shell/frontend_application/src/core/client.rs",
 ]
 
 [scope]

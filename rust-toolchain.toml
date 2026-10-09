@@ -1,10 +1,10 @@
 [toolchain]
-# T-177 — pin the WHOLE workspace toolchain. Before this only `apps/api/rust-toolchain.toml`
-# pinned a channel, so the gate harness (`tools/developer_tools`) and the Trunk wasm build (run from the
-# repo root / `apps/frontend`) resolved to the floating rustup default — a silent drift
-# vector for the editor gate. Keep this in lockstep with `tools/browser_testing/browser_gate_suites/gate-env.json` and
-# `apps/api/rust-toolchain.toml`. Do NOT install via dnf/rpm-ostree on Bazzite — rustup
-# resolves this per-checkout.
+# The one toolchain of the whole workspace: every cargo call from the repository root or a member
+# folder (the gate harness in `tools/developer_tools`, the Trunk wasm build of
+# `crates/frontend/shell/frontend_application`) resolves this file, so no build falls back to the
+# floating rustup default. Keep the channel in lockstep with the `rustc` entry of
+# `tools/browser_testing/browser_gate_suites/gate-env.json`. Install Rust through rustup, which
+# resolves this file per checkout, never through dnf or rpm-ostree on Bazzite.
 channel = "1.95.0"
 components = ["rustfmt", "clippy"]
 targets = ["wasm32-unknown-unknown"]

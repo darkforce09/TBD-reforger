@@ -55,7 +55,7 @@ Implement **T-090.1.2.8** — unified GPU satellite texture (no tile flicker).
   6. Tag **T-090.1.2.8** · prefix T-090.1.2.8:
 
 ═══ VERIFY ═══
-  cd apps/frontend && npm run build && npm run lint
+  cd crates/frontend/shell/frontend_application && npm run build && npm run lint
   Manual: pan/zoom MC @ max zoom — no tile pop-in
 
 ═══ RETURN ═══

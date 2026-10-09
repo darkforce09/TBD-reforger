@@ -77,12 +77,12 @@ crates/api/api_identity_and_access/src/services/
   membership enrollment, `load_user`); `api_command_center` (`load_user`); the `staging-fixtures` host
   tool in `tools/staging/staging_fixtures/src/` (`register_account`, `claim_membership_refresh`,
   `accept_membership_observation`, `issue_refresh`); the integration tests in
-  `apps/api/tests/`.
+  `crates/api/api_server/tests/`.
 - Rules: every writer that touches identities or accounts takes `api_caller_identity`'s
   `identity_ownership.rs` lock order; a failed Discord call never downgrades a verified snapshot; `user_lookup.rs` is the one
   read of the account row, so the soft-delete filter lives there once.
 
 ## Related documentation
 
-- [Identity transactions](/documentation/apps/api/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
   — authorization, Discord observations, linking and their rollout.

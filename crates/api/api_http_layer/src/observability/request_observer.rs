@@ -13,7 +13,7 @@ use super::metrics_registry::{Registry, UNMATCHED_ROUTE};
 /// gauge, and `tbd_http_rate_limited_total` on a 429.
 ///
 /// Mounted **outside** the panic-catcher and the rate limiter so a 500-from-panic and a
-/// 429-from-throttle are both counted; see the API router (`api::router::router`)
+/// 429-from-throttle are both counted; see the API router (`api_server::router::router`)
 /// for the layer order that guarantees it.
 ///
 /// The `route` label is axum's [`MatchedPath`] — the registered template, so

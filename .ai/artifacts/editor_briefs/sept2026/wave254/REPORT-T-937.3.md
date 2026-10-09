@@ -41,7 +41,7 @@ filtered out of the post-place selection, so the stamp appears to have done noth
 
 ### Why the entity.rs half is a source probe, not a behavioural test
 
-`apps/frontend/src/editor/state/operations/entity.rs` is reached only through
+`crates/frontend/shell/frontend_application/src/editor/state/operations/entity.rs` is reached only through
 `state/operations.rs`, which carries `#![cfg(target_arch = "wasm32")]` on its whole subtree, and
 `frontend` links `map-engine-core`'s `doc` feature **only** in its
 `cfg(target_arch = "wasm32")` dependency table. There is no native build of that file to call into,
@@ -69,7 +69,7 @@ decide it. The gate's own `wasm32 (frontend)` step is what proves the edited bod
 5. `pub fn side_key_resolution_count(&self) -> u64` — the memo's honesty check.
 6. Tests (all inside the existing `mod tests`, at EOF, below every production item).
 
-**`apps/frontend/src/editor/state/operations/entity.rs`**
+**`crates/frontend/shell/frontend_application/src/editor/state/operations/entity.rs`**
 
 7. `slot_attrs_exists` -> `core.slot_exists(id)` (was `core.materialize().ids.iter().any(...)`).
 8. The two warning comments at `live_slot_ids` and `mint_ids` now name `slot_attrs_exists` as the
@@ -214,7 +214,7 @@ test result: ok. 1344 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; f
 `[]` — exactly the two owned files:
 
 ```
-apps/frontend/src/editor/state/operations/entity.rs |  26 +-
+crates/frontend/shell/frontend_application/src/editor/state/operations/entity.rs |  26 +-
 crates/map-engine-core/src/doc/store.rs                     | 649 ++++++++++++++++++++-
 ```
 

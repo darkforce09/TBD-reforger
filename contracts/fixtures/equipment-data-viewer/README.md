@@ -17,8 +17,8 @@ contracts/fixtures/equipment-data-viewer/
 
 Both folders hold the same six file names, one per schema in
 `contracts/definitions/equipment-data-viewer/`. The API's
-`apps/api/tests/contract_parity_equipment_viewer.rs` imports the committed export under
-`apps/api/tests/fixtures/equipment_data_viewer/` through the production importer, boots
+`crates/api/api_server/tests/contract_parity_equipment_viewer.rs` imports the committed export under
+`crates/api/api_server/tests/fixtures/equipment_data_viewer/` through the production importer, boots
 a development router and requires the answer of each route that has a sample here to equal the
 `positive/` page, validate against its schema and decode into the generated type. The frontend's
 `crates/frontend/foundation/frontend_api_dtos/src/tests/equipment_data_viewer_parity.rs` decodes every
@@ -44,7 +44,7 @@ fail decoding.
 ## Boundaries
 
 - Depends on: the schemas in `contracts/definitions/equipment-data-viewer/`, the committed
-  export under `apps/api/tests/fixtures/equipment_data_viewer/`, and the API's importer
+  export under `crates/api/api_server/tests/fixtures/equipment_data_viewer/`, and the API's importer
   and query code that turn that export into pages.
 - Used by: the API's contract parity suite and the frontend's DTO parity tests.
 - Rules: a `positive/` page changes only with the API's answer or the committed export, never by

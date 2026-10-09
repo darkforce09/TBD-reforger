@@ -71,7 +71,7 @@ cd packages/tbd-schema && npm run validate
 ```bash
 make test-it
 cd packages/tbd-schema && npm run validate
-cd apps/frontend && npm run build && npm run lint
+cd crates/frontend/shell/frontend_application && npm run build && npm run lint
 curl -H "X-Service-Token: …" http://localhost:8080/api/v1/missions/{id}/compiled
 ```
 

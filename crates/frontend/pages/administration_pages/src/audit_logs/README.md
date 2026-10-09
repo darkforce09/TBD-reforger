@@ -102,7 +102,7 @@ every request run in the browser build only; the views that run them exist in th
   `SplitPane`, `SplitPaneEmpty`, `search_matches`, `badge_class`, `MaterialIcon`, `cn`) and
   `frontend_ui::datefmt` (`log_stamp`); over HTTP, the audit log routes of the
   [administration](/documentation/glossary/a_to_f.md#administration) domain.
-- Used by: the `/admin/audit` route in `apps/frontend/src/app_routes.rs` and
+- Used by: the `/admin/audit` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Audit Logs" link in
   `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; `audit_source` in
   `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`, which joins the page's sources for its

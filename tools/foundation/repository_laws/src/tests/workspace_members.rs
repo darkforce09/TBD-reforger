@@ -12,7 +12,7 @@ fn checkout(name: &str, members: &str) -> TemporaryCheckout {
         &format!("[workspace]\nmembers = [\n{members}\n]\nexclude = [\"crates/api/excluded\"]\n"),
     );
     for (path, name) in [
-        ("apps/api", "api"),
+        ("apps/server", "api"),
         ("crates/foundation/newtype_ids", "newtype_ids"),
         ("crates/api/api_state", "api_state"),
         ("crates/api/excluded", "excluded"),
@@ -30,14 +30,14 @@ fn checkout(name: &str, members: &str) -> TemporaryCheckout {
 fn workspace_members_expands_explicit_paths_and_globs_minus_excludes() {
     let checkout = checkout(
         "globs",
-        "    \"apps/api\", # the server\n    \"crates/*/*\",\n    \"crates/frontend/*/*\",",
+        "    \"apps/server\", # the server\n    \"crates/*/*\",\n    \"crates/frontend/*/*\",",
     );
     let members = read_workspace_members(checkout.root()).expect("the reader runs");
     let paths: Vec<&str> = members.iter().map(|m| m.path.as_str()).collect();
     assert_eq!(
         paths,
         [
-            "apps/api",
+            "apps/server",
             "crates/api/api_state",
             "crates/foundation/newtype_ids",
             "crates/frontend/pages/account_pages"
@@ -56,7 +56,7 @@ fn workspace_members_expands_explicit_paths_and_globs_minus_excludes() {
 
 #[test]
 fn workspace_members_a_missing_member_folder_or_root_manifest_did_not_run() {
-    let checkout = checkout("missing", "\"apps/api\", \"apps/gone\"");
+    let checkout = checkout("missing", "\"apps/server\", \"apps/gone\"");
     assert!(
         matches!(read_workspace_members(checkout.root()), Err(NotRun::TargetMissing(path)) if path.ends_with("apps/gone"))
     );

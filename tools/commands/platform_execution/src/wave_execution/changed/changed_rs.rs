@@ -64,8 +64,8 @@ pub(crate) fn changed_rs(base: &str) -> Result<Vec<String>, i32> {
 
 /// Resolve a file's edition from the nearest `Cargo.toml` above it that states one.
 ///
-/// Edition is NOT fixed across this workspace: `apps/api` is edition 2024, the frontend is 2021,
-/// and the two style editions sort a mixed-case brace import differently. Hardcoding
+/// Edition is NOT fixed across this workspace: `crates/api/api_server` is edition 2024, the
+/// frontend is 2021, and the two style editions sort a mixed-case brace import differently. Hardcoding
 /// `--edition 2021` made every slice touching an edition-2024 file fail a gate it did not cause —
 /// main's own `use axum::http::{HeaderMap, HeaderValue, StatusCode, header};` already fails the
 /// 2021 form.
@@ -152,22 +152,22 @@ pub(crate) fn fmt_changed(ctx: &Ctx, base: &str) -> i32 {
     rc
 }
 
-/// Native `cargo check --workspace` does NOT compile the frontend: `apps/frontend/src` is
-/// `#![cfg(target_arch = "wasm32")]`, so a native check walks straight past it and reports PASS on
+/// Native `cargo check --workspace` does NOT compile the frontend:
+/// `crates/frontend/shell/frontend_application/src` is `#![cfg(target_arch = "wasm32")]`, so a native check walks straight past it and reports PASS on
 /// a file it never looked at. Any slice touching the frontend must be
 /// checked for wasm32 or the gate is decorative. Warm cost measured: 0.16s.
 /// The frontend crate directory, and every WORKSPACE crate it depends on, transitively.
 ///
 /// THE PATH PREFIX WAS NEVER THE RIGHT QUESTION. `wasm_changed` and the `trunk build` step
-/// both asked "did anything under `apps/frontend/` change", but the SPA compiles the renderer
-/// crates into its own wasm binary. A wave that rewrites one of them — a source file and a
+/// both asked "did anything under `crates/frontend/shell/frontend_application/` change", but the
+/// SPA compiles the renderer crates into its own wasm binary. A wave that rewrites one of them — a source file and a
 /// dependency that stops being optional — touches no frontend path, and the gate printed `wasm32 (frontend) PASS` alongside `trunk build SKIP (frontend untouched this
 /// wave)`. Neither had compiled a line of it. `Runner::run` discards a passing step's output, so
 /// the reason never even reached the log: the vacuity was invisible in the transcript.
 ///
 /// The scope is DERIVED, not listed, because a hand-kept list is the same bug with a slower fuse:
-/// walk the dependency edges out of `apps/frontend/Cargo.toml` and out of every crate under
-/// `crates/frontend`, and keep walking. An edge leads to
+/// walk the dependency edges out of `crates/frontend/shell/frontend_application/Cargo.toml` and
+/// out of every crate under `crates/frontend`, and keep walking. An edge leads to
 /// a workspace crate when it names a `path`, or when it takes its source from
 /// `[workspace.dependencies]` (`workspace = true`) and names a workspace member's package — the
 /// shared crates under `crates/` are reached that way. The walk reaches every `crates/` member
@@ -305,20 +305,21 @@ pub(crate) fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
 /// **Scope is [`wasm_scope_touched`] PLUS the SPA's `include_str!`/`include_bytes!` inputs.**
 /// `wasm_scope_touched` walks the SPA's `Cargo.toml` dependencies, so every renderer crate is
 /// inside it — which is precisely how a core-crate edit reaches a frontend test, and why a
-/// literal `apps/frontend/` prefix would have missed the very case this step exists for.
+/// literal `crates/frontend/shell/frontend_application/` prefix would have missed the very case
+/// this step exists for.
 ///
 /// But the dependency graph is not the whole input set, and the wave-255 verify caught the hole:
 /// the suite compiles files from OUTSIDE that graph, through `include_str!` —
 /// `contracts/definitions/mission.schema.json` (`workspaces/editor/ui/inspector/zones_panel/zone_schema_vocabulary.rs`),
-/// `loadout-export.schema.json` (`arsenal/`), `apps/api/src/<domain>/routes.rs` (four `pages/`
-/// census tests), `apps/mod/tbd-framework/Data/registry.json` (`arsenal/asset_catalog.rs`). Wave 255 itself
+/// `loadout-export.schema.json` (`arsenal/`), `crates/api/api_server/src/<domain>/routes.rs`
+/// (four `pages/` census tests), `apps/mod/tbd-framework/Data/registry.json` (`arsenal/asset_catalog.rs`). Wave 255 itself
 /// changed `mission.schema.json`; a slice whose diff was only that file would have printed
 /// "frontend untouched" and skipped, while `zone_rule_fields_cover_the_whole_vocabulary` compiles
 /// that exact file and is documented to fail loudly on a new key.
 ///
 /// So the include inputs are added — but SCOPED to the wasm-scope crates via
 /// [`include_inputs_under`], not taken wholesale from [`compiled_include_input_paths`]. Wholesale
-/// would drag `apps/api/**` into the frontend's scope, which this module's own test
+/// would drag `crates/api/api_server/**` into the frontend's scope, which this module's own test
 /// deliberately asserts must never happen.
 ///
 /// Native `cargo test`, not `--target wasm32-unknown-unknown`: the wasm target has no test runner
@@ -327,9 +328,10 @@ pub(crate) fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
 ///
 /// **A PRIVATE, PER-SLICE target dir — not [`Ctx::gate_check_target`].** `gate_check_target` is
 /// `main_root/target/gate-check`, and `main_root` is the primary checkout SHARED BY EVERY WORKTREE —
-/// so five concurrent slice gates would all build `frontend` into one directory. That is
-/// the exact condition [`super::super::gate::cmd_gate`] refuses in so many words: two runs measured
-/// `cargo test -p frontend` running a stale `frontend-<hash>` binary built from
+/// so five concurrent slice gates would all build `frontend_application` into one directory. That
+/// is the exact condition [`super::super::gate::cmd_gate`] refuses in so many words: two runs
+/// measured `cargo test -p frontend_application` running a stale `frontend_application-<hash>`
+/// binary built from
 /// ANOTHER worktree (same package name + version across worktrees = same artifact hash =
 /// clobbering), and the wave gate gives its own frontend step `target/gate-frontend` for it. A
 /// *test* step reporting another worktree's cached PASS is worse than no step at all. Keyed by
@@ -380,8 +382,8 @@ pub(crate) fn frontend_tests_changed(ctx: &Ctx, base: &str, slice: &str) -> i32 
 ///
 /// The companion to [`wasm_scope_touched`] — see [`frontend_tests_changed`] for why the dependency
 /// graph alone is not the frontend suite's input set. Scoped deliberately: passing
-/// `wasm_scope_prefixes` rather than `workspace_members` keeps `apps/api/**` out of the
-/// frontend's scope even though the API has plenty of include inputs of its own.
+/// `wasm_scope_prefixes` rather than `workspace_members` keeps `crates/api/api_server/**` out of
+/// the frontend's scope even though the API has plenty of include inputs of its own.
 pub(super) fn frontend_include_input_touched<'a>(
     root: &Path,
     paths: impl Iterator<Item = &'a str>,

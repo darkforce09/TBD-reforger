@@ -36,5 +36,5 @@ author and the reviewer read one record in the same words.
 ## Related documentation
 
 - [Frontend crates](/crates/frontend/README.md) — the layer order every frontend crate follows.
-- [Frontend source root](/apps/frontend/src/README.md) — the app's entry point, route table and
+- [Frontend source root](/crates/frontend/shell/frontend_application/src/README.md) — the app's entry point, route table and
   frame, and the layer order of the frontend crates.

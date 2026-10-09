@@ -21,7 +21,7 @@ use repository_laws::workspace_laws::frontend_layering::check_frontend_layering;
 use repository_laws::workspace_laws::tailwind_sources::check_tailwind_sources;
 use repository_laws::workspace_laws::test_file_reachability::check_test_file_reachability;
 
-use super::workspace_law_locations::{FRONTEND_LAYERS, MANIFEST_SWEEP_ROOTS, TAILWIND_STYLESHEET};
+use super::workspace_law_locations::{CRATE_TIERS, FRONTEND_LAYERS, TAILWIND_STYLESHEET};
 use repository_root::find_repository_root;
 
 #[cfg(test)]
@@ -46,7 +46,7 @@ pub enum WorkspaceLaw {
 /// The report of `law` over the checkout at `repo_root`.
 pub fn workspace_law_report(law: WorkspaceLaw, repo_root: &Path) -> WorkspaceLawReport {
     match law {
-        WorkspaceLaw::CrateTiers => check_crate_tiers(repo_root, MANIFEST_SWEEP_ROOTS),
+        WorkspaceLaw::CrateTiers => check_crate_tiers(repo_root, CRATE_TIERS),
         WorkspaceLaw::CrateAnatomy => check_crate_anatomy(repo_root),
         WorkspaceLaw::TestFileReachability => check_test_file_reachability(repo_root),
         WorkspaceLaw::FrontendLayering => check_frontend_layering(repo_root, FRONTEND_LAYERS),

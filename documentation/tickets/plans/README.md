@@ -41,7 +41,7 @@ record, never reworded, once the ticket ships or is cancelled.
   `tools/tickets/ticket_model/src/repository.rs`; `mark_ready` in
   `tools/tickets/ticket_registry/src/ops/readiness.rs`; the plan ready-gate in
   `tools/tickets/ticket_registry/src/validation/readiness.rs`.
-- [Ticketboard](/apps/ticketboard/) — shows a ticket's `plan` and opens it in the in-app document
+- [Ticketboard](/tools/tickets/ticketboard_desktop/) — shows a ticket's `plan` and opens it in the in-app document
   viewer with one click.
 
 ## Boundaries

@@ -4,7 +4,7 @@
 //! exclude list is also the `--delete` guard, and renders that list for the dry run.
 //!
 //! **Position:** called by `tools/commands/deployment/src/website.rs`; the exclusions it
-//! shares with `cargo xtask deploy staging` come from
+//! shares with `cargo xtask deploy staging` come from [`crate::host_owned_paths`] and
 //! [`crate::development_machine_only_paths`].
 //!
 //! **Signals & state:** none; pure functions.
@@ -13,6 +13,7 @@
 //! exclusion of the argv, in argv order.
 
 use crate::development_machine_only_paths;
+use crate::host_owned_paths::HOST_OWNED_PATHS;
 
 /// The `rsync` argv after the program name, source and destination included.
 ///
@@ -36,9 +37,6 @@ pub(crate) fn rsync_argv(rsync_e: &str, mono: &str, dest: &str) -> Vec<String> {
         // `target/` (one subfolder per purpose).
         "--exclude=target/".into(),
         "--exclude=**/node_modules/".into(),
-        "--exclude=apps/frontend/dist/".into(),
-        "--exclude=apps/api/.env".into(),
-        "--exclude=apps/api/.tools/".into(),
         format!("--exclude={}", repository_layout::DEPLOY_ENV),
         // The served terrain tree: ~590 MB of LFS content plus the gitignored tile pyramids
         // nested under it. The server carries its own copy; it is never pushed from a dev PC.
@@ -58,6 +56,13 @@ pub(crate) fn rsync_argv(rsync_e: &str, mono: &str, dest: &str) -> Vec<String> {
         format!("--exclude={}/", repository_layout::REFERENCES_DIR),
         "--exclude=apps/mod/.local-test-profile/".into(),
     ];
+    // What the host owns in its checkout, excluded by `deploy staging` too: the API's `.env` and
+    // `.tools/`, and the app built there.
+    argv.extend(
+        HOST_OWNED_PATHS
+            .iter()
+            .map(|path| format!("--exclude={path}")),
+    );
     // What only a development machine holds, excluded by `deploy staging` too: the retired and
     // hand-set cargo target folders beside `target/`, the retired gate and debug app builds,
     // worktrees, and the local state of its agents and tools.

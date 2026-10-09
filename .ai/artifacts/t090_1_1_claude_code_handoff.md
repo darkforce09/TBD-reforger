@@ -105,7 +105,7 @@ make map-cartographic-everon          # after you add the target
 VIEW=map node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
 make schema-validate
 make verify-terrain
-cd apps/frontend && npm run build && npm run lint
+cd crates/frontend/shell/frontend_application && npm run build && npm run lint
 ```
 
 Manual: Mission Settings → **Map** → pan Everon; compare peninsula orientation vs Satellite; FpsCounter ≥55 fps.

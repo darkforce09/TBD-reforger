@@ -60,8 +60,8 @@ use crate::cargo_target_verification::{reclaim_target_ci, verify_cargo_target};
 /// One line of a `make` recipe: where it runs, what it sets, what it execs.
 ///
 /// `envs` are **recipe-level** assignments — the ones make echoed as part of the line, e.g.
-/// `CARGO_TARGET_DIR=…/target/dev-api cargo run --bin api`. The inherited shared pin is NOT one of
-/// these; it is injected by [`run_steps`] and was never echoed. That distinction is what
+/// `CARGO_TARGET_DIR=…/target/dev-api cargo run --bin api-server`. The inherited shared pin is NOT
+/// one of these; it is injected by [`run_steps`] and was never echoed. That distinction is what
 /// [`verify_cargo_target`] §5 checks, so it is structural rather than a convention.
 pub(crate) struct Step {
     cwd: Option<String>,
@@ -132,8 +132,10 @@ impl Step {
 
 // ── THE RECIPES ──────────────────────────────────────────────────────────────────────────────
 
-pub(crate) const WEB: &str = "apps/api";
-const FE: &str = "apps/frontend";
+/// The API server crate, the folder `rust-api` and `rust-fmt` run in.
+pub(crate) const API_SERVER_FOLDER: &str = "crates/api/api_server";
+/// The single-page app crate, the folder every `trunk` line runs in.
+const FRONTEND_APPLICATION_FOLDER: &str = "crates/frontend/shell/frontend_application";
 
 // ── DISPATCH ─────────────────────────────────────────────────────────────────────────────────
 

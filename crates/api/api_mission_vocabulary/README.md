@@ -42,7 +42,7 @@ No feature and no variable.
 
 - Depends on: serde, sqlx and thiserror; the `terrain_type` and `game_mode` enums of
   `crates/api/api_database/migrations/`.
-- Used by: the API application (`apps/api`): missions, match telemetry, operations, server
+- Used by: the API application (`crates/api/api_server`): missions, match telemetry, operations, server
   infrastructure and the integration suites.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md); an enum moves here only when a
   domain other than `api_missions` names it.

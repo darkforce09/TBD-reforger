@@ -7,8 +7,8 @@
 //! streams subprocess output ([`core::process`]), and holds the egui-free application state
 //! ([`application_state::workspace_state::WorkspaceState`], [`application_state::events::Action`]).
 //! **Position:** tier 4 of `tools/tickets`, over `ticket_model`, `ticket_metrics`,
-//! `ticket_wave_lock`, `repository_layout` and `time_source`; `apps/ticketboard` paints these
-//! models with egui and applies the actions its views emit.
+//! `ticket_wave_lock`, `repository_layout` and `time_source`; `tools/tickets/ticketboard_desktop`
+//! paints these models with egui and applies the actions its views emit.
 //! **Signals & state:** the models are plain data; the loaders, the document reads, the file
 //! watch and the subprocess streams run on worker threads and report over `mpsc` channels.
 //! **Invariants:** nothing here names egui or eframe; the crate writes no file under the

@@ -28,7 +28,7 @@ directly.
 ## Boundaries
 
 - Depends on: the foundation, mission and engine CPU crates; never a browser crate.
-- Used by: the Mission Creator in `apps/frontend/`, which links each crate directly.
+- Used by: the Mission Creator in `crates/frontend/shell/frontend_application/`, which links each crate directly.
 - Rules: every edge points to a lower tier along the category matrix
   (`cargo xtask verify crate-tiers`); every crate keeps the library anatomy
   (`cargo xtask verify crate-anatomy`).

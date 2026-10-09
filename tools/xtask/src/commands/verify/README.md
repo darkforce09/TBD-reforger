@@ -56,10 +56,11 @@ Run each as `cargo xtask verify <verb>` from the repository root.
   `verify frontend-layering`; `verify tailwind-sources`
 - Does: the five workspace laws of the
   [crate boundary rules](/documentation/standards/crate_boundary_rules.md) over the members of
-  the root manifest: membership (every member judged, an app or a tool binary), layout, tiers,
-  category edges and firewalls; the library crate anatomy; every file in a member's test folders
-  compiled by one of its targets; the frontend layer order (hard at zero); an `@source` line per
-  leptos crate. Body: `tools/checks/repository_checks/src/architecture/workspace_laws.rs`.
+  the root manifest: membership (every member judged, the applications included, or one of the
+  two tool binaries), layout, tiers, category edges, firewalls and no edge onto an application
+  package in any table; the library crate anatomy; every file in a member's test folders compiled
+  by one of its targets; the frontend layer and crate orders, the two shell crates peers (hard at
+  zero); an `@source` line per leptos crate. Body: `tools/checks/repository_checks/src/architecture/workspace_laws.rs`.
 - Example: `cargo xtask verify crate-tiers`
 
 ### CI gates

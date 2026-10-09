@@ -54,7 +54,7 @@ cargo test -p unit_symbology   # marker vocabulary, atlas and caption cases, squ
 - Used by: `overlay_instances`; `symbology_layers_gpu` (the slot and marker lanes);
   `mission_editing_session` (the editing lanes and picking); the Mission Creator's document host,
   marker dock, canvas
-  mount and select tool, and the mortar map picker, in `apps/frontend/`.
+  mount and select tool, and the mortar map picker, in `crates/frontend/shell/frontend_application/`.
 - Rules: every marker alias of the schema maps to a glyph (`every_schema_alias_maps`); marker
   atlas cells 0 and 1 equal the slot atlas (`marker_atlas_cells_0_and_1_match_slot_atlas`); the
   side tints are pinned in `src/classification.rs` by

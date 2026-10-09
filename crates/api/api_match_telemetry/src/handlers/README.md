@@ -61,7 +61,7 @@ crates/api/api_match_telemetry/src/handlers/
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/Delivery/TBD_TelemetryDelivery.c`
   sends; no frontend page calls the event read.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
-  imports another domain's handlers (`apps/api/src/tests/architecture_rules.rs`); the
+  imports another domain's handlers (`crates/api/api_server/src/tests/architecture_rules.rs`); the
   three ingests validate in `models/` and write in `services/`, while the heartbeat keeps its fenced
   status upsert in its own transaction.
 - Body decoding: every JSON body is read through `ApiError::from_json_rejection`: 413 with

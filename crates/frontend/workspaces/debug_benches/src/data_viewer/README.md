@@ -50,7 +50,7 @@ pure and covered by the native tests.
 
 ## Public surface
 
-- `DataViewerPage`: the route component `apps/frontend/src/app_routes.rs` mounts at
+- `DataViewerPage`: the route component `crates/frontend/shell/frontend_application/src/app_routes.rs` mounts at
   `/debug/data-viewer`.
 - `navigation_state` and `browsing_state`: public so the native unit tests reach them.
 
@@ -59,7 +59,7 @@ pure and covered by the native tests.
 - Depends on: `frontend_transport::client::public_reads::public_get` and the DTOs in
   `crates/frontend/foundation/frontend_api_dtos/src/equipment_data_viewer/`; `leptos`, `web_sys`,
   `gloo_timers` and `serde_json`.
-- Used by: the `/debug/data-viewer` route in `apps/frontend/src/app_routes.rs`, with its
+- Used by: the `/debug/data-viewer` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`, with its
   row in `crates/frontend/foundation/frontend_route_table/src/routes.rs` (full-bleed, chromeless, route tier `none`); the live
   check `gate equipment-data-viewer` in
   `tools/browser_testing/browser_gate_suites/src/equipment_data_viewer/`.

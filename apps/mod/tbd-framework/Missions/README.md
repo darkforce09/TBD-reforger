@@ -40,7 +40,7 @@ Missions/TBD_Dev_POC_Arland.conf ──World──▶ worlds/TBD_Dev_POC_Arland.
 A server boots a header by its resource name, given as the dedicated-server config's
 `game.scenarioId`: `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf` for Everon,
 `{9716613D6210414A}Missions/TBD_Dev_POC_Arland.conf` for Arland. Switching a server between the two
-changes its terrain, so the fleet host agent restarts the server process for it.
+changes its terrain, so the game server host agent restarts the server process for it.
 
 ## Format
 
@@ -50,7 +50,7 @@ changes its terrain, so the fleet host agent restarts the server process for it.
 - Resource GUID: each `.conf.meta` file's `Name` line,
   `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf` and
   `{9716613D6210414A}Missions/TBD_Dev_POC_Arland.conf`. A resource name is written into server
-  configs, the deploy settings, the database seeds and the fleet host agent's tests, so it never
+  configs, the deploy settings, the database seeds and the game server host agent's tests, so it never
   changes.
 - Naming: `TBD_<Name>.conf`, one header per world the framework boots.
 - Adding a header: create it in Workbench inside this addon, which writes the `.meta` with a new
@@ -66,7 +66,7 @@ changes its terrain, so the fleet host agent restarts the server process for it.
 - `deploy/deploy.env.example` sets `TBD_SCENARIO` to it, and
   `cargo xtask deploy staging` uses it as the default (`tools/commands/deployment/src/staging/config.rs`).
 - `crates/api/api_database/seeds/content_golden.sql` seeds it as the `everon` fleet scenario, which the
-  platform sends to the fleet host agent in `apps/fleet_host_agent/` when it deploys a mission.
+  platform sends to the game server host agent in `crates/fleet/game_server_host_agent/` when it deploys a mission.
 - `cargo xtask setup server-profile` names `Missions/TBD_Dev_POC.conf` in its Workbench checklist.
 - `TBD_Dev_POC_Arland.conf` is named by no committed file: a server boots it when the fleet
   scenario registered for `arland` names `{9716613D6210414A}Missions/TBD_Dev_POC_Arland.conf`.

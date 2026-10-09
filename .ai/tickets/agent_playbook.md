@@ -98,7 +98,7 @@ print its prompt with `cargo xtask ticket prompt <id>` and deliver it as one fen
 ### Brainstorm
 
 1. File each idea with `cargo xtask ticket add`.
-2. Review the `idea` and `deferred` columns in the [ticketboard](/apps/ticketboard/README.md).
+2. Review the `idea` and `deferred` columns in the [ticketboard](/tools/tickets/ticketboard_desktop/README.md).
 3. When one is promoted: reorder it, write its spec and plan, mark it ready.
 
 ### Read a ticket
@@ -118,7 +118,7 @@ cargo xtask ticket next
 |---|---|---|
 | `claude-code` | any AI coding agent, through the ticket tooling or a chat prompt | code, with its tests and documentation |
 | `documentation` | an agent in a chat | a ticket, spec or documentation pass |
-| `workbench` / `human` | a person | Workbench and hands-on work in `apps/mod/`; filter the [ticketboard](/apps/ticketboard/README.md) by executor |
+| `workbench` / `human` | a person | Workbench and hands-on work in `apps/mod/`; filter the [ticketboard](/tools/tickets/ticketboard_desktop/README.md) by executor |
 | `ci` | CI | a CI lane |
 
 An agent stops at a `workbench`, `human` or `ci` ticket and waits for that party.

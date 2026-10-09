@@ -101,7 +101,7 @@ authored editor triggers), and the [API](/documentation/glossary/a_to_f.md#api) 
 
 ## Related documentation
 
-- [Mission artifacts](/documentation/apps/api/verification_evidence/mission_artifacts.md)
+- [Mission artifacts](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
   — how a compiled document becomes an immutable artifact.
 - [Voice bridge contract](/documentation/contracts/definitions/bridge_messages.md) — how the
   radio plan's nets map to voice channels.

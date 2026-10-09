@@ -39,8 +39,8 @@ the corpus and the id-to-index map, so a dialog never reaches application state.
   (`FileChangeGuard`, `TicketCommand`, `TicketCommandQueue`);
   `crate::ticket_registry::models::corpus::Corpus`.
 - Used by: `crate::ticket_actions::services::dialog_builders`; the desktop application:
-  `apps/ticketboard/src/ticket_actions/ui/`, which paints the dialogs and toasts, and
-  `apps/ticketboard/src/application/` (`mod.rs`, `command_execution.rs`, `ticket_command_views.rs`,
+  `tools/tickets/ticketboard_desktop/src/ticket_actions/ui/`, which paints the dialogs and toasts, and
+  `tools/tickets/ticketboard_desktop/src/application/` (`mod.rs`, `command_execution.rs`, `ticket_command_views.rs`,
   `tests/rendering.rs`), which owns the state.
 - Rules: no egui type appears here (the test
   `model_dependency_boundaries_and_external_test_placement_are_enforced` in

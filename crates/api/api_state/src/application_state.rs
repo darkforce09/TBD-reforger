@@ -6,7 +6,7 @@
 //! **Position:** above the HTTP layer, the configuration, the Discord clients and the equipment
 //! datasets, below the domains. The services that need a concrete implementation (the session
 //! authority, the Discord and webhook clients, the equipment datasets) are built by the API's
-//! composition root (`api::composition::application_state`) and injected through
+//! composition root (`api_server::composition::application_state`) and injected through
 //! [`AppState::new`], so this file names no domain.
 //! **Signals & state:** every field is an `Arc` or a pool handle, so a clone shares them all; the
 //! rate limiters and the metrics registry are the mutable state every request shares.

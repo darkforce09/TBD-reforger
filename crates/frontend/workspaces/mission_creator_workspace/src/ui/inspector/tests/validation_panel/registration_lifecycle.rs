@@ -245,9 +245,9 @@ fn the_seam_mechanism_is_defined_exactly_once_in_the_crate() {
             }
         }
     }
-    // The editor's code spans the app's source and the frontend crates, the five Mission Creator
-    // crates among them: the walk covers every frontend source tree, so a second copy in any of
-    // them is found.
+    // The editor's code spans the frontend crates, the app in `shell/` and the five Mission
+    // Creator crates among them: the walk covers every frontend source tree once, so a second
+    // copy in any of them is found.
     let repository =
         frontend_test_support::repository_root::repository_root(env!("CARGO_MANIFEST_DIR"));
     let mut files = Vec::new();

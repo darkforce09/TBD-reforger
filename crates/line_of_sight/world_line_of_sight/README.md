@@ -86,7 +86,7 @@ The crate root is the public surface:
     (`crates/streaming/map_streaming_host/src/queries.rs`);
   - `map_editing_tools`: the object wash of its line-of-sight tool;
   - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s line-of-sight
-    tool and the debug world line-of-sight bench in `apps/frontend/`;
+    tool and the debug world line-of-sight bench in `crates/frontend/shell/frontend_application/`;
   - the world line-of-sight check and the blueprint tooling in `tools/developer_tools/src/`.
 - Rules: the box tree returns exactly what the brute-force scan returns
   (`tlas_matches_brute_force_including_the_observer_inside_case`) and `cells_on_segment` matches

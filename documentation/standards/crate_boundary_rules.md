@@ -24,17 +24,21 @@ The web platform draws its map with crates in four categories, each with one job
 
 The [mission](/documentation/glossary/g_to_m.md#mission) domain is the crates of `crates/mission/`,
 the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s headless editing layer
-the crates of `crates/mission_editing/`, and the single-page app ([`frontend`](/apps/frontend/README.md))
-links them all. The [API](/documentation/glossary/a_to_f.md#api) (`api`) links none of the map
-crates: it compiles and validates missions with the mission crates, and its category edge stops at
-foundation, contracts, mission and ballistics crates.
+the crates of `crates/mission_editing/`, and the single-page app
+([`frontend_application`](/crates/frontend/shell/frontend_application/README.md)) links them all.
+The [API](/documentation/glossary/a_to_f.md#api) (the `crates/api` crates, the server
+`api_server` on top) links none of the map crates: it compiles and validates missions with the
+mission crates, and its category edge stops at foundation, contracts, mission and ballistics
+crates. The applications are judged crates like the libraries ([5.1](#51-the-judged-set)), and no
+member links one ([5.9](#59-the-applications-and-the-tool-crates)).
 
 ### Dependency direction — non-negotiable
 
 ```text
-api      ──► crates/mission, crates/ballistics                      native, no map or GPU crate
-frontend ──► crates/mission, crates/mission_editing, map_streaming_model   every target
-frontend ──► map_renderer, map_streaming_host, map_asset_loading, gpu_frame, …   wasm32
+crates/api      ──► crates/mission, crates/ballistics                      native, no map or GPU crate
+crates/frontend ──► crates/mission, crates/mission_editing, map_streaming_model   every target
+crates/frontend ──► map_renderer, map_streaming_host, map_asset_loading, gpu_frame, …   wasm32
+crates/fleet    ──► crates/foundation (every target), crates/contracts     native, no product crate
 map_rendering, paper_doll ──► streaming, map_overlay, terrain, … (engine) ──► graphics
 ```
 
@@ -57,7 +61,7 @@ map_rendering, paper_doll ──► streaming, map_overlay, terrain, … (engine
 > The engine side (the map crates and the mission and mission editing crates) owns state that
 > survives a reload. The frontend owns state that dies with the tab.
 
-| Survives a reload: the engine side | Dies with the tab: `frontend` |
+| Survives a reload: the engine side | Dies with the tab: the frontend crates |
 |---|---|
 | the mission document, its entities and its undo stack (`crates/mission/mission_document/`, `crates/mission_editing/mission_editing_session/src/history/`) | hover and drag in progress |
 | the selection (`crates/mission_editing/mission_editing_session/src/host.rs`) | the pointer gesture state machine (`crates/frontend/workspaces/mission_creator_engine_bridge/src/input/`) |
@@ -185,8 +189,11 @@ The frontend owns presentation, input and the browser shell. It mounts `map_rend
 `RenderEngine` on a canvas, drives it with `gpu_frame`'s animation-frame pump, feeds it through
 `map_streaming_host`, and never names `wgpu` (the wgpu firewall does not admit it). It supplies what
 only a browser has (the canvas, preference readers, clocks, storage) to the map crates as values
-and closures, and keeps the state [section 1](#where-state-lives) gives it. The frontend app's start
-function is its one JavaScript export.
+and closures, and keeps the state [section 1](#where-state-lives) gives it. The frontend's top
+layer, the shell (`crates/frontend/shell/`), holds the two binaries Trunk builds side by side: the
+app `frontend_application`, whose start function `start_app` is its one JavaScript export, and the
+`offline_service_worker`, which never names the app nor any rendering crate
+([5.4](#54-the-firewalls), [5.7](#57-frontend-layering-cargo-xtask-verify-frontend-layering)).
 
 ## 5. The workspace laws
 
@@ -194,8 +201,9 @@ Five laws judge the members of the root `Cargo.toml`. `cargo xtask ci verify-wor
 them in this order and stops at the first failure, and each is also its own `cargo xtask verify`
 command: crate tiers, crate anatomy, test-file reachability, frontend layering and Tailwind
 sources. Each prints `<LAW>: PASS`, or `FAIL` with exit 1 on a finding and exit 2 when an input
-could not be read; a missing input never passes. The paths that move with the tree (the manifest
-sweep roots, the frontend layer tables and crate orders, the stylesheet) are constants of
+could not be read; a missing input never passes. The paths and names that move with the tree (the
+manifest sweep roots, the application packages, the frontend layer tables and crate orders, the
+stylesheet) are constants of
 `tools/checks/repository_checks/src/architecture/workspace_law_locations.rs`, which xtask passes
 in. Where each law runs is in [CI gates](/documentation/standards/coding_standards/ci_gates.md#verify-workspace-laws)
 (rules WS-1 to WS-5).
@@ -204,24 +212,32 @@ in. Where each law runs is in [CI gates](/documentation/standards/coding_standar
 
 The layout laws judge every member that declares `[package.metadata.layout]` plus every member
 under `crates/<category…>/<name>` or `tools/<category>/<name>` (`is_judged` in
-`tools/foundation/repository_laws/src/workspace_laws/crate_layout.rs`). Outside that set stand
-only the apps under `apps/` and the two tool binaries of `TOOL_BINARY_PATHS`, `tools/xtask` and
-`tools/developer_tools`; the report names them in a note. Any other member outside the judged set
-is a rule 2 finding: a crate that carries no layout table and sits nowhere the layout knows
-cannot slip past the matrix.
+`tools/foundation/repository_laws/src/workspace_laws/crate_layout.rs`). The applications are
+crates like any other: the API server at `crates/api/api_server`, the single-page app and the
+offline service worker at `crates/frontend/shell/`, the game server host agent at
+`crates/fleet/game_server_host_agent` and the ticketboard desktop viewer at
+`tools/tickets/ticketboard_desktop`, each with its layout table. Outside the judged set stand
+only the two tool binaries of `TOOL_BINARY_PATHS`, `tools/xtask` and `tools/developer_tools`
+(`is_tool_binary`); the report names them in a note. Any other member outside the judged set,
+a crate under `apps/` included, is a rule 2 finding: a crate that carries no layout table and sits
+nowhere the layout knows cannot slip past the matrix. `apps/` holds the game mod and no crate,
+and stays a sweep root, so a manifest placed there is a finding of rule 1 or rule 2, never
+exempt.
 
 ### 5.2 Crate tiers (`cargo xtask verify crate-tiers`)
 
-`tools/foundation/repository_laws/src/workspace_laws/crate_tiers.rs` judges seven rules:
+`tools/foundation/repository_laws/src/workspace_laws/crate_tiers.rs` judges seven rules over the
+`CrateTierConfiguration` xtask passes (`CRATE_TIERS`: the sweep roots and the application
+packages):
 
 1. **Membership.** Every `Cargo.toml` under `apps`, `crates` and `tools` (outside folders named
    `tests`, `fixtures`, `test_fixtures`, `target` and `node_modules`) is a workspace member. The
    root `members` list reaches the library crates through one glob per category
-   (`crates/<category>/*`, and `crates/frontend/*/*` for the frontend's layer folders), so a
-   manifest in a category no glob lists fails here.
+   (`crates/<category>/*`, `crates/fleet/*` among them, and `crates/frontend/*/*` for the
+   frontend's layer folders), so a manifest in a category no glob lists fails here.
 2. **Declarations.** Each judged member declares `[package.metadata.layout]` with a `category`, a
    whole-number `tier` and `targets` (`any` or `wasm32`); every member outside the judged set is
-   an app or a tool binary ([5.1](#51-the-judged-set)).
+   a tool binary ([5.1](#51-the-judged-set)).
 3. **Location.** The declared category is the crate's parent folder and a category the layout
    knows, and the package name equals the folder name.
 4. **Tiers.** A crate with no judged workspace dependency is tier 0; any other is 1 plus the
@@ -231,14 +247,21 @@ cannot slip past the matrix.
    [5.3](#53-the-category-matrix), and a crate built for every target reaches a `wasm32` crate
    only from its `[target.'cfg(target_arch = "wasm32")'.dependencies]` table.
 6. **Firewalls.** The external-crate and source firewalls of [5.4](#54-the-firewalls) hold.
-7. **Dev-dependencies.** A dev-dependency is outside the tier order and the matrix, because it
-   never ships, but it never points at an app under `apps/`.
+7. **Applications.** No member — judged or a tool binary — depends on an application package, in
+   any table: normal, build, dev and target-specific, a renamed edge under its real package name,
+   a crate's edge onto itself (a test-only feature) excepted. The application packages are
+   `APPLICATION_PACKAGES` of `workspace_law_locations.rs`, by package name: `api_server`,
+   `frontend_application`, `offline_service_worker`, `game_server_host_agent` and
+   `ticketboard_desktop`. A listed package that is no member is a finding, never a pass.
+   Dev-dependencies are otherwise outside the tier order and the matrix, because they never
+   ship.
 
 ### 5.3 The category matrix
 
 `category_edge_allowed` in `crate_layout.rs` decides rule 5. A category's class comes from its
-folder path alone, and an edge to or from a category with no class (an unknown category, an app,
-a tool binary) is refused.
+folder path alone, and an edge to or from a category with no class (an unknown category, a tool
+binary) is refused. Every row lists the classes it allows, so a new class is reachable from no
+row until one names it.
 
 | A crate in | May depend on |
 |---|---|
@@ -251,7 +274,8 @@ a tool binary) is refused.
 | `crates/map_rendering`, `crates/paper_doll` | foundation, contracts, mission, ballistics and rendering crates and every engine category |
 | `crates/mission_editing` | foundation crates whose `targets` is not `wasm32`; mission and mission editing crates; the geometry, world formats, terrain, world objects, line of sight and map overlay categories (never ballistics, streaming, graphics or rendering) |
 | `crates/api` | foundation, contracts, mission, ballistics and api crates |
-| `crates/frontend/<layer>` (`foundation`, `features`, `pages`, `workspaces`) | every class but api and tools |
+| `crates/fleet` | foundation crates whose `targets` is `any`, and contracts crates |
+| `crates/frontend/<layer>` (`FRONTEND_LAYER_FOLDERS`: `foundation`, `features`, `pages`, `workspaces`, `shell`) | foundation, contracts, mission, ballistics, graphics, engine, rendering, mission editing and frontend crates (never api, fleet or tools) |
 | `tools/<category>` | foundation, contracts, mission, ballistics and tool crates, and engine crates whose `targets` is `any`; never a `wasm32` crate; the api crates from `tools/staging/staging_fixtures` only (`STAGING_FIXTURES_PATH`) |
 
 The engine categories are `ENGINE_CATEGORIES` (the graphics category among them), and the mission
@@ -280,6 +304,11 @@ manifest firewalls read the normal and build edges of each judged member onto an
   member over normal and build edges although xtask is outside the judged set, declares
   `tokio`, `axum`, `reqwest`, `resvg` or `image` (`XTASK_CLOSURE_BANS`); this keeps the harness
   servers out of xtask.
+- **The rendering stack:** the offline service worker (`OFFLINE_SERVICE_WORKER_PACKAGE`) and
+  every `crates/api` crate, the server among them, declare no edge onto a crate of
+  `RENDERING_STACK_CATEGORIES` (`crates/graphics`, `crates/map_rendering`, `crates/paper_doll`,
+  `crates/streaming`) and none onto `wgpu` or `wgpu-*`, in any table, dev and target-specific
+  included: a test build of the worker or the server links no renderer either.
 
 Three source scans complete the rule:
 
@@ -291,9 +320,9 @@ Three source scans complete the rule:
   `web_sys`, `leptos` or `wasm_bindgen` as a whole word, in code or prose
   ([2B](#2b-the-headless-editing-layer)); a category folder holding no `.rs` file is a finding,
   never a clean scan.
-- **JavaScript exports:** no `.rs` file of a workspace member outside `apps/frontend`,
-  `crates/foundation/browser_platform` and `apps/offline_service_worker`
-  (`WASM_BINDGEN_EXPORT_FOLDERS`) carries a `#[wasm_bindgen]` attribute, plain, path-qualified
+- **JavaScript exports:** no `.rs` file of a workspace member outside the two shell crates
+  `crates/frontend/shell/frontend_application` and `crates/frontend/shell/offline_service_worker`
+  and `crates/foundation/browser_platform` (`WASM_BINDGEN_EXPORT_FOLDERS`) carries a `#[wasm_bindgen]` attribute, plain, path-qualified
   or under `cfg_attr`, at the start of a line; a walk of no `.rs` file at all is a finding.
 
 ### 5.5 Crate anatomy (`cargo xtask verify crate-anatomy`)
@@ -327,9 +356,10 @@ skips `target` folders and any folder holding its own `Cargo.toml`.
 
 ### 5.7 Frontend layering (`cargo xtask verify frontend-layering`)
 
-The frontend's layers are foundation < features < pages and workspaces < the app shell
-(`apps/frontend`). Pages and workspaces are peers: neither depends on the other, and no page crate
-depends on another page crate. `frontend_layering.rs` and `frontend_layering/crate_edges.rs` judge
+The frontend's layers are foundation < features < pages and workspaces < the shell
+(`crates/frontend/shell/`: the app `frontend_application` and the offline service worker). Pages
+and workspaces are peers: neither depends on the other, and no page crate depends on another page
+crate. `frontend_layering.rs` and `frontend_layering/crate_edges.rs` judge
 two modes, hard at zero, so every edge (production or test, normal, dev or build) fails:
 
 - **crate-edge mode** (`FRONTEND_CRATE_EDGES`): a crate's layer is its folder
@@ -339,7 +369,10 @@ two modes, hard at zero, so every edge (production or test, normal, dev or build
   braced crates peers, `frontend_test_support` reached only through dev-dependencies),
   `MISSION_CREATOR_CRATE_ORDER` (`mission_creator_state` < `mission_creator_engine_bridge` <
   `mission_creator_session` < `mission_creator_arsenal` < `mission_creator_workspace`) and
-  `DEBUG_BENCHES_CRATE_ORDER`, an order of its own that no Mission Creator crate touches. A
+  `DEBUG_BENCHES_CRATE_ORDER`, an order of its own that no Mission Creator crate touches, and
+  `SHELL_CRATE_ORDER`, one tier of peers (`frontend_application`, `offline_service_worker`): the
+  app and the worker are two binaries Trunk builds side by side, so neither names the other, in a
+  normal or a dev table. A
   frontend crate in no layer folder or in none of its folder's orders, and a crate an order names
   that no member carries, are findings;
 - **in-crate mode** (`APP_LAYERS`): the app's own modules (`main.rs`, `app_routes.rs`, `shell/`,
@@ -347,19 +380,31 @@ two modes, hard at zero, so every edge (production or test, normal, dev or build
 
 ### 5.8 Tailwind sources (`cargo xtask verify tailwind-sources`)
 
-`tailwind_sources.rs` holds the `@source` lines of `apps/frontend/style/aegis.css` exact: every
+`tailwind_sources.rs` holds the `@source` lines of `crates/frontend/shell/frontend_application/style/aegis.css` exact: every
 member with a non-dev `leptos` dependency, the app included, is named by exactly one line whose
 glob, resolved from the stylesheet's folder, is `<member>/src/**/*.rs`. A member no line names, a
 member several lines name, and a line naming no leptos member (an ancestor or wildcard folder
-included) are findings. Trunk's `[watch]` list in `apps/frontend/Trunk.toml` covers
+included) are findings. Trunk's `[watch]` list in `crates/frontend/shell/frontend_application/Trunk.toml` covers
 `crates/frontend`, so a change in any frontend crate rebuilds the bundle.
 
-### 5.9 The apps and the tool crates
+### 5.9 The applications and the tool crates
 
-The apps carry no layout table, so the matrix does not judge them. Their limits are deny-lists in
-`tools/foundation/repository_laws/src/crate_dependencies.rs`, run by the `engineering_laws` test
-binary of `apps/api`: the frontend never links `api`; `api` links neither `frontend` nor a GPU
-crate; the offline service worker links none of `api`, `frontend` or a GPU crate.
+The applications are judged crates ([5.1](#51-the-judged-set)), so the laws hold their edges as
+they hold every other crate's; no deny-list names them. Each wall between them is a rule:
+
+| Wall | Rule |
+|---|---|
+| The single-page app never links the server, in any table | rule 7 (and the frontend row of the matrix for shipped edges) |
+| The server links neither the app nor the worker, in any table | rule 7 (and the api row of the matrix for shipped edges) |
+| The server links no GPU, rendering or streaming crate, in any table | the rendering-stack firewall (and the api row of the matrix for shipped edges) |
+| The worker never links the server, in any table | rule 7 (and the frontend row of the matrix for shipped edges) |
+| The worker and the app never name each other, in any table | rule 7 and `SHELL_CRATE_ORDER` |
+| The worker links no GPU, rendering or streaming crate and no wgpu, in any table | the rendering-stack firewall |
+| Nothing links the game server host agent or the ticketboard desktop viewer | rule 7; no matrix row admits `crates/fleet` |
+
+The test-only feature rule (`tools/foundation/repository_laws/src/test_only_features.rs`) keeps a
+feature such as `failpoints` out of every build that is not a test build; the `engineering_laws`
+test binary of `crates/api/api_server` holds the failpoints crate and every API manifest to it.
 
 The tool crates keep a direction of their own, pinned by
 `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`
@@ -380,6 +425,8 @@ The tool crates keep a direction of their own, pinned by
 | Wall | Law | Where |
 |---|---|---|
 | Edges point down the tiers and across the allowed categories | crate tiers rules 4 and 5 | `crate_tiers.rs`, the matrix in `crate_layout.rs` |
+| No member depends on an application package | crate tiers rule 7 | `crate_tiers.rs`, `APPLICATION_PACKAGES` in `workspace_law_locations.rs` |
+| The worker and the API crates link no rendering stack crate | crate tiers firewall | `crate_firewalls.rs` |
 | wgpu only in the rendering category and the GPU packages | crate tiers firewall | `crate_firewalls.rs` |
 | Browser crates only in wasm-only crates, `time_source` behind a target table and the frontend | crate tiers firewall | `crate_firewalls.rs` |
 | A wasm-only crate reached from a crate built for every target only through its wasm32 table | crate tiers rule 5 | `crate_tiers.rs` |
@@ -387,7 +434,7 @@ The tool crates keep a direction of their own, pinned by
 | No browser crate or token in the mission editing layer | crate tiers firewall | `crate_firewalls.rs` |
 | Every library crate keeps the standard shape | crate anatomy | `crate_anatomy.rs`, `crate_anatomy_sources.rs` |
 | Every test file compiles | test-file reachability | `test_file_reachability.rs` |
-| Lower frontend layers never name higher ones; pages and workspaces stay apart | frontend layering | `frontend_layering.rs` |
+| Lower frontend layers never name higher ones; pages and workspaces stay apart; the two shell crates stay apart | frontend layering | `frontend_layering.rs`, `frontend_layering/crate_edges.rs` |
 | Every leptos crate's classes reach the stylesheet | Tailwind sources | `tailwind_sources.rs` |
 | The frame path stays damage-driven | source pins | `crates/map_rendering/map_renderer/src/tests/damage_discipline.rs` |
 

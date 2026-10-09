@@ -20,8 +20,8 @@ use crate::error::{Error, Result, error_chain};
 use crate::relay::{RelayLog, serve};
 use crate::relay_settings::RelaySettings;
 
-/// A loopback relay between one fleet host agent and the API that, when armed, withholds one
-/// executor answer past the agent's request timeout and then closes its connection.
+/// A loopback relay between one game server host agent and the API that, when armed, withholds
+/// one executor answer past the agent's request timeout and then closes its connection.
 #[derive(Debug, Parser)]
 #[command(name = "acknowledgement-dropping-relay")]
 struct RelayCommandLine {

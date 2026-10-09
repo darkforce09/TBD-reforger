@@ -4,8 +4,9 @@
 //! digits to the caller as `(sample index, value)`; [`decode_mask_grid`] and
 //! [`decode_depth_grid`] store those values into the water class mask and the depth grid.
 //! **Position:** called by the lane's `run` when the image grid is the export's own grid and both
-//! `bathymetry_mask.txt` and `bathymetry_depth.txt` (or their legacy names) are present; the
-//! files run to hundreds of megabytes, so they are read through one large buffer, never whole.
+//! `bathymetry_mask.txt` and `bathymetry_depth.txt` (or their `TBD_WaterExport_` names) are
+//! present; the files run to hundreds of megabytes, so they are read through one large buffer,
+//! never whole.
 //! **Signals & state:** none held; each call owns its reader.
 //! **Invariants:** a digit extends the pending number (`value × 10 + digit`); any other byte ends
 //! a pending number, which is stored at the next index while the index is below the sample count

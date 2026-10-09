@@ -37,7 +37,7 @@ approach = [
     "Perturbation: reintroduce a per-chunk fetch on the pan path; the zero-allocation assertion must go red; restore, touch, green.",
 ]
 verify = [
-    "cargo test -p frontend",
+    "cargo xtask mk ci-local-leptos",
     "cargo xtask platform wave gate --slice T-935.19",
 ]
 acceptance = [
@@ -52,10 +52,10 @@ citations = [
 ]
 created_at = "2026-09-07T23:17:22Z"
 owns = [
-    "apps/frontend/src/editor/world_assets/world_host.rs",
-    "apps/frontend/src/editor/world_assets/mod.rs",
-    "apps/frontend/src/editor/world_assets/fetch.rs",
-    "apps/frontend/src/editor/world_assets/occluder_host.rs",
+    "crates/frontend/shell/frontend_application/src/editor/world_assets/world_host.rs",
+    "crates/frontend/shell/frontend_application/src/editor/world_assets/mod.rs",
+    "crates/frontend/shell/frontend_application/src/editor/world_assets/fetch.rs",
+    "crates/frontend/shell/frontend_application/src/editor/world_assets/occluder_host.rs",
     "assets/terrains/everon/manifest.json",
 ]
 

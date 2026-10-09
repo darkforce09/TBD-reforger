@@ -30,8 +30,8 @@ test -f .ai/artifacts/t152_9_road_name_spike.json                          → O
 cargo test -p map-engine-core road_labels --all-features                   → 7/7 PASS
 cargo test -p map-engine-render draw_order --all-features                  → 7/7 PASS
 make wasm                                                                  → map_engine_wasm_bg.wasm 4,327,185 B
-cd apps/frontend && npm test                                       → 355/355 PASS
-cd apps/frontend && npm run build && npm run lint                  → OK
+cd crates/frontend/shell/frontend_application && npm test                                       → 355/355 PASS
+cd crates/frontend/shell/frontend_application && npm run build && npm run lint                  → OK
 node scripts/map-assets/verify-road-names.mjs --terrain everon --zoom 0    → OK
 ```
 

@@ -61,7 +61,7 @@ whole chain: the Discord OAuth failure log and the equipment export watcher's pr
   and `runtime_session_expiry`
   [background workers](/documentation/glossary/a_to_f.md#background-workers);
   `api_http_layer::authentication_primitives`, whose `SessionAuthority` refuses with it; two
-  integration suites under `apps/api/tests/`; and, over HTTP, the single-page app, which
+  integration suites under `crates/api/api_server/tests/`; and, over HTTP, the single-page app, which
   reads `error` and a string-array `details` in
   `crates/frontend/foundation/frontend_transport/src/client/errors.rs`.
 - Rules: `error` stays a string and `details` stays optional, the shape the single-page app

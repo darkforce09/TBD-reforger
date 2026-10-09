@@ -1,11 +1,12 @@
 # Repository laws
 
 The `repository_laws` crate: the structural engineering laws of the repository as pure checks over
-a checkout — file length, sibling test placement, no exemption mechanism, the dependency
-direction between the website crates, and the workspace laws (crate tiers, crate
-anatomy, test-file reachability, frontend layering, Tailwind sources). The `cargo xtask verify` gates
-print these results and the `api` engineering-law tests assert on them, so the two never disagree
-about the tree.
+a checkout — file length, sibling test placement, no exemption mechanism, test-only features that
+only test builds compile in, and the workspace laws over the members the root manifest names
+(crate tiers, which hold the dependency direction of every member, the application packages
+included; crate anatomy; test-file reachability; frontend layering; Tailwind sources). The
+`cargo xtask verify` gates print these results and the `engineering_laws` test binary of
+`api_server` asserts on them, so the two never disagree about the tree.
 
 ## Contents
 
@@ -41,7 +42,7 @@ No feature and no environment variable.
 ## Public surface
 
 - The modules `file_length`, `sibling_test_placement`, `exemption_mechanisms`,
-  `crate_dependencies`, `source_roots`, `cargo_manifest`, `workspace_members` and
+  `test_only_features`, `source_roots`, `cargo_manifest`, `workspace_members` and
   `workspace_laws`; `Error` and `Result` at the crate root; `prelude` with each law's entry point.
   The [source README](/tools/foundation/repository_laws/src/README.md) lists their items.
 
@@ -50,8 +51,8 @@ No feature and no environment variable.
 - Depends on: `verification_core` (the `NotRun` vocabulary, the scans and the patterns), `regex`
   and `thiserror`.
 - Used by: `xtask` (`verify file-length`, the five workspace-law verbs,
-  and the tooling tests that read the workspace members) and `api` as a dev-dependency
-  (`apps/api/tests/engineering_laws.rs`).
+  and the tooling tests that read the workspace members) and `api_server` as a dev-dependency
+  (`crates/api/api_server/tests/engineering_laws.rs`).
 - Rules: tier 1 of `tools/foundation`, depending only on `verification_core` among the workspace
   crates (`foundation_crates_depend_only_on_lower_foundation_crates` in
   `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`; `cargo xtask verify crate-tiers`).

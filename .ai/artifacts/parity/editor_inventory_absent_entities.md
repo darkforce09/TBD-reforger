@@ -75,7 +75,7 @@ promoting.
 
 ## 2. Triggers — absent
 
-- `grep -rin "trigger" apps/frontend/src/ --include="*.rs"` → 9 hits, **all unrelated**:
+- `grep -rin "trigger" crates/frontend/shell/frontend_application/src/ --include="*.rs"` → 9 hits, **all unrelated**:
   re-read ticks (`attributes.rs:19`, `editor_ops.rs:68`), an auth-refresh test string
   (`auth.rs:514`), JS-bridge prose (`yrs_persist.rs:8,94`), file-download triggers
   (`mission_commands.rs:5,227,258`), an encode trigger (`mission_editor.rs:1170`).
@@ -92,7 +92,7 @@ effect list. `$defs/flow` and `$defs/winConditions` are mission-global, not per-
 
 ## 3. Waypoints — absent, totally
 
-`grep -rin "waypoint"` across `apps/frontend/src/`, `crates/`, `packages/tbd-schema/schema/`
+`grep -rin "waypoint"` across `crates/frontend/shell/frontend_application/src/`, `crates/`, `packages/tbd-schema/schema/`
 → **exactly 2 hits**, `mission.schema.json:608` and `:609` — the strings `"waypoint"` /
 `"waypoint2"` inside the marker **icon alias enum**. Glyph names, not entities.
 
@@ -105,7 +105,7 @@ anywhere.**
 
 ## 4. Comments (Eden annotation) — absent
 
-Every `Comment` hit in `apps/frontend/src/` and `crates/` is either prose about
+Every `Comment` hit in `crates/frontend/shell/frontend_application/src/` and `crates/` is either prose about
 source-code comments (`mission_title_prefer.rs:467,582`, `event_manager.rs:1611`, `arsenal.rs:4011`,
 `store.rs:3752`) or the social feature below.
 

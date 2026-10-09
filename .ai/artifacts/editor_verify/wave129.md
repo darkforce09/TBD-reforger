@@ -26,7 +26,7 @@ worktree-only LFS failure did not appear on main, as required).
 
 ## FINDINGS (Evidence → Impact → Disposition; NO-DEFERRAL — all four get fixed this wave)
 
-### F1 — MAJOR | `apps/frontend/src/mission_editor.rs:1801` (`route_target`, no Entity arm) — **claim 5 CONFIRMED: validation-panel rows for placed OBJECTS are styled clickable over a click that selects nothing**
+### F1 — MAJOR | `crates/frontend/shell/frontend_application/src/mission_editor.rs:1801` (`route_target`, no Entity arm) — **claim 5 CONFIRMED: validation-panel rows for placed OBJECTS are styled clickable over a click that selects nothing**
 **Evidence.** (a) The engine emits placed-object findings with a subject id: `placed_asset_refs`
 (`crates/map-engine-core/src/mission/validate.rs:1330-1347`) pushes
 `("/entities/{i}/{field}", entity_id, asset)` for every top-level `entities[]` row (the
@@ -50,7 +50,7 @@ coordinates (either reuse `Vehicle` or mint `Entity { x, y }`), and in the regis
 vehicles already ride that path. Extend `t754_router_resolves_zones` with the entity fixture (my
 repro test is the ready-made pin, assert flipped to `Some(...)`).
 
-### F2 — MAJOR (narrow but reachable) | `apps/frontend/src/eden_dock_right.rs:1124-1128` — **claim 2: the zone-selection hook is never unregistered, so an unmounted Zones panel reports a selection that did not happen**
+### F2 — MAJOR (narrow but reachable) | `crates/frontend/shell/frontend_application/src/eden_dock_right.rs:1124-1128` — **claim 2: the zone-selection hook is never unregistered, so an unmounted Zones panel reports a selection that did not happen**
 **Evidence.** The hook is registered in `DockRight`'s body (`:1124`) and there is **no `on_cleanup`
 unregister anywhere** (`register_select_zone` `:1017`, `route_select_zone` `:1026`). DockRight is
 mounted behind the `chrome_hidden` gate (`mission_editor.rs:4495-4515`, `.then(...)`), and
@@ -76,7 +76,7 @@ router returns `false`, and the settings row click falls back to the `OWNER_UNRE
 toast — the documented residue. Pin it: register a hook, drop it via a scoped owner (or call the
 cleanup fn directly), assert `route_select_zone` is `false` again.
 
-### F3 — MINOR | `apps/frontend/src/arsenal.rs:242-248` (`attachment_errors` messages) — **claim 14 CONFIRMED: two stranded attachments on ONE row still render identically**
+### F3 — MINOR | `crates/frontend/shell/frontend_application/src/arsenal.rs:242-248` (`attachment_errors` messages) — **claim 14 CONFIRMED: two stranded attachments on ONE row still render identically**
 **Evidence.** `attachment_errors` pushes `RowError { key, message }` where `key` is the **weapon
 slot** and the message names only the slot label — the attachment `rn` is never printed. Repro test
 in the perturb worktree (two attachments on `primary`, neither accepted):
@@ -205,7 +205,7 @@ not inferred from the summary line).
 
 ### FINDINGS
 
-**RV-1 — MAJOR | apps/frontend/src/eden_dock_left.rs:546, :1412-1414, :1421-1427, :2438-2466
+**RV-1 — MAJOR | crates/frontend/shell/frontend_application/src/eden_dock_left.rs:546, :1412-1414, :1421-1427, :2438-2466
 — THE FOURTH AFFORDANCE/CLICK DIVERGENCE: dock-left search-hit rows decide clickability from a
 hardcoded kind list that predates the router's Zone and Entity arms.**
 What is wrong: `DocKind::is_selectable()` (line 1413) returns `matches!(self, DocKind::Slot |
@@ -240,7 +240,7 @@ Note: Marker/Trigger/Comment/Layer hits remain genuinely unroutable (no router a
 This predates the fix pass (T-697 era) but was made false BY this wave's own widenings; under the
 wave's thesis ("a fourth divergence is a MAJOR") it must not close with the wave green.
 
-**RV-2 — NIT (pre-existing, out of fix-pass scope) | apps/frontend/src/eden_layout.rs:583 —
+**RV-2 — NIT (pre-existing, out of fix-pass scope) | crates/frontend/shell/frontend_application/src/eden_layout.rs:583 —
 unused import `chrome_hidden`** (plus `NodeKind` eden_tree.rs:1056, `EventHub` event_manager.rs:30,
 dead `auth_error_copy`). Warnings in the native test build; eden_layout.rs:583 blames to T-638
 (a4e4dcc8), and none of the six fix commits touch these files — NOT the stalled agent's residue.

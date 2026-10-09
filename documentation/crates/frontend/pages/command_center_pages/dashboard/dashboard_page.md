@@ -108,7 +108,7 @@ lists the call and the DTO the page reads. Server-side:
     (`configured`, `online`, `players`, `max_players`, `telemetry_backlog`,
     `telemetry_dropped_total`). `online`, `players` and `max_players` count online servers only;
     the telemetry figures sum every reported queue reading. The
-    [telemetry specification](/documentation/apps/api/verification_evidence/telemetry.md#fleet)
+    [telemetry specification](/documentation/crates/api/api_server/verification_evidence/telemetry.md#fleet)
     defines the shape.
   - `current_modpack`: the modpack flagged current (`load_current_modpack` in
     `crates/api/api_community_content/src/services/modpack_lookup.rs`).

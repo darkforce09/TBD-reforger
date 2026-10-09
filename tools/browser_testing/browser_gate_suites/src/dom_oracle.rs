@@ -2,10 +2,11 @@
 //!
 //! Captures the normalized DOM — through the serializer `fixture_injection` injects — plus a PNG
 //! for every leaf route, and diffs both against the frozen goldens under
-//! `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/oracle-freeze/`. `verify` is the regression gate;
-//! `accept` re-sources ONE route's golden from the current `apps/frontend/dist` with a
-//! recorded note. There is no whole-tree re-freeze: the goldens are not regenerable from any dist
-//! this repository still builds, so a bulk overwrite would destroy the oracle it exists to check.
+//! `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/oracle-freeze/`. `verify` is the
+//! regression gate; `accept` re-sources ONE route's golden from the current
+//! `crates/frontend/shell/frontend_application/dist` with a recorded note. There is no whole-tree
+//! re-freeze: the goldens are not regenerable from any dist this repository still builds, so a
+//! bulk overwrite would destroy the oracle it exists to check.
 //!
 //! Readiness = the injected clock freeze plus fixture-intercepted fetches, then a stability loop:
 //! serialize until two consecutive captures are byte-identical. Viewport pinned 1440×900.

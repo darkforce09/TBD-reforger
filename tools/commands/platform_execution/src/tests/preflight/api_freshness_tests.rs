@@ -59,17 +59,17 @@ impl Drop for Repository {
 #[test]
 fn a_commit_under_an_api_crate_is_newer_api_code() {
     let repository = Repository::new("crates");
-    repository.commit("apps/api/src/lib.rs", 1_000_000_000);
+    repository.commit("crates/api/api_server/src/lib.rs", 1_000_000_000);
     repository.commit("crates/api/api_state/src/lib.rs", 2_000_000_000);
     repository.commit("documentation/notes.md", 3_000_000_000);
     assert_eq!(newest_api_commit_epoch(&repository.0), 2_000_000_000);
 }
 
 #[test]
-fn a_commit_under_the_app_still_counts() {
-    let repository = Repository::new("app");
+fn a_commit_under_the_api_server_counts() {
+    let repository = Repository::new("api-server");
     repository.commit("crates/api/api_state/src/lib.rs", 1_000_000_000);
-    repository.commit("apps/api/src/lib.rs", 2_000_000_000);
+    repository.commit("crates/api/api_server/src/lib.rs", 2_000_000_000);
     assert_eq!(newest_api_commit_epoch(&repository.0), 2_000_000_000);
 }
 

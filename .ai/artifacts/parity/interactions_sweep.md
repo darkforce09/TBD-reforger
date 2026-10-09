@@ -8,7 +8,7 @@ two were not read while writing this one, so agreement between them is independe
 **Sources.** `docs/specs/Mission_Creator_Architecture/eden/interactions.md` (the id set),
 `eden/gap_analysis.md` (format + parity vocabulary, **not modified**),
 [`../eden_screenshots/`](../eden_screenshots/) (8 batches + README, 75 real Eden frames),
-and the live editor under `apps/frontend/src/`.
+and the live editor under `crates/frontend/shell/frontend_application/src/`.
 
 **Evidence rule.** Every `match` / `partial` carries a `file:line`. Every claim of absence carries
 the command that produced the zero. Inference is prefixed `INFERRED:`. Anything not established is
@@ -107,9 +107,9 @@ Parity vocabulary exactly as `gap_analysis.md:13-20`: `match` · `partial` · `m
 | eden_id | tbd_id | parity | gap_notes | maps_to_ticket |
 |---|---|---|---|---|
 | RIGHT-MODE-001 | RIGHT-CAT-001 | partial | Live registry tree exists (`asset_catalog.rs:146` `build_catalog_tree`; DockRight tab 0 "Factions" `eden_chrome.rs:3040-3055`). But Eden's F1 Object mode is **one** tree over units+vehicles+props; TBD splits it across a Factions tab, a Vehicles tab (`eden_chrome.rs:2961-3007`) and an Objects side-chip. No `F1` binding — F-keys are **deliberately banned** (`eden_chrome.rs:4998-5011`, T-180.5). `gap_analysis` calls this `match`; downgraded — see §6. | T-146 |
-| RIGHT-MODE-002 | — | missing | No composition mode. `grep -rniwE 'composition' --include=*.rs apps/frontend/src` → **3 hits, all `asset_catalog.rs:345,362,782`**, the `comp:` *alias slug* for a Reforger prefab. That is not Eden's author-saved composition — see §6. | T-078 |
-| RIGHT-MODE-003 | — | missing | No trigger entity. `grep -rnwE 'trigger' --include=*.rs apps/frontend/src` → 6 hits, **all prose/comments** (`auth.rs:514`, `yrs_persist.rs:94`, `attributes.rs:19`, `mission_commands.rs:258`, `editor_ops.rs:68`, `mission_editor.rs:1170`). | T-079 |
-| RIGHT-MODE-004 | — | missing | `grep -rliwE 'waypoint' --include=*.rs apps/frontend/src` → **0 files**. | T-079 |
+| RIGHT-MODE-002 | — | missing | No composition mode. `grep -rniwE 'composition' --include=*.rs crates/frontend/shell/frontend_application/src` → **3 hits, all `asset_catalog.rs:345,362,782`**, the `comp:` *alias slug* for a Reforger prefab. That is not Eden's author-saved composition — see §6. | T-078 |
+| RIGHT-MODE-003 | — | missing | No trigger entity. `grep -rnwE 'trigger' --include=*.rs crates/frontend/shell/frontend_application/src` → 6 hits, **all prose/comments** (`auth.rs:514`, `yrs_persist.rs:94`, `attributes.rs:19`, `mission_commands.rs:258`, `editor_ops.rs:68`, `mission_editor.rs:1170`). | T-079 |
+| RIGHT-MODE-004 | — | missing | `grep -rliwE 'waypoint' --include=*.rs crates/frontend/shell/frontend_application/src` → **0 files**. | T-079 |
 | RIGHT-MODE-005 | — | missing | No systems/modules family. | T-079 |
 | RIGHT-MODE-006 | RIGHT-STUB-002 | missing | Markers tab is a stub (`eden_chrome.rs:3000-3005`, tab index 2). | T-069 / T-213 |
 | RIGHT-SUBMODE-001 | EDEN-SIDE-CHIPS | partial | Eden **side** chips BLUFOR/OPFOR/INDFOR/Objects filter the tree (`eden_chrome.rs:2871` `EDEN_SIDE_CHIPS`, `:2919` `apply_eden_chip`, rebuild via `build_catalog_tree(_, side)`). Eden's submode is a per-mode faction/side sub-tab row cycled by `Tab`; no `Tab` binding in TBD (`grep -rnoE '"Tab"' --include=*.rs` → 0). `gap_analysis` says `missing | T-074`; T-074 is **cancelled** and the chips shipped in T-180.5 — see §6. | — (shipped T-180.5) |
@@ -118,7 +118,7 @@ Parity vocabulary exactly as `gap_analysis.md:13-20`: `match` · `partial` · `m
 | RIGHT-SEARCH-003 | — | missing | Same; no `mod:` handling. | T-084 |
 | RIGHT-SEARCH-004 | — | missing | Same; no glob. | T-084 |
 | RIGHT-SEARCH-005 | — | deferred | Same; no regex. Lowest value of the four search modes for a milsim authoring flow — deliberately behind `class:`/`mod:`. | T-084 |
-| RIGHT-CREW-001 | — | missing | No crew concept anywhere: `grep -rowE '\bcrew\b' --include=*.rs apps/frontend/src \| wc -l` → **0**; `\bseat\b` → **0**. Vehicles carry **cargo** rows only (`eden_chrome.rs:1985` `placed_vehicles_panel`, `editor_ops.rs:1811` `set_vehicle_cargo`). | T-076 |
+| RIGHT-CREW-001 | — | missing | No crew concept anywhere: `grep -rowE '\bcrew\b' --include=*.rs crates/frontend/shell/frontend_application/src \| wc -l` → **0**; `\bseat\b` → **0**. Vehicles carry **cargo** rows only (`eden_chrome.rs:1985` `placed_vehicles_panel`, `editor_ops.rs:1811` `set_vehicle_cargo`). | T-076 |
 
 ### 2.2 PLACE — Entity placement (7)
 
@@ -130,7 +130,7 @@ Parity vocabulary exactly as `gap_analysis.md:13-20`: `match` · `partial` · `m
 | PLACE-004 | — | missing | `place_at` unconditionally `take()`s the pending arm (`editor_ops.rs:2204`) — one-shot by construction. No modifier is read in the place path (`mission_editor.rs:1655-1700` contains no `ctrl_key`). | **T-072** |
 | PLACE-005 | ZONE-DRAW-001 | partial | An area **does** get drawn, by a different gesture and for a different family. Circle = click centre then rim; polygon = click each vertex then Close (`editor_ops.rs:2436-2497` `advance_zone_draw`, `:2499` `close_zone_polygon`; UI `eden_chrome.rs:2228-2300`). Eden is LMB **hold-drag**. TBD's areas are schema `zone.type` play areas/objectives (`eden_chrome.rs:3518` `zone_types`), **not** trigger or marker areas. | T-582 shipped; drag modality + marker/trigger areas → T-069 / T-079 |
 | PLACE-COMMENT-001 | — | missing | Blocked twice. No annotation entity, and **TBD has no context menu at all**: `contextmenu` is `prevent_default()` and nothing else (`mission_editor.rs:1844-1847`), because RMB is a pan button (`mission_editor.rs:1402`). | new (P-3, needs the menu first) |
-| PLACE-CREW-001 | — | missing | `grep -rn 'alt_key()' --include=*.rs apps/frontend/src` → **3 hits, all disqualifiers** (`mission_editor.rs:1020`, `:1023`, `mission_history.rs:490`). Alt is read nowhere in the pointer path. | **T-077** |
+| PLACE-CREW-001 | — | missing | `grep -rn 'alt_key()' --include=*.rs crates/frontend/shell/frontend_application/src` → **3 hits, all disqualifiers** (`mission_editor.rs:1020`, `:1023`, `mission_history.rs:490`). Alt is read nowhere in the pointer path. | **T-077** |
 
 ### 2.3 XFORM — Basic transform (5)
 
@@ -160,7 +160,7 @@ Parity vocabulary exactly as `gap_analysis.md:13-20`: `match` · `partial` · `m
 | eden_id | tbd_id | parity | gap_notes | maps_to_ticket |
 |---|---|---|---|---|
 | WIDGET-CYCLE-001 | — | missing | No widget to cycle, and **`Space` is already bound** to centre-on-selection (`mission_editor.rs:1026` → `editor_ops.rs:354` `center_on_selection`). This is the known collision. | **T-075** |
-| WIDGET-TRANS-001 | — | missing | Buildable in 2D (X/Y axis handles); direct drag currently substitutes. `grep -rniwE 'widget' --include=*.rs apps/frontend/src` → 1 hit, an unrelated comment at `server_control.rs:1138`. | T-075 |
+| WIDGET-TRANS-001 | — | missing | Buildable in 2D (X/Y axis handles); direct drag currently substitutes. `grep -rniwE 'widget' --include=*.rs crates/frontend/shell/frontend_application/src` → 1 hit, an unrelated comment at `server_control.rs:1138`. | T-075 |
 | WIDGET-ROT-001 | — | missing | A 2D yaw ring is buildable and is the natural home for Shift-drag rotate. | T-073 / T-075 |
 | WIDGET-AREA-SCALE-001 | ZONE-RESHAPE-001 | partial | Radius **is** re-authorable — `editor_ops.rs:2378` `begin_zone_reshape` re-arms the circle draw and `set_zone_circle` replaces the shape (`editor_ops.rs:2483-2486`), preserving label/faction/rules. But it is a re-draw, not an on-map scaling handle, and it never touches trigger areas (none exist). | T-582 follow-on |
 | WIDGET-AREA-001 | ZONE-RESHAPE-001 | partial | Same mechanism for polygons (`eden_chrome.rs:2576` "Redraw this zone as a polygon"). No vertex handles. | T-582 follow-on |
@@ -203,16 +203,16 @@ Parity vocabulary exactly as `gap_analysis.md:13-20`: `match` · `partial` · `m
 |---|---|---|---|---|
 | SEL-001 | SEL-MAP-001 | match | Sub-threshold release = click; picks against the **frozen** press camera and replaces/clears (`mission_editor.rs:1727-1757`, `select_tool.rs:165-181` `apply_click`). Covers slots **and** placed vehicles (`pick_slot_or_vehicle`, `select_tool.rs:150-158`). | — |
 | SEL-MOD-001 | SEL-MOD-001 | match | `additive = ev.ctrl_key() \|\| ev.meta_key()` (`mission_editor.rs:1731`) → toggle in/out, empty+additive preserves (`select_tool.rs:166-180`). Eden's `AddUnitToSel` is add-only; TBD toggles — a superset, T-053 decision. Shift stays unbound. | T-053 (shipped) |
-| SEL-ALL-001 | — | missing | `grep -rnoE '"KeyA"' --include=*.rs apps/frontend/src \| wc -l` → **0**. Eden's real label is `Select All on Screen` / `Select All in View`, `Ctrl+A` (`batch02_menus.md:541`, `batch01_context_menu.md:245`) — **viewport-scoped**, not whole-document. Cheap: the marquee already has a viewport-AABB primitive (`select_tool.rs:308` `marquee_ids_with_vehicles`). | new (P-5) |
+| SEL-ALL-001 | — | missing | `grep -rnoE '"KeyA"' --include=*.rs crates/frontend/shell/frontend_application/src \| wc -l` → **0**. Eden's real label is `Select All on Screen` / `Select All in View`, `Ctrl+A` (`batch02_menus.md:541`, `batch01_context_menu.md:245`) — **viewport-scoped**, not whole-document. Cheap: the marquee already has a viewport-AABB primitive (`select_tool.rs:308` `marquee_ids_with_vehicles`). | new (P-5) |
 | SEL-GROUP-ICON-001 | LEFT-ORBAT-001 | missing | Squad rows render as **non-interactive `<div>`s** — `eden_chrome.rs:1578-1611`: the `orbat_refile` branch has only `on:pointerup` (refile drop), the other branch has no handler at all. No group glyph on the map either (T-180 draws leader lines, not a selectable group icon). `gap_analysis` says `partial \| T-071`; T-071 shipped and this did not change — see §6. | new (P-6) |
 | SEL-LAYER-CHILDREN-001 | — | missing | Folder click sets the **drop target**, not a selection: `eden_chrome.rs:1624-1627` → `editor_ops.rs:1025` `set_active_layer`. `title="Make this the drop target"` (`eden_chrome.rs:1622`). | new (P-6) |
 | SEL-LAYER-DESC-001 | — | missing | Same handler; no descendant walk. | new (P-6) |
-| LAYER-CREATE-001 | LEFT-LAYER-005 | missing | The doc mutator exists and is **uncalled from any UI**: `crates/map-engine-core/src/doc/store.rs:1872` `add_editor_layer`, whose only SPA caller is the auto-seed `editor_ops.rs:1136` inside `ensure_layer`. `grep -rnwE 'add_editor_layer\|rename_editor_layer\|reparent_editor_layer' --include=*.rs apps/frontend/src` → 3 hits, **all comments plus that one seed**. DockLeft has no `+`/rename control (`eden_chrome.rs:2838-2860`; its five footer buttons are `disabled=true`, "visual only"). `gap_analysis` says `tbd_only`, which is a claim about *semantics* not *existence* — see §6. | new (P-6) |
+| LAYER-CREATE-001 | LEFT-LAYER-005 | missing | The doc mutator exists and is **uncalled from any UI**: `crates/map-engine-core/src/doc/store.rs:1872` `add_editor_layer`, whose only SPA caller is the auto-seed `editor_ops.rs:1136` inside `ensure_layer`. `grep -rnwE 'add_editor_layer\|rename_editor_layer\|reparent_editor_layer' --include=*.rs crates/frontend/shell/frontend_application/src` → 3 hits, **all comments plus that one seed**. DockLeft has no `+`/rename control (`eden_chrome.rs:2838-2860`; its five footer buttons are `disabled=true`, "visual only"). `gap_analysis` says `tbd_only`, which is a claim about *semantics* not *existence* — see §6. | new (P-6) |
 | LAYER-DEL-001 | LEFT-LAYER-007 | missing | `store.rs:1527` `remove_editor_layer` has **zero** SPA callers (same grep). `Delete` removes the selected slots only (`editor_ops.rs:342` `core.remove_slots(ids)`). | new (P-6) |
 | ATTR-OPEN-001 | ATTR-OPEN-001 | partial | Opens from map dblclick (`mission_editor.rs:1936-1969`) and outliner row dblclick (`eden_chrome.rs:1655-1660`). Two real limits: the pick is **slot-only** (`select_tool.rs:128-130`), so vehicles / placed objects / zones never open it; and any multi-selection **suppresses** it (`editor_ops.rs:583-585`). | new (P-7) |
 | ATTR-MULTI-001 | — | missing | Not merely unbuilt — actively refused by the same guard (`editor_ops.rs:583-585`). Eden reaches it via RMB ▸ `Attributes...` (`batch01_context_menu.md:219`); TBD has no RMB menu. | T-082 |
 | ATTR-MULTI-CHK-001 | — | missing | Per-field "values differ" opt-in checkbox. Presupposes ATTR-MULTI-001. | T-082 |
-| CTX-FORMATION-001 | — | missing | No context menu, no formation action. `grep -rnwE 'formation' --include=*.rs apps/frontend/src` → **1 hit, a comment** (`editor_ops.rs:1324`) describing the `APPLY_ANCHOR_X + 15.0 * i` **line-up** used when applying a faction library — a placement spacing rule, not a formation. | T-079 / new (P-3) |
+| CTX-FORMATION-001 | — | missing | No context menu, no formation action. `grep -rnwE 'formation' --include=*.rs crates/frontend/shell/frontend_application/src` → **1 hit, a comment** (`editor_ops.rs:1324`) describing the `APPLY_ANCHOR_X + 15.0 * i` **line-up** used when applying a faction library — a placement spacing rule, not a formation. | T-079 / new (P-3) |
 
 ### 2.10 KEY shortcuts (4)
 
@@ -228,7 +228,7 @@ Parity vocabulary exactly as `gap_analysis.md:13-20`: `match` · `partial` · `m
 | eden_id | tbd_id | parity | gap_notes | maps_to_ticket |
 |---|---|---|---|---|
 | ACTION-COPY-001 | ACTION-COPY-001 | match | `Ctrl/Cmd+C`, Alt+Shift disqualify (`mission_editor.rs:1020`) → `editor_ops.rs:394` `copy_selection` (snapshots the selected slot dicts). | T-056 (shipped) |
-| ACTION-CUT-001 | — | missing | `grep -rnoE '"KeyX"' --include=*.rs apps/frontend/src \| wc -l` → **0**. Trivially `copy_selection() && delete_selection()`. | new (P-10) |
+| ACTION-CUT-001 | — | missing | `grep -rnoE '"KeyX"' --include=*.rs crates/frontend/shell/frontend_application/src \| wc -l` → **0**. Trivially `copy_selection() && delete_selection()`. | new (P-10) |
 | ACTION-PASTE-001 | ACTION-PASTE-001 | match | `Ctrl/Cmd+V` (`mission_editor.rs:1023`) → `editor_ops.rs:436` `paste_at_cursor(cx, cy)`; centroid → cursor, terrain-clamped, one undo step, paste becomes the selection (`:542-562`). | T-056 (shipped) |
 | ACTION-PASTE-ORIG-001 | — | missing | The V arm requires `!ev.shift_key()` (`mission_editor.rs:1023`), so `Ctrl+Shift+V` falls through. The primitive already exists — `paste_at_cursor(None, None)` is the paste-at-original path (`editor_ops.rs:436`, `cx/cy` optional). Near-free. | new (P-10) |
 | ACTION-LEVEL-001 | — | **na** | `LevelWithSurface` aligns an object's up-vector to the terrain normal, which needs pitch **and** roll. The 2D doc stores yaw only (`attributes.rs:292`; compiled `headingDeg`, T-092.1) and the mod re-grounds every spawn. There is no orientation to level. | — |
@@ -365,7 +365,7 @@ Both editor listeners guard on `in_editable_field()` (`mission_editor.rs:1010`,
 That is **10 bindings**. Everything else is unbound — verified by literal search:
 
 ```bash
-cd apps/frontend/src
+cd crates/frontend/shell/frontend_application/src
 for k in KeyA KeyX KeyF KeyM KeyE KeyR KeyL KeyG KeyT KeyI KeyS KeyO KeyN \
          Digit1 Digit2 Digit3 Digit4 Digit5 Tab Home Quote Minus Semicolon; do
   printf '%-10s %s\n' "$k" "$(grep -rnoE "\"$k\"" --include=*.rs . | wc -l)"; done
@@ -583,7 +583,7 @@ to verify. Two load-bearing lines were checked directly:
   entire vehicle roster is dropped by the compile, so a crew UI would author state the game never
   receives.
 * ✅ **`README.md:83-88` — the `stance` word-boundary trap.** The methodology reproduced here and
-  it caught a live false positive: `grep -rn 'snap' apps/frontend/src` looks like ~33 hits
+  it caught a live false positive: `grep -rn 'snap' crates/frontend/shell/frontend_application/src` looks like ~33 hits
   of snapping support; `grep -rnwE 'snap'` shows **every one** is a `snapshot`/`snap` local
   (`mission_commands.rs:187-304`, `orbat_manager.rs:283-306`). TBD has **no** snapping. Every
   absence claim in §2 is word-boundary.

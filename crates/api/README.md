@@ -1,8 +1,8 @@
 # API crates
 
-The library crates of the [API](/documentation/glossary/a_to_f.md#api): the code the API
-application (`apps/api`) is built from, one crate per kernel concern or domain, each one free of
-the application binary.
+The crates of the [API](/documentation/glossary/a_to_f.md#api): the library crates, one per kernel
+concern or domain, each one free of the server binary, and `api_server`, the top crate that
+assembles them into the router, the composition root and the two binaries.
 
 ## Contents
 
@@ -29,6 +29,7 @@ crates/api/
 ├── api_missions/            `api_missions`: the mission library, versions, artifacts, reviews and approvals, deployments, the armory, factions and registries
 ├── api_operations/          `api_operations`: the event calendar and its access control, ORBAT slotting and reservations, service records, leave requests, fire missions, ballistics catalogs
 ├── api_property_evidence/   `api_property_evidence`: the dev-only property run recorder of the API's property tests
+├── api_server/              `api_server`: the router, the composition root and the `api-server` and `import-item-registry` binaries, over every API crate
 ├── api_server_infrastructure/  `api_server_infrastructure`: the server registry, the live status feed, machine credentials, the fleet command ledger, runtime sessions
 └── api_state/               `api_state`: the application state and its `FromRef` sub-state projections
 ```
@@ -48,13 +49,14 @@ category carries its own rules on top of those every library crate keeps:
   and no anyhow; only the dev-only `failpoints` and `test_fixtures` features exist.
 
 The tier of a crate is 1 plus the highest tier it depends on (0 with no workspace dependency), so
-the domain crates sit above the kernel crates, and `api_mission_vocabulary` (tier 0) and
-`api_identifiers` (tier 1) sit at the bottom of the category.
+the domain crates sit above the kernel crates, `api_mission_vocabulary` (tier 0) and
+`api_identifiers` (tier 1) sit at the bottom of the category, and `api_server` (tier 11) sits on
+top, above the background workers.
 
 ## Boundaries
 
 - Depends on: the foundation, contracts, mission and ballistics crates, and external crates from
   the root `[workspace.dependencies]`.
-- Used by: the API application (`apps/api`) and its integration tests.
+- Used by: the API server (`crates/api/api_server`) and its integration tests.
 - Rules: the category rules above, plus the anatomy every library crate keeps
   (`cargo xtask verify crate-anatomy`).

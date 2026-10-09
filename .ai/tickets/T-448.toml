@@ -48,8 +48,8 @@ estimated = [
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 owns = [
     "apps/website/api/src/handlers/admin.rs",
-    "apps/frontend/src/dto.rs",
-    "apps/frontend/src/personnel.rs",
+    "crates/frontend/shell/frontend_application/src/dto.rs",
+    "crates/frontend/shell/frontend_application/src/personnel.rs",
     "contracts/fixtures/api_goldens/GET__admin__users.json",
 ]
 

@@ -35,7 +35,7 @@ cargo xtask db test-it --test contract_parity_equipment_viewer --test community_
 ```
 
 The contract parity suite imports the committed exports under
-`apps/api/tests/fixtures/equipment_data_viewer/` and compares every route's answer with its
+`crates/api/api_server/tests/fixtures/equipment_data_viewer/` and compares every route's answer with its
 golden.
 
 ## Configuration
@@ -59,7 +59,7 @@ publication the gameplay catalog imports from).
 - Depends on: `api_identifiers` (the generation, resource, node and field ids), `content_digest`,
   `sqlx` with SQLite, `tokio`, `serde`, `serde_json` and `thiserror`; the rule file
   `contracts/rules/equipment-gameplay/native-matching.json`, embedded at compile time.
-- Used by: the API application (`apps/api`): its composition and application state, the equipment
+- Used by: the API application (`crates/api/api_server`): its composition and application state, the equipment
   data viewer handlers of `api_community_content`, the `equipment_export_watcher` background worker
   and the integration suites.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md); nothing is read from the

@@ -70,7 +70,7 @@ An optional field the [API](/documentation/glossary/a_to_f.md#api) leaves out is
   `http_url_guard`, `frontend_ui` (short and local date formatting),
   the `AuthStore` context and the router's `use_params_map` and `use_navigate`.
 - Used by: the `/announcements` and `/announcements/:id` routes in
-  `apps/frontend/src/app_routes.rs`; the dashboard's Recent Intelligence rows in
+  `crates/frontend/shell/frontend_application/src/app_routes.rs`; the dashboard's Recent Intelligence rows in
   `crates/frontend/pages/command_center_pages/src/dashboard/` link to `/announcements/{id}`.
 - Rules: a body paragraph keeps bare `<` and `&` for the one escape the view applies
   (`body_paragraphs_preserve_bare_angle_brackets` in `tests/announcements.rs`); the preview falls

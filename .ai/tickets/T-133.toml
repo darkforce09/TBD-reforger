@@ -45,7 +45,7 @@ completed_at = "2026-09-06T21:46:19Z"
 estimated = ["tokens"]
 owns = [
     "crates/map-engine-core/src/mission/tasks.rs",
-    "apps/frontend/src/editor/panels/tasks_panel.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/tasks_panel.rs",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c",
 ]

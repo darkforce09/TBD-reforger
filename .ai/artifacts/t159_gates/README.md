@@ -12,7 +12,7 @@ moved to their consumers (the T-171 fixture convention — fixtures live crate-l
 
 The oracle is **non-regenerable** (captured from the final React dist at T-159.29.1; the React
 app was deleted at T-159.29.3). `gate v-suite freeze` was retired at T-171 for exactly that
-reason — `apps/frontend/dist` is now the live Leptos dist, and a re-freeze would
+reason — `crates/frontend/shell/frontend_application/dist` is now the live Leptos dist, and a re-freeze would
 overwrite the oracle. Route-level intentional divergence goes through
 `gate v-suite accept --only <slug> --note "<why>"`.
 

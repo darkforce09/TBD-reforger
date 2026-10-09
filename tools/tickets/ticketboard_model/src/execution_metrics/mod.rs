@@ -4,7 +4,7 @@
 //! ([`measured`]) and `.ai/tickets/estimates/` files into per-class and per-domain aggregates
 //! ([`estimated`]).
 //! **Position:** over [`crate::ticket_registry`] and `ticket_metrics`; the Metrics tab and the
-//! detail panel of `apps/ticketboard` paint [`models::MetricsView`] and emit
+//! detail panel of `tools/tickets/ticketboard_desktop` paint [`models::MetricsView`] and emit
 //! [`events::MetricsEvent`]s.
 //! **Signals & state:** none; plain data rebuilt on load.
 //! **Invariants:** measured and estimated figures are never summed together; missing data never

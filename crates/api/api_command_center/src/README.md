@@ -35,7 +35,7 @@ players and capacity, and sum every reported telemetry queue's backlog and drops
 
 ## Public surface
 
-- `routes()`: the table the API's router (`apps/api/src/router.rs`) merges under
+- `routes()`: the table the API's router (`crates/api/api_server/src/router.rs`) merges under
   `/api/v1`, one route each, all
   `AuthUser`:
   - `GET /api/v1/dashboard`: the next event, the caller's assignment, the configured fleet with
@@ -56,21 +56,21 @@ players and capacity, and sum every reported telemetry queue's backlog and drops
   `api_community_content`, `api_operations` and `api_server_infrastructure` for the rows the
   dashboard and the card read.
 - Used by:
-  - the API's router (`apps/api/src/router.rs`), which merges the route table;
-  - the API's integration suites in `apps/api/tests/`;
+  - the API's router (`crates/api/api_server/src/router.rs`), which merges the route table;
+  - the API's integration suites in `crates/api/api_server/tests/`;
   - over HTTP, the dashboard and the leaderboard pages in the page crates under `crates/frontend/pages/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
-  router merges (`apps/api/src/tests/architecture_rules.rs` checks both); every handler
+  router merges (`crates/api/api_server/src/tests/architecture_rules.rs` checks both); every handler
   carries its `/// @route` tag (`cargo xtask verify route-tags`); the view refresh and the counter
   recomputation each have one home, in `services/`.
 
 ## Related documentation
 
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
-- [API environment variables](/documentation/apps/api/environment_variables.md)
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
+- [API environment variables](/documentation/crates/api/api_server/environment_variables.md)
   — `LEADERBOARD_REFRESH_INTERVAL_SECS`,
   the cadence of the scheduled leaderboard refresh.
-- [Match telemetry, fleet status and derived statistics](/documentation/apps/api/verification_evidence/telemetry.md)
+- [Match telemetry, fleet status and derived statistics](/documentation/crates/api/api_server/verification_evidence/telemetry.md)
   — the fleet block and when the derived statistics are recomputed.
-- [Reservation and attendance separation](/documentation/apps/api/verification_evidence/reservation_attendance.md)
+- [Reservation and attendance separation](/documentation/crates/api/api_server/verification_evidence/reservation_attendance.md)
   — what counts as attendance, which the statistics summarise.

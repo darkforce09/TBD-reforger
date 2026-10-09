@@ -75,14 +75,14 @@ too. The ledger in `fleet_commands/` has its own README.
 - Used by: the domain's handlers; `api_match_telemetry`, `api_missions`, `api_operations` and
   `api_command_center` through the surface above; the workers in `crates/api/api_background_workers/src/`;
   the `staging-fixtures` host tool in `tools/staging/staging_fixtures/`; the integration tests in
-  `apps/api/tests/`.
+  `crates/api/api_server/tests/`.
 - Rules: only the SHA-256 of a secret is stored, and the secret is shown once at issue; a machine
   acts only for its own server; `status_broadcast.rs` stays the one publisher of the `server:{id}`
   topic.
 
 ## Related documentation
 
-- [Machine credentials and runtime sessions](/documentation/apps/api/verification_evidence/machine_credentials.md)
+- [Machine credentials and runtime sessions](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md)
   — the credential format, the session fence and their consumers.
-- [Fleet command ledger](/documentation/apps/api/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
   — the ledger's design.

@@ -54,7 +54,7 @@ cargo test -p map_coordinates   # the chunk grid, rounding and grid-reference un
   `terrain_elevation` and `terrain_relief` (the terrain grid and hillshade), and the mission and
   mission editing crates (the selection digest); the developer tools (`tools/developer_tools`);
   and the single-page app
-  (`apps/frontend`): the Mission Creator's toolbelt and the mortar page.
+  (`crates/frontend/shell/frontend_application`): the Mission Creator's toolbelt and the mortar page.
 - Rules: one grid-reference convention, so the edge labels, the clipboard exporters and the
   mortar page agree (`format_six_figure_halves_are_the_edge_label_digits` and the other cases in
   `src/tests/grid_reference.rs`); `round` rounds a half toward +∞ (`matches_js_math_round`);

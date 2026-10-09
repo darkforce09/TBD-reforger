@@ -28,7 +28,7 @@ HEAD at dispatch: `4b01ae415` (twin-widen already on this branch). Worktree matc
 | `apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneVolume.c` (export twin, NEW) | whole file | Volume AGL test (per-entity `GetSurfaceY`), attacker/defender counts, advantagePercent, startingOwner. TBD rules, WOG sentence marked INFERRED only. |
 | `apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c` (export twin) | 132, 163, 395–396, 753 | Read/Clear; ApplyStartingOwner + LogBound; destroy query uses `ContainsOrigin` (XZ + AGL). |
 | `apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c` (export twin) | 308, 342, 560–561 | **Outside owns** — without these call sites the volume/count rules never reach capture/hold presence. See files_outside_owns. |
-| `apps/frontend/src/editor/panels/zones_panel.rs` | 1280+ | `t685_volume_fields_render_from_zone_rules_schema`: kinds for the six keys (no second inspector). |
+| `crates/frontend/shell/frontend_application/src/editor/panels/zones_panel.rs` | 1280+ | `t685_volume_fields_render_from_zone_rules_schema`: kinds for the six keys (no second inspector). |
 
 TBD semantics (not the inferred WOG sentence):
 
@@ -52,7 +52,7 @@ Broke `t685_volume_fields_render_from_zone_rules_schema` by replacing the `start
 
 running 1 test
 
-thread 'editor::panels::zones_panel::tests::t685_volume_fields_render_from_zone_rules_schema' (1915832) panicked at apps/frontend/src/editor/panels/zones_panel.rs:1335:51:
+thread 'editor::panels::zones_panel::tests::t685_volume_fields_render_from_zone_rules_schema' (1915832) panicked at crates/frontend/shell/frontend_application/src/editor/panels/zones_panel.rs:1335:51:
 assertion `left == right` failed: startingOwner must resolve $ref factionKey (side picker, not a free string)
   left: Some("^[a-z][a-z0-9_]*$")
  right: Some("PERTURB_T685")

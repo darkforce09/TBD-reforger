@@ -85,7 +85,7 @@ contract requires fails the fetch instead of rendering blank.
   (`AuthGate`, `MaterialIcon`, `cn`), `frontend_ui` (countdown and short date
   formatting, and `format_download_size` for the modpack size), the `AuthStore` context,
   and the banner image on `lh3.googleusercontent.com`.
-- Used by: the `/` route in `apps/frontend/src/app_routes.rs`.
+- Used by: the `/` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`.
 - Rules: the fetch belongs to `page.rs` and each panel receives its data owned; a panel with nothing
   to show keeps its heading and shape and says so, so the card grid always holds three cells. No
   test pins these rules.

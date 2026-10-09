@@ -196,11 +196,11 @@ fn a_change_under_an_api_crate_changes_the_fingerprint() {
 #[test]
 fn only_paths_inside_an_input_folder_are_source_inputs() {
     for inside in [
-        "apps/api/src/lib.rs",
+        "crates/api/api_server/src/lib.rs",
         "crates/geometry/geometry_primitives/src/lib.rs",
         "tools/xtask/src/main.rs",
         "contracts/definitions/mission.schema.json",
-        "documentation/apps/api/verification_evidence/register.md",
+        "documentation/crates/api/api_server/verification_evidence/register.md",
         ".cargo/config.toml",
         ".github/workflows/ci.yml",
     ] {
@@ -211,7 +211,7 @@ fn only_paths_inside_an_input_folder_are_source_inputs() {
         "crates.rs",
         "toolset/lib.rs",
         "contracts_old/schema.json",
-        "documentation/apps/api/README.md",
+        "documentation/crates/api/api_server/README.md",
         ".github-old/ci.yml",
     ] {
         assert!(

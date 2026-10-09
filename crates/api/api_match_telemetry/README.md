@@ -66,19 +66,19 @@ compile to nothing outside test builds (`api_failpoints`).
   `api_http_layer`, `api_audit_log`, `api_database`, `api_failpoints`, `api_foundation`,
   `api_identifiers`, `api_mission_vocabulary`, `fleet_wire_contract`, `http_url_guard`, sqlx,
   axum, serde, chrono, thiserror and uuid. It names no other domain.
-- Used by: the API application (`apps/api`): its router merges `routes`, the operations domain
+- Used by: the API application (`crates/api/api_server`): its router merges `routes`, the operations domain
   reads the match models for the member service record, and the integration suites call the
   ingest services. Over HTTP: the game runtime's session loop and telemetry delivery in
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md);
-  `apps/api/src/tests/architecture_rules.rs` checks its route table, its handlers and its
+  `crates/api/api_server/src/tests/architecture_rules.rs` checks its route table, its handlers and its
   imports against the domain graph.
 
 ## Related documentation
 
 - [API match telemetry source](/crates/api/api_match_telemetry/src/README.md) — the files, the
   routes and how each ingest is decided.
-- [Match telemetry, fleet status and derived statistics](/documentation/apps/api/verification_evidence/telemetry.md)
+- [Match telemetry, fleet status and derived statistics](/documentation/crates/api/api_server/verification_evidence/telemetry.md)
   — registration, revisions, detailed events, the lock order and the game runtime's queue.
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.

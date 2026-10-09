@@ -133,7 +133,7 @@ make wasm                 # merged pkg rebuilt; map_engine_wasm_bg.wasm = 4,152,
                           #   update_slot_loadout + json plumbing)
 make schema-codegen       # regenerates exactly the two loadout contract files (committed)
 cd packages/tbd-schema && npm run validate        # All contracts valid (sample untouched)
-cd apps/frontend && npm test              # 42 files / 316 passed (+16 rules, +1 parity)
+cd crates/frontend/shell/frontend_application && npm test              # 42 files / 316 passed (+16 rules, +1 parity)
 npm run build                                     # clean (1.5 s)
 npm run lint              # 1 pre-existing error: router.tsx react-refresh (T-150 precedent)
 npm run format:check      # 24 pre-existing drift files — none from this slice

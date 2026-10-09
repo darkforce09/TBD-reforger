@@ -22,8 +22,8 @@ on: this crate's dev-dependency on itself, the dev-dependency of every API crate
 call site (`api_administration`, `api_identity_and_access`, `api_match_telemetry`,
 `api_missions`, `api_operations`, `api_server_infrastructure`) and the API application's
 dev-dependency on it. So every test build (this crate's unit tests, each of those crates' unit
-tests, and every `apps/api/tests/*.rs` binary) carries it, and a build of the `api` binary
-(`cargo build --release -p api --bin api`, the deploy build) does not.
+tests, and every `crates/api/api_server/tests/*.rs` binary) carries it, and a build of the `api-server` binary
+(`cargo build --release -p api_server --bin api-server`, the deploy build) does not.
 
 A call site names a point with `fail_point!(<variant>);` inside an `async fn` whose error type
 converts from `api_failpoints::Error`, as `ApiError` and `sqlx::Error` do. Without the
@@ -83,14 +83,14 @@ reads no environment variable.
   `serde_json`, `sqlx`, `thiserror`, `tokio` (the suite lock and the pause flags) and `tracing`.
 - Used by: the call sites in the services and handlers of the six API domain crates above; the
   `failure_injection*` and
-  `controlled_races*` suites under `apps/api/tests/`, the only binaries that arm catalogue
+  `controlled_races*` suites under `crates/api/api_server/tests/`, the only binaries that arm catalogue
   points; this crate's unit tests, which arm only the two points that exist in its unit-test
   build.
 - Rules: never enable `failpoints` by default or on a deploy build, which
-  `apps/api/tests/engineering_laws.rs` and `cargo xtask ci verify-workspace-laws` check; a call
+  `crates/api/api_server/tests/engineering_laws.rs` and `cargo xtask ci verify-workspace-laws` check; a call
   site passes a catalogue point; every arming case holds the suite lock for its whole run.
 
 ## Related documentation
 
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.
-- [Website API](/apps/api/README.md) — the application whose test builds arm the points.
+- [Website API](/crates/api/api_server/README.md) — the application whose test builds arm the points.

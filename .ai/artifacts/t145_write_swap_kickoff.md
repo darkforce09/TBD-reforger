@@ -105,7 +105,7 @@ round-trip; `yjs`/`y-indexeddb` gone from `package.json`.
 - `make wasm` — rebuild the gitignored pkg (before any frontend build/test). `make wasm-ci` — fmt +
   clippy `--all-features -D warnings` + core tests.
 - `cargo fmt -p map-engine-core -p map-engine-wasm` (fmt has no `--manifest-path`).
-- Frontend: `cd apps/frontend && npm run test -- mutatorParity` / `lint` / `build` /
+- Frontend: `cd crates/frontend/shell/frontend_application && npm run test -- mutatorParity` / `lint` / `build` /
   `format:check`. `npx prettier --write <file>` (worldmap/* has pre-existing prettier debt — don't touch).
 - `make rust-test-it > /tmp/it.log 2>&1; echo $?` — **never `| tail`** (masks exit + truncates). DB
   `tbd_reforger_db` on :5434 (`make db-up` if down).

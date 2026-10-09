@@ -10,7 +10,7 @@ KNOWN AND ALREADY FILED — do not re-report: the shared cache can serve a stale
 
 THE SPAN. Base marker `b0257e946` (wave 239 CLOSED). Landed:
 - `ab7f900b8` T-935.6 — `tools/tbd-tools/src/world/roads_emit.rs` (new), `world/mod.rs`, `bin/world.rs`, `crates/map-engine-core/src/world/{roads.rs,store.rs}`: road network to rkyv, with a gzip-vs-rkyv sniff.
-- `fe14f8d0f` T-935.9 — `crates/map-engine-core/src/world/water.rs` (new), `world/mod.rs`, `tools/tbd-tools/src/map/water_emit.rs` (new), `map/mod.rs`, `bin/map.rs`, `apps/frontend/src/editor/world_assets/{water.rs (new),mod.rs}`: water vectors + a TBDB bathymetry pyramid and a placement-guard mask.
+- `fe14f8d0f` T-935.9 — `crates/map-engine-core/src/world/water.rs` (new), `world/mod.rs`, `tools/tbd-tools/src/map/water_emit.rs` (new), `map/mod.rs`, `bin/map.rs`, `crates/frontend/shell/frontend_application/src/editor/world_assets/{water.rs (new),mod.rs}`: water vectors + a TBDB bathymetry pyramid and a placement-guard mask.
 - `8647ad1d6` T-674.1 — `crates/map-engine-core/src/mission/flatten.rs`: slot identity and squad leader on the wire at schema 1.3.
 
 COMMAND-CENTRE work in the span, and attack it as hard as the slices:

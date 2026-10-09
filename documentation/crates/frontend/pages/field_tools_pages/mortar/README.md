@@ -54,7 +54,7 @@ feature doc; the code folder's README lists the page's files.
 
 - [Operations domain](/crates/api/api_operations/src/README.md) — the API side of the
   catalogs and the fire missions.
-- [Game ballistics design note](/documentation/apps/api/verification_evidence/game_ballistics.md)
+- [Game ballistics design note](/documentation/crates/api/api_server/verification_evidence/game_ballistics.md)
   — the operator decisions, the model, the tolerances and the register.
 - [Offline mortar page](/documentation/runbooks/offline_mortar_page.md) — preparing, using and
   checking the offline pack.

@@ -1,7 +1,8 @@
 //! The frontend's format, lint and test command lines, derived from the workspace.
 //!
-//! **Role:** names the frontend family, the single-page app `frontend` and every workspace member
-//! under `crates/frontend/`, and renders the four cargo lines that gate it (format, wasm32 clippy,
+//! **Role:** names the frontend family, the single-page app `frontend_application` and every
+//! workspace member under `crates/frontend/` (the offline service worker beside the app among
+//! them), and renders the four cargo lines that gate it (format, wasm32 clippy,
 //! native clippy, native tests), each naming every package of the family with one `-p` apiece;
 //! runs them as task-table steps.
 //! **Position:** the `ci-local-leptos` row of [`crate::task_runner::TASKS`] runs
@@ -15,9 +16,9 @@
 //! runner, with the environment every task line gets.
 //! **Invariants:** a frontend crate is formatted, linted for both targets and tested from the
 //! moment the workspace names it, never only once someone extends a list; the app comes first,
-//! then the crates in member-path order; an unreadable workspace, or a workspace without the app,
-//! is an error, never a line naming fewer packages; the family runs in one cargo per line, as the
-//! API family does.
+//! then the crates in member-path order, each package once; an unreadable workspace, or a
+//! workspace without the app, is an error, never a line naming fewer packages; the family runs in
+//! one cargo per line, as the API family does.
 
 use std::path::Path;
 
@@ -27,10 +28,11 @@ use repository_root::find_repository_root;
 use crate::error::{Error, Result};
 
 /// The package of the single-page app, the root of the frontend family.
-pub const FRONTEND_APPLICATION: &str = "frontend";
+pub const FRONTEND_APPLICATION: &str = "frontend_application";
 
-/// The folder whose workspace members are the frontend's library crates, one per
-/// `crates/frontend/<layer>/<crate>`.
+/// The folder whose workspace members are the frontend's crates, one per
+/// `crates/frontend/<layer>/<crate>`: the library layers and the `shell` layer that holds the app
+/// and the offline service worker.
 pub const FRONTEND_CRATES_FOLDER: &str = "crates/frontend";
 
 /// The task-table row and `mk` recipe that format, lint and test the frontend family.

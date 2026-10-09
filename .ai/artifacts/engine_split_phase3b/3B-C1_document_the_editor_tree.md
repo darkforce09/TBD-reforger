@@ -5,7 +5,7 @@ applies to this brief.
 
 ## Why now
 
-Brief 3B-C2 moves `apps/frontend/src/editor/` under `src/v2`, where
+Brief 3B-C2 moves `crates/frontend/shell/frontend_application/src/editor/` under `src/v2`, where
 `v2/tests/doc_audit/` audits every production file. Three of its five rules — size, inline test
 modules, ticket/wave comments — are carried on the dated allowlist brief 3B-B built, because
 clearing them is Phase 3C's subject. **Two are not exempted and never will be:** every file opens

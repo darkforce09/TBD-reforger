@@ -25,7 +25,7 @@ include_str!(concat!(
 ))
 ```
 
-`CARGO_MANIFEST_DIR` is `apps/frontend`, so the suffixes are:
+`CARGO_MANIFEST_DIR` is `crates/frontend/shell/frontend_application`, so the suffixes are:
 
 | pin target | anchored suffix |
 |---|---|
@@ -39,7 +39,7 @@ include_str!(concat!(
 
 **254 cross-file `include_str!` sites across 53 files.** A *cross-file* pin is one whose resolved
 target is a file other than the file holding it. Derive the list yourself with this script, run
-from `apps/frontend`:
+from `crates/frontend/shell/frontend_application`:
 
 ```python
 import re, os, collections

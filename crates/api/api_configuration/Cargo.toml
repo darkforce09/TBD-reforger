@@ -17,6 +17,8 @@ targets = "any"
 [dependencies]
 api_identifiers = { workspace = true }
 dotenvy = { workspace = true }
+# The checkout-root walk the development defaults of the directory settings are joined onto.
+repository_root = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["sync"] }
 

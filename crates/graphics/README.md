@@ -19,7 +19,7 @@ crates/graphics/
 - Used by: the map rendering crates (`crates/map_rendering/`), whose `map_renderer` implements
   `renderer_core`'s contracts and whose typed layers draw through `gpu_frame`; the paper doll
   renderer (`crates/paper_doll/paper_doll_renderer`), over `gpu_device`'s GPU context; the
-  streaming and overlay crates and the single-page app (`apps/frontend`), over
+  streaming and overlay crates and the single-page app (`crates/frontend/shell/frontend_application`), over
   `render_primitives`' byte layouts and `gpu_frame`'s frame pump.
 - Rules: a graphics crate declares `category = "crates/graphics"` (`cargo xtask verify
   crate-tiers`), and no name or document in it names a thing in the world being drawn.

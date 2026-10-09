@@ -42,7 +42,7 @@ audit id, and reloads the history on `reset`.
 
 ## Public surface
 
-- `routes::routes()`: the table the API's router (`api::router`) merges under `/api/v1`, every route `AdminUser`
+- `routes::routes()`: the table the API's router (`api_server::router`) merges under `/api/v1`, every route `AdminUser`
   unless marked:
   - `GET /api/v1/admin/users?q&page&per_page`: one page of the searchable roster,
     `{items, page, per_page, total}`.
@@ -70,14 +70,14 @@ audit id, and reloads the history on `reset`.
   `api_failpoints`; the domain crate `api_identity_and_access` (the role resync and the grace
   extension).
 - Used by:
-  - the API's router (`apps/api/src/router.rs`), which merges the route table, and the
+  - the API's router (`crates/api/api_server/src/router.rs`), which merges the route table, and the
     `audit_publication_worker` in `crates/api/api_background_workers/src/`;
-  - the API's audit integration suites in `apps/api/tests/`, which drive the services directly;
+  - the API's audit integration suites in `crates/api/api_server/tests/`, which drive the services directly;
   - over HTTP, the [personnel](/documentation/glossary/n_to_z.md#personnel) and
     [audit logs](/documentation/glossary/a_to_f.md#audit-logs) pages in
     `crates/frontend/pages/administration_pages/src/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
-  router merges (`apps/api/src/tests/architecture_rules.rs` checks both); every handler
+  router merges (`crates/api/api_server/src/tests/architecture_rules.rs` checks both); every handler
   carries its `/// @route` tag (`cargo xtask verify route-tags`); no Rust code outside `api_audit_log`
   inserts into `audit_logs`, which keeps one audit path for the API's code; the wire shapes follow
   `contracts/definitions/personnel-roster.schema.json` and
@@ -85,8 +85,8 @@ audit id, and reloads the history on `reset`.
 
 ## Related documentation
 
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
-- [Administration and community content](/documentation/apps/api/verification_evidence/administration_and_content.md)
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
+- [Administration and community content](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md)
   — the roster paging, the audit stream's replay, reset and recovery semantics.
 - [Personnel roster page](/documentation/crates/frontend/pages/administration_pages/personnel/personnel_roster_page.md)
   — the roster, discipline and resync as administrators use them.

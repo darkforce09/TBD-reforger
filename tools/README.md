@@ -1,10 +1,10 @@
 # Developer tooling
 
 Every developer tool in the repository: the `cargo xtask` command line, the tool crates its
-command groups dispatch onto (grouped by category), the heavy offline tools, and the npm package
-that pins the
-Enfusion MCP server. Developers, AI agents, the CI workflows and the host's timers run them; the
-products they build, check and deploy live in `apps/`.
+command groups dispatch onto (grouped by category), the heavy offline tools, the ticketboard
+desktop viewer, and the npm package that pins the Enfusion MCP server. Developers, AI agents, the
+CI workflows and the host's timers run them; the products they build, check and deploy are the
+crates under `crates/` and the game mod in `apps/`.
 
 ## Contents
 
@@ -19,7 +19,7 @@ tools/
 ├── foundation/                 verdicts and the verification lock, child processes, the repository laws, the layout, the deploy settings, the test locks
 ├── map_assets/                 the map asset crates: the blueprint compiler, the world export, raster and verification pipelines
 ├── staging/                    the staging crates: the load plan, the load generator, the acknowledgement-dropping relay
-├── tickets/                    the ticket registry crates: model, metrics, wave lock, registry, the ticketboard's headless model
+├── tickets/                    the ticket registry crates: model, metrics, wave lock, registry, the ticketboard's headless model and its desktop viewer
 └── xtask/                      the `cargo xtask` command line and dispatch, and the groups without a crate of their own
 ```
 
@@ -37,10 +37,9 @@ groups as modules of its own. It passes each crate the checkout root:
   `ticket_wave_lock` the [wave](/documentation/glossary/n_to_z.md#wave) lock and its history; and
   `ticket_registry` the typed operations, validation and the sync outputs (`queue.json`, the
   roadmap markers and the gap-analysis ticket column). The `ticket` and `wave` command groups of
-  xtask delegate to them, and [ticketboard](/documentation/glossary/n_to_z.md#ticketboard)
-  (`apps/ticketboard/`) reads the registry through `ticket_model` and paints the models of
-  `ticketboard_model` (tools/tickets); process invocation and worktree
-  cleanup stay with xtask.
+  xtask delegate to them, and the [ticketboard](/documentation/glossary/n_to_z.md#ticketboard)
+  desktop viewer `ticketboard_desktop` reads the registry through `ticket_model` and paints the
+  models of `ticketboard_model`; process invocation and worktree cleanup stay with xtask.
 - The [foundation crates](/tools/foundation/README.md) hold what every tool builds on:
   `verification_core` the fail-closed primitives the gates share (verdicts and findings, pattern
   scans, the run report and the `flock` on the shared verification lock), `process_runner` child
@@ -122,7 +121,7 @@ xtask ──runs──▶ developer_tools (binaries only)
   │               ├── gate, capture ──▶ browser_gate_suites ──▶ chrome_devtools_protocol (tools/browser_testing)
   │               └── staging-load, acknowledgement-dropping-relay ──▶ staging_load_generator, acknowledgement_dropping_relay (tools/staging)
   ├────▶ staging_procedures (tools/commands), the staging group ──▶ staging_load_plan (tools/staging), the plan crate under staging_load_generator
-  ├────▶ ticket crates (tools/tickets) ◀── ticketboard_model (tools/tickets) ◀── ticketboard (apps/ticketboard)
+  ├────▶ ticket crates (tools/tickets) ◀── ticketboard_model (tools/tickets) ◀── ticketboard_desktop (tools/tickets)
   ├────▶ command crates (tools/commands); enfusion_mcp: mcp; schema_tooling ──▶ prefab_catalog (INSTANCE_KINDS)
   ├────▶ ci_task_catalog (tools/commands): ci, help, mk ──▶ check crates, command crates, map_asset_verification (map asset steps)
   ├────▶ platform_execution (tools/commands): platform ──▶ ci_task_catalog, ticket crates
@@ -167,8 +166,7 @@ Each crate's README lists its own commands and checks.
   and rsync, the Arma Reforger tools.
 - Used by: developers and AI agents at the command line; the GitHub workflows in `.github/`; the
   backup and backup-drill units in `deploy/systemd/`, which run
-  `cargo xtask deploy db backup` and `cargo xtask deploy db drill`; and `apps/ticketboard/`, which
-  links `ticket_model`.
+  `cargo xtask deploy db backup` and `cargo xtask deploy db drill`.
 - Rules: each held by a test in `tools/checks/repository_checks/src/tests/`, over every tool crate
   found by folder (each `tools/<name>` and `tools/<category>/<name>` holding a `Cargo.toml`):
   - `developer_tools` never depends on `xtask`, and `xtask` never depends on

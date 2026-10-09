@@ -97,7 +97,7 @@ selection falls back to the first row. Paths carry the id percent-encoded as one
   `frontend_session` (`has_min_role_authed`, `Role`, the `AuthStore` context);
   `frontend_ui` (`AuthGate`, `Dialog`, the `split_pane` primitives, `MaterialIcon`, the
   toasts); `frontend_ui::safe_url::safe_image_src`.
-- Used by: the `/vehicles` route in `apps/frontend/src/app_routes.rs` and
+- Used by: the `/vehicles` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Vehicle Database" link in
   `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; the DOM oracle's `vehicles`
   capture in `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.

@@ -45,7 +45,7 @@ citations = [
     "contract/generated",
     "registry_import.rs",
 ]
-owns = ["apps/frontend/src/pages/public/vehicles.rs"]
+owns = ["crates/frontend/shell/frontend_application/src/pages/public/vehicles.rs"]
 
 [scope]
 domain = "repo"

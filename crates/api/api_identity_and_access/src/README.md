@@ -44,7 +44,7 @@ administrator does to a member lives in `api_administration`.
 
 ## Public surface
 
-- `routes::routes(dev)`: the table the API's router (`api::router`) merges under `/api/v1`, one
+- `routes::routes(dev)`: the table the API's router (`api_server::router`) merges under `/api/v1`, one
   route each:
   - `GET /api/v1/auth/discord/login`: public; starts Discord OAuth2.
   - `GET /api/v1/auth/discord/callback`: public; completes it and redirects to the SPA.
@@ -82,24 +82,24 @@ administrator does to a member lives in `api_administration`.
     attendance attribution);
   - Discord's OAuth2 and REST API.
 - Used by:
-  - the API's router (`apps/api/src/router.rs`), which merges the route table;
+  - the API's router (`crates/api/api_server/src/router.rs`), which merges the route table;
   - the workers in `crates/api/api_background_workers/src/`, and every other domain through
     the services above;
-  - over HTTP, the account pages and the navigation frame in `apps/frontend/`, and the
+  - over HTTP, the account pages and the navigation frame in `crates/frontend/shell/frontend_application/`, and the
     identity link of the mod in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.
 - Rules: handlers never import another domain's handlers, `routes.rs` exports the table the router
   merges, and only the router names this crate from the API's application source
-  (`apps/api/src/tests/architecture_rules.rs` checks all three); every handler carries
+  (`crates/api/api_server/src/tests/architecture_rules.rs` checks all three); every handler carries
   its `/// @route` tag (`cargo xtask verify route-tags`); the domain's generated contract types
   (`contract_schema_types::identity_and_access`) are written by `cargo xtask ci schema-codegen`
   and never edited by hand.
 
 ## Related documentation
 
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
-- [Identity transactions](/documentation/apps/api/verification_evidence/identity_transactions.md)
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
+- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
   — session authorization, Discord observations, linking and attribution.
-- [API environment variables](/documentation/apps/api/environment_variables.md)
+- [API environment variables](/documentation/crates/api/api_server/environment_variables.md)
   — the Discord, token and
   session settings, and what an empty one does.
 - [Local development](/documentation/runbooks/local_development.md) — the dev login and the

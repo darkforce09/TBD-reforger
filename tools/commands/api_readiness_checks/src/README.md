@@ -49,7 +49,8 @@ register.rs ──▶ fingerprint.rs (source, configuration) ──▶ [--execut
    that Git tracks (index mode 120000) is hashed as its link text under its own tag, and only
    when it resolves to an existing entry inside the repository; any other symlink on an input's
    path (one Git does not track as a symlink, or a symlinked ancestor directory) fails the run.
-   The configuration digest covers the three `.env` files and `deploy.env` (present or absent),
+   The configuration digest covers the root `.env`, the API server's `crates/api/api_server/.env`
+   and `deploy.env` (each path with its presence and contents, so a moved file changes it),
    every `PROPTEST_*` variable, and a fixed list of build and API environment variables, and
    refuses a symlinked configuration file; no value is printed.
 3. With `--execute`, every check that carries a command and is not `operational` runs once per
@@ -179,9 +180,9 @@ missing: <dependency>
 
 ## Related documentation
 
-- [Acceptance register](/documentation/apps/api/verification_evidence/requirements.json)
+- [Acceptance register](/documentation/crates/api/api_server/verification_evidence/requirements.json)
   — every requirement, its implementation paths and the checks that prove it.
-- [Property-test acceptance evidence](/documentation/apps/api/verification_evidence/property_test_evidence.md)
+- [Property-test acceptance evidence](/documentation/crates/api/api_server/verification_evidence/property_test_evidence.md)
   — why generated cases and test functions are counted apart.
-- [API v2 completion and executable verification](/documentation/apps/api/verification_evidence/completion_plan.md)
+- [API v2 completion and executable verification](/documentation/crates/api/api_server/verification_evidence/completion_plan.md)
   — the acceptance contract this command enforces.

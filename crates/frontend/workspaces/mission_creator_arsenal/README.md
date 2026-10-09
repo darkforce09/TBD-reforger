@@ -56,7 +56,7 @@ cargo test -p mission_creator_arsenal   # the loadout core, the export and impor
   `orbat_slot_ids`, `deterministic_random`, `leptos`, `serde_json`; on `wasm32` `paper_doll_renderer`, `web-sys`, `js-sys`,
   `wasm-bindgen`, `wasm-bindgen-futures`; `frontend_test_support` and the engine bridge's
   `test_fixtures` for its tests.
-- Used by: the single-page app (`apps/frontend`), whose Attributes dialog mounts `ArsenalTab`;
+- Used by: the single-page app (`crates/frontend/shell/frontend_application`), whose Attributes dialog mounts `ArsenalTab`;
   `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/arsenal.rs`, which drives the
   tab in a headless browser; `tools/checks/repository_checks/src/architecture/editor_orbat_coherency.rs`,
   which scans `src/loadout_commands.rs`.

@@ -18,8 +18,8 @@ tools/tickets/ticketboard_model/src/document_viewer/models/
 - Depends on: `std` only.
 - Used by: `crate::document_viewer::services::document_loading`, which re-exports the three types
   and builds `LoadedDocument`; through that re-export, the desktop application, whose
-  `apps/ticketboard/src/application/` holds the `ViewerState`, opens, closes and lands reads, and
-  whose `apps/ticketboard/src/document_viewer/ui/` paints it.
+  `tools/tickets/ticketboard_desktop/src/application/` holds the `ViewerState`, opens, closes and lands reads, and
+  whose `tools/tickets/ticketboard_desktop/src/document_viewer/ui/` paints it.
 - Rules: every state but `Closed` carries the repository-relative path as clicked, which is both
   the header label and the identity of a read; `land` applies a result only while `Loading` that
   same path, so a read superseded by another click or by Back is dropped

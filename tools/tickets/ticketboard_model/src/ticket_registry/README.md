@@ -48,7 +48,7 @@ The raw lowercase status and class names are the labels everywhere.
 - Used by: `crate::application_state`; `crate::ticket_browser`, `crate::ticket_actions`,
   `crate::wave_plan` and `crate::execution_metrics`;
   `tools/tickets/ticketboard_model/src/tests/support/mod.rs`; the desktop application
-  (`apps/ticketboard/src/main.rs`, `apps/ticketboard/src/application/` and the feature `ui/`
+  (`tools/tickets/ticketboard_desktop/src/main.rs`, `tools/tickets/ticketboard_desktop/src/application/` and the feature `ui/`
   folders).
 - Rules:
   - the registry imports no consuming feature, only `core` besides itself, and nothing here names

@@ -152,7 +152,7 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](/documentation/standards/commit_checklist
 | [`feature_inventory.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md) | TOP-UNDO-001 / TOP-REDO-001 edge cases + acceptance; KEY-UNDO-001 → **working** |
 | [`agent_execution.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md) | Decisions log row **Undo keyboard (T-052)** |
 | [`ROADMAP.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md) | Move **PLANNED T-052** → **DONE T-052**; line ~80 note keyboard undo |
-| [`docs/website/frontend/ROADMAP.md`](/documentation/apps/frontend/README.md) | Recently shipped T-052 |
+| [`docs/website/frontend/ROADMAP.md`](/documentation/crates/frontend/shell/frontend_application/README.md) | Recently shipped T-052 |
 | [`eden/gap_analysis.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_gap_analysis.md) | TOP-UNDO-001 → ✅ shipped T-052; TOOLBAR-UNDO-001 parity → match or partial→match |
 | [`t050_cursor_z_readout.md`](t050_cursor_z_readout.md) | Related: prior shipped slice (T-050) |
 

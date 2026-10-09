@@ -4,7 +4,7 @@
 //! and explains why two tickets can never share a wave ([`colliding_pairs`]).
 //! **Position:** the Waves tab's input; `crate::application_state::background_loading` loads it,
 //! [`crate::wave_plan::models::wave_projection`] projects it, and the comparison view of
-//! `apps/ticketboard` lists the colliding pairs.
+//! `tools/tickets/ticketboard_desktop` lists the colliding pairs.
 //! **Signals & state:** none; pure functions over the file text.
 //! **Invariants:** wave membership is rendered exactly as recorded. Missing and malformed locks
 //! are local refusals; the registry board remains usable. The board keeps its own lock shape,

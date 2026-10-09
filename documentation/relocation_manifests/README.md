@@ -73,6 +73,10 @@ documentation/relocation_manifests/
 ├── s12_w03_agent_context_crate.tsv  stage S12 G13: xtask's agent context guards become agent_context_guards under tools/commands; the `ai` group keeps only its command line and dispatch
 ├── s12_w03_mod_documentation_mirror.tsv  stage S12 G8: the mod's documentation mirror moves under documentation/apps/, at the mod's code path like every other application's
 ├── s12_w04_restructure_program_archive.tsv  stage S12 G10b: the closed workspace restructure program's records move into the archive as one topic folder
+├── s13_w01_1_api_server.tsv  stage S13 W1, first of four: the API application becomes the api_server crate under crates/api, its binaries api-server and import-item-registry, its documentation mirror under documentation/crates/api/
+├── s13_w01_2_frontend_shell.tsv  stage S13 W1, second of four: the single-page app becomes the frontend_application crate and the offline service worker joins it in the new shell layer crates/frontend/shell; the app's documentation hub becomes its mirror, the planned workspaces join the workspace crate documentation
+├── s13_w01_3_game_server_host_agent.tsv  stage S13 W1, third of four: the host agent becomes the game_server_host_agent crate in the new category crates/fleet, its documentation mirror under documentation/crates/fleet/, its systemd template game_server_host_agent@.service
+├── s13_w01_4_ticketboard_desktop.tsv  stage S13 W1, fourth of four: the ticketboard becomes the ticketboard_desktop tool crate under tools/tickets, its package, binary and eframe app id ticketboard_desktop, its documentation mirror under documentation/tools/tickets/
 ├── s1_global_renames.tsv     stage S1: top-level folder and tool package renames, archived records
 ├── s2_apps_and_deploy.tsv    stage S2: website crates to apps/ and legacy/, snake_case packages, deploy/
 ├── s2_brief_archive.tsv      stage S2: the executed S1 agent briefs into the archive

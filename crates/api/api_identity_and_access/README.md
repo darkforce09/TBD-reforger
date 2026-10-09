@@ -47,7 +47,7 @@ the API's integration suites.
 
 No feature and no variable of its own. The handlers read the Discord OAuth client, the configured
 guild, the frontend URL and the development flag from the `Config` the API loads at boot
-(`api_configuration`); [API environment variables](/documentation/apps/api/environment_variables.md)
+(`api_configuration`); [API environment variables](/documentation/crates/api/api_server/environment_variables.md)
 lists them.
 
 ## Public surface
@@ -68,19 +68,19 @@ lists them.
   `api_audit_log`, `api_http_layer`, `api_failpoints`, `api_configuration`, `api_foundation`,
   `api_identifiers`, `fleet_wire_contract`, `http_url_guard`, sqlx, axum, serde, chrono, url,
   tracing, thiserror and uuid; Discord's OAuth2 and REST API. It names no other domain.
-- Used by: the API application (`apps/api`): its router merges `routes`, its background workers
+- Used by: the API application (`crates/api/api_server`): its router merges `routes`, its background workers
   run the role sync, the membership reconciliation and the refresh token purge, the administration
   and operations domains call the services, and the `staging-fixtures` host tool and the
   integration suites reach the services directly.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md);
-  `apps/api/src/tests/architecture_rules.rs` checks its route table, its handlers and its
+  `crates/api/api_server/src/tests/architecture_rules.rs` checks its route table, its handlers and its
   imports against the domain graph.
 
 ## Related documentation
 
 - [API identity and access source](/crates/api/api_identity_and_access/src/README.md) — the files,
   the routes and how sign-in, sessions and the link handshake work.
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
-- [Identity transactions](/documentation/apps/api/verification_evidence/identity_transactions.md)
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
+- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
   — session authorization, Discord observations, linking and attribution.
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.

@@ -80,9 +80,10 @@ No feature and no environment variable; the crate holds constants and pure path 
   `is_retired_root_level_build_folder`.
 - `documentation`: `DOCUMENTATION_ROOT`, `ROADMAP` and `GAP_ANALYSIS`.
 - `workspace_folders`: the workspace's top-level folders (`APPLICATIONS_DIR`, `LIBRARY_CRATES_DIR`,
-  `TOOLS_DIR`) and the API database crate with its SQL folders (`API_DATABASE_CRATE_DIR`,
-  `API_DATABASE_MIGRATIONS_DIR`, `API_DATABASE_SEEDS_DIR`), which the API readiness fingerprint
-  and the `db` commands read.
+  `TOOLS_DIR`), the API server crate and the `.env` its binaries read (`API_SERVER_CRATE_DIR`,
+  `API_SERVER_ENVIRONMENT_FILE`), and the API database crate with its SQL folders
+  (`API_DATABASE_CRATE_DIR`, `API_DATABASE_MIGRATIONS_DIR`, `API_DATABASE_SEEDS_DIR`), which the
+  API readiness fingerprint, the `db` commands and the staging, mod and fixture tools read.
 - `prelude`: the top-level trees (`TICKETS_DIR`, `ARTIFACTS_DIR`, `CONTRACTS_DIR`, `DEPLOY_DIR`,
   `REFERENCES_DIR`, `TERRAIN_ASSETS_DIR`, `BUILD_OUTPUT_FOLDER`) and the checkout-root finder's
   names re-exported from `repository_root` (`find_repository_root`, `find_repository_root_from`,
@@ -92,7 +93,7 @@ No feature and no environment variable; the crate holds constants and pure path 
 
 - Depends on: `repository_root`, whose finder the prelude re-exports and whose root the tests
   check the committed locations against.
-- Used by: the ticket crates in `tools/tickets/`, the check and command crates and `ticketboard`,
+- Used by: the ticket crates in `tools/tickets/`, the check and command crates and `ticketboard_desktop`,
   for every location listed above; `deploy_settings` (the settings file and its example); `xtask`,
   for the checkout root through the prelude.
 - Rules: tier 1 of `tools/foundation`, over `repository_root` alone (`cargo xtask verify

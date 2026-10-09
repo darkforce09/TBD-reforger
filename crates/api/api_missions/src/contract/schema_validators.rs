@@ -147,7 +147,7 @@ pub fn validate_mission_document(raw: &[u8]) -> Result<Vec<String>, ContractErro
 }
 
 /// Validate a raw items envelope against `registry-items.schema.json`
-/// (the Workbench export ingested by `import-registry`).
+/// (the Workbench export ingested by `import-item-registry`).
 ///
 /// @contract registry-items.schema.json#/
 pub fn validate_registry_items_envelope(raw: &[u8]) -> Result<Vec<String>, ContractError> {
@@ -165,7 +165,7 @@ pub fn validate_faction_library_doc(raw: &[u8]) -> Result<Vec<String>, ContractE
 }
 
 /// Validate a raw compat envelope against `registry-compat.schema.json`
-/// (the Workbench edge export ingested by `import-registry`).
+/// (the Workbench edge export ingested by `import-item-registry`).
 ///
 /// @contract registry-compat.schema.json#/
 pub fn validate_registry_compat_envelope(raw: &[u8]) -> Result<Vec<String>, ContractError> {

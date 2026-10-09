@@ -84,7 +84,7 @@ before anything is sent: an item needs a name, and a quantity is a number or bla
 - Depends on: `frontend_transport` (the `api_get` and `api_put` client, `MissionDetail`),
   `frontend_session` (`AuthStore`, `Role`), `frontend_ui` (`AuthGate`, `Dialog`,
   `MaterialIcon`, the toasts) and `MissionReviewRecord` from the review record folder.
-- Used by: the `/missions/:id` route in `apps/frontend/src/app_routes.rs`; the library in
+- Used by: the `/missions/:id` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`; the library in
   `crates/frontend/pages/mission_hub_pages/src/library/` renders `dossier_body` in its
   slide-over and labels its cards with `mission_status_label`; `mission_overview_source` in
   `crates/frontend/pages/mission_hub_pages/src/tests/source_pins.rs` reads its source files.

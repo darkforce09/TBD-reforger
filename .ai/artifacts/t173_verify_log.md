@@ -91,7 +91,7 @@ the operator's to confirm on real GPU.
 
 Engine/core: `crates/map-engine-core/src/world/residency.rs`, `geometry/polyline_strip.rs`,
 `world/mod.rs`; `crates/map-engine-render/src/{engine.rs,shader.wgsl}`; `crates/map-engine-wasm/src/lib.rs`.
-Frontend: `apps/frontend/src/world_assets/{world_host.rs,mod.rs,bridge.rs,forest_mass.rs,satellite.rs,labels.rs}`,
+Frontend: `crates/frontend/shell/frontend_application/src/world_assets/{world_host.rs,mod.rs,bridge.rs,forest_mass.rs,satellite.rs,labels.rs}`,
 `mission_editor.rs`, `eden_chrome.rs`, `missions.rs`, `ui.rs`, `dto.rs`, `editor_ops.rs`,
 `world_layer_prefs.rs`, `main.rs`, `style/aegis.css`(none — blur removed in missions/ui), `index.html`(unchanged).
 Tooling: `tools/tbd-tools/src/smokes.rs` (perf smoke + bench probe), `Makefile`.

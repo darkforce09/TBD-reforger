@@ -20,6 +20,6 @@ Each folder is a public module with its own README. The two modules do not impor
 
 ## Boundaries
 
-- Depends on: `api_identifiers`, `dotenvy`, `thiserror` and `tokio::sync`.
+- Depends on: `api_identifiers`, `dotenvy`, `repository_root`, `thiserror` and `tokio::sync`.
 - Used by: the crate root and, through it, the API's database crate and application.
 - Rules: no module names a domain or an API crate above this one.

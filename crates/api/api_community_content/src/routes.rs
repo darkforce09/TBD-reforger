@@ -1,7 +1,7 @@
 //! The `/api/v1` route table for community content.
 //!
 //! Paths are written relative to the `/api/v1` nest applied by the API's router
-//! (`apps/api/src/router.rs`). Auth tiers
+//! (`crates/api/api_server/src/router.rs`). Auth tiers
 //! are enforced per-handler by the extractor each takes (`AuthUser` for the reads, `AdminUser`
 //! for the writes), so they travel with the handler rather than with the registration. The
 //! equipment data viewer's anonymous debug reads are the one exception: they are registered only

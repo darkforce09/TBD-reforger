@@ -4,7 +4,7 @@
 
 > **ARCHIVE.** This document is the original Go-era design plan. It is **not** the live backend.
 >
-> **Live API:** [`apps/website/api_v2/`](../../../apps/api/) — Rust **Axum + sqlx**, crate
+> **Live API:** [`apps/website/api_v2/`](../../../crates/api/api_server/) — Rust **Axum + sqlx**, crate
 > `website-api`. `src/` is `core/`, `background_workers/`, and eight domain directories
 > (`administration`, `command_center`, `community_content`, `identity_and_access`,
 > `match_telemetry`, `missions`, `operations`, `server_infrastructure`); each domain holds
@@ -13,7 +13,7 @@
 >
 > **A new endpoint** goes in `src/<domain>/handlers/`, is registered in that domain's `routes.rs`,
 > and shared logic goes in that domain's `services/`. The live atlas is
-> [`apps/website/api_v2/README.md`](../../../apps/api/README.md).
+> [`apps/website/api_v2/README.md`](../../../crates/api/api_server/README.md).
 >
 > **Run / status:** root [`CLAUDE.md`](../../../CLAUDE.md) · [`DEV_RUNBOOK.md`](/documentation/runbooks/local_development.md) · conventions [`WHERE_DOES_X_GO.md`](/documentation/standards/where_does_x_go.md).
 >

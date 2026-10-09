@@ -60,7 +60,7 @@ in chunks of 10,000 rows; a re-run of the same envelope changes no row.
   `deployment_settlement::lock_and_settle` for the [event](/documentation/glossary/a_to_f.md#event)
   roster in `api_operations`; `deployment_settlement::reconcile_mission_deployments` for the
   [deployment](/documentation/glossary/a_to_f.md#deployment) reconciler worker.
-- `registry_import`: `import_items`, `import_compat` and `ImportCounts` for the `import-registry`
+- `registry_import`: `import_items`, `import_compat` and `ImportCounts` for the `import-item-registry`
   binary.
 
 ## Boundaries
@@ -76,10 +76,10 @@ in chunks of 10,000 rows; a re-run of the same envelope changes no row.
   - the domain's handlers, for everything above;
   - `api_command_center` and `api_operations`, through the public surface;
   - the `mission_deployment_reconciler` worker in `crates/api/api_background_workers/src/`
-    and the `import-registry` binary in `apps/api/src/bin/`;
+    and the `import-item-registry` binary in `crates/api/api_server/src/bin/`;
   - the [API](/documentation/glossary/a_to_f.md#api) tests
-    `apps/api/tests/registry_compat.rs`, `apps/api/tests/models_fromrow.rs`
-    and `apps/api/tests/mission_deployment_transitions.rs`.
+    `crates/api/api_server/tests/registry_compat.rs`, `crates/api/api_server/tests/models_fromrow.rs`
+    and `crates/api/api_server/tests/mission_deployment_transitions.rs`.
 - Rules: the compile refuses over-capacity cargo with the same check and wording as the save, so
   a version the save would refuse never becomes an artifact
   (`compile_with_catalog_refuses_over_capacity_like_save` in
@@ -90,6 +90,6 @@ in chunks of 10,000 rows; a re-run of the same envelope changes no row.
 
 ## Related documentation
 
-- [Mission artifacts, reviews and deployment](/documentation/apps/api/verification_evidence/mission_artifacts.md)
+- [Mission artifacts, reviews and deployment](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
   — the artifact, review and deployment design.
 - [Contract catalogs](/contracts/catalogs/README.md) — the registry exports the import reads.

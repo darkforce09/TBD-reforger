@@ -48,8 +48,8 @@ crates/api/api_operations/src/handlers/fire_missions/
   `ApiError`.
 - Used by: `crates/api/api_operations/src/routes.rs`; over HTTP, the mortar calculator in
   `crates/frontend/pages/field_tools_pages/src/mortar/`; the tests
-  `apps/api/tests/game_ballistics_fire_missions.rs` and
-  `apps/api/tests/fire_mission_solution.rs`.
+  `crates/api/api_server/tests/game_ballistics_fire_missions.rs` and
+  `crates/api/api_server/tests/fire_mission_solution.rs`.
 - Rules: both routes take `AuthUser`; a refused save stores nothing.
 
 ## Related documentation

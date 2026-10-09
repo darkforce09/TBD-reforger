@@ -69,14 +69,14 @@ once `cargo xtask db up` has started it.
   density formats of `crates/world_formats/world_file_formats/src/`; and the glyph keys of
   `assets/glyphs/manifest.json`.
 - Used by:
-  - `apps/api/`: generated models, embedded validators, the registry import binary and
+  - `crates/api/api_server/`: generated models, embedded validators, the registry import binary and
     the contract test suites;
-  - `apps/frontend/`: the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
+  - `crates/frontend/shell/frontend_application/`: the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
     schema embeds for zones and loadout export;
   - `crates/mission/`: the embedded kit-alias table (`mission_payload`) and the compiler's
     fixture tests (`mission_compiler`, `mission_model`, `mission_document`);
   - `apps/mod/`: DTO classes whose `@contract` tags cite the mission, loadout and registry schemas;
-  - `apps/fleet_host_agent/`, whose ledger client follows the fleet-command schema;
+  - `crates/fleet/game_server_host_agent/`, whose ledger client follows the fleet-command schema;
   - `tools/xtask/` (the schema gates, codegen, `db registry-import` and the `mod` commands that
     stage fixture missions) and `tools/developer_tools/` (world export, blueprint compiler and
     map verification), which find these folders through

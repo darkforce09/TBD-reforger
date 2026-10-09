@@ -14,6 +14,10 @@ changes the staging host is approved by the operator first, one numbered list pe
 - `deploy/deploy.env` names the host and the fleet, and none of the retired
   single-server keys (the deploy refuses them)
   ([staging deploy settings](/documentation/runbooks/game_server_staging/staging_deploy.md)).
+- On the host, the API's `.env` sits at `crates/api/api_server/.env` of the checkout, and no host
+  agent carries the former name `fleet_host_agent`: both deploys refuse otherwise. A host that
+  still does runs `cargo xtask deploy staging --migrate-host-agent-name` once
+  ([staging deploy](/documentation/runbooks/game_server_staging/staging_deploy.md) step 3).
 - The operator's Chrome runs the Claude extension, signed in to the site as an administrator and to
   Discord.
 - The operator's game client is on the Experimental branch; Workbench is closed on run day.
@@ -62,7 +66,7 @@ changes the staging host is approved by the operator first, one numbered list pe
    cargo xtask deploy staging --migrate-single-instance
    ```
 
-   Expected: `tbd-reforger@1` … `@5` and `fleet_host_agent@1` … `@5` active, the relay unit active
+   Expected: `tbd-reforger@1` … `@5` and `game_server_host_agent@1` … `@5` active, the relay unit active
    for instance 5, and each instance's console log showing `session-started`.
 
 6. In the browser: deactivate "TBD Staging POC"; create the partner guild "TBD Staging Partner" with

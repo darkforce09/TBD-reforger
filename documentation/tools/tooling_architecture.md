@@ -17,13 +17,13 @@ module to the tooling; each crate's README then says what its own folders hold.
   [`repository_laws/`](/tools/foundation/repository_laws/README.md)),
   [`developer_tools/`](/tools/developer_tools/README.md) and
   [`enfusion_mcp_node_package/`](/tools/enfusion_mcp_node_package/README.md); the
-  [ticketboard](/apps/ticketboard/README.md) in `apps/ticketboard/` links `ticket_model`.
+  [ticketboard](/tools/tickets/ticketboard_desktop/README.md) in `tools/tickets/ticketboard_desktop/` links `ticket_model`.
 - Entry: `cargo xtask`, the alias `run --package xtask --` in `.cargo/config.toml`; the eight
   `developer_tools` executables (`enf`, `gate`, `mcpd`, `world`, `map`, `capture`,
   `acknowledgement-dropping-relay`, `staging-load`).
 - Related features: the [ticket crates documentation](/documentation/tools/tickets/README.md),
   the [developer tools documentation](/documentation/tools/developer_tools/README.md) and the
-  [ticketboard documentation](/documentation/apps/ticketboard/README.md).
+  [ticketboard documentation](/documentation/tools/tickets/ticketboard_desktop/README.md).
 
 ## Behaviour
 
@@ -61,7 +61,7 @@ the ticket rules are `ticket_registry::validation`.
 ```text
 verification_core ◀── process_runner, repository_laws        (tools/foundation, tiers 0 and 1)
         ▲                      ▲
-        │                      │          ticket crates ◀──── ticketboard (apps/ticketboard)
+        │                      │          ticket crates ◀──── ticketboard (tools/tickets/ticketboard_desktop)
         └──────── xtask ───────┴───────────────┘
                     │
                     ▼ runs as child processes
@@ -173,7 +173,7 @@ sit beside the code that reads them, and a layout module names each once.
 ### Known discrepancies
 
 - The dependency rule says the ticketboard reads tickets through `ticket_model`'s public model
-  (`apps/ticketboard/README.md`, How it works) — the ticketboard loads tickets without
+  (`tools/tickets/ticketboard_desktop/README.md`, How it works) — the ticketboard loads tickets without
   `Corpus::load`'s vocabulary and id-to-file checks and keeps its own copies of the wave-lock
   types, the scope vocabulary parsing and the estimate validation
   (`tools/tickets/ticketboard_model/src/execution_metrics/estimated/validation.rs`).
@@ -200,7 +200,7 @@ rather than by review.
 
 - [T-1137 — Gate ticket_engine, verification_core, ticketboard and fleet agent tests and clippy](/.ai/tickets/T-1137.toml)
   (idea, no plan): CI, `ci-local` and the wave gate run `cargo test` and clippy for the two
-  foundational crates, the ticketboard and the fleet host agent.
+  foundational crates, the ticketboard and the game server host agent.
 - [T-1142 — Decide whether the ticketboard imports the ticket_engine logic it copies](/.ai/tickets/T-1142.toml)
   (idea, no plan): the ticketboard stops copying ticket crate logic, or the copy is recorded as intended.
 - [T-1133 — Consolidate developer_tools duplicate helpers, repo-root lookup and fixture paths](/.ai/tickets/T-1133.toml)

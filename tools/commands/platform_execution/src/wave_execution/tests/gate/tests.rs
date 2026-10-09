@@ -31,8 +31,8 @@ fn both_gates_run_the_same_ten_class_r_verifies() {
 
 /// The wave gate tests every workspace member: `test workspace members` derives every member
 /// outside the dedicated packages and the API family, every dedicated package is a workspace
-/// member, and the step that tests each dedicated package (the API family with `api`) is wired
-/// into the gate.
+/// member, and the step that tests each dedicated package (the API family with `api_server`) is
+/// wired into the gate.
 #[test]
 fn the_wave_gate_tests_every_workspace_member() {
     let root = tool_test_support::test_repo_root();
@@ -109,13 +109,19 @@ fn the_wave_gate_lints_every_tool_crate_of_the_workspace() {
         "developer_tools",
         "platform_execution",
         "process_runner",
+        "ticketboard_desktop",
     ] {
         assert!(
             derived.iter().any(|package| package == expected),
             "the lint misses `{expected}`"
         );
     }
-    for outside in ["api", "frontend", "map_renderer", "ticketboard"] {
+    for outside in [
+        "api_server",
+        "frontend_application",
+        "map_renderer",
+        "game_server_host_agent",
+    ] {
         assert!(
             !derived.iter().any(|package| package == outside),
             "the lint names `{outside}`, which is no tool crate"
@@ -170,9 +176,10 @@ fn the_tool_lint_refuses_a_workspace_without_its_anchor_packages() {
 
 /// The wave gate's clippy lanes cover every workspace member: the tool lint, the frontend family,
 /// the wasm32 members and the native lint together name each member of the root manifest; the
-/// native lint names the API application, every API crate and the `crates/**` libraries outside
-/// the frontend family, and nothing another lane already lints; and both derived steps are wired
-/// into the gate.
+/// native lint names the API server, every API crate, the game server host agent and the
+/// `crates/**` libraries outside the frontend family, and nothing another lane already lints; the
+/// offline service worker is linted with the frontend family alone; and both derived steps are
+/// wired into the gate.
 #[test]
 fn the_wave_gate_clippy_lanes_cover_every_workspace_member() {
     let root = tool_test_support::test_repo_root();
@@ -204,10 +211,9 @@ fn the_wave_gate_clippy_lanes_cover_every_workspace_member() {
         .collect();
     assert!(!api_family.is_empty(), "the workspace names no API crate");
     for package in api_family.iter().copied().chain([
-        "api",
+        "api_server",
         "geometry_primitives",
-        "fleet_host_agent",
-        "ticketboard",
+        "game_server_host_agent",
     ]) {
         assert!(
             native.iter().any(|linted| linted == package),
@@ -215,17 +221,16 @@ fn the_wave_gate_clippy_lanes_cover_every_workspace_member() {
         );
     }
     assert!(
-        native
+        native.iter().all(|package| members
             .iter()
-            .all(|package| members.iter().any(|m| &m.package_name == package
-                && (m.path.starts_with("crates/") || m.path.starts_with("apps/")))),
-        "the native lint names a member outside `apps/` and `crates/`: {native:?}"
+            .any(|m| &m.package_name == package && m.path.starts_with("crates/"))),
+        "the native lint names a member outside `crates/`: {native:?}"
     );
     assert!(
-        wasm32
+        frontend
             .iter()
             .any(|package| package == "offline_service_worker"),
-        "the wasm32 lint misses the offline service worker: {wasm32:?}"
+        "the frontend family misses the offline service worker: {frontend:?}"
     );
     let source = include_str!("../../gate/gate_dispatch.rs")
         .split_whitespace()
@@ -243,16 +248,22 @@ fn the_wave_gate_clippy_lanes_cover_every_workspace_member() {
     }
 }
 
-/// A workspace whose native lane lacks the API application is an error, never a smaller lint.
+/// A workspace whose native lane lacks the API server is an error, never a smaller lint.
 #[test]
-fn the_native_lint_refuses_a_workspace_without_the_api_application() {
+fn the_native_lint_refuses_a_workspace_without_the_api_server() {
     let folder = std::env::temp_dir().join(format!(
         "platform-execution-native-lint-{}",
         std::process::id()
     ));
     let members = [
-        ("apps/frontend", "frontend"),
-        ("apps/offline_service_worker", "offline_service_worker"),
+        (
+            "crates/frontend/shell/frontend_application",
+            "frontend_application",
+        ),
+        (
+            "crates/frontend/shell/offline_service_worker",
+            "offline_service_worker",
+        ),
         ("crates/geometry/geometry_primitives", "geometry_primitives"),
     ];
     for (path, package) in members {
@@ -278,8 +289,8 @@ fn the_native_lint_refuses_a_workspace_without_the_api_application() {
     assert_eq!(
         refusal,
         Err(
-            "`api` is no workspace member outside `tools/`, the frontend family and the wasm32 \
-             members"
+            "`api_server` is no workspace member outside `tools/`, the frontend family and the \
+             wasm32 members"
                 .to_string()
         )
     );

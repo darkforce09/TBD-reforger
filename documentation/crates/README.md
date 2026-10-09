@@ -9,7 +9,9 @@ their code READMEs. Developers and AI agents read it below those READMEs.
 
 ```text
 documentation/crates/
+├── api/              the API crates: overview, environment variables, decisions, verification evidence
 ├── ballistics/       the game ballistics: flight model, solver, calibration, fire-mission assembly
+├── fleet/            the game server host agent: how it carries out fleet commands
 ├── frontend/         the single-page app's crates: the page and workspace feature docs, per crate
 ├── graphics/         the GPU device and frame crates: one frame, the GPU context, sprite culling
 ├── map_rendering/    the map renderer and its typed GPU layers: from a mounted canvas to a drawn frame

@@ -58,7 +58,7 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-owns = ["apps/frontend/src/event_hub.rs"]
+owns = ["crates/frontend/shell/frontend_application/src/event_hub.rs"]
 
 [scope]
 domain = "website"

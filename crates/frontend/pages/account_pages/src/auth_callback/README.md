@@ -27,7 +27,7 @@ fragment ─┬─ error=<code> ────────────────
 
 The fragment carries credentials, so the page replaces the history entry with the bare path as soon
 as it has read it: a back button cannot return to the tokens, and a second parse would find
-nothing. The frame in `apps/frontend/src/shell/layout.rs` skips the
+nothing. The frame in `crates/frontend/shell/frontend_application/src/shell/layout.rs` skips the
 stored-session restore on this path, because the page installs the session it was handed. When the
 profile fetch fails the stored tokens stay, so a reload can still restore the session.
 
@@ -69,15 +69,15 @@ profile fetch fails the stored tokens stay, so a reload can still restore the se
   `session::persist_profile_if_current`, `session_refresh::with_refresh_lock`),
   `frontend_transport` (`api_get`, `MeResponse`, `RefreshResponse`), and the browser's location and history through
   `web_sys` and `js_sys`.
-- Used by: the `/auth/callback` route in `apps/frontend/src/app_routes.rs` and
+- Used by: the `/auth/callback` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the frame in
-  `apps/frontend/src/shell/layout.rs`, which renders this path bare; the DOM
+  `crates/frontend/shell/frontend_application/src/shell/layout.rs`, which renders this path bare; the DOM
   oracle's `callback` capture in
   `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`; over redirects, the Discord
   callback and the dev login in `crates/api/api_identity_and_access/src/handlers/`.
 - Rules: the fragment is scrubbed with a history replace, never a push; the path stays reachable
   signed out and stays named in the frame's `classify_frame` (`classify_frame_kinds` in
-  `apps/frontend/src/shell/tests/layout.rs`); an error code the page does not
+  `crates/frontend/shell/frontend_application/src/shell/tests/layout.rs`); an error code the page does not
   know falls back to the generic line.
 
 ## Related documentation

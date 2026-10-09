@@ -16,9 +16,9 @@ start, every observation with the SHA-256 of its raw artifact, and one case line
 It passes only when every declared case is ok and the judge accepts it; a partial run still writes
 a failing receipt that names its missing dependencies.
 
-In code: `tools/commands/api_readiness_checks/src/operational_recording.rs` and `operational_log.rs`; the operational checks in `documentation/apps/api/verification_evidence/requirements.json`.
+In code: `tools/commands/api_readiness_checks/src/operational_recording.rs` and `operational_log.rs`; the operational checks in `documentation/crates/api/api_server/verification_evidence/requirements.json`.
 
-See: [Verification evidence](/documentation/apps/api/verification_evidence/README.md), [API readiness judge](/tools/commands/api_readiness_checks/src/README.md).
+See: [Verification evidence](/documentation/crates/api/api_server/verification_evidence/README.md), [API readiness judge](/tools/commands/api_readiness_checks/src/README.md).
 
 ### operations
 
@@ -97,12 +97,12 @@ See: [charge ring](/documentation/glossary/a_to_f.md#charge-ring), [Game ballist
 
 ### RCON
 
-BattlEye RCon, the remote-console protocol the dedicated server speaks over UDP; the [fleet host
-agent](/documentation/glossary/a_to_f.md#fleet-host-agent) uses it to list players and to send an administrator's
+BattlEye RCon, the remote-console protocol the dedicated server speaks over UDP; the
+[game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) uses it to list players and to send an administrator's
 [console command](/documentation/glossary/a_to_f.md#console-command), one line transmitted once. Broadcasts and kicks run in the
 [game runtime](/documentation/glossary/g_to_m.md#game-runtime), and Reforger's RCON has no broadcast command.
 
-In code: `apps/fleet_host_agent/src/rcon/`; `FleetAction` in `crates/contracts/fleet_wire_contract/src/fleet_action.rs`.
+In code: `crates/fleet/game_server_host_agent/src/rcon/`; `FleetAction` in `crates/contracts/fleet_wire_contract/src/fleet_action.rs`.
 
 See: [fleet command](/documentation/glossary/a_to_f.md#fleet-command), [console command](/documentation/glossary/a_to_f.md#console-command).
 
@@ -204,7 +204,7 @@ published ballistics catalog version, the Everon manifest, elevation, imagery an
 about 248 MB. The Rust service worker answers from it with no connection; the page calls it the
 offline pack and shows its state in `data-offline-state`.
 
-In code: `apps/offline_service_worker/` (the worker); `offline_pack` and `offline_manifest` in `crates/frontend/foundation/frontend_offline/src/`; `cargo xtask map tile-index` writes the tile list the pack reads.
+In code: `crates/frontend/shell/offline_service_worker/` (the worker); `offline_pack` and `offline_manifest` in `crates/frontend/foundation/frontend_offline/src/`; `cargo xtask map tile-index` writes the tile list the pack reads.
 
 See: [Offline mortar page](/documentation/runbooks/offline_mortar_page.md), [Mortar calculator page](/documentation/crates/frontend/pages/field_tools_pages/mortar/mortar_calculator_page.md).
 
@@ -261,7 +261,7 @@ set in the `visual_references/` folder of the feature it depicts. A set is named
 `<set>.png` and, when the export carries tokens, `design_tokens.md`. The built interface wins; the
 [feature doc](/documentation/glossary/a_to_f.md#feature-doc)'s Design section says how it differs.
 
-In code: none; the built styles a set is compared with are `apps/frontend/style/aegis.css` on the website and `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UITheme.c` in the mod.
+In code: none; the built styles a set is compared with are `crates/frontend/shell/frontend_application/style/aegis.css` on the website and `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UITheme.c` in the mod.
 
 See: [Design system](/documentation/design_system/README.md), [Stitch token exports](/documentation/design_system/token_exports/README.md).
 
@@ -293,9 +293,9 @@ The native desktop viewer of the ticket registry, built on egui: parent and chil
 lanes, the program tree, run receipts and estimates, with specs and documents beside them. Every
 change it makes runs a `cargo xtask ticket` command.
 
-In code: `apps/ticketboard/`, which reads the registry through `tools/tickets/ticket_model/`.
+In code: the package and binary `ticketboard_desktop` in `tools/tickets/ticketboard_desktop/` (`cargo run -p ticketboard_desktop`), which reads the registry through `tools/tickets/ticket_model/`.
 
-See: [Ticketboard](/apps/ticketboard/README.md).
+See: [Ticketboard](/tools/tickets/ticketboard_desktop/README.md).
 
 ### time fuze
 

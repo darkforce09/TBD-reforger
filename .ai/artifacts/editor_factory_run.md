@@ -251,7 +251,7 @@ ticket assumed they were not. The operator reserved this approach decision; give
 `MissionDocCore::update_slot_position` (store.rs:2779-2783) writes `pz = 0.0` whenever `z` is None
 and x or y is Some. Every call site excused this with a comment saying the DEM is re-sampled
 JS-side. **That sampler does not exist** — `terrainZ` did not survive the React deletion; a grep for
-`terrainZ|terrain_z|sample_z|sampleZ|dem_z|elevation_at` across `apps/frontend/src` returns
+`terrainZ|terrain_z|sample_z|sampleZ|dem_z|elevation_at` across `crates/frontend/shell/frontend_application/src` returns
 only comments saying so. The 0.0 was final, and vehicles were unaffected (`set_vehicle_position`
 passes `e.z`) — **the slot/vehicle asymmetry is the reliable tell**.
 

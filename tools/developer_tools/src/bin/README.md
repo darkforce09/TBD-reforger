@@ -41,7 +41,7 @@ acknowledgement_dropping_relay.rs ──▶ acknowledgement_dropping_relay::entr
 staging_load.rs ──▶ staging_load_generator::entrypoint
 ```
 
-Default paths such as `apps/frontend/dist` and `.ai/artifacts/enf-index` are relative to the
+Default paths such as `crates/frontend/shell/frontend_application/dist` and `.ai/artifacts/enf-index` are relative to the
 working directory, so the commands run from the repository root.
 
 ## Commands
@@ -129,7 +129,7 @@ a subcommand prints its usage, and a clap usage error exits 2.
   `acknowledgement-dropping-relay control --control-socket <path> arm
   drop-next-claim-response|drop-next-result-response`, `… control --control-socket <path> disarm`,
   `… control --control-socket <path> status`.
-- Does: `serve` relays every exchange between one fleet host agent and the API, and, once armed,
+- Does: `serve` relays every exchange between one game server host agent and the API, and, once armed,
   withholds the next `200` answer to a claim or to a result report for 30 s, past the agent's 20 s
   request timeout, then closes that connection without a byte of the answer; it refuses a
   non-loopback listen address or upstream, creates the control socket mode 600, and runs until

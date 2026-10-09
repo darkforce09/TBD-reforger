@@ -39,7 +39,7 @@ feature doc. The code folder's README lists the page's files, calls and states.
 - Used by: the page's in-code README, the operations pages README and the operations domain
   README, which link the feature doc; the [event](/documentation/glossary/a_to_f.md#event) glossary
   entry; the feature doc template's worked sample; the event manager feature doc; the web app
-  README's page table in `documentation/apps/frontend/`.
+  README's page table in `documentation/crates/frontend/shell/frontend_application/`.
 - Rules: the feature doc keeps its name, which those links use; the blueprint set stays as it was
   captured and is never edited to match the built page.
 

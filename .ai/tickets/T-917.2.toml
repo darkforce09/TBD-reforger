@@ -67,7 +67,7 @@ estimated = ["tokens"]
 owns = [
     "crates/tbd-tickets",
     "xtask/src",
-    "apps/ticketboard/src",
+    "tools/tickets/ticketboard_desktop/src",
     ".ai/tickets",
 ]
 

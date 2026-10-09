@@ -8,7 +8,7 @@ Gate: 30/30 run 1. Verifier: Fable, on merged main. Tree confirmed clean before 
 
 ## FINDINGS
 
-### MAJOR | crates/map-engine-core/src/mission/flatten.rs:1491 ↔ apps/frontend/src/eden_env.rs:186 | The compiled-mission flow defaults exist twice with no cross-crate pin — drift ships green
+### MAJOR | crates/map-engine-core/src/mission/flatten.rs:1491 ↔ crates/frontend/shell/frontend_application/src/eden_env.rs:186 | The compiled-mission flow defaults exist twice with no cross-crate pin — drift ships green
 
 **Evidence.** `FLOW_DEFAULT_BRIEFING_S/SAFESTART_S/TIMELIMIT_S/JIP` are `pub const` in both files.
 The only guard, `eden_env.rs:421-424`, restates the literals (`assert_eq!(FLOW_DEFAULT_BRIEFING_S, 600)`)
@@ -31,7 +31,7 @@ mission and the whole 800-test suite stays green.
 **Disposition.** Not fixed, not ticketed (standing instruction). One-line native pin is possible
 today. Slice agent's hand-off: CONFIRMED in full.
 
-### MAJOR | apps/frontend/src/eden_settings.rs:1634-1640 | T-688's click-through-to-owner is effectively undelivered for every row that has an owner
+### MAJOR | crates/frontend/shell/frontend_application/src/eden_settings.rs:1634-1640 | T-688's click-through-to-owner is effectively undelivered for every row that has an owner
 
 **Evidence.** The ticket requires rows to click through to the owning entity. The row handler does
 attempt `validation_panel::route_select_by_subject_id` first (:1634) — but that router
@@ -48,7 +48,7 @@ as an affordance, not a partial delivery.
 **Disposition.** Documented, not fixed. Follow-up belongs with whatever ticket extends the T-655
 router to zones.
 
-### MINOR | apps/frontend/src/eden_settings.rs:2188-2210, :2127-2178 | T-688's textual pins are narrower than advertised
+### MINOR | crates/frontend/shell/frontend_application/src/eden_settings.rs:2188-2210, :2127-2178 | T-688's textual pins are narrower than advertised
 
 The single-constructor pin counts the needle `"Self::Schema {"` — a second construction spelled
 `SettingDefault::Schema {` outside the impl evades it. The `FLOW_DEFAULT_` name-ban scans five named
@@ -57,7 +57,7 @@ function bodies but not `from_schema_node` itself. Both holes are backstopped be
 `NotInSchema` for unknown keys), so a hardcoded default that the view can show still goes red — the
 guarantee is real, the advertised mechanism is weaker than claimed.
 
-### MINOR | apps/frontend/src/eden_toolbelt.rs:~1690 | T-670's "scrubbed-source check fails if T-639 rebases" is overstated
+### MINOR | crates/frontend/shell/frontend_application/src/eden_toolbelt.rs:~1690 | T-670's "scrubbed-source check fails if T-639 rebases" is overstated
 
 The pin fixes the exact strings `"let m_per_px = 2.0_f64.powf(-zoom);"` and
 `"contour_interval_for_zoom(m_per_px)"` in dem_vectors.rs. An in-place rebase breaks it (good), but a
@@ -66,9 +66,9 @@ rebase expressed as an *adjustment line between* dem_vectors.rs:121 and :122, or
 (self-referential — pins eden_toolbelt's conversion, not the ladder's). Residual hole is small
 because `contour_interval_for_zoom` takes m/px directly. Also: the slice agent cited the ladder
 feed as `crates/.../dem_vectors.rs:121` — right line, wrong path; the file is
-`apps/frontend/src/world_assets/dem_vectors.rs`.
+`crates/frontend/shell/frontend_application/src/world_assets/dem_vectors.rs`.
 
-### MINOR | apps/frontend/src/eden_toolbelt.rs:47-53, :122-142 | Scale formatter degenerate corners
+### MINOR | crates/frontend/shell/frontend_application/src/eden_toolbelt.rs:47-53, :122-142 | Scale formatter degenerate corners
 
 A non-finite **zoom** maps to `m_per_px = 1.0` (pre-existing T-667 convention), so a NaN camera
 prints a confident `"1.00 m/px"` instead of the `"— m/px"` sentinel (the em-dash path triggers only
@@ -84,19 +84,19 @@ merge) contains the full schema bytes **exactly twice** (empirical `bytes.count`
 dedupe. ~91 KB uncompressed cost (near-zero gzipped); release/wasm-opt behavior unverified. Stale
 comment: eden_zones.rs:626 still says "~40 KB of JSON" — the schema is now 91 KB.
 
-### MINOR | apps/frontend/src/eden_settings.rs:1623-1640 | Mission-owned rows are inert focusable `<button>`s
+### MINOR | crates/frontend/shell/frontend_application/src/eden_settings.rs:1623-1640 | Mission-owned rows are inert focusable `<button>`s
 
 `selectable=false` short-circuits the click, but the element remains a focusable button that does
 nothing — a11y nit.
 
-### NIT | apps/frontend/src/eden_top_strip.rs:2486 | The T-692 hint-mount pin checks presence, not position
+### NIT | crates/frontend/shell/frontend_application/src/eden_top_strip.rs:2486 | The T-692 hint-mount pin checks presence, not position
 
 `code.contains("ControlsHint open=hint_open")` would still pass if the mount migrated outside the
 gated subtree — exactly the premise-relaxation trap this wave was told to look for. This wave did
 NOT trip it (position verified by structure, below), but the pin does not defend the invariant it
 narrates.
 
-### NIT | apps/frontend/src/eden_layout.rs:232 | `STRIP` is production-dead, silenced by a pre-existing crate-level allow
+### NIT | crates/frontend/shell/frontend_application/src/eden_layout.rs:232 | `STRIP` is production-dead, silenced by a pre-existing crate-level allow
 
 Its only remaining consumer is T-634's own test (eden_top_strip.rs:2618, :2669 — which pins the
 two-row shell to STRIP's surface recipe verbatim, so the corpse is load-bearing as a reference).

@@ -46,7 +46,7 @@ Implement **T-171** — full monorepo/website hygiene (not mod).
 ═══ LOCKED ═══
   End layout:
     apps/website/api/       ← Axum API crate (from today’s apps/website crate root)
-    apps/frontend/  ← Leptos SPA (from apps/website-leptos)
+    crates/frontend/shell/frontend_application/  ← Leptos SPA (from apps/website-leptos)
   Package names aligned: api + frontend (prefer; ASK only if truly blocked)
   apps/mod/** OFF LIMITS
   No silent deferrals of hygiene items found in inventory
@@ -59,7 +59,7 @@ Implement **T-171** — full monorepo/website hygiene (not mod).
     doc/ADR/rule rot, tickets, conventions gaps.
 
   Phase 1 — Layout + renames:
-    Move SPA → apps/frontend; move API → apps/website/api;
+    Move SPA → crates/frontend/shell/frontend_application; move API → apps/website/api;
     rename packages; fix workspace, root Makefile, CI, Trunk, compose, .env.example, scripts, gates.
     Prove make api + make leptos; /map-assets 200.
 
@@ -95,7 +95,7 @@ Implement **T-171** — full monorepo/website hygiene (not mod).
 
 ═══ VERIFY ═══
   make leptos-gates && make ci-local && make verify-no-node && ./scripts/ticket check
-  test -d apps/frontend && test -f apps/frontend/Trunk.toml
+  test -d crates/frontend/shell/frontend_application && test -f crates/frontend/shell/frontend_application/Trunk.toml
   test -d apps/website/api && test -f apps/website/api/Cargo.toml
   test ! -e apps/website-leptos
   # no leftover dual API root src/ at apps/website/src unless intentional thin shim — prefer clean

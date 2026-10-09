@@ -9,7 +9,7 @@
 //! **Invariants:** a missing `psql` and a missing container is exit 1, never a success; a child's
 //! non-zero exit is forwarded unchanged; the `.env` file is parsed, never executed.
 //!
-//! `DATABASE_URL` comes from the process environment, overlaid by `apps/api/.env`,
+//! `DATABASE_URL` comes from the process environment, overlaid by `crates/api/api_server/.env`,
 //! which is parsed as `KEY=VALUE` and never executed.
 //!
 //! What it refuses and what it tolerates:
@@ -72,7 +72,7 @@ struct Paths {
 impl Paths {
     fn from_root(root: &Path) -> Self {
         Self {
-            web: root.join("apps/api"),
+            web: root.join(crate::local_database::WEB),
         }
     }
 }

@@ -71,7 +71,7 @@ for a staging recording, the environment the harness hands it, never `std::env`.
 ## Related documentation
 
 - [Command crates](/tools/commands/README.md) — the command crates and their tiers.
-- [Verification evidence](/documentation/apps/api/verification_evidence/README.md) — the
+- [Verification evidence](/documentation/crates/api/api_server/verification_evidence/README.md) — the
   acceptance register, the receipts and the staging procedures this crate judges.
-- [Staging verification](/documentation/apps/api/verification_evidence/staging.md) — how the
+- [Staging verification](/documentation/crates/api/api_server/verification_evidence/staging.md) — how the
   staging runner records its operational receipts.

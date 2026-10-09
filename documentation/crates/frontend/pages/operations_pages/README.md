@@ -73,7 +73,7 @@ and a row in the table.
 - Used by: the in-code READMEs of the page folders, which link their feature docs under Related
   documentation; the operations domain READMEs; the glossary's event and service record entries;
   the feature doc template's worked sample; the event manager feature doc; the web app README's
-  page table in `documentation/apps/frontend/`.
+  page table in `documentation/crates/frontend/shell/frontend_application/`.
 - Rules: one folder per page folder of the code, spelled the same; a page's feature doc keeps its
   name (`event_hub_page.md` for `EventHubPage`), since the glossary and the READMEs link it; the
   slotting is described only in the event hub feature doc; a feature doc stays within 500 lines;
@@ -85,5 +85,5 @@ and a row in the table.
 - [Archived platform design spec](/documentation/archive/go_and_react_era_design/platform_context_handoff.md)
   — the design-phase specification of the deployments and leaderboards pages, which the feature
   docs compare against.
-- [Event eligibility and allocation](/documentation/apps/api/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
   — the evidence behind access, pools, promotion and attendance.

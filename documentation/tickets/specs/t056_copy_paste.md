@@ -246,7 +246,7 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](/documentation/standards/commit_checklist
 | [`eden/gap_analysis.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_gap_analysis.md) | T-056 → ✅ shipped T-056 |
 | [`feature_inventory.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md) | copy/paste (CopyUnit/PasteUnit) row → working (Trigger, Procedure, Evidence, acceptance) |
 | [`agent_execution.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md) | Decisions log row **Copy/paste at cursor (T-056)** |
-| [`docs/website/frontend/ROADMAP.md`](/documentation/apps/frontend/README.md) + [`docs/website/frontend/pages/mission-editor.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/ux_spec.md) | Shipped/milestone row for copy-paste |
+| [`docs/website/frontend/ROADMAP.md`](/documentation/crates/frontend/shell/frontend_application/README.md) + [`docs/website/frontend/pages/mission-editor.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/ux_spec.md) | Shipped/milestone row for copy-paste |
 | [`docs/TAGS.md`](/documentation/standards/ticket_identifiers.md) | T-056 row |
 
 **Do not update:** archive stitch, Eden wiki artifacts, historical CLAUDE bullets.

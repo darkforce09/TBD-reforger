@@ -23,7 +23,9 @@ and are not restated here.
   of the form `// Authority only — <reason>`. Gate: MANUAL, for the same reason as ENF-1.
 - **ENF-3 (Readability) — Networked-code tags resolve.** Every `@contract` citation in a `.c`
   file names a schema definition that exists. Gate: CI-SCRIPT, `cargo xtask ci verify-citations`
-  (`cargo xtask schema citations`), which reads `.c` and `.rs` files under `apps/` and `tools/`.
+  (`cargo xtask schema citations`), which reads the code files, `.c` and `.rs` among them, under
+  the top-level folder of every workspace member (today `crates/` and `tools/`) and under
+  `apps/mod/`.
   `cargo xtask verify enfusion-comments` (ECM-5 and ECM-6) requires the `@authority`, `@rpc`,
   `@replicated`, `@route` and `@contract` tags where they belong over the pinned mod Scripts
   roots, today `apps/mod/tbd-framework/Scripts` and `apps/mod/tbd-emcp/Scripts`.

@@ -23,7 +23,7 @@
 
 ```bash
 make test-it
-cd apps/frontend && npm run build && npm run lint
+cd crates/frontend/shell/frontend_application && npm run build && npm run lint
 go build ./...
 cd packages/tbd-schema && npm run validate
 ```

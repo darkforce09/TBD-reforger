@@ -76,7 +76,7 @@ missing one, and a write by someone who may not edit the mission answers 403.
   `apps/mod/tbd-framework/Scripts/Game/TBD/`, and the `cargo xtask mod` commands' client in
   `tools/commands/mod_operations/src/website_api_client/`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
-  imports another domain's handlers (`apps/api/src/tests/architecture_rules.rs`); every
+  imports another domain's handlers (`crates/api/api_server/src/tests/architecture_rules.rs`); every
   mission write takes `MissionMakerUser` as well as ownership, so a demotion revokes it
   (`mission_mutators_require_mission_maker_tier` in `tests/mission_lifecycle.rs`).
 - Body decoding: every JSON body is read through `ApiError::from_json_rejection`: 413 with
@@ -88,7 +88,7 @@ missing one, and a write by someone who may not edit the mission answers 403.
 
 ## Related documentation
 
-- [Mission artifacts, reviews and deployment](/documentation/apps/api/verification_evidence/mission_artifacts.md)
+- [Mission artifacts, reviews and deployment](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
   — submission, review decisions, artifact reads and deployments.
 - [Mission approvals page](/documentation/crates/frontend/pages/administration_pages/approvals/mission_approvals_page.md)
   — the review queue as administrators use it.

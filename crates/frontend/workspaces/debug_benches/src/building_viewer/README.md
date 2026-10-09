@@ -88,7 +88,7 @@ uses).
 - Used by:
   - `crates/frontend/workspaces/debug_benches/src/building_viewer.rs`, the module root, which declares
     these modules and re-exports `BuildingViewerPage` for the `/debug/building-viewer` route in
-    `apps/frontend/src/app_routes.rs`;
+    `crates/frontend/shell/frontend_application/src/app_routes.rs`;
   - `crates/frontend/workspaces/debug_benches/src/building_interior.rs`, which builds on `geom`'s static
     lanes, colours and packing helpers;
   - `crates/frontend/workspaces/debug_benches/src/world_los/live.rs`, for `geom::screen_to_world`;

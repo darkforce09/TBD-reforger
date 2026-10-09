@@ -60,8 +60,8 @@ pub fn max_concurrent() -> usize {
 }
 
 /// Whether two `owns` lists collide: some path pair is equal, or one path is a folder prefix of
-/// the other (`apps/api/src/` collides with every file under it). The packer, the check and
-/// `slice-collisions` all use this rule.
+/// the other (`crates/api/api_server/src/` collides with every file under it). The packer, the
+/// check and `slice-collisions` all use this rule.
 pub fn collides(a: &[String], b: &[String]) -> bool {
     for x in a {
         for y in b {

@@ -51,8 +51,8 @@ estimated = [
     "tokens",
 ]
 owns = [
-    "apps/frontend/src/editor/panels/zones_panel.rs",
-    "apps/frontend/src/editor/state/operations/entity.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/zones_panel.rs",
+    "crates/frontend/shell/frontend_application/src/editor/state/operations/entity.rs",
 ]
 
 [scope]

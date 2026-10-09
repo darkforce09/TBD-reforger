@@ -61,8 +61,8 @@ fn split_run_args_puts_program_arguments_only_on_run() {
         )
     );
     assert_eq!(
-        split_run_args(&v(&["-p", "api", "--bin", "api"])),
-        (v(&["-p", "api", "--bin", "api"]), v(&[]))
+        split_run_args(&v(&["-p", "api_server", "--bin", "api-server"])),
+        (v(&["-p", "api_server", "--bin", "api-server"]), v(&[]))
     );
 }
 
@@ -72,7 +72,7 @@ fn split_run_args_puts_program_arguments_only_on_run() {
 fn run_lane_refuses_a_worktree_and_names_both_checkouts() {
     let main = Path::new("/repo");
     let wt = Path::new("/repo/.ai/artifacts/worktrees/T-300");
-    let args = v(&["-p", "api"]);
+    let args = v(&["-p", "api_server"]);
     let text = run_lane_refusal(wt, main, "/cache/run-main", &args)
         .expect("must refuse")
         .join("\n");
@@ -95,7 +95,7 @@ fn run_lane_refuses_an_empty_argv_and_a_caller_supplied_target_dir() {
         "--target-dir=/tmp/x",
         "CARGO_TARGET_DIR=/tmp/x",
     ] {
-        let args = v(&["-p", "api", bad]);
+        let args = v(&["-p", "api_server", bad]);
         let lines = run_lane_refusal(main, main, "/cache/run-main", &args)
             .unwrap_or_else(|| panic!("accepted {bad}"));
         assert!(lines.join("\n").contains(bad));

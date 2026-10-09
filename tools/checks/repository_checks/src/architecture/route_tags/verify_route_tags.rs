@@ -43,7 +43,7 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
     // The extractor reads the MERGE function by name and prefixes ONE nest path; both are
     // load-bearing, so both are pinned. bash's `gate_require … "$APP_RS"` is a stat plus a content
     // match, split here into an explicit read plus `gate::require_str` for one reason: the script
-    // `cd`s to `$ROOT` and so printed `apps/api/src/router.rs`, while xtask
+    // `cd`s to `$ROOT` and so printed `crates/api/api_server/src/router.rs`, while xtask
     // takes an absolute root and may be invoked from any subdirectory. Reading first lets the
     // missing-target `Finding` carry that same relative path, with the same `Verdict` shapes.
     let nest = format!(".nest(\"{API_PREFIX}\", api_v1_routes(");
@@ -134,8 +134,10 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
         Ok(pair) => pair,
         Err(cause) => {
             // The case `2>/dev/null || true` could not tell apart from "no tags exist".
-            let msg =
-                format!("the @route sweep could not read {SRC_DIR_REL} and {API_CRATES_DIR_REL}");
+            let msg = format!(
+                "the @route sweep could not read {}",
+                TAG_SWEEP_ROOTS.join(", ")
+            );
             o.push(Verdict::did_not_run(msg, Kind::Pin, cause).to_string());
             say(&mut o, &["", PARSE_FAIL]);
             return (2, o);

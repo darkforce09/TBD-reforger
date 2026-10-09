@@ -21,7 +21,7 @@ crates/api/api_server_infrastructure/src/models/
 
 The fleet command wire shapes (`FleetAction` with its rules, the request, receipt, list, claim,
 reports and console types) and `ExecutorKind` live in the `fleet_wire_contract` crate
-(`crates/contracts/fleet_wire_contract`), which the fleet host agent shares; the ledger reads a
+(`crates/contracts/fleet_wire_contract`), which the game server host agent shares; the ledger reads a
 `FleetCommandReceiptRow` from the `fleet_commands` table and converts it into that crate's
 `FleetCommandReceipt` column for column.
 `FleetCommandState` runs from `queued` through `claimed` and `executing` to `succeeded`, `failed`,
@@ -46,7 +46,7 @@ conversion folds the five `telemetry_queue_*` columns, all set or all null, into
   `server-intel.schema.json` (`ServerStatus`, `TelemetryQueueStatus`); `cargo xtask schema
   citations` resolves every tag.
 - Used by: the domain's handlers and services and `api_command_center` (`ServerStatus`,
-  `ServerStatusRow`); the contract test `apps/api/tests/game_runtime_contract.rs`, which decodes
+  `ServerStatusRow`); the contract test `crates/api/api_server/tests/game_runtime_contract.rs`, which decodes
   live answers into the generated types; the web app's DTOs in
   `crates/frontend/foundation/frontend_api_dtos/src/` (`servers.rs`, `fleet_commands.rs`,
   `fleet_scenarios.rs`) mirror these shapes.

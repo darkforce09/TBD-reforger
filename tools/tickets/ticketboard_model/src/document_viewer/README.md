@@ -4,7 +4,7 @@ The state and reads behind the [ticketboard](/documentation/glossary/n_to_z.md#t
 that opens a repository Markdown document, such as a
 [ticket](/documentation/glossary/n_to_z.md#ticket)'s spec, plan or a citation, in a read-only column
 beside the ticket details. The desktop application paints the column from
-`apps/ticketboard/src/document_viewer/ui/`, as Markdown or, when it cannot, as raw text with a note
+`tools/tickets/ticketboard_desktop/src/document_viewer/ui/`, as Markdown or, when it cannot, as raw text with a note
 saying why.
 
 ## Contents
@@ -32,7 +32,7 @@ Closed ──open(rel)──▶ Loading(rel) ──land(rel, outcome)──▶ R
    └───── close (Back) ──┴──────────────────────────────────────────────────┘
 ```
 
-The application's column (`apps/ticketboard/src/document_viewer/ui/document_column.rs`) paints from
+The application's column (`tools/tickets/ticketboard_desktop/src/document_viewer/ui/document_column.rs`) paints from
 that state, and its Back and "open externally" buttons come back as `DocumentEvent`s, which
 `crate::application_state::events` turns into `CloseViewer` and `OpenPath` actions. The application owns the Markdown render cache and the saved column width
 (280 to 1600 points, 560 by default).
@@ -50,9 +50,9 @@ that state, and its Back and "open externally" buttons come back as `DocumentEve
 - Depends on: the crate's `Error` (`DocumentRefused`); `std` for files, threads and channels. It is
   the one feature besides `core` that uses nothing from `ticket_model`.
 - Used by: `crate::application_state::events`; the desktop application:
-  `apps/ticketboard/src/document_viewer/ui/`, the files of `apps/ticketboard/src/application/` that
+  `tools/tickets/ticketboard_desktop/src/document_viewer/ui/`, the files of `tools/tickets/ticketboard_desktop/src/application/` that
   open, poll, close and lend the viewer, and the ticket details in
-  `apps/ticketboard/src/ticket_browser/ui/detail_panel/` (`cells.rs`, `body_sections.rs`), through
+  `tools/tickets/ticketboard_desktop/src/ticket_browser/ui/detail_panel/` (`cells.rs`, `body_sections.rs`), through
   `wants_viewer`.
 - Rules:
   - no document outside the repository root is read, by `..` or by a symbolic link, and no read

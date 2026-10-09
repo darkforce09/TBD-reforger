@@ -2,7 +2,7 @@
 //!
 //! **Role:** decides whether a request carries the operator's `OBSERVABILITY_TOKEN` as an
 //! `Authorization: Bearer` credential.
-//! **Position:** consumed by the API router (`api::router`); `/metrics` takes the
+//! **Position:** consumed by the API router (`api_server::router`); `/metrics` takes the
 //! [`ObservabilityAuth`] extractor, `/healthz` asks [`observability_bearer_matches`] to choose
 //! between the public and the detailed report.
 //! **Signals & state:** none; reads [`api_configuration::configuration::Config::observability_token`].

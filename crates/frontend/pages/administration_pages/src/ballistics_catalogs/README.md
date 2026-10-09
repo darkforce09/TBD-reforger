@@ -70,7 +70,7 @@ in the browser build only; the views that run them exist in that build only.
 
 ## Public surface
 
-- `BallisticsCatalogsPage`: the route component `apps/frontend/src/app_routes.rs` mounts.
+- `BallisticsCatalogsPage`: the route component `crates/frontend/shell/frontend_application/src/app_routes.rs` mounts.
 
 ## Boundaries
 
@@ -78,7 +78,7 @@ in the browser build only; the views that run them exist in that build only.
   `api_post_form_keeping_refusal`, `Error`, the ballistics catalog DTOs, `AuthStore`,
   `AdminGate`, `PageHeader`, `MaterialIcon`, `cn`, `utc_label`); over HTTP, the operations domain
   of the API.
-- Used by: the route table in `apps/frontend/src/app_routes.rs` and `router.rs`; the
+- Used by: the route table in `crates/frontend/shell/frontend_application/src/app_routes.rs` and `router.rs`; the
   Administration section of `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`.
 
 ## Tests

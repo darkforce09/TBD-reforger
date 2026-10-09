@@ -15,7 +15,7 @@
 //! (`mission_compiler`, `mission_model`, `mission_validation`, `mission_wire_safety`) and
 //! `fleet_wire_contract`; names no other domain. The API's router
 //! merges [`routes()`]; the background workers, the operations and command center domains, the
-//! `import-registry` tool and the integration suites call its services.
+//! `import-item-registry` tool and the integration suites call its services.
 //! **Signals & state:** none in memory beyond the schema validators, compiled once per process;
 //! missions, versions, artifacts, reviews, deployments, factions and registries live in the
 //! database, reached through the caller's pool or transaction.

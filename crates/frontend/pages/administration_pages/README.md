@@ -21,7 +21,7 @@ crates/frontend/pages/administration_pages/
 
 ## How it works
 
-The app's route table (`apps/frontend/src/app_routes.rs`) mounts the seven route components:
+The app's route table (`crates/frontend/shell/frontend_application/src/app_routes.rs`) mounts the seven route components:
 `EventManagerPage` at `/admin/events`, `MissionApprovalsPage` at `/admin/approvals`,
 `ServerControlPage` at `/admin/server`, `PersonnelRosterPage` at `/admin/personnel`,
 `ContentManagerPage` at `/admin/content`, `AuditLogsPage` at `/admin/audit` and
@@ -71,7 +71,7 @@ None: no feature, no environment variable.
   to), `time_source` (the clock and UTC formatter of new posts), `leptos`, `futures`,
   `serde_json`, `url`; on `wasm32`, `leptos_router`, `gloo-timers`,
   `js-sys`, `wasm-bindgen` and `web-sys`; `frontend_test_support` for its tests only.
-- Used by: the single-page app (`apps/frontend`), whose route table mounts the seven pages.
+- Used by: the single-page app (`crates/frontend/shell/frontend_application`), whose route table mounts the seven pages.
 - Rules: a page crate depends on foundation and feature crates only, never on another page crate,
   a workspace or the app (`cargo xtask ci verify-workspace-laws`); every page renders its body
   inside `AdminGate`, and every route of the crate declares the `admin` tier in

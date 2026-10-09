@@ -91,7 +91,7 @@ Keep the helper behaviour pin and banner/`attrs_multi_ids` pins. Perturbations (
 T-749 owns only `eden_top_strip.rs`. Strip production comment and settle-pin claim were corrected
 (`Settled/authored HH:MM… is NOT live drag feedback`; needle tightened to
 `{move || env.get().time}`).  
-`apps/frontend/src/ui.rs` **still** says (Slider rustdoc ~148–149):
+`crates/frontend/shell/frontend_application/src/ui.rs` **still** says (Slider rustdoc ~148–149):
 
 > A caller that needs live-drag feedback should render its own readout from the same signal
 > (which is what the top strip's `HH:MM` label does)

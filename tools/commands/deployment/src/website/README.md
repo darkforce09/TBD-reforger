@@ -23,12 +23,18 @@ tools/commands/deployment/src/website/
   `packages/map-assets` tree does (exit 10), or neither (exit 11). The deploy continues on the
   first, continues with a warning on the third (a host that serves only the mission library), and
   stops on the second or on any other answer, printing the `mv` commands for the second.
+- The API `.env` probe (`tools/commands/deployment/src/api_environment_file_preflight.rs`) runs
+  next, still before the rsync: the deploy sends its `probe_script` as the same `bash -lc` word as
+  every step, continues only on exit 0 (a readable `crates/api/api_server/.env` in
+  `TBD_REMOTE_DIR`) and stops with exit 1 on exit 20 (missing or unreadable) or any other answer,
+  naming the operator's step; `--dry-run` prints the probe before the rsync lines.
 - `rsync_argv`: `rsync -e <ssh> -avz --delete` of the checkout root with exclusions for `.git/`,
-  build output (`target/`, which holds the gates' private folders too, `node_modules`,
-  `apps/frontend/dist/`), the server's secrets (the API's `.env` and `.tools/`,
-  `deploy.env`), the served terrain tree `assets/terrains/`, the scratch and equipment asset
+  build output (`target/`, which holds the gates' private folders too, `node_modules`), the
+  server's `deploy.env`, the served terrain tree `assets/terrains/`, the scratch and equipment asset
   trees, `packages/`, the untracked reference trees under `apps/mod/` and the local test profile,
-  followed by the patterns `deploy staging` excludes too, from
+  followed by the paths both deploys exclude: the host-owned paths of
+  `tools/commands/deployment/src/host_owned_paths.rs` (the API's `.env` and `.tools/`, and
+  `crates/frontend/shell/frontend_application/dist/`), then the patterns from
   `tools/commands/deployment/src/development_machine_only_paths.rs`: what only a
   development machine holds, such as the retired and hand-set cargo target folders beside
   `target/`, worktrees and
@@ -40,11 +46,12 @@ tools/commands/deployment/src/website/
   `TBD_POSTGRES_HOST_PORT` and defines `staging_compose`, a shell function that runs
   `deploy/compose.staging.yml` under docker compose when the host has docker, else
   under podman compose. The steps are: `staging_compose up -d postgres`; `cargo build --release -p
-  api --bin api`; the staging host tools of `STAGING_HOST_TOOLS`, `cargo build --release
+  api_server --bin api-server` (`API_SERVER`), proven by `test -x target/release/api-server`; the
+  staging host tools of `STAGING_HOST_TOOLS`, `cargo build --release
   -p staging_fixtures --bin staging-fixtures` and `cargo build --release -p developer_tools --bin
   acknowledgement-dropping-relay`, each proven by `test -x target/release/<executable>`, so the
   staging harness and `cargo xtask deploy staging` find them built from the same checkout;
-  `trunk build --release` in `apps/frontend`;
+  `trunk build --release` in `crates/frontend/shell/frontend_application`;
   `staging_compose up -d caddy`, then `staging_compose exec -T caddy caddy reload --config
   /etc/tbd-caddy/Caddyfile --adapter caddyfile`, tried up to `CADDY_RELOAD_ATTEMPTS` (5)
   times a second apart, because `up -d` returns before Caddy's admin endpoint listens;
@@ -69,9 +76,10 @@ tools/commands/deployment/src/website/
 ## Boundaries
 
 - Depends on: `repository_layout` (`DEPLOY_ENV`, `WEBSITE_API_UNIT`,
-  `SYSTEMD_UNITS_DIR`); `crate::development_machine_only_paths` for the
-  exclusions both deploys share; the `[[bin]]` names of `apps/api/Cargo.toml` and
-  `tools/developer_tools/Cargo.toml` for the host tools; `tools/commands/deployment/src/website.rs` reads the
+  `SYSTEMD_UNITS_DIR`); `crate::host_owned_paths` and `crate::development_machine_only_paths`
+  for the exclusions both deploys share; `crate::api_environment_file_preflight` for the `.env`
+  probe; the `[[bin]]` names of `crates/api/api_server/Cargo.toml` and
+  `tools/developer_tools/Cargo.toml` for the API server and the host tools; `tools/commands/deployment/src/website.rs` reads the
   settings through `deploy_settings`; on the host, the `postgres` and `caddy`
   services of `deploy/compose.staging.yml` and the Caddyfile the `caddy` service
   mounts.
@@ -89,8 +97,14 @@ tools/commands/deployment/src/website/
   the host tools build after the API and skip with it
   (`the_staging_host_tools_build_after_the_api_and_skip_with_it`), each is built and proven
   (`the_staging_host_tools_step_builds_and_proves_every_executable`) and is a `[[bin]]` of the
-  package it names, the relay under the name its unit runs
-  (`every_staging_host_tool_is_an_executable_its_package_declares`); the Caddyfile trusts only
+  package it names, the API server and the relay under the names their units run
+  (`every_built_executable_is_one_its_package_declares`); the API build names `api_server` and
+  `api-server` and the app build runs in the app's folder
+  (`the_api_and_app_builds_name_the_server_package_and_the_app_folder`); the `.env` probe reaches
+  the host as one login-shell word
+  (`the_api_environment_file_probe_reaches_the_host_as_one_login_shell_word`) and the unit loads
+  the file it proves
+  (`the_api_unit_runs_in_the_server_folder_with_the_env_the_preflight_proves`); the Caddyfile trusts only
   the tunnel's peer (`the_caddyfile_trusts_forwarded_addresses_only_from_the_tunnel_peer`);
   every compose step names the staging compose file
   (`every_compose_step_runs_the_staging_compose_file_from_the_checkout`, and
@@ -102,7 +116,7 @@ tools/commands/deployment/src/website/
   (`the_caddy_service_mounts_no_folder_holding_the_deploy_secrets`);
   the API unit keeps its runtime files in its own state folder
   (`the_unit_template_keeps_the_runtime_files_in_its_state_directory`); the
-  `apps/api/.env.example` the host's `.env` starts from sets none of the variables the
+  `crates/api/api_server/.env.example` the host's `.env` starts from sets none of the variables the
   API unit pins, since a value in the `.env` overrides the unit's
   (`the_env_template_sets_none_of_the_variables_the_unit_pins`); the install command
   renders the shipped template (`the_unit_install_command_renders_the_shipped_template_for_the_remote_dir`).

@@ -45,7 +45,7 @@ their tests run; the whole `wiki` module is one of them.
 ## Public surface
 
 - `modpacks::ModpacksPage`, `vehicles::VehicleDatabasePage` and `wiki::WikiPage`: the route
-  components (`wasm32`) `apps/frontend/src/app_routes.rs` binds to `/modpacks`, `/vehicles`,
+  components (`wasm32`) `crates/frontend/shell/frontend_application/src/app_routes.rs` binds to `/modpacks`, `/vehicles`,
   `/wiki` and `/wiki/:slug`, also in `prelude`; each lives in its page's `page` module, which is
   public so the props type `#[component]` derives for it is reachable.
 
@@ -57,7 +57,7 @@ their tests run; the whole `wiki` module is one of them.
   (wiki and vehicles) and `frontend_ui` (`AuthGate`, `Dialog`, the `split_pane`
   primitives, the toast queue); over HTTP, the `/api/v1/wiki`, `/api/v1/vehicle-database` and
   `/api/v1/modpacks` routes of the community content domain.
-- Used by: the route table in `apps/frontend/src/app_routes.rs` and
+- Used by: the route table in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Doctrine & Info" section in
   `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; `wiki_source` and
   `modpacks_source` in `crates/frontend/pages/doctrine_pages/src/tests/source_pins.rs`.

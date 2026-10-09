@@ -71,7 +71,7 @@ its panels with `Mount` or `MountHandler`, and fills `GetScreenTitle`, `GetSessi
   `TBD_Rounded<N>` layout for radius 5 to 12 (8 for any other value) and leaves a non-frame dock
   square.
 - `TBD_UITheme` holds the colour tokens, named after the design tokens of
-  `apps/frontend/style/aegis.css` (the known value differences are listed in
+  `crates/frontend/shell/frontend_application/style/aegis.css` (the known value differences are listed in
   [design tokens](/documentation/design_system/design_tokens.md)), under three laws: tokens are sRGB and reach the engine
   through `Color.FromSRGBA`, never `SetColorInt`; alpha is composited in sRGB by `Over(top, ground)`
   (`Paint` over the panel ground, `PaintOver` over a given ground), and only `PaintAlpha` sends

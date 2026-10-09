@@ -1,0 +1,26 @@
+# Stage S13 W1, third of four: the host agent leaves `apps/` and becomes the crate
+# game_server_host_agent in the new crate category `crates/fleet/`, beside the fleet command
+# vocabulary of `crates/contracts/fleet_wire_contract`; its documentation mirror moves with it
+# under `documentation/crates/fleet/game_server_host_agent`, and its systemd template takes the
+# crate's name (`deploy/systemd/game_server_host_agent@.service`).
+# The package, library and binary rename (`fleet_host_agent` -> `game_server_host_agent`) is in the
+# crate's manifest. The crate path `fleet_host_agent::` becomes `game_server_host_agent::` in the
+# two places that name the library: the binary's entry file and the integration tests. The rows
+# stop there: a one-segment prefix also matches the bare word in comments and string literals, and
+# the library's own sources hold the HTTP user agent `fleet_host_agent/<version>`, a wire literal
+# with its own decision. Recorded staging transcripts that name the old library's log targets are
+# records and stay. Package names in commands (`-p fleet_host_agent`), the installed binary, the
+# configuration folder and the unit instances have no `text` row: the host migration and the deploy
+# code rename them.
+kind	from	to	scope
+#
+# The host agent crate and its documentation mirror
+path	apps/fleet_host_agent	crates/fleet/game_server_host_agent
+path	documentation/apps/fleet_host_agent	documentation/crates/fleet/game_server_host_agent
+#
+# The systemd template of one instance's host agent, named for the crate
+path	deploy/systemd/fleet_host_agent@.service	deploy/systemd/game_server_host_agent@.service
+#
+# The crate path, where the library is named from outside it
+rust_path	fleet_host_agent::	game_server_host_agent::	apps/fleet_host_agent/src/main.rs
+rust_path	fleet_host_agent::	game_server_host_agent::	apps/fleet_host_agent/tests

@@ -139,8 +139,8 @@ table, with a skeleton and a worked sample written from a real folder; the
 
 | Kind | Kind sections, in order | Template | Examples |
 |---|---|---|---|
-| area root | Getting started | `readme_area_root.md` | `apps/`, `apps/mod/`, `tools/` |
-| crate, package or addon root | Getting started, Configuration, Public surface | `readme_crate_root.md` | `apps/api/`, `tools/enfusion_mcp_node_package/`, `apps/mod/tbd-framework/` |
+| area root | Getting started | `readme_area_root.md` | `crates/`, `apps/mod/`, `tools/` |
+| crate, package or addon root | Getting started, Configuration, Public surface | `readme_crate_root.md` | `crates/api/api_server/`, `tools/enfusion_mcp_node_package/`, `apps/mod/tbd-framework/` |
 | domain or subsystem | Public surface | `readme_domain.md` | `crates/api/api_missions/src/`, `crates/streaming/map_asset_loading/src/terrain/` |
 | leaf | none | `readme_leaf.md` | `crates/line_of_sight/interior_line_of_sight/src/` |
 | page | Routes, Data, States | `readme_page.md` | `crates/frontend/pages/operations_pages/src/schedule/` |
@@ -166,7 +166,7 @@ table, with a skeleton and a worked sample written from a real folder; the
   other folders import, the binaries, the HTTP routes the folder owns. Only what crosses the folder's
   boundary, never an inventory of everything marked `pub`.
 - **`## Routes`**: each browser route the folder renders: path, component, access tier and layout
-  flags, as `apps/frontend/src/app_routes.rs` and `crates/frontend/foundation/frontend_route_table/src/routes.rs`
+  flags, as `crates/frontend/shell/frontend_application/src/app_routes.rs` and `crates/frontend/foundation/frontend_route_table/src/routes.rs`
   declare them.
 - **`## Data`**: each API call the page makes (method, path, the DTO it reads or sends), the context
   and storage it reads, and what it writes.
@@ -194,9 +194,9 @@ Go down this list and take the first kind that fits.
 
 1. **documentation folder**: any folder under `documentation/`.
 2. **area root**: the top of a code tree, or a folder that groups several products without being
-   one (`apps/`, `apps/mod/`, `tools/`, `contracts/`).
+   one (`crates/`, `apps/`, `apps/mod/`, `tools/`, `contracts/`).
 3. **crate, package or addon root**: the folder that holds a `Cargo.toml`, a `package.json` or an
-   Enfusion `addon.gproj` (`apps/api/`, `apps/ticketboard/`,
+   Enfusion `addon.gproj` (`crates/api/api_server/`, `tools/tickets/ticketboard_desktop/`,
    `tools/enfusion_mcp_node_package/`, `apps/mod/tbd-framework/`).
 4. **mod scripts**: a folder at or under an addon's `Scripts/`
    (`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/AI/`).
@@ -208,7 +208,7 @@ Go down this list and take the first kind that fits.
    (`contracts/definitions/`, `crates/api/api_database/seeds/`, `assets/`, `assets/terrains/`).
 8. **command-line**: a crate's `src/bin/`, and each folder directly under
    `tools/xtask/src/commands/` (`tools/developer_tools/src/bin/`,
-   `apps/api/src/bin/`, `tools/commands/database_operations/src/`). Any other folder that
+   `crates/api/api_server/src/bin/`, `tools/commands/database_operations/src/`). Any other folder that
    parses or runs commands, such as a folder inside a command group, is a domain or a leaf and
    links the command-line README it belongs to.
 9. **app**: a workspace crate directly under `crates/frontend/workspaces/`.
@@ -229,16 +229,16 @@ configures or runs by hand, such as a crate's `rustfmt.toml`, needs only its Con
 ## Writing rules
 
 - **Truth.** Every claim is checked against the code it describes: paths with `git ls-files`, routes
-  in `apps/frontend/src/app_routes.rs` and `apps/api/src/<domain>/routes.rs`,
+  in `crates/frontend/shell/frontend_application/src/app_routes.rs` and `crates/api/api_<domain>/src/routes.rs`,
   commands in the xtask command tree (`tools/xtask/src/cli/` and
   `tools/xtask/src/commands/<group>/cli.rs`) and safe `--help` runs,
-  environment variables in `apps/api/.env.example` and the code that reads them, callers
+  environment variables in `crates/api/api_server/.env.example` and the code that reads them, callers
   with `git grep`. When a document and the code disagree, the code wins.
 - **Present tense.** A README says what the folder is and does. It holds no history (no dates, no
   "formerly", "previously", "legacy", "migrated" or "renamed from", no phase or wave story) and no
   plans; commit history owns the past, and feature docs own open work.
 - **No tickets.** A README never names or links a ticket.
-- **Links.** Repository-root links, such as `[API overview](/documentation/apps/api/api_overview.md)`,
+- **Links.** Repository-root links, such as `[API overview](/documentation/crates/api/api_server/api_overview.md)`,
   never `../` climbs.
 - **Paths.** A backticked path to anything outside the README's folder is a full repository path;
   inside the folder, a path relative to it (`src/bin/api.rs`); a bare file name only after the

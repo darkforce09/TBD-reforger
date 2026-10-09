@@ -10,15 +10,18 @@
 //! [`SQLX_STAGING_TOOL_PATH`], the staging fixtures host tool; leptos in
 //! frontend crates; no tokio, axum, reqwest, resvg or image in the dependency closure of xtask
 //! (which keeps the harness servers out of it); no map noun in a declared name of a graphics
-//! crate; and no `#[wasm_bindgen]` attribute in any `.rs` file of a workspace member outside the
-//! frontend, `browser_platform` and the offline service worker — the three crates that export to
-//! JavaScript.
+//! crate; no `#[wasm_bindgen]` attribute in any `.rs` file of a workspace member outside the
+//! frontend app, `browser_platform` and the offline service worker — the three crates that export
+//! to JavaScript; and the rendering-stack clause: the offline service worker and every API crate
+//! link no graphics, map rendering, paper doll or streaming crate and no wgpu, in any table.
 //! **Position:** called by [`super::crate_tiers`] over the judged members; the xtask closure is
 //! walked from the xtask member wherever it sits, judged or not (the binary lives at
 //! `tools/xtask`, outside the `tools/<category>/<name>` layout).
 //! **Signals & state:** none; reads parsed manifests, the graphics crates' sources and the mission
 //! editing category's sources.
-//! **Invariants:** only normal and build edges count (dev-dependencies never ship), an edge is
+//! **Invariants:** only normal and build edges count (dev-dependencies never ship) — except in
+//! the rendering-stack clause, which reads every table, dev and target-specific included, so a
+//! test build of the worker or the server never links the renderer either; an edge is
 //! external when no workspace member has its package name, and a graphics crate whose `src`
 //! folder is missing is [`NotRun::TargetMissing`]. The mission editing scan runs whenever the
 //! category folder exists or a member declares the category; a declared category with no folder
@@ -80,11 +83,23 @@ pub(crate) const XTASK_PACKAGE: &str = "xtask";
 pub(crate) const WASM_BINDGEN_ATTRIBUTE_PATTERN: &str =
     r"^\s*#\[\s*(wasm_bindgen\b|cfg_attr\s*\(.*\bwasm_bindgen\b)";
 /// The folders whose sources may export to JavaScript: the frontend app (its start function),
-/// `browser_platform` and the offline service worker.
+/// `browser_platform` and the offline service worker, the two shell crates beside each other.
 pub(crate) const WASM_BINDGEN_EXPORT_FOLDERS: &[&str] = &[
-    "apps/frontend",
+    "crates/frontend/shell/frontend_application",
     "crates/foundation/browser_platform",
-    "apps/offline_service_worker",
+    "crates/frontend/shell/offline_service_worker",
+];
+/// The package of the offline service worker: a browser worker that applies the cache policy and
+/// never links a rendering-stack crate.
+pub(crate) const OFFLINE_SERVICE_WORKER_PACKAGE: &str = "offline_service_worker";
+/// The categories of the rendering stack — the GPU crates, the map renderers, the paper doll and
+/// the streamed world's draw buffers — which neither the offline service worker nor an API crate
+/// links, in any table.
+pub(crate) const RENDERING_STACK_CATEGORIES: &[&str] = &[
+    "crates/graphics",
+    "crates/map_rendering",
+    "crates/paper_doll",
+    "crates/streaming",
 ];
 /// A declaration whose name holds a map noun, which no graphics crate may make. The five nouns
 /// are ordinary English and ordinary graphics vocabulary — a doc comment may discuss what a map
@@ -121,6 +136,7 @@ pub(super) fn firewall_findings(
     if let Some(xtask) = members.iter().find(|m| m.package_name == XTASK_PACKAGE) {
         findings.extend(xtask_closure_findings(xtask, members));
     }
+    findings.extend(rendering_stack_findings(members, judged));
     findings.extend(mission_editing_browser_token_findings(repo_root, members)?);
     findings.extend(wasm_bindgen_attribute_findings(repo_root, members)?);
     Ok(findings)
@@ -178,6 +194,40 @@ fn breached_firewall(
             .then_some("leptos lives only in frontend crates");
     }
     None
+}
+
+/// Every edge, in any table, from the offline service worker or an API crate onto a crate of
+/// [`RENDERING_STACK_CATEGORIES`] or onto wgpu.
+fn rendering_stack_findings(
+    members: &[WorkspaceMember],
+    judged: &[&WorkspaceMember],
+) -> Vec<String> {
+    let bound = judged.iter().filter(|member| {
+        member.package_name == OFFLINE_SERVICE_WORKER_PACKAGE
+            || category_class(&effective_category(member)) == Some(CategoryClass::Api)
+    });
+    let mut findings = Vec::new();
+    for member in bound {
+        for edge in &member.manifest.dependencies {
+            let name = edge.package.as_str();
+            let onto_stack =
+                members
+                    .iter()
+                    .find(|m| m.package_name == name)
+                    .is_some_and(|target| {
+                        RENDERING_STACK_CATEGORIES.contains(&effective_category(target).as_str())
+                    });
+            if onto_stack || name == "wgpu" || name.starts_with("wgpu-") {
+                findings.push(format!(
+                    "rule 6: {}/Cargo.toml:{}: [{}] {name} — the offline service worker and the \
+                     API crates link no graphics, map rendering, paper doll or streaming crate \
+                     and no wgpu, in any table",
+                    member.path, edge.line_no, edge.table
+                ));
+            }
+        }
+    }
+    findings
 }
 
 /// The banned crates in the dependency closure of xtask, each with the member that brings it.

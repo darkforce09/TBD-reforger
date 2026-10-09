@@ -47,9 +47,9 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 7 commit subject(s)"
 owns = [
-    "apps/frontend/Cargo.toml",
-    "apps/frontend/src/client.rs",
-    "apps/frontend/src/content.rs",
+    "crates/frontend/shell/frontend_application/Cargo.toml",
+    "crates/frontend/shell/frontend_application/src/client.rs",
+    "crates/frontend/shell/frontend_application/src/content.rs",
 ]
 
 [scope]

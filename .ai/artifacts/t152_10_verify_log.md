@@ -75,7 +75,7 @@ make wasm                                     → exit 0
 node scripts/map-assets/verify-t152-cartographic.mjs  → exit 0
 make map-export-validate                      → exit 0
 make schema-validate                            → exit 0
-cd apps/frontend && npm test          → 355/355
+cd crates/frontend/shell/frontend_application && npm test          → 355/355
 npm run build && npm run lint                 → exit 0
 ```
 

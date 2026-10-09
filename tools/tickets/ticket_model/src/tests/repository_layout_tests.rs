@@ -7,10 +7,6 @@ use std::path::{Path, PathBuf};
 fn required_documentation_locations() -> Vec<(&'static str, Vec<&'static str>)> {
     vec![
         (
-            "APPS_DOCUMENTATION_DIR",
-            vec![documentation::APPS_DOCUMENTATION_DIR],
-        ),
-        (
             "CRATES_DOCUMENTATION_DIR",
             vec![documentation::CRATES_DOCUMENTATION_DIR],
         ),
@@ -76,9 +72,9 @@ fn the_root_sparse_set_carries_the_task_surface() {
     }
 }
 
-/// A website slice checks out the three website applications, the trees they reach through
-/// `path =` dependencies, the deployment folder, the API golden responses its contract tests read,
-/// and the documentation mirrors of `apps/` and `crates/`.
+/// A website slice checks out `crates/` (the three website applications and the trees they reach
+/// through `path =` dependencies), the deployment folder, the API golden responses its contract
+/// tests read, and the documentation mirror of `crates/`.
 #[test]
 fn the_website_sparse_set_carries_the_applications_their_dependencies_and_their_mirrors() {
     let (_, website_set) = SPARSE_CHECKOUT_SETS
@@ -86,13 +82,9 @@ fn the_website_sparse_set_carries_the_applications_their_dependencies_and_their_
         .find(|(name, _)| *name == "website")
         .expect("a website target");
     for expected in [
-        "apps/api",
-        "apps/frontend",
-        "apps/offline_service_worker",
         "crates",
         "deploy",
         "contracts/fixtures/api_goldens",
-        documentation::APPS_DOCUMENTATION_DIR,
         documentation::CRATES_DOCUMENTATION_DIR,
     ] {
         assert!(
@@ -100,6 +92,42 @@ fn the_website_sparse_set_carries_the_applications_their_dependencies_and_their_
             "website set lacks {expected}"
         );
     }
+    for application in [
+        "crates/api/api_server",
+        "crates/frontend/shell/frontend_application",
+        "crates/frontend/shell/offline_service_worker",
+    ] {
+        assert!(
+            website_set
+                .iter()
+                .any(|entry| lies_within(application, entry)),
+            "website set does not reach the application {application}"
+        );
+    }
+}
+
+/// No entry of a sparse-checkout set lies inside another entry of the same set: the outer entry
+/// already checks it out, and a scan over the set's source trees would read it twice.
+#[test]
+fn no_sparse_checkout_entry_lies_inside_another_of_its_set() {
+    let nested: Vec<String> = SPARSE_CHECKOUT_SETS
+        .iter()
+        .flat_map(|(target, paths)| {
+            paths.iter().enumerate().flat_map(move |(index, path)| {
+                paths
+                    .iter()
+                    .enumerate()
+                    .filter(move |(other_index, other)| {
+                        index != *other_index && lies_within(path, other)
+                    })
+                    .map(move |(_, other)| format!("{target}: {path} inside {other}"))
+            })
+        })
+        .collect();
+    assert!(
+        nested.is_empty(),
+        "sparse-checkout entries named twice: {nested:#?}"
+    );
 }
 
 /// Every `contracts/` file a website crate compiles in through `include_str!` or `include_bytes!`

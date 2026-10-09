@@ -1,7 +1,7 @@
 //! Selection and layer authoring tests for the outliner.
 
 //! T-666 — the folder-click SELECTION RULES + the group-icon rule, native (this module is not
-//! wasm-gated, so `cargo test -p frontend` runs it). These pin the pure logic the
+//! wasm-gated, so `cargo test -p mission_creator_workspace` runs it). These pin the pure logic the
 //! `editor_ops` selectors call (`layer_direct_slot_children` / `layer_descendant_slots` /
 //! `folders_holding_slots`) — the part that decides WHICH slots a folder click selects.
 //!

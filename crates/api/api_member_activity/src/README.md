@@ -43,14 +43,14 @@ crates/api/api_member_activity/src/
 - Depends on: `api_foundation` for `ApiError`; `api_identifiers` for the account, event, match
   and mission ids; `api_audit_log` for the warning a failed best-effort recomputation records;
   sqlx.
-- Used by: the API application (`apps/api`): `api_match_telemetry`'s match results ingest, `api_identity_and_access`'s identity linking,
+- Used by: the API application (`crates/api/api_server`): `api_match_telemetry`'s match results ingest, `api_identity_and_access`'s identity linking,
   membership cache and account lookup, `api_operations`' event administration and mission
   restoration, `api_administration`'s bans; the `leaderboard_refresher` and
   `event_reservation_reevaluator` workers in `crates/api/api_background_workers/src/`; the integration
-  tests in `apps/api/tests/`.
+  tests in `crates/api/api_server/tests/`.
 - Rules: every refresh of the view takes one transaction advisory lock, and a business transaction
   takes it last, before its snapshot, so no refresher publishes an older snapshot over a newer
   commit; the two counters come from one statement, and attendance counts only decided
   observations; no handler writes those columns itself (`the_sql_lives_only_in_the_service` in
-  `apps/api/tests/user_stats_service.rs`); producers of re-evaluation requests never take event
+  `crates/api/api_server/tests/user_stats_service.rs`); producers of re-evaluation requests never take event
   locks.

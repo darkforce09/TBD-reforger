@@ -9,13 +9,13 @@ fn this_repo() -> PathBuf {
 /// The member folders a [`TmpRepo`] workspace declares: the folders the repository's own members
 /// sit in.
 const FIXTURE_WORKSPACE_MEMBERS: &[&str] = &[
-    "apps/fleet_host_agent",
-    "apps/ticketboard",
-    "apps/api",
-    "apps/frontend",
+    "crates/fleet/game_server_host_agent",
+    "tools/tickets/ticketboard_desktop",
+    "crates/api/api_server",
+    "crates/frontend/shell/frontend_application",
     "crates/geometry/camera_math",
     "crates/graphics/render_primitives",
-    "apps/offline_service_worker",
+    "crates/frontend/shell/offline_service_worker",
     "tools/foundation/verification_core",
     "tools/foundation/process_runner",
     "tools/foundation/repository_laws",
@@ -90,9 +90,9 @@ fn walk_is_nonempty_anti_vacuity() {
         "/tools/foundation/process_runner/",
         "/tools/foundation/repository_laws/",
         "/tools/tickets/ticket_model/",
-        "/apps/ticketboard/src/",
-        "/apps/api/src/",
-        "/apps/frontend/src/",
+        "/tools/tickets/ticketboard_desktop/src/",
+        "/crates/api/api_server/src/",
+        "/crates/frontend/shell/frontend_application/src/",
         "/apps/mod/tbd-framework/Scripts/",
         "/apps/mod/tbd-emcp/Scripts/",
     ] {
@@ -146,7 +146,7 @@ fn write_lines(path: &Path, count: usize) {
 #[test]
 fn production_boundary_is_500_lines() {
     let d = TmpRepo::new("production-boundary");
-    let path = d.0.join("apps/ticketboard/src/board.rs");
+    let path = d.0.join("tools/tickets/ticketboard_desktop/src/board.rs");
     write_lines(&path, SIZE_3_PRODUCTION_MAX_LINES);
     assert_eq!(verify_file_length_in(&d.0), 0);
     write_lines(&path, SIZE_3_PRODUCTION_MAX_LINES + 1);
@@ -156,7 +156,7 @@ fn production_boundary_is_500_lines() {
 #[test]
 fn test_boundary_is_1000_lines_for_directory_and_basename() {
     let d = TmpRepo::new("test-boundary");
-    let directory_test = d.0.join("apps/api/tests/integration.rs");
+    let directory_test = d.0.join("crates/api/api_server/tests/integration.rs");
     let basename_test = d.0.join("tools/xtask/src/fixture_tests.rs");
     for path in [&directory_test, &basename_test] {
         write_lines(path, SIZE_3_TEST_MAX_LINES);
@@ -165,7 +165,7 @@ fn test_boundary_is_1000_lines_for_directory_and_basename() {
         assert_eq!(verify_file_length_in(&d.0), 1);
         std::fs::remove_file(path).unwrap();
     }
-    assert!(is_test_file("apps/api/tests/integration.rs"));
+    assert!(is_test_file("crates/api/api_server/tests/integration.rs"));
     assert!(is_test_file("tools/xtask/src/fixture_tests.rs"));
     assert!(!is_test_file("tools/xtask/src/test_helpers.rs"));
 }
@@ -250,7 +250,7 @@ fn mod_script_roots_are_the_three_shipped_addons() {
 #[test]
 fn website_test_roots_and_generated_contracts_are_walked_without_exemption() {
     let d = TmpRepo::new("walk-coverage");
-    let test = d.0.join("apps/api/tests/integration.rs");
+    let test = d.0.join("crates/api/api_server/tests/integration.rs");
     let generated = [
         "crates/contracts/contract_schema_types/src/generated/missions/registry_items/mod.rs",
         "crates/contracts/contract_schema_types/src/generated/missions/mission_review/approval_queue_row.rs",

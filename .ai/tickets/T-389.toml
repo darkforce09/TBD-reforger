@@ -84,8 +84,8 @@ estimated = [
 ]
 estimate_note = "completed_at from stray date-shaped shipped_at 2026-07-26; created_at/shipped_at git_subject-mined from 4 commit subject(s)"
 owns = [
-    "apps/frontend/src/missions.rs",
-    "apps/frontend/src/dto.rs",
+    "crates/frontend/shell/frontend_application/src/missions.rs",
+    "crates/frontend/shell/frontend_application/src/dto.rs",
 ]
 
 [scope]

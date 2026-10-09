@@ -12,13 +12,19 @@ fn violations(checkout: &TemporaryCheckout) -> Vec<FileLengthViolation> {
 #[test]
 fn a_production_file_may_hold_exactly_500_lines() {
     let checkout = TemporaryCheckout::with_law_roots("production-ceiling");
-    checkout.write_lines("apps/ticketboard/src/board.rs", PRODUCTION_MAX_LINES);
+    checkout.write_lines(
+        "tools/tickets/ticketboard_desktop/src/board.rs",
+        PRODUCTION_MAX_LINES,
+    );
     assert!(violations(&checkout).is_empty());
-    checkout.write_lines("apps/ticketboard/src/board.rs", PRODUCTION_MAX_LINES + 1);
+    checkout.write_lines(
+        "tools/tickets/ticketboard_desktop/src/board.rs",
+        PRODUCTION_MAX_LINES + 1,
+    );
     assert_eq!(
         violations(&checkout),
         [FileLengthViolation {
-            path: "apps/ticketboard/src/board.rs".into(),
+            path: "tools/tickets/ticketboard_desktop/src/board.rs".into(),
             lines: 501,
             max_lines: 500,
         }]
@@ -29,7 +35,7 @@ fn a_production_file_may_hold_exactly_500_lines() {
 fn a_test_file_may_hold_exactly_1000_lines_by_folder_or_by_stem() {
     let checkout = TemporaryCheckout::with_law_roots("test-ceiling");
     for rel in [
-        "apps/api/tests/integration.rs",
+        "apps/server/tests/integration.rs",
         "tools/xtask/src/fixture_tests.rs",
         "tools/xtask/fixtures/TBD_ScriptPlant_tests.c",
     ] {

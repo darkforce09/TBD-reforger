@@ -66,5 +66,5 @@ enabled only from the load generator's `[dev-dependencies]`. No environment vari
 - [Staging tool crates](/tools/staging/README.md) — the three staging crates.
 - [Staging verification engines](/documentation/tools/staging/staging_verification_engines.md) —
   the member load and the relay end to end.
-- [Staging design note](/documentation/apps/api/verification_evidence/staging.md) — the load
+- [Staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md) — the load
   procedure and how the report maps onto its cases.

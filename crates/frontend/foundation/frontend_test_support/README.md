@@ -4,7 +4,8 @@ The `frontend_test_support` crate: the helpers the tests of every frontend crate
 repository files from the root the workspace's one finder,
 [`repository_root`](/crates/foundation/repository_root/README.md), answers (the captured
 [API](/documentation/glossary/a_to_f.md#api) responses, the contract schemas, the API route
-tables), scrubs a source text down to what a build compiles and runs, joins the shards a source pin
+tables), lists the `src/` folder of every frontend package once for the scans that read the whole
+frontend, scrubs a source text down to what a build compiles and runs, joins the shards a source pin
 reads, and guards `view!` attribute values. Every frontend crate names it under
 `[dev-dependencies]` only, so no shipped build links it.
 
@@ -13,7 +14,7 @@ reads, and guards `view!` attribute values. Every frontend crate names it under
 ```text
 crates/frontend/foundation/frontend_test_support/
 ├── Cargo.toml  the package: `repository_root`, layout tier 1, any target
-└── src/        the repository file reads, `golden!`, the scrubber, the source shards and the attribute guard
+└── src/        the repository file reads, `golden!`, the frontend source roots, the scrubber, the source shards and the attribute guard
 ```
 
 ## How it works
@@ -50,6 +51,9 @@ None: no feature, no environment variable. The crate reads files at test run tim
 - `repository_root::{repository_root, repository_path, repository_text, source_file_folder,
   cached_text}`: the root of the calling crate's checkout and the cached reads of repository
   files.
+- `frontend_source_roots::{frontend_source_roots, assert_each_package_read_once,
+  FRONTEND_CRATE_MEMBER_GLOB}`: the `src/` folder of every frontend package, one per package, and
+  the check that a scan's root list names each package once.
 - `class_r_scrub::{live_source, live_code, only_item, only_body}`: the scrubbed views of a text.
 - `source_shards::{production_source, production_shard}`: the joined text of a pinned file.
 - `view_attribute_guard::{assert_view_attributes_are_well_formed, view_attribute_findings}`: the
@@ -61,13 +65,14 @@ None: no feature, no environment variable. The crate reads files at test run tim
 
 - Depends on: `repository_root` (the checkout-root walk); at test run time, the repository files a
   test names and the calling crate's `Cargo.toml`.
-- Used by: the tests of the single-page app (`apps/frontend`) and of every crate under
+- Used by: the tests of the single-page app (`crates/frontend/shell/frontend_application`) and of every crate under
   `crates/frontend/`, through `[dev-dependencies]`.
 - Rules: no dependency on `apps/` and no shipped dependent (`cargo xtask ci
   verify-workspace-laws`: the frontend crate order lists it as reached only through
-  dev-dependencies); no path here counts parent-folder steps from a crate or a file.
+  dev-dependencies); no path here counts parent-folder steps from a crate or a file; a
+  whole-frontend scan reads each package once.
 
 ## Related documentation
 
-- [Frontend documentation](/documentation/apps/frontend/README.md#shared-foundations) — the shared
+- [Frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md#shared-foundations) — the shared
   foundations whose tests this crate serves.

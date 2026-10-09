@@ -97,7 +97,8 @@ The crate has no features and reads no configuration file of its own. What it re
     `mod-gates.yml`, `schema.yml`);
   - the backup and drill units in `deploy/systemd/`, which run `cargo run -q -p xtask --`;
   - the PreToolUse hook in `.claude/settings.json`, which runs the built binary's `ai guard`;
-  - the ticketboard in `apps/ticketboard/`, which runs `cargo xtask ticket` commands.
+  - the ticketboard desktop viewer `tools/tickets/ticketboard_desktop/`, which runs
+    `cargo xtask ticket` commands.
 - Rules:
   - xtask and `developer_tools` are binary-only packages over tool crates alone (the checkout-root
     finder comes through `repository_layout`), neither depends on the other, and no member depends on either; a

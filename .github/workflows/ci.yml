@@ -5,9 +5,9 @@ name: ci
 # Required on every push + PR to `main` — NO `paths:` filter. This is what distinguishes
 # it from contracts.yml / schema.yml, which stay as path-scoped supplements (do NOT merge
 # them here in this slice).
-# The api, wasm-ci and frontend jobs are the cargo gates: each runs a fmt
-# check, clippy and tests, and the comment above each job lists its exact commands. Every
-# job passes `-D warnings` to clippy, so a warning fails the job.
+# The api, wasm-ci and frontend jobs are the cargo gates: api and frontend each run a fmt
+# check, clippy and tests, wasm-ci the wasm32 lint, and the comment above each job lists its exact
+# commands. Every job passes `-D warnings` to clippy, so a warning fails the job.
 # The workspace-members job tests every other workspace member.
 # contracts.yml is the path-filtered citations/codegen supplement.
 on:
@@ -25,9 +25,9 @@ permissions:
 
 jobs:
   # --- api: the sole backend (Rust 1.95 + Postgres 18) ---
-  # fmt (FMT-1): `cargo fmt --check` on api, then `cargo fmt --all --check` on every
+  # fmt (FMT-1): `cargo fmt --check` on api_server, then `cargo fmt --all --check` on every
   # workspace member. clippy (GO-2..8 analog): `cargo clippy --all-targets -- -D warnings` on
-  # api and every crates/api package (host target, default features; one `-p` each, derived from
+  # api_server and every other crates/api package (host target, default features; one `-p` each, derived from
   # the workspace), so any warning fails the job. build: `cargo build --all-targets` on the same
   # packages. tests: their `cargo test` (unit + integration, TEST-1) against the Postgres service
   # below.
@@ -39,7 +39,7 @@ jobs:
     #
     # Each test binary gets its own database, derived from whatever `TEST_DATABASE_URL` names
     # (`<base>_<suite>_it`), and the guard in
-    # `apps/api/tests/common/database.rs is_safe_test_database_name` hard-REFUSES the
+    # `crates/api/api_server/tests/common/database.rs is_safe_test_database_name` hard-REFUSES the
     # literal name `tbd_reforger` before anything can connect, create or drop. That guard is
     # correct and deliberate: it is the only thing standing between an exported
     # `TEST_DATABASE_URL=…/tbd_reforger` and a wiped live dev database. It is not to be widened.
@@ -67,7 +67,7 @@ jobs:
           --health-retries 10
     defaults:
       run:
-        working-directory: apps/api
+        working-directory: crates/api/api_server
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
@@ -76,7 +76,7 @@ jobs:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
       # workspace --all (matches `cargo xtask mk rust-fmt`). Job default cwd is
-      # apps/api — override so formatting drift under tools/ cannot slip past CI.
+      # crates/api/api_server — override so formatting drift under tools/ cannot slip past CI.
       - name: fmt (FMT-1 analog — workspace --all)
         working-directory: .
         run: cargo xtask mk rust-fmt
@@ -90,16 +90,14 @@ jobs:
           TEST_DATABASE_URL: postgres://tbd:tbd@localhost:5432/rust_it?sslmode=disable
         run: cargo xtask ci api-test
 
-  # --- wasm-ci: the offline service worker and the wasm32 lint (`cargo xtask mk wasm-ci`) ---
-  # fmt: `cargo fmt --check -p offline_service_worker`. clippy, two passes, each with `-D warnings`
-  # so any warning fails the job: host target with `--all-targets --all-features` over the offline
-  # service worker, then `--target wasm32-unknown-unknown` (default features, without
+  # --- wasm-ci: the wasm32 lint outside the frontend family (`cargo xtask mk wasm-ci`) ---
+  # clippy `--target wasm32-unknown-unknown -- -D warnings` (default features, without
   # `--all-targets`) over every package the wasm32 lint derives from the workspace: each member
-  # declaring `targets = "wasm32"` and the offline service worker (the frontend family's wasm32
-  # lint is the frontend job's). tests: `cargo test --all-features -p offline_service_worker`, host
-  # target. No separate build step, no trunk.
+  # declaring `targets = "wasm32"` outside crates/frontend. The frontend family, the offline
+  # service worker under crates/frontend/shell among it, is formatted, linted and tested once, by
+  # the frontend job. No fmt, test or build step, no trunk.
   wasm-ci:
-    name: wasm-ci (offline service worker, wasm32 lint)
+    name: wasm-ci (wasm32 lint)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -113,13 +111,15 @@ jobs:
       - run: cargo xtask mk wasm-ci
 
   # --- frontend: the Rust/Leptos SPA and its crates (`cargo xtask mk ci-local-leptos`) ---
-  # Every cargo line names the frontend family, derived from the workspace: `-p frontend` plus one
-  # `-p` per member under crates/frontend (`ci_task_catalog::frontend_package_lane`), so a frontend
-  # crate is gated from its first commit. fmt: `cargo fmt -p frontend -p … --check`. clippy, twice
-  # with `-D warnings`: `cargo clippy -p frontend -p … --target wasm32-unknown-unknown
-  # --all-targets -- -D warnings` (the browser build) and `cargo clippy -p frontend -p …
-  # --all-targets --locked -- -D warnings` (the native test build). tests: `cargo test -p frontend
-  # -p …`, host target. build: `trunk build --release` in apps/frontend. The editor S/V/R/T
+  # Every cargo line names the frontend family, derived from the workspace: one `-p` per member
+  # under crates/frontend, the app `frontend_application` and the offline service worker among
+  # them (`ci_task_catalog::frontend_package_lane`), so a frontend crate is gated from its first
+  # commit. fmt: `cargo fmt -p frontend_application -p … --check`. clippy, twice with
+  # `-D warnings`: `cargo clippy -p frontend_application -p … --target wasm32-unknown-unknown
+  # --all-targets -- -D warnings` (the browser build) and `cargo clippy -p frontend_application
+  # -p … --all-targets --locked -- -D warnings` (the native test build). tests: `cargo test
+  # -p frontend_application -p …`, host target. build: `trunk build --release` in
+  # crates/frontend/shell/frontend_application. The editor S/V/R/T
   # smokes + the frozen V-suite (`xtask mk leptos-gates`) need a full chrome build + Postgres + map-assets LFS;
   # they run in the dedicated **editor-gates.yml** workflow (nightly + on-demand + gate/editor-path
   # PRs). `gate doctor` fails those fast if the env drifts.
@@ -143,8 +143,9 @@ jobs:
 
   # --- workspace-members: every member the jobs above do not test ---
   # `cargo xtask ci workspace-member-tests` derives its package list from the root Cargo.toml
-  # workspace minus the members a dedicated job tests (api with every crates/api package,
-  # frontend with every crates/frontend package, and the offline service worker of wasm-ci), and runs `cargo test -p <package>` once per package, so features never
+  # workspace minus the members a dedicated job tests (every crates/api package, api_server among
+  # them, and every crates/frontend package, frontend_application and the offline service worker
+  # among them), and runs `cargo test -p <package>` once per package, so features never
   # unify across packages. A member the workspace gains is tested here from the moment the
   # manifest names it; `ci_local_tests_every_workspace_member` and
   # `the_ci_workflow_tests_every_workspace_member` (ci_task_catalog) keep every member in a job.

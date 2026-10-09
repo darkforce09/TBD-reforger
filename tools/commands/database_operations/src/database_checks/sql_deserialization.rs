@@ -25,13 +25,13 @@
 //!
 //! `2>/dev/null` hid "no such directory" and `|| true` turned the failure into an empty result
 //! set, which the loop read as *zero violations*. Renaming `src/handlers` — or running the script
-//! from a tree where `apps/api` had moved — printed `no-select-star: clean` over
+//! from a tree where `crates/api/api_server` had moved — printed `no-select-star: clean` over
 //! source it never opened. That is the signature defect, and here a missing root is a `DidNotRun`.
 //!
 //! Output is byte-identical to the script otherwise, including the absolute paths that
 //! `grep -rn "$ROOT/..."` produced, so the port is accepted by diffing stdout.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::error::{Result, refuse};
 use verification_core::scan::{self, Hit};
@@ -45,19 +45,24 @@ const ALLOW: &[&str] = &["modpack_mods", "orbat_reservations"];
 
 /// Directories searched, relative to the repository root.
 ///
-/// The API application's whole `src` tree and every API crate (`crates/api`), not a hand-listed
-/// set of subdirectories: any SQL-bearing module is in scope wherever it sits, and no rename can
-/// silently drop source out of the gate.
-const ROOTS: &[&str] = &["apps/api/src", "crates/api"];
+/// Every API crate (`crates/api`), the API server among them, as one root, not a hand-listed set
+/// of subdirectories: any SQL-bearing module is in scope wherever it sits, no rename can silently
+/// drop source out of the gate, and no root lies inside another, so no file is read and reported
+/// twice.
+const ROOTS: &[&str] = &["crates/api"];
+
+/// Every file under [`ROOTS`] in the checkout at `repo_root`, in walk order.
+fn api_source_files(repo_root: &Path) -> std::result::Result<Vec<PathBuf>, NotRun> {
+    let roots: Vec<PathBuf> = ROOTS.iter().map(|r| repo_root.join(r)).collect();
+    let root_refs: Vec<&Path> = roots.iter().map(PathBuf::as_path).collect();
+    scan::walk_files(&root_refs, |_| true)
+}
 
 /// `cargo xtask verify no-select-star`: no `SELECT *` in the API's query sources; returns the
 /// gate's exit code.
 pub fn verify_no_select_star(repo_root: &Path) -> Result<u8> {
-    let roots: Vec<_> = ROOTS.iter().map(|r| repo_root.join(r)).collect();
-    let root_refs: Vec<&Path> = roots.iter().map(|p| p.as_path()).collect();
-
     // A missing root is "the check did not run", never "clean". See the module docs.
-    let files = match scan::walk_files(&root_refs, |_| true) {
+    let files = match api_source_files(repo_root) {
         Ok(f) => f,
         Err(cause) => return Ok(report_did_not_run(cause)),
     };
@@ -101,7 +106,7 @@ pub fn verify_no_select_star(repo_root: &Path) -> Result<u8> {
     }
 }
 
-fn fetch(pattern: &Pattern, files: &[std::path::PathBuf]) -> Result<Vec<Hit>> {
+fn fetch(pattern: &Pattern, files: &[PathBuf]) -> Result<Vec<Hit>> {
     match scan::matching_lines(pattern, files) {
         Ok(hits) => Ok(hits),
         Err(cause) => {

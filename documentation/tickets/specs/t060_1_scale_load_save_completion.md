@@ -239,7 +239,7 @@ proxy: {
 | [docs/TAGS.md](/documentation/standards/ticket_identifiers.md) | T-060.1 note |
 | [feature_inventory.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md) | PERF-LOAD-001 / PERF-SAVE-001 acceptance |
 | [mission-editor.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/ux_spec.md) | PERF-003/004 determinate + 360k gate |
-| [docs/website/frontend/ROADMAP.md](/documentation/apps/frontend/README.md) | T-060 acceptance |
+| [docs/website/frontend/ROADMAP.md](/documentation/crates/frontend/shell/frontend_application/README.md) | T-060 acceptance |
 | [docs/AGENT_COMMIT_CHECKLIST.md](/documentation/standards/commit_checklist.md) | T-060.1.4 gate before tag |
 
 ---

@@ -49,7 +49,7 @@ No feature and no variable; the caller passes the pool or the connection.
 
 - Depends on: `api_identifiers` (`DiscordUserId`, `AuditTargetId`), sqlx, serde, thiserror and
   tracing; the `audit_logs` and `users` tables of `crates/api/api_database/migrations/`.
-- Used by: the API application (`apps/api`): its domains, its member activity aggregates, the
+- Used by: the API application (`crates/api/api_server`): its domains, its member activity aggregates, the
   `staging-fixtures` host tool and the integration suites.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md); nothing here names a domain
   or another API crate above `api_identifiers`.

@@ -35,7 +35,7 @@ crates/api/api_background_workers/src/
 
 ## How it works
 
-`apps/api/src/bin/api.rs` calls `spawn_all(&state)` once, after the migrations and
+`crates/api/api_server/src/bin/api_server.rs` calls `spawn_all(&state)` once, after the migrations and
 before it builds the router. `spawn_all` logs the resolved intervals of the three tunable workers
 and six of the fixed ones, and returns `WorkerHandles`, one Tokio task handle per worker:
 aborting one stops that worker alone, and dropping them detaches the tasks, which run until the
@@ -78,20 +78,20 @@ into it unchanged.
 - Depends on: `api_state` (`AppState`, the pool, the hub, the equipment datasets),
   `api_foundation` (`ApiError`), `api_http_layer` (`PgRateLimiter`), and the domain,
   `api_member_activity` and other API crate services in the table.
-- Used by: `apps/api/src/bin/api.rs`, which calls `spawn_all`; integration suites under
-  `apps/api/tests/` that run one pass directly (`drain_due_reevaluations`,
+- Used by: `crates/api/api_server/src/bin/api_server.rs`, which calls `spawn_all`; integration suites under
+  `crates/api/api_server/tests/` that run one pass directly (`drain_due_reevaluations`,
   `expire_runtime_sessions`) or the bucket pruning.
 - Rules: only the API application's manifest depends on this crate, and in its source only
-  `apps/api/src/bin/api.rs` names it (`background_workers_used_only_by_the_binary` in
-  `apps/api/src/tests/architecture_rules.rs`); a worker holds no query of its own beyond
+  `crates/api/api_server/src/bin/api_server.rs` names it (`background_workers_used_only_by_the_binary` in
+  `crates/api/api_server/src/tests/architecture_rules.rs`); a worker holds no query of its own beyond
   its loop, the work stays in the owning domain's services; `spawn_all` keeps arming the bucket
-  pruner (`apps/api/tests/durable_rate_limit.rs` checks `worker_set.rs` for it).
+  pruner (`crates/api/api_server/tests/durable_rate_limit.rs` checks `worker_set.rs` for it).
 
 ## Related documentation
 
-- [Fleet command ledger](/documentation/apps/api/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
   — the leases and expiries the fleet command reconciler enforces.
-- [Mission artifacts](/documentation/apps/api/verification_evidence/mission_artifacts.md)
+- [Mission artifacts](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
   — how a mission deployment settles.
-- [Event eligibility and allocation](/documentation/apps/api/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
   — the re-evaluation requests the reservation worker drains.

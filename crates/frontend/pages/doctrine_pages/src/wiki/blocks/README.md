@@ -66,5 +66,5 @@ each `ElementTag`, setting each attribute by name and writing each text as a tex
 
 - [Doctrine wiki page](/documentation/crates/frontend/pages/doctrine_pages/wiki/wiki_page.md)
   — what a manual can hold and how it renders.
-- [Administration and community content](/documentation/apps/api/verification_evidence/administration_and_content.md#markup-service)
+- [Administration and community content](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md#markup-service)
   — the server's parse that produces the blocks.

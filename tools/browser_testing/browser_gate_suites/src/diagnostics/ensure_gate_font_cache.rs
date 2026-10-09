@@ -165,7 +165,7 @@ pub async fn run(dist: Option<String>, strict: bool) -> Result<u8> {
     if matches!(fonts, FontProbe::Inconclusive) {
         warnings += 1;
     }
-    warnings += check_dist(dist.as_deref().unwrap_or(DEFAULT_DIST));
+    warnings += check_dist(dist.as_deref().unwrap_or(FRONTEND_APPLICATION_DIST));
 
     // A zero-font chromium is a HARD fail, and it short-circuits the liveness probe.
     //
@@ -184,7 +184,7 @@ pub async fn run(dist: Option<String>, strict: bool) -> Result<u8> {
         return Ok(1);
     }
 
-    let dist = dist.unwrap_or_else(|| DEFAULT_DIST.to_string());
+    let dist = dist.unwrap_or_else(|| FRONTEND_APPLICATION_DIST.to_string());
     let live = liveness_probe(&dist, env).await;
     let live_ok = match live {
         Ok(Liveness::Ready) => {

@@ -26,9 +26,10 @@
 //! | `render` | modpack resolution, `game.mods[]` and the server config check |
 //! | [`payloads`] | the secret file check, each instance's files, profile writer and V2–V4 smoke |
 //! | `fleet_units` | the three template units and their install |
-//! | `host_agent` | each instance's `agent.toml` and the agents' install |
+//! | `host_agent` | the agent's installed names, each instance's `agent.toml` and the agents' install |
 //! | `acknowledgement_relay` | the relay in front of the relay instance's agent |
 //! | `legacy_single_instance_migration` | `--migrate-single-instance` |
+//! | `host_agent_name_migration` | `--migrate-host-agent-name` and the check that refuses without it |
 //! | `boot` | the boot verdict over a `console.log`, plus its selftest |
 //! | `pycompat` | JSON behaviours a `python3` implementation made observable in output |
 //! | `remote` | ssh and rsync transport, the pipeline, the boot verdict per instance |
@@ -77,6 +78,7 @@ pub mod fleet_instances;
 mod fleet_server_config;
 mod fleet_units;
 mod host_agent;
+mod host_agent_name_migration;
 mod legacy_single_instance_migration;
 pub mod payloads;
 mod pycompat;
@@ -110,7 +112,8 @@ impl Paths {
 /// The `--help` block.
 const USAGE: &str = "\
 Usage: cargo xtask deploy staging [--dry-run] [--migrate-single-instance] [--render-only <directory>]
-                                  [--verify-boot <console.log>] [--verify-boot-selftest]";
+                                  [--verify-boot <console.log>] [--verify-boot-selftest]
+       cargo xtask deploy staging --migrate-host-agent-name [--dry-run]";
 
 /// Everything the CLI loop can produce.
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -119,6 +122,9 @@ pub struct Cli {
     pub dry_run: bool,
     /// `--migrate-single-instance`: retire the single-instance server so the fleet takes its ports.
     pub migrate_single_instance: bool,
+    /// `--migrate-host-agent-name`: move the host agents to their current names and stop; the
+    /// deploy runs afterwards, without the flag.
+    pub migrate_host_agent_name: bool,
     /// `--render-only <directory>`: write the instances' server configs there and stop.
     pub render_only_out: Option<String>,
     /// `--verify-boot <console.log>`: judge one recorded boot log and stop.
@@ -158,6 +164,7 @@ pub fn parse(args: &[String]) -> Parsed {
         match args[i].as_str() {
             "--dry-run" => cli.dry_run = true,
             "--migrate-single-instance" => cli.migrate_single_instance = true,
+            "--migrate-host-agent-name" => cli.migrate_host_agent_name = true,
             // Render every instance's server config into a LOCAL directory and exit before any
             // rsync/ssh runs: the render half, exercised without touching a real server.
             "--render-only" => {
@@ -192,6 +199,18 @@ pub fn parse(args: &[String]) -> Parsed {
             }
         }
         i += 1;
+    }
+    if cli.migrate_host_agent_name
+        && (cli.migrate_single_instance
+            || cli.render_only_out.is_some()
+            || cli.verify_boot_log.is_some()
+            || cli.verify_boot_selftest)
+    {
+        eprintln!(
+            "--migrate-host-agent-name runs alone, with --dry-run at most; deploy after it without \
+             the flag"
+        );
+        return Parsed::Stop(2);
     }
     Parsed::Run(Box::new(cli))
 }

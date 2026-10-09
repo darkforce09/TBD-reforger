@@ -48,8 +48,8 @@ broken by key name.
   `workspace_state.rs` and `events.rs` hold the state and the sort types);
   `crate::execution_metrics::estimated`, which reuses `ErrorRow`, `format_tokens`,
   `valid_ticket_id` and `valid_git_sha`; `crate::execution_metrics::models` and `events`; the
-  desktop application: `apps/ticketboard/src/application/action_dispatch.rs` calls `sort_rows`,
-  and `apps/ticketboard/src/execution_metrics/ui/` paints the tables.
+  desktop application: `tools/tickets/ticketboard_desktop/src/application/action_dispatch.rs` calls `sort_rows`,
+  and `tools/tickets/ticketboard_desktop/src/execution_metrics/ui/` paints the tables.
 - Rules:
   - the receipt check is a copy of `validate_record` in
     `tools/tickets/ticket_metrics/src/model.rs` plus the patterns of

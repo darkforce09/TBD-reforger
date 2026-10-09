@@ -1,7 +1,7 @@
 # Process lifecycle
 
 The process-wide shutdown signal of the [API](/documentation/glossary/a_to_f.md#api): the one
-flag the `api` binary raises when it is asked to stop, so the
+flag the `api-server` binary raises when it is asked to stop, so the
 [SSE](/documentation/glossary/n_to_z.md#sse) streams that would otherwise hold a graceful
 shutdown open end with it.
 
@@ -21,7 +21,7 @@ begun, at once when it already has, so a long-lived stream can race it without b
 signal. `has_begun` reads the flag. Beginning twice is the same as beginning once, and a begun
 signal never returns to not begun.
 
-`process_shutdown` is the one instance the process shares, kept in a static. The `api` binary
+`process_shutdown` is the one instance the process shares, kept in a static. The `api-server` binary
 begins it when SIGINT or SIGTERM arrives, as `axum::serve` stops accepting connections and starts
 its graceful drain. `authorize_event_stream` in `api_http_layer::middleware` races every open event
 stream against it and closes the body when it begins, with no event of its own, so the drain
@@ -38,10 +38,10 @@ SIGINT / SIGTERM ─▶ bin/api.rs begins process_shutdown ─▶ axum::serve st
 ## Boundaries
 
 - Depends on: `tokio::sync::watch`.
-- Used by: `apps/api/src/bin/api.rs`, which begins `process_shutdown`;
+- Used by: `crates/api/api_server/src/bin/api_server.rs`, which begins `process_shutdown`;
   `api_http_layer::middleware::authorized_event_stream`, which waits on it for the audit log feed of
   `api_administration` and the server status stream of `api_server_infrastructure`;
-  `apps/api/tests/audit_replay_shutdown.rs`, which begins it in its own process.
-- Rules: only the `api` binary begins `process_shutdown`; the library's unit tests race signals of
+  `crates/api/api_server/tests/audit_replay_shutdown.rs`, which begins it in its own process.
+- Rules: only the `api-server` binary begins `process_shutdown`; the library's unit tests race signals of
   their own, because a begun process shutdown ends every event stream opened afterwards in the same
   process, which is also why `tests/audit_replay_shutdown.rs` is a binary with one case.

@@ -19,7 +19,7 @@ account to their Arma identity, and gives their attendance figures.
   [sign-in callback page](/crates/frontend/pages/account_pages/src/auth_callback/README.md#routes)
   and [account settings page](/crates/frontend/pages/account_pages/src/settings/README.md#routes)
   READMEs.
-- Related: the [app layout and navigation](/documentation/apps/frontend/shell/app_layout_and_navigation.md)
+- Related: the [app layout and navigation](/documentation/crates/frontend/shell/frontend_application/shell/app_layout_and_navigation.md)
   doc, whose frame renders the first two pages bare and whose top bar links `/login` and
   `/settings`; the [session and access](/crates/frontend/foundation/frontend_session/src/README.md) code,
   which holds the session store, its persistence and the role ladder; the
@@ -121,7 +121,7 @@ The page's states and toasts are in the settings README's
   `oauth_host_mismatch` and `server_error`, since `auth_error_copy` has no line for either
   (`crates/frontend/pages/account_pages/src/auth_callback/page.rs`). The API sends
   `oauth_host_mismatch` in development for a configuration fault that no retry fixes: the two
-  URLs in `apps/api/.env` name different hosts (`reject_login_on_host_mismatch` in
+  URLs in `crates/api/api_server/.env` name different hosts (`reject_login_on_host_mismatch` in
   `crates/api/api_identity_and_access/src/handlers/oauth_host_guard.rs`).
 - `AuthCallbackPage`'s doc comment says the page shows "Completing sign in…" and navigates to the
   destination the sign-in started from (`auth_callback/page.rs`). The page shows

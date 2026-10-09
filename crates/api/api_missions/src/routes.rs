@@ -1,6 +1,6 @@
 //! The `/api/v1` route table for missions.
 //!
-//! Paths are written relative to the `/api/v1` nest applied by the API's router (`api::router`). Auth tiers
+//! Paths are written relative to the `/api/v1` nest applied by the API's router (`api_server::router`). Auth tiers
 //! are enforced per-handler by the extractor each takes (`AuthUser`, `MissionMakerUser`,
 //! `AdminUser`, and the machine-credential `MachineCaller` on `/game-runtime/*`), so they travel
 //! with the handler rather than with the registration.

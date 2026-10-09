@@ -38,9 +38,9 @@ acceptance = [
 ]
 created_at = "2026-09-05T03:30:00Z"
 owns = [
-    "apps/frontend/src/editor/state/operations/slot_naming.rs",
-    "apps/frontend/src/editor/state/operations.rs",
-    "apps/frontend/src/editor/state/operations/entity.rs",
+    "crates/frontend/shell/frontend_application/src/editor/state/operations/slot_naming.rs",
+    "crates/frontend/shell/frontend_application/src/editor/state/operations.rs",
+    "crates/frontend/shell/frontend_application/src/editor/state/operations/entity.rs",
 ]
 
 [scope]

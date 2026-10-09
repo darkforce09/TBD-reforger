@@ -93,7 +93,7 @@ game server reads the bytes from `/api/v1/game-runtime/artifacts/{artifactId}`.
 ## Public surface
 
 - `routes::routes(version_limit)`: the route table the API application's router
-  (`apps/api/src/router.rs`) merges under `/api/v1`:
+  (`crates/api/api_server/src/router.rs`) merges under `/api/v1`:
   `/missions` and `/missions/{id}` with its `armory`, `bookmark`, `export`, `submit`, `reviews`,
   `review-comments`, `artifacts/{artifact_id}` (and its `document` and `workspace`) and `versions`
   children; `/approvals`; `/factions`; `/registry` and `/registry/compat`;
@@ -106,7 +106,7 @@ game server reads the bytes from `/api/v1/game-runtime/artifacts/{artifactId}`.
   `deployment_settlement::lock_and_settle` for the game-runtime roster in `api_operations`, and
   `deployment_settlement::reconcile_mission_deployments` for the deployment reconciler of
   `api_background_workers`.
-- `services::registry_import`: `import_items` and `import_compat`, run by the `import-registry`
+- `services::registry_import`: `import_items` and `import_compat`, run by the `import-item-registry`
   binary.
 - `models::mission`: `TerrainType`, `GameMode` and `MissionArmory`, which `api_operations` and
   `api_command_center` read.
@@ -124,24 +124,24 @@ game server reads the bytes from `/api/v1/game-runtime/artifacts/{artifactId}`.
     `mission_model`), which compile and validate mission documents, and `contract_schema_types`;
   - the schemas in `contracts/definitions/`, embedded at compile time.
 - Used by:
-  - the API application's router (`apps/api/src/router.rs`), which merges the route table;
+  - the API application's router (`crates/api/api_server/src/router.rs`), which merges the route table;
   - the deployment reconciler in `crates/api/api_background_workers/src/` and the
-    `import-registry` binary in `apps/api/src/bin/`;
+    `import-item-registry` binary in `crates/api/api_server/src/bin/`;
   - `api_command_center` and `api_operations`, through the lookups, deployment services and
     models above;
   - over HTTP, the Mission Creator and the mission hub and approval pages in
-    `apps/frontend/`, and the mission loaders of the game server in
+    `crates/frontend/shell/frontend_application/`, and the mission loaders of the game server in
     `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`.
 - Rules: no other crate imports this crate's handlers, and `routes.rs` exports the one `routes`
-  table that `apps/api/src/router.rs` merges (`apps/api/src/tests/architecture_rules.rs`
+  table that `crates/api/api_server/src/router.rs` merges (`crates/api/api_server/src/tests/architecture_rules.rs`
   checks both); the domain's generated contract types in `contract_schema_types` are written by
   `cargo xtask ci schema-codegen` and never edited by hand (`cargo xtask ci verify-codegen-fresh`
   checks them), with `contract/loadout_projection.rs` as the one hand-maintained contract model.
 
 ## Related documentation
 
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes and the
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes and the
   layers they share.
-- [Mission artifacts](/documentation/apps/api/verification_evidence/mission_artifacts.md)
+- [Mission artifacts](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
   — the design of artifacts, their reviews and deployments.
 ````

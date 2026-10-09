@@ -19,7 +19,7 @@ crates/frontend/workspaces/
 ## How it works
 
 A workspace crate owns its whole surface: its canvas, its signals and its engine handle. The
-app's route table (`apps/frontend/src/app_routes.rs`) mounts each workspace's route components,
+app's route table (`crates/frontend/shell/frontend_application/src/app_routes.rs`) mounts each workspace's route components,
 which exist on `wasm32`; the pure halves under them compile on every target, so their tests run
 natively.
 
@@ -37,7 +37,7 @@ natively.
 
 - Depends on: the foundation crates under `crates/frontend/foundation/`, the feature crates under
   `crates/frontend/features/`, and the engine crates under `crates/`.
-- Used by: the app (`apps/frontend`), whose route table mounts the workspaces.
+- Used by: the app (`crates/frontend/shell/frontend_application`), whose route table mounts the workspaces.
 - Rules: a workspace crate never depends on a page crate or the app; the Mission Creator's crates
   follow their own order (`mission_creator_state` < `mission_creator_engine_bridge` <
   `mission_creator_session` < `mission_creator_arsenal` < `mission_creator_workspace`, each
@@ -47,5 +47,5 @@ natively.
 ## Related documentation
 
 - [Frontend crates](/crates/frontend/README.md) — the layer order every frontend crate follows.
-- [Frontend source root](/apps/frontend/src/README.md) — the app's entry point, route table and
+- [Frontend source root](/crates/frontend/shell/frontend_application/src/README.md) — the app's entry point, route table and
   frame, and the layer order of the frontend crates.

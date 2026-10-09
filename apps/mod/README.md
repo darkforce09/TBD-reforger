@@ -30,7 +30,7 @@ TBD_Framework ──▶ vanilla 58D0FB3206B6F859
 TBD_EMCP      ──▶ vanilla
 TBD_Export    ──▶ vanilla, TBD_EMCP
 
-dedicated server ── loads ──▶ TBD_Framework ── HTTP ──▶ apps/api
+dedicated server ── loads ──▶ TBD_Framework ── HTTP ──▶ crates/api/api_server
 Workbench ── opens ──▶ TBD_Export (+ TBD_EMCP) ◀── Net API ── enfusion-mcp, cargo xtask mcp
 ```
 
@@ -72,7 +72,7 @@ filled with `TBD_SSH_HOST` and the `TBD_FLEET_*` settings; on the host, the mach
 that `cargo xtask staging provision-fleet` writes and the join password in
 `~/tbd/fleet/join-password`; then `cargo xtask deploy staging`. Each fleet instance N runs its own
 dedicated server (`tbd-reforger@N`, game port `TBD_FLEET_GAME_PORT_BASE + N`) beside its own host
-agent (`fleet_host_agent@N`, configured by `~/.config/fleet_host_agent/instance-N/agent.toml`);
+agent (`game_server_host_agent@N`, configured by `~/.config/game_server_host_agent/instance-N/agent.toml`);
 the relay instance's agent (instance 5 on staging) reaches the API through the
 acknowledgement-dropping relay. With `TBD_WORKSHOP_MOD_ID` set, clients Direct Join an instance
 and download the Workshop mod; only instance 1 is listed in the server browser, and a local
@@ -94,13 +94,13 @@ Other mod commands:
 
 ## Boundaries
 
-- Depends on: the vanilla Arma Reforger data addon; the website API in `apps/api/`,
+- Depends on: the vanilla Arma Reforger data addon; the website API in `crates/api/api_server/`,
   which the framework calls over HTTP; the wire shapes in `contracts/definitions/`; the pinned
   `enfusion-mcp` package in `tools/enfusion_mcp_node_package/`.
 - Used by: the dedicated servers that `cargo xtask mod playtest`, `cargo xtask deploy staging` and
-  the fleet host agent in `apps/fleet_host_agent/` boot; the gates in
+  the game server host agent in `crates/fleet/game_server_host_agent/` boot; the gates in
   `tools/commands/mod_operations/src/`, run by `.github/workflows/mod-gates.yml`; the Mission
-  Creator in `apps/frontend/`, which embeds the framework's alias registry; and the
+  Creator in `crates/frontend/shell/frontend_application/`, which embeds the framework's alias registry; and the
   importers of the Workbench exports in `contracts/catalogs/` and `assets/terrains/`.
 - Rules:
   - No addon depends on `tbd-framework`, and it carries no `Scripts/WorkbenchGame/`

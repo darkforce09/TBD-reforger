@@ -1,4 +1,4 @@
-# The fleet-command wire contract the platform API and the fleet host agent share: the nine
+# The fleet-command wire contract the platform API and the game server host agent share: the nine
 # `fleet-command.schema.json` shapes in both serde directions, the executor kind, their RFC 3339
 # timestamp spelling, the machine credential format and the secret-file limits.
 [package]

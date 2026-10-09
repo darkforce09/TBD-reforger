@@ -50,7 +50,7 @@ cargo test -p camera_math   # the deck.gl parity suite and the seeded camera pro
   engine, its viewport and the readback checks), `map_editing_tools` and
   `mission_editing_session` (the editing tools), and `paper_doll_scene` and `paper_doll_renderer`
   (the doll), which import `ortho`, `orbit` and `matrix4`; and the single-page app
-  (`apps/frontend`): the Mission Creator's toolbelt, the map view and the debug benches.
+  (`crates/frontend/shell/frontend_application`): the Mission Creator's toolbelt, the map view and the debug benches.
 - Rules: the orthographic camera matches 300 deck.gl 9.3.5 captures, bit exact at integer zooms
   (`t1_integer_zoom_cases_bit_exact`) and with the golden scale injected
   (`t3_scale_injected_pipeline_bit_exact_all_cases`), within 2 ULP for matrices and 4 for

@@ -19,7 +19,7 @@ and the renderer dies:
 panicked at wgpu-29.0.4/src/backend/webgpu.rs:2697:14
 ```
 
-Every subsequent call then panics at `apps/frontend/src/mission_editor.rs:2360:37` — the
+Every subsequent call then panics at `crates/frontend/shell/frontend_application/src/mission_editor.rs:2360:37` — the
 `engine.borrow_mut()` inside `cam_set` — because the first panic left the `RefCell` poisoned.
 `window.__editorCam()` returns `undefined` from that point on, and every canvas read afterwards
 returns a **44,075-byte black rectangle** instead of the ~3.7 MB of real map.

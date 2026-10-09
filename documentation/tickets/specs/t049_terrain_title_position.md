@@ -327,7 +327,7 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](/documentation/standards/commit_checklist
 | [`docs/specs/.../feature_inventory.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md) | Update TOP-TITLE-001, MAP-TERRAIN-001, ATTR-FIELD-OBJ-POSITION rows |
 | [`eden/gap_analysis.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_gap_analysis.md) | Mark MAP-TERRAIN-001 / TOP-TITLE-001 / ATTR-FIELD-OBJ-POSITION **partial→match** where appropriate |
 | [`ROADMAP.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md) | Phase 1 row → ✅ T-049; add DONE T-049 section |
-| [`docs/website/frontend/ROADMAP.md`](/documentation/apps/frontend/README.md) | mission-editor notes |
+| [`docs/website/frontend/ROADMAP.md`](/documentation/crates/frontend/shell/frontend_application/README.md) | mission-editor notes |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-049 bullet |
 | **This file** | Status → **shipped** |
 

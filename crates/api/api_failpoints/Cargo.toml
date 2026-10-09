@@ -17,7 +17,7 @@ targets = "any"
 
 # `failpoints` compiles the catalogue, the registry and the injected failure in. Only a
 # `[dev-dependencies]` edge enables it, so every test build carries it and the deploy build
-# (`cargo build --release -p api --bin api`) expands every `fail_point!` to nothing.
+# (`cargo build --release -p api_server --bin api-server`) expands every `fail_point!` to nothing.
 [features]
 failpoints = []
 

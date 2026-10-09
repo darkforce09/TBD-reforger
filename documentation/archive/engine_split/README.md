@@ -20,7 +20,7 @@ documentation/archive/engine_split/
 
 - [Graphics engine](https://github.com/darkforce09/TBD-reforger/tree/2a105fa4fbc0a23062fcff3dc5aedd387127c5d9/legacy/graphics_engine) and [map engine](https://github.com/darkforce09/TBD-reforger/tree/2a105fa4fbc0a23062fcff3dc5aedd387127c5d9/legacy/map_engine) —
   the crates the split produced.
-- [Frontend](/apps/frontend/) — the browser app the editing logic left.
+- [Frontend](/crates/frontend/shell/frontend_application/) — the browser app the editing logic left.
 - [Engine layer gate](/tools/checks/repository_checks/src/architecture/) —
   `cargo xtask verify engine-layers`, which holds the rules the program set.
 

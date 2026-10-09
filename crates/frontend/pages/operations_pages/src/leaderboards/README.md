@@ -80,7 +80,7 @@ open nothing.
 - Depends on: `frontend_transport` (the `api_get` client, `Leaderboard`, `LeaderboardRow`), `frontend_ui`
   (`AuthGate`, `PageHeader`, `Sheet`, `MaterialIcon`, `cn`), `http_url_guard`
   and the `AuthStore` context.
-- Used by: the `/leaderboards` route in `apps/frontend/src/app_routes.rs`.
+- Used by: the `/leaderboards` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`.
 - Rules: ordering and filtering stay on the server, so nothing here re-sorts a page of rows; the
   row reader prefers the server's rank (`parse_row_prefers_the_server_rank_over_position` in
   `tests/leaderboards.rs`); the command win rate renders its wire fraction as a percentage

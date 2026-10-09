@@ -57,7 +57,7 @@ citations = [
     "eden_top_strip validation chip",
 ]
 estimated = ["scope"]
-owns = ["apps/frontend/src/editor/panels/top_strip.rs"]
+owns = ["crates/frontend/shell/frontend_application/src/editor/panels/top_strip.rs"]
 
 [scope]
 domain = "website"

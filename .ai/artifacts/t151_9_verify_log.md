@@ -63,8 +63,8 @@ Delta: **−877 776** bytes (~12% smaller assets dir vs last local dist).
 
 ## Artifacts
 
-- Oracle: `apps/frontend/src/features/_wasm/oracles/jsWorldChunkOracle.ts`
-- Goldens: `apps/frontend/src/features/_wasm/oracles/goldens/residency_everon_v1.json` (baseline `ec59d10e`, 22 steps)
+- Oracle: `crates/frontend/shell/frontend_application/src/features/_wasm/oracles/jsWorldChunkOracle.ts`
+- Goldens: `crates/frontend/shell/frontend_application/src/features/_wasm/oracles/goldens/residency_everon_v1.json` (baseline `ec59d10e`, 22 steps)
 
 ## Ready for Cursor doc sync
 

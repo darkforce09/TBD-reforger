@@ -33,10 +33,10 @@ session reports.
   the members' read-only view of the same servers; the API's
   [server infrastructure domain](/crates/api/api_server_infrastructure/src/README.md) and
   [missions domain](/crates/api/api_missions/src/README.md); the
-  [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) and its
-  [README](/apps/fleet_host_agent/README.md); the
-  [fleet command ledger evidence](/documentation/apps/api/verification_evidence/fleet_command_ledger.md)
-  and [machine credentials evidence](/documentation/apps/api/verification_evidence/machine_credentials.md).
+  [game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) and its
+  [README](/crates/fleet/game_server_host_agent/README.md); the
+  [fleet command ledger evidence](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
+  and [machine credentials evidence](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md).
 
 ## Behaviour
 
@@ -66,7 +66,7 @@ mention.
    above zero), "Oldest" (the age of the oldest waiting entry) and "Reported" (when the API stored
    the reading, in the viewer's zone). A server that reports no status shows zeros and dashes; a
    server that never reported a queue reading shows "No reading" in the queue column. The
-   [telemetry specification](/documentation/apps/api/verification_evidence/telemetry.md#game-runtime-telemetry-queue)
+   [telemetry specification](/documentation/crates/api/api_server/verification_evidence/telemetry.md#game-runtime-telemetry-queue)
    defines the reading.
 
 ### Registering and editing servers
@@ -212,7 +212,7 @@ lists each call with the DTO it reads or sends. Server-side:
   deactivated server is refused with 409 "a deactivated server accepts no commands", and a kick
   against a session that has ended with 409 `RUNTIME_SESSION_ENDED`. It records
   `server.command_requested`, whose audit row carries a console command's line. `start`, `stop`,
-  `restart`, `list_players` and `console_command` go to the fleet host agent; `broadcast` and
+  `restart`, `list_players` and `console_command` go to the game server host agent; `broadcast` and
   `kick` go to the game runtime (`FleetAction` in
   `crates/contracts/fleet_wire_contract/src/fleet_action.rs`). A console line is
   stored trimmed and refused with 400 outside 1 to 256 bytes, with a control character or a line

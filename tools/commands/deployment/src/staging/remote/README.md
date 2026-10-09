@@ -24,10 +24,14 @@ tools/commands/deployment/src/staging/remote/
 ```text
 deploy(paths, cli)
   ├─ Env::load + validate (deploy.env) ─ --render-only renders locally and stops here
+  ├─ --migrate-host-agent-name ─▶ ssh bash -s < host agent name migration_payload and stop
+       (under --dry-run: print the plan line and the exact script)
   ├─ --dry-run ─▶ print dry_run_plan (every step, every instance) and stop
   ├─ ssh bash -s < website_api_health_payload          curl -sSf <TBD_BACKEND_URL>/healthz on the host
   ├─ ssh bash -s < fleet_secret_files_check_payload    join password + two credentials per instance
   ├─ without --migrate-single-instance: refuse while tbd-reforger.service or fleet-host-agent.service is installed
+  ├─ ssh bash -s < retired_names_absent_payload        refuse while a fleet_host_agent name is left
+  ├─ ssh bash -s < the API .env probe                   refuse unless <TBD_REMOTE_DIR>/crates/api/api_server/.env is readable
   ├─ rsync -avz --delete <checkout>/ <host>:<TBD_REMOTE_DIR>/   (exclusions below)
   ├─ with --migrate-single-instance: ssh bash -s < migration_payload (kebab-case single-instance names)
   ├─ per instance: scenario read, local render, ssh bash -s < instance_files_payload, < smoke_payload
@@ -53,7 +57,9 @@ untracked reference trees under `apps/mod/` (the Coalition framework, the vanill
 playable selector), a `Tbd_framework` folder and the local test profile, the
 `apps/mod/tbd-export/` and `apps/mod/tbd-emcp/` addons, `node_modules`, the API's `.env` and
 `.tools/`, `deploy.env`, the `assets` terrain, scratch and equipment trees, and
-`apps/frontend/dist/`, the app the website deploy built in the same checkout; after them
+`crates/frontend/shell/frontend_application/dist/`, the app the website deploy built in the same
+checkout (the three host-owned paths of `tools/commands/deployment/src/host_owned_paths.rs`, which
+the website deploy excludes too); after them
 come the patterns the website deploy excludes too, from
 `tools/commands/deployment/src/development_machine_only_paths.rs`: what only a development
 machine holds, such as the cargo target folders beside `target/`, worktrees and the local files
@@ -66,7 +72,7 @@ the restart never counts, since the previous boot's log also says `Server regist
 address:`; each instance passes only on a new folder whose `console.log` the pull returned whole,
 judged by `boot::verify_boot_log` with the Workshop rival pak measured on the host.
 `deployed_scenario` extracts a valid `game.scenarioId` from the live config on the host, since the
-[fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) rewrites it to restart
+[game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) rewrites it to restart
 missions and the config also holds the instance's passwords; `TBD_SCENARIO` seeds only an
 instance without one.
 

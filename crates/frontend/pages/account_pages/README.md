@@ -15,7 +15,7 @@ crates/frontend/pages/account_pages/
 
 ## How it works
 
-The app's route table (`apps/frontend/src/app_routes.rs`) mounts the three route components:
+The app's route table (`crates/frontend/shell/frontend_application/src/app_routes.rs`) mounts the three route components:
 `LoginPage` at `/login`, `AuthCallbackPage` at `/auth/callback` and `SettingsPage` at
 `/settings`. The sign-in button sends the whole page to the
 [API](/documentation/glossary/a_to_f.md#api)'s Discord sign-in, which redirects back to
@@ -54,7 +54,7 @@ None: no feature, no environment variable.
   and session token wire types), `frontend_ui` (the interface primitives and the avatar URL
   guard), `leptos`; on `wasm32`, `web-sys`, `js-sys`, `wasm-bindgen`, `futures` and `serde_json`;
   `http_url_guard` for its tests only.
-- Used by: the single-page app (`apps/frontend`), whose route table mounts the three pages and
+- Used by: the single-page app (`crates/frontend/shell/frontend_application`), whose route table mounts the three pages and
   whose frame renders `/login` and `/auth/callback` bare.
 - Rules: a page crate depends on foundation and feature crates only, never on another page crate,
   a workspace or the app (`cargo xtask ci verify-workspace-laws`); `/login` and `/auth/callback`

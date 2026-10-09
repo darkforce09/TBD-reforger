@@ -396,7 +396,7 @@ fn exported_file_satisfies_the_v2_branch_of_the_real_schema() {
         .expect("a v2 branch");
 
     for (label, raw) in &docs {
-        // The exact bytes the download button writes. `cargo test -p frontend
+        // The exact bytes the download button writes. `cargo test -p mission_creator_arsenal
         // exported_file -- --nocapture` re-dumps them for an external schema run.
         println!("─── {label} ───\n{raw}");
         let doc: serde_json::Value = serde_json::from_str(raw).expect("valid JSON");

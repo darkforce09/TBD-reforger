@@ -70,7 +70,7 @@ from the `Config` the API loads at boot (`api_configuration`).
   `authentication_sessions`, `discord_membership_snapshots`, `user_discord_roles`,
   `discord_roles`, `discord_membership_grace_overrides`, `arma_identity_serialization`,
   `server_machine_credentials` and `servers` tables of `crates/api/api_database/migrations/`.
-- Used by: the API application (`apps/api`): its composition root, its domains, the
+- Used by: the API application (`crates/api/api_server`): its composition root, its domains, the
   `staging-fixtures` host tool and the integration suites; the application state crate
   (`api_state`) holds the authority as `Arc<dyn SessionAuthority>` and never names this crate.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md); nothing here names a domain.

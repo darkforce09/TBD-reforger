@@ -33,7 +33,7 @@ stream pick up.
   no other API crate and no domain.
 - Used by: every domain; the member activity aggregates in `crates/api/api_member_activity/src/`,
   whose maintenance wrappers record a warning line; the `staging-fixtures` host tool
-  (`append_system_audit`); the integration tests in `apps/api/tests/`.
+  (`append_system_audit`); the integration tests in `crates/api/api_server/tests/`.
 - Rules: `audit_logs` is append-only; in the API's Rust code these writers are its only insert
   (database functions in `crates/api/api_database/migrations/` write the others), so a domain that
   needs an audit row calls them rather than writing its own insert; `AuditSeverity` and the

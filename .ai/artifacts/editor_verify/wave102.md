@@ -227,7 +227,7 @@ inheriting stale numbers.
 
 ## F-13 NOTE — T-640 claim nit: `forest_mass.rs:159` depends on `compose_contour_hairlines`, not `contour_segments` — which now has zero production callers
 
-`apps/frontend/src/world_assets/forest_mass.rs:159` calls
+`crates/frontend/shell/frontend_application/src/world_assets/forest_mass.rs:159` calls
 `compose_contour_hairlines` (unchanged ✓, the single-colour compose the claim meant).
 `contour_segments` itself (`contours.rs:395`) is untouched ✓ but after T-640 its only callers
 are its own tests — a retained Class-R oracle that is now production-dead alongside its private

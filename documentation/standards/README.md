@@ -48,7 +48,7 @@ these answers; a rule that fits an existing standard goes into it.
   contract citations and the crate tiers law with its firewalls.
 - [CI task list](/tools/commands/ci_task_catalog/src/) — the `ci-local` steps that run those gates.
 - [Graphics crates](/crates/graphics/), [streaming crates](/crates/streaming/),
-  [map rendering crates](/crates/map_rendering/) and [frontend](/apps/frontend/) — the crates the
+  [map rendering crates](/crates/map_rendering/) and [frontend](/crates/frontend/shell/frontend_application/) — the crates the
   crate boundary rules govern.
 - [Ticket model](/tools/tickets/ticket_model/) — the id, spec and plan paths the ticket
   identifiers standard describes.

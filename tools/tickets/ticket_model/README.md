@@ -79,7 +79,7 @@ checkout.
   `TicketId` declaration), `serde`, `toml` with `preserve_order`, `time`, `regex` and
   `thiserror`.
 - Used by: `ticket_metrics`, `ticket_wave_lock` and `ticket_registry` in `tools/tickets/`;
-  `xtask` (`TicketId`, `StatusName`, `error_chain_text`); the ticketboard in `apps/ticketboard/`
+  `xtask` (`TicketId`, `StatusName`, `error_chain_text`); the ticketboard in `tools/tickets/ticketboard_desktop/`
   (the model types, `parse_ticket_toml`, `CLASS_VALUES`, `ESTIMATED_VALUES`).
 - Rules: tier 2 of `tools/tickets`, depending only on foundation crates
   (`ticket_crates_depend_only_on_foundations_and_lower_ticket_crates` in

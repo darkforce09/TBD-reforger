@@ -16,7 +16,6 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - "apps/frontend/**"
       - "tools/developer_tools/**"
       - "tools/browser_testing/**"
       - "crates/streaming/**"
@@ -58,7 +57,7 @@ jobs:
           --health-timeout 3s
           --health-retries 10
     env:
-      # The API (apps/api) reads these from the environment (config.rs); `.env` is not used in CI.
+      # The API (crates/api/api_server) reads these from the environment (crates/api/api_configuration); `.env` is not used in CI.
       DATABASE_URL: postgres://tbd:tbd@localhost:5432/tbd_reforger?sslmode=disable
       APP_ENV: development # exposes GET /auth/dev-login, which the hydrate/mutations smokes use
       PORT: "8080"

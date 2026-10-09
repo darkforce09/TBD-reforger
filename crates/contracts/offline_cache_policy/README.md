@@ -3,7 +3,7 @@
 The `offline_cache_policy` crate: every decision of the offline service worker as pure functions
 with no browser type — which cache holds a response, how each request is served, when a saved copy
 answers instead of the network, and which terrain files make up the offline pack. The service
-worker (`apps/offline_service_worker`) applies it in the browser; the single-page app links it to
+worker (`crates/frontend/shell/offline_service_worker`) applies it in the browser; the single-page app links it to
 download the offline pack into the same caches under the same keys.
 
 ## Contents
@@ -57,9 +57,9 @@ committed Everon and Arland manifests under `assets/terrains/`.
 ## Boundaries
 
 - Depends on: `serde`, `serde_json`, `thiserror` and `url`; no workspace crate.
-- Used by: `apps/offline_service_worker` (the worker's handlers), the frontend's offline core
+- Used by: `crates/frontend/shell/offline_service_worker` (the worker's handlers), the frontend's offline core
   (`crates/frontend/foundation/frontend_offline/`) and the mortar calculator's catalog source
-  tests in `apps/frontend`.
+  tests in `crates/frontend/shell/frontend_application`.
 - Rules:
   - no module imports `web_sys`, `js_sys` or `wasm_bindgen`, so the crate compiles and tests on
     the host; contracts tier, so it depends on no workspace crate outside the foundation tier

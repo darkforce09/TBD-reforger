@@ -1,0 +1,108 @@
+# Offline service worker
+
+The `offline_service_worker` package: the service worker that keeps the single-page app, the
+ballistics catalogs and the Everon map working with no network. It applies the offline policy of
+the `offline_cache_policy` crate (`crates/contracts/offline_cache_policy/`), which the app also
+links, inside the browser's service worker, and answers `Range` requests from cached bodies. It
+sits in the shell layer beside the app it serves, as that app's peer
+([Frontend shell crates](/crates/frontend/shell/README.md)).
+
+## Contents
+
+```text
+crates/frontend/shell/offline_service_worker/
+├── Cargo.toml  the package: the `offline_service_worker` binary, the policy crate, wasm32-only deps
+└── src/        the worker's event handlers and the byte-range arithmetic
+```
+
+## How it works
+
+Trunk builds the binary from the app's `index.html` as a `no-modules` worker, next to the app
+bundle: `offline_service_worker.js` and `offline_service_worker_bg.wasm` at the site root, with no
+content hash in either name. The page registers `/service_worker.js?build=<id>`; that loader,
+`crates/frontend/shell/frontend_application/service_worker.js`, imports the bindgen script,
+starts the module and hands `install`, `activate` and `fetch` to the exported Rust handlers.
+
+```text
+page ── register /service_worker.js?build=<id> ──▶ loader (JS, no policy)
+                                                    │ importScripts + wasm_bindgen(...)
+                                                    ▼
+install ─▶ on_install:  shell cache ⟵ "/", "/manifest.webmanifest"; skipWaiting
+activate ─▶ on_activate: delete every stale "tbd-offline-*" cache; clients.claim
+fetch ───▶ on_fetch:    classify ─▶ cache-first │ network-first │ passthrough
+                                       └─ map asset + Range ─▶ 206 slice or 416 from the cached body
+```
+
+| Request | Class | Strategy | Cache |
+|---|---|---|---|
+| navigation | shell document | network-first, stored under `/`, cached copy on unreachable or `5xx` | `tbd-offline-shell-<build>` |
+| other same-origin file | shell asset | cache-first | `tbd-offline-shell-<build>` |
+| `GET /api/v1/ballistics-catalogs` | catalog list | network-first, cached copy on unreachable or `5xx` | `tbd-offline-catalogs-v1` |
+| `GET /api/v1/ballistics-catalogs/{id}/versions/{v}` | catalog version | cache-first | `tbd-offline-catalogs-v1` |
+| `/map-assets/**` except satellite XYZ tiles | map asset | cache-first, `Range` sliced | `tbd-offline-map-assets-v1` |
+| Google Fonts stylesheet and font files | icon font | cache-first | `tbd-offline-icon-font-v1` |
+| any other API route, non-`GET`, other origin, satellite XYZ tile, the worker's own files | passthrough | network only | none |
+
+A network-first request falls back to its cached copy when the network is unreachable or answers
+a gateway or server failure (`502`, `503`, `504`, any `5xx`: a proxy such as Caddy answers `502`
+while the API behind it is down); a `4xx` is never masked. That copy carries the header
+`x-served-from-offline-cache: 1`, which the page reads to word "offline copy from <date>" from the
+copy's `Date` header. A cache-first request reads the cache before the network, so a server failure
+reaches the page only when nothing is cached.
+
+Only the shell cache carries the build identifier, so a new build replaces the shell and keeps the
+roughly 250 MB of map assets. Stored responses keep every header, so the document's
+`Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` hold offline and the Mission
+Creator stays cross-origin isolated. The page downloads the Everon pack itself (the list comes from
+`offline_pack::terrain_pack`) into the same caches the worker reads.
+
+## Getting started
+
+Run these from the repository root, in the container with
+`CARGO_TARGET_DIR=target-container-api-v2`:
+
+```bash
+cargo test -p offline_service_worker     # the byte-range arithmetic's unit tests, native
+cargo test -p offline_cache_policy       # the policy's unit tests, native
+cargo clippy -p offline_service_worker --all-targets --target wasm32-unknown-unknown -- -D warnings
+cargo xtask mk leptos                            # Trunk builds the worker with the app on :3000
+```
+
+The worker runs only in a browser; the native binary is an empty `main`.
+
+## Configuration
+
+None: the crate reads no environment variable or feature flag. The worker takes its build
+identifier from the `build` query of its script URL; a missing or malformed value selects the
+build `unversioned`. `Cargo.toml` pins edition 2024 and Rust 1.95.
+
+## Public surface
+
+- The binary `offline_service_worker`, exporting `on_install`, `on_activate` and `on_fetch` to the
+  loader. The policy it applies is the public surface of `offline_cache_policy`.
+
+## Boundaries
+
+- Depends on: `offline_cache_policy`; `wasm-bindgen`, `wasm-bindgen-futures`, `js-sys` and
+  `web-sys` on `wasm32`.
+- Used by: `crates/frontend/shell/frontend_application/index.html`, which builds the binary as a
+  Trunk worker, and `crates/frontend/shell/frontend_application/service_worker.js`, which loads
+  it.
+- Rules:
+  - the crate is a peer of `frontend_application` in the shell layer: neither names the other in
+    any dependency table (the shell crate order of `cargo xtask verify frontend-layering`), and
+    Trunk builds the worker from the app's `index.html`;
+  - the crate depends on no application package, no graphics, map rendering, paper doll or
+    streaming crate and not on `wgpu`, in any target table (the workspace laws and the crate
+    firewalls of `cargo xtask verify crate-tiers`);
+  - its `#[wasm_bindgen]` exports are three of the workspace's few: only this crate,
+    `frontend_application` and `crates/foundation/browser_platform` carry one;
+  - every production file under `src/` passes the frontend documentation audit of
+    `crates/frontend/shell/frontend_application/src/tests/doc_audit/mod.rs`;
+  - the loader holds no policy: every decision lives in `offline_cache_policy` or in
+    `src/range_slicing.rs`, and is unit-tested natively.
+
+## Related documentation
+
+- [Crate boundary rules](/documentation/standards/crate_boundary_rules.md) — the dependency
+  directions between the website crates.

@@ -76,5 +76,5 @@ unexpected errors, refreshes, late switches, addresses and templates over the wh
   source of.
 - [Staging load generator](/tools/staging/staging_load_generator/README.md) — the engine that runs
   a plan.
-- [Staging design note](/documentation/apps/api/verification_evidence/staging.md) — the load
+- [Staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md) — the load
   procedure and how the report maps onto its cases.

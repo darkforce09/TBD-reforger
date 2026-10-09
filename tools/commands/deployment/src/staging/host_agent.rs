@@ -1,18 +1,23 @@
-//! The host agents (`apps/fleet_host_agent`) of the fleet: one per instance, each a user service of
-//! the account that runs the game servers, because it restarts its instance's unit and rewrites its
-//! server config's `scenarioId` for mission restarts; it polls the platform with its instance's
-//! `host_agent` machine credential and reads the game over RCON.
+//! The game server host agents (`crates/fleet/game_server_host_agent`) of the fleet: one per
+//! instance, each a user service of the account that runs the game servers, because it restarts
+//! its instance's unit and rewrites its server config's `scenarioId` for mission restarts; it polls
+//! the platform with its instance's `host_agent` machine credential and reads the game over RCON.
 //!
-//! **Role:** renders each instance's `agent.toml` ([`agent_configuration`]) and the payload that
-//! builds and installs the agent binary, writes every configuration, restarts every
-//! `fleet_host_agent@N` and reads each unit's state back ([`host_agents_install_payload`]).
+//! **Role:** names what the host agent install puts on the host ([`HOST_AGENT_PACKAGE`],
+//! [`HOST_AGENT_UNIT_TEMPLATE`], [`HOST_AGENT_BINARY_UNDER_HOME`],
+//! [`HOST_AGENT_CONFIGURATION_UNDER_HOME`]), renders each instance's `agent.toml`
+//! ([`agent_configuration`]) and the payload that builds and installs the agent binary, writes
+//! every configuration, restarts every `game_server_host_agent@N` and reads each unit's state back
+//! ([`host_agents_install_payload`]).
 //!
 //! **Position:** called by the deploy pipeline in `super::remote` after every boot verdict holds and
 //! after the relay is up; the unit template itself is written by `super::fleet_units`.
 //!
 //! **Signals & state:** none.
 //!
-//! **Invariants:** an `agent.toml` names files, never secrets: the instance's
+//! **Invariants:** every name the install writes on the host is the package's name
+//! [`HOST_AGENT_PACKAGE`], which `deploy/systemd/game_server_host_agent@.service` repeats; an
+//! `agent.toml` names files, never secrets: the instance's
 //! `secrets/host-agent-credential` and `secrets/rcon-password` under `~/tbd/fleet/instance-N/`;
 //! it is written mode 600 under a mode-700 folder; the relay instance's agent polls the relay on
 //! loopback, every other agent polls `TBD_HOST_AGENT_API_URL`; a unit that is not active after
@@ -20,6 +25,16 @@
 
 use super::fleet_instances::{FleetInstance, HOST_AGENT_CREDENTIAL_FILE, RCON_PASSWORD_FILE};
 use super::fleet_units::unit_list;
+
+/// The host agent's cargo package, which is also its executable's name and the stem of every name
+/// the install writes on the host.
+pub(super) const HOST_AGENT_PACKAGE: &str = "game_server_host_agent";
+/// The file name of the agent's systemd template unit, `deploy/systemd/` and the host alike.
+pub(super) const HOST_AGENT_UNIT_TEMPLATE: &str = "game_server_host_agent@.service";
+/// The installed agent binary, relative to the deploy user's home.
+pub(super) const HOST_AGENT_BINARY_UNDER_HOME: &str = ".local/bin/game_server_host_agent";
+/// The folder of every instance's `instance-N/agent.toml`, relative to the deploy user's home.
+pub(super) const HOST_AGENT_CONFIGURATION_UNDER_HOME: &str = ".config/game_server_host_agent";
 
 /// Instance `instance`'s `agent.toml`, for an unquoted heredoc: the remote shell expands `$HOME`,
 /// which the agent needs because it accepts absolute paths only.
@@ -52,15 +67,15 @@ pub(super) fn host_agents_install_payload(remote_dir: &str, instances: &[FleetIn
         "set -euo pipefail\n\
          {toolchain}\n\
          umask 077\n\
-         mkdir -p \"$HOME/.local/bin\" \"$HOME/.config/fleet_host_agent\"\n\
-         chmod 700 \"$HOME/.config/fleet_host_agent\"\n\
-         (cd '{remote_dir}' && cargo build --release -q -p fleet_host_agent)\n\
-         install -m 755 '{remote_dir}/target/release/fleet_host_agent' \"$HOME/.local/bin/fleet_host_agent\"\n",
+         mkdir -p \"$HOME/.local/bin\" \"$HOME/{HOST_AGENT_CONFIGURATION_UNDER_HOME}\"\n\
+         chmod 700 \"$HOME/{HOST_AGENT_CONFIGURATION_UNDER_HOME}\"\n\
+         (cd '{remote_dir}' && cargo build --release -q -p {HOST_AGENT_PACKAGE})\n\
+         install -m 755 '{remote_dir}/target/release/{HOST_AGENT_PACKAGE}' \"$HOME/{HOST_AGENT_BINARY_UNDER_HOME}\"\n",
         toolchain = crate::remote_rust_toolchain::PUT_RUST_TOOLCHAIN_ON_PATH,
     );
     for instance in instances {
         payload.push_str(&format!(
-            "AGENT_DIR=\"$HOME/.config/fleet_host_agent/instance-{n}\"\n\
+            "AGENT_DIR=\"$HOME/{HOST_AGENT_CONFIGURATION_UNDER_HOME}/instance-{n}\"\n\
              mkdir -p \"$AGENT_DIR\"\n\
              chmod 700 \"$AGENT_DIR\"\n\
              cat > \"$AGENT_DIR/agent.toml\" <<AGENTTOML\n\

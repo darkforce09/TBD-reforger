@@ -1,6 +1,6 @@
 # 3A-B1 — `state/persist.rs`: the decidable half crosses into `editing/persist/`
 
-Agent 2 of 8. Your scope is `apps/frontend/src/editor/state/persist.rs` (1,719 LOC) and
+Agent 2 of 8. Your scope is `crates/frontend/shell/frontend_application/src/editor/state/persist.rs` (1,719 LOC) and
 nothing else. `state/hydrate.rs` belongs to `3A-B2` — do not touch it.
 
 ## The cut

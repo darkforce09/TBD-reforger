@@ -90,5 +90,5 @@ match on its variants or its `status` and word it with `Error::message_or`.
 
 ## Related documentation
 
-- [Identity transactions](/documentation/apps/api/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
   — sessions, refresh rotation and replay revocation in the API, and the browser's generations.

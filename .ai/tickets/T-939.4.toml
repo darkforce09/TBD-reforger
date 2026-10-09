@@ -55,12 +55,12 @@ acceptance = [
 ]
 created_at = "2026-09-05T02:33:18Z"
 owns = [
-    "apps/frontend/src/editor/panels/context_menu.rs",
-    "apps/frontend/src/editor/panels/top_strip.rs",
-    "apps/frontend/src/pages/admin/server_control.rs",
-    "apps/frontend/src/pages/public/server_intel.rs",
-    "apps/frontend/src/pages/public/vehicles.rs",
-    "apps/frontend/src/editor/library/mission_library.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/context_menu.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/top_strip.rs",
+    "crates/frontend/shell/frontend_application/src/pages/admin/server_control.rs",
+    "crates/frontend/shell/frontend_application/src/pages/public/server_intel.rs",
+    "crates/frontend/shell/frontend_application/src/pages/public/vehicles.rs",
+    "crates/frontend/shell/frontend_application/src/editor/library/mission_library.rs",
     "crates/frontend/pages/operations_pages/src/event_hub.rs",
     "contracts/fixtures/api_goldens/GET__cms__announcements.json",
     "contracts/fixtures/api_goldens/GET__me__leave-requests.json",

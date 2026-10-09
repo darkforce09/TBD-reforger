@@ -4,7 +4,7 @@ use super::*;
 fn expand_covers_web_and_compose_and_nothing_else() {
     assert_eq!(
         expand_make_vars("cd $(WEB) && $(COMPOSE) up -d db"),
-        "cd apps/api && podman compose up -d db"
+        "cd crates/api/api_server && podman compose up -d db"
     );
     assert_eq!(expand_make_vars("$(CURDIR)/x"), "$(CURDIR)/x");
 }

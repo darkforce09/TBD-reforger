@@ -49,7 +49,7 @@ $ make verify-terrain
 maxDeltaM=0.204 thresholdM=1
 verify-terrain-alignment: OK
 
-$ cd apps/frontend && npm run build && npm run lint
+$ cd crates/frontend/shell/frontend_application && npm run build && npm run lint
 build clean (pre-existing chunk-size warning only) · lint clean
 ```
 

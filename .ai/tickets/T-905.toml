@@ -11,16 +11,16 @@ executor = "claude-code"
 notes = """
 --- HEAD migration_legacy (verbatim) ---
 
-T-899 walked the Rust tree and allowlisted 37 apps/frontend/src/*.rs files over 1000 lines with reason+expires. Do not raise the threshold. Split them so the SIZE-3 rows can drop. Files: arsenal.rs, arsenal_rules.rs, asset_catalog.rs, attributes.rs, client.rs, content.rs, context_menu.rs, deployments.rs, dto.rs, eden_dock_left.rs, eden_dock_right.rs, eden_help.rs, eden_layout.rs, eden_settings.rs, eden_toolbelt.rs, eden_top_strip.rs, eden_tree.rs, eden_zones.rs, editor_ops.rs, event_hub.rs, event_manager.rs, los_tool.rs, mission_commands.rs, mission_editor.rs, mission_hydrate.rs, mission_overview.rs, missions.rs, mortar.rs, orbat_manager.rs, outliner.rs, personnel.rs, place_helpers.rs, ruler_tool.rs, server_control.rs, ui.rs, validation_panel.rs, yrs_persist.rs. Not dispatched in T-853 waves 234-235 (would collide with live editor work). Not the registry-split program.
+T-899 walked the Rust tree and allowlisted 37 crates/frontend/shell/frontend_application/src/*.rs files over 1000 lines with reason+expires. Do not raise the threshold. Split them so the SIZE-3 rows can drop. Files: arsenal.rs, arsenal_rules.rs, asset_catalog.rs, attributes.rs, client.rs, content.rs, context_menu.rs, deployments.rs, dto.rs, eden_dock_left.rs, eden_dock_right.rs, eden_help.rs, eden_layout.rs, eden_settings.rs, eden_toolbelt.rs, eden_top_strip.rs, eden_tree.rs, eden_zones.rs, editor_ops.rs, event_hub.rs, event_manager.rs, los_tool.rs, mission_commands.rs, mission_editor.rs, mission_hydrate.rs, mission_overview.rs, missions.rs, mortar.rs, orbat_manager.rs, outliner.rs, personnel.rs, place_helpers.rs, ruler_tool.rs, server_control.rs, ui.rs, validation_panel.rs, yrs_persist.rs. Not dispatched in T-853 waves 234-235 (would collide with live editor work). Not the registry-split program.
 
 --- HEAD migration_legacy line (verbatim) ---
 
-migration_legacy = ["T-899 walked the Rust tree and allowlisted 37 apps/frontend/src/*.rs files over 1000 lines with reason+expires. Do not raise the threshold. Split them so the SIZE-3 rows can drop. Files: arsenal.rs, arsenal_rules.rs, asset_catalog.rs, attributes.rs, client.rs, content.rs, context_menu.rs, deployments.rs, dto.rs, eden_dock_left.rs, eden_dock_right.rs, eden_help.rs, eden_layout.rs, eden_settings.rs, eden_toolbelt.rs, eden_top_strip.rs, eden_tree.rs, eden_zones.rs, editor_ops.rs, event_hub.rs, event_manager.rs, los_tool.rs, mission_commands.rs, mission_editor.rs, mission_hydrate.rs, mission_overview.rs, missions.rs, mortar.rs, orbat_manager.rs, outliner.rs, personnel.rs, place_helpers.rs, ruler_tool.rs, server_control.rs, ui.rs, validation_panel.rs, yrs_persist.rs. Not dispatched in T-853 waves 234-235 (would collide with live editor work). Not the registry-split program."]
+migration_legacy = ["T-899 walked the Rust tree and allowlisted 37 crates/frontend/shell/frontend_application/src/*.rs files over 1000 lines with reason+expires. Do not raise the threshold. Split them so the SIZE-3 rows can drop. Files: arsenal.rs, arsenal_rules.rs, asset_catalog.rs, attributes.rs, client.rs, content.rs, context_menu.rs, deployments.rs, dto.rs, eden_dock_left.rs, eden_dock_right.rs, eden_help.rs, eden_layout.rs, eden_settings.rs, eden_toolbelt.rs, eden_top_strip.rs, eden_tree.rs, eden_zones.rs, editor_ops.rs, event_hub.rs, event_manager.rs, los_tool.rs, mission_commands.rs, mission_editor.rs, mission_hydrate.rs, mission_overview.rs, missions.rs, mortar.rs, orbat_manager.rs, outliner.rs, personnel.rs, place_helpers.rs, ruler_tool.rs, server_control.rs, ui.rs, validation_panel.rs, yrs_persist.rs. Not dispatched in T-853 waves 234-235 (would collide with live editor work). Not the registry-split program."]
 
 missing=0"""
 main_goal = "Split 37 T-899-allowlisted frontend SIZE-3 files; drop allowlist rows."
 context = [
-    "T-899 allowlisted 37 apps/frontend/src/*.rs over 1000 lines.",
+    "T-899 allowlisted 37 crates/frontend/shell/frontend_application/src/*.rs over 1000 lines.",
     "Not dispatched in T-853 waves 234-235; collides with live editor work.",
     "Not the registry-split program.",
     "operations.rs is already a 45-line root (its row just drops); the mass moved to operations/entity.rs (4779 lines); gestures.rs, loadout.rs and building_viewer.rs are allowlisted too — all owned now.",
@@ -50,52 +50,52 @@ acceptance = [
 citations = [
     "T-899 SIZE-3 allowlist",
     "t853_shell_to_xtask_waves.md",
-    "apps/frontend/src",
+    "crates/frontend/shell/frontend_application/src",
 ]
 estimated = ["scope"]
 owns = [
-    "apps/frontend/src/editor/arsenal/mod.rs",
-    "apps/frontend/src/editor/arsenal/arsenal_rules.rs",
-    "apps/frontend/src/editor/arsenal/asset_catalog.rs",
-    "apps/frontend/src/editor/panels/attributes_modal.rs",
-    "apps/frontend/src/core/client.rs",
-    "apps/frontend/src/pages/admin/content.rs",
-    "apps/frontend/src/editor/panels/context_menu.rs",
-    "apps/frontend/src/pages/public/deployments.rs",
-    "apps/frontend/src/core/dto.rs",
-    "apps/frontend/src/editor/panels/dock_left.rs",
-    "apps/frontend/src/editor/panels/dock_right.rs",
-    "apps/frontend/src/editor/panels/help_modal.rs",
-    "apps/frontend/src/editor/layout.rs",
-    "apps/frontend/src/editor/panels/settings_modal.rs",
-    "apps/frontend/src/editor/panels/toolbelt.rs",
-    "apps/frontend/src/editor/panels/top_strip.rs",
-    "apps/frontend/src/editor/panels/outliner_tree.rs",
-    "apps/frontend/src/editor/panels/zones_panel.rs",
-    "apps/frontend/src/editor/state/operations.rs",
+    "crates/frontend/shell/frontend_application/src/editor/arsenal/mod.rs",
+    "crates/frontend/shell/frontend_application/src/editor/arsenal/arsenal_rules.rs",
+    "crates/frontend/shell/frontend_application/src/editor/arsenal/asset_catalog.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/attributes_modal.rs",
+    "crates/frontend/shell/frontend_application/src/core/client.rs",
+    "crates/frontend/shell/frontend_application/src/pages/admin/content.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/context_menu.rs",
+    "crates/frontend/shell/frontend_application/src/pages/public/deployments.rs",
+    "crates/frontend/shell/frontend_application/src/core/dto.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/dock_left.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/dock_right.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/help_modal.rs",
+    "crates/frontend/shell/frontend_application/src/editor/layout.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/settings_modal.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/toolbelt.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/top_strip.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/outliner_tree.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/zones_panel.rs",
+    "crates/frontend/shell/frontend_application/src/editor/state/operations.rs",
     "crates/frontend/pages/operations_pages/src/event_hub.rs",
-    "apps/frontend/src/pages/admin/event_manager.rs",
-    "apps/frontend/src/editor/tools/los_tool.rs",
-    "apps/frontend/src/editor/state/commands_hotkeys.rs",
-    "apps/frontend/src/editor/mission_editor.rs",
-    "apps/frontend/src/editor/state/hydrate.rs",
-    "apps/frontend/src/editor/library/mission_overview.rs",
-    "apps/frontend/src/editor/library/mission_library.rs",
-    "apps/frontend/src/pages/public/mortar.rs",
+    "crates/frontend/shell/frontend_application/src/pages/admin/event_manager.rs",
+    "crates/frontend/shell/frontend_application/src/editor/tools/los_tool.rs",
+    "crates/frontend/shell/frontend_application/src/editor/state/commands_hotkeys.rs",
+    "crates/frontend/shell/frontend_application/src/editor/mission_editor.rs",
+    "crates/frontend/shell/frontend_application/src/editor/state/hydrate.rs",
+    "crates/frontend/shell/frontend_application/src/editor/library/mission_overview.rs",
+    "crates/frontend/shell/frontend_application/src/editor/library/mission_library.rs",
+    "crates/frontend/shell/frontend_application/src/pages/public/mortar.rs",
     "crates/frontend/pages/operations_pages/src/orbat_manager.rs",
-    "apps/frontend/src/editor/panels/outliner.rs",
-    "apps/frontend/src/pages/admin/personnel.rs",
-    "apps/frontend/src/editor/tools/place_helpers.rs",
-    "apps/frontend/src/editor/tools/ruler_tool.rs",
-    "apps/frontend/src/pages/admin/server_control.rs",
-    "apps/frontend/src/core/ui.rs",
-    "apps/frontend/src/editor/panels/validation_panel.rs",
-    "apps/frontend/src/editor/state/persist.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/outliner.rs",
+    "crates/frontend/shell/frontend_application/src/pages/admin/personnel.rs",
+    "crates/frontend/shell/frontend_application/src/editor/tools/place_helpers.rs",
+    "crates/frontend/shell/frontend_application/src/editor/tools/ruler_tool.rs",
+    "crates/frontend/shell/frontend_application/src/pages/admin/server_control.rs",
+    "crates/frontend/shell/frontend_application/src/core/ui.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/validation_panel.rs",
+    "crates/frontend/shell/frontend_application/src/editor/state/persist.rs",
     ".coding-standards-allowlist.yaml",
-    "apps/frontend/src/editor/canvas/gestures.rs",
-    "apps/frontend/src/editor/arsenal/loadout.rs",
-    "apps/frontend/src/editor/state/operations/entity.rs",
-    "apps/frontend/src/pages/debug/building_viewer.rs",
+    "crates/frontend/shell/frontend_application/src/editor/canvas/gestures.rs",
+    "crates/frontend/shell/frontend_application/src/editor/arsenal/loadout.rs",
+    "crates/frontend/shell/frontend_application/src/editor/state/operations/entity.rs",
+    "crates/frontend/shell/frontend_application/src/pages/debug/building_viewer.rs",
 ]
 
 [scope]

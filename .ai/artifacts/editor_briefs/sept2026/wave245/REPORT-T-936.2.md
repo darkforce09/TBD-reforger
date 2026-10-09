@@ -28,8 +28,8 @@ Confirmed before the first edit (`pwd && git branch --show-current`). HEAD after
 | `crates/map-engine-core/src/mission/tasks.rs` | NEW; `LEGAL_TRANSITIONS` :35-38; `validate` registered | Typed model; assigned→succeeded\|failed only; compile_payload + `ExtensionBlocks` tests (no flatten.rs) |
 | `crates/map-engine-core/src/mission/mod.rs` | 17 `pub mod tasks` | Register the module |
 | `crates/map-engine-core/src/mission/extensions.rs` | 81 `key: "tasks"` | AUTHORED_BLOCKS row so `copy_authored_blocks` / `ExtensionBlocks::from_payload` emit `tasks` |
-| `apps/frontend/src/editor/panels/tasks_panel.rs` | NEW; `add_task`/`remove_task`/`move_task`/`with_field`/`env_patch` | Undoable list; tier, trigger, marker pickers |
-| `apps/frontend/src/editor/panels/mod.rs` | 33 `pub mod tasks_panel` | Register the panel |
+| `crates/frontend/shell/frontend_application/src/editor/panels/tasks_panel.rs` | NEW; `add_task`/`remove_task`/`move_task`/`with_field`/`env_patch` | Undoable list; tier, trigger, marker pickers |
+| `crates/frontend/shell/frontend_application/src/editor/panels/mod.rs` | 33 `pub mod tasks_panel` | Register the panel |
 | `apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` | NEW; `TryTransition` :185; `IsLegal` :209 | Server-authoritative table; T-676 FIRED → succeeded; INERT/missing trigger → failed |
 | `apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` | NEW twin | T-946.26 |
 | `apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_TaskHud.c` | NEW; `InsertStaticMarker` :115; `BuildSnapshot` :122 | One HUD marker per assigned task via `TBD_MarkerIcons`; hidden once omitted from snapshot |
@@ -119,7 +119,7 @@ Command center / T-936.1 bookkeeping should retarget that dummy key (same `audio
 |---|---|
 | `crates/map-engine-core/src/mission/flatten.rs` `EditorPayload::authored_blocks_root` (merge-base: copies only `winConditions`) | `flatten_to_mod_document` on a payload whose root has `tasks` still omits `tasks` from the compiled document, because serde drops the unknown key and `authored_blocks_root` never reinserts it. `compile_payload` + `ExtensionBlocks::from_payload` **do** carry the block. T-936.1's comment in flatten.rs says a later slice adds a one-liner here; this slice was ordered **not** to. |
 | `crates/map-engine-core/src/mission/compile.rs:1320` | `cargo test -p map-engine-core --all-features --lib an_unlisted_environment_key_is_not_promoted_to_the_payload_root` — red solely because AUTHORED_BLOCKS now lists `tasks`. See files_outside_owns. |
-| `apps/frontend/src/editor/panels/settings_modal.rs` (not owned) | `tasks_panel` is registered and unit-tested but not mounted. Same T-936.1 card pattern. |
+| `crates/frontend/shell/frontend_application/src/editor/panels/settings_modal.rs` (not owned) | `tasks_panel` is registered and unit-tested but not mounted. Same T-936.1 card pattern. |
 
 ## deviations
 

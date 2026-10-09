@@ -11,8 +11,8 @@ Verified that prior to adding item schemas, a payload with `editor.slots` carryi
 
 ## changes
 1. `packages/tbd-schema/schema/mission-editor-payload.schema.json`: Added `$defs/editorSlot` and `$defs/editorLayer` with `additionalProperties: false` constraining authored slots and layers, and attached `$ref` item schemas to `editor.slots` and `editor.editorLayers`.
-2. `apps/frontend/src/editor/state/operations/slot_ids.rs`: Added `duplicate_slot_ids(&MissionDocCore) -> Vec<(String, String)>` detecting duplicate slot IDs under the same callsign or squad, leveraging `doc.slot_exists`. Registered in `operations.rs`.
-3. `apps/frontend/src/editor/library/mission_library.rs`:
+2. `crates/frontend/shell/frontend_application/src/editor/state/operations/slot_ids.rs`: Added `duplicate_slot_ids(&MissionDocCore) -> Vec<(String, String)>` detecting duplicate slot IDs under the same callsign or squad, leveraging `doc.slot_exists`. Registered in `operations.rs`.
+3. `crates/frontend/shell/frontend_application/src/editor/library/mission_library.rs`:
    - Enforced `UPLOAD_MAX_BYTES = 8388608` (8 MiB).
    - In `parse_uploaded_document`, added duplicate slot ID check refusing payloads with duplicates and naming both callsign and duplicated slot id.
    - Surfaced the picked file size against the 8.4 MB ceiling in the upload UI when `up_size > 0`.
@@ -24,7 +24,7 @@ Verbatim failure when dropping callsign from the duplicate check error:
 ```
 ---- editor::library::mission_library::tests::duplicate_slot_id_under_callsign_is_refused stdout ----
 
-thread 'editor::library::mission_library::tests::duplicate_slot_id_under_callsign_is_refused' (1638286) panicked at apps/frontend/src/editor/library/mission_library.rs:3508:9:
+thread 'editor::library::mission_library::tests::duplicate_slot_id_under_callsign_is_refused' (1638286) panicked at crates/frontend/shell/frontend_application/src/editor/library/mission_library.rs:3508:9:
 refusal must name both callsign and duplicated slot id; got "Duplicate slot id \"s1\"."
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 

@@ -6,7 +6,7 @@
 //! `/metrics` and `/healthz` ([`observability`]), the in-process SSE hub ([`realtime_hub`]) and
 //! the outbound retry policy ([`http_client`]).
 //! **Position:** above `api_foundation`, `api_configuration` and `api_identifiers`; `api_state`'s
-//! `AppState` holds its services, the API router (`api::router`) mounts its layers, and the kernel
+//! `AppState` holds its services, the API router (`api_server::router`) mounts its layers, and the kernel
 //! and domain crates take its extractors. Every middleware and extractor reads a sub-state through
 //! `FromRef`, so nothing here names the application state or a domain.
 //! **Signals & state:** the rate limiters' buckets, the metrics registry and the hub's broadcast

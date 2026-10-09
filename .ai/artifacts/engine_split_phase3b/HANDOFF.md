@@ -20,7 +20,7 @@ WHERE THINGS STAND — HEAD is 9ae1eedf0, do not re-derive this:
       cargo check --target wasm32-unknown-unknown -p frontend   8 warnings
       cargo test -p xtask                     826 passed; 8 failed (the known-red eight, by name)
 
-  `apps/frontend/src/editor/state/operations/` and `state/operations.rs` NO LONGER EXIST.
+  `crates/frontend/shell/frontend_application/src/editor/state/operations/` and `state/operations.rs` NO LONGER EXIST.
   Every document mutation reaches the engine directly through
   `map-engine/src/editing/hosted_commands/` (17 files). 124 new native tests now cover logic that
   previously needed a browser.
@@ -30,7 +30,7 @@ WHERE THINGS STAND — HEAD is 9ae1eedf0, do not re-derive this:
 
 PHASE 3B — reshape the frontend into `v2/apps/editor/`
 
-  `apps/frontend/src/editor/` is 110 files / 86,968 LOC. `v2/apps/` is 42 READMEs and
+  `crates/frontend/shell/frontend_application/src/editor/` is 110 files / 86,968 LOC. `v2/apps/` is 42 READMEs and
   ZERO lines of Rust, and is not even compiled — `v2/mod.rs` declares only `core` and `pages`.
 
   Scope, per the plan's §3B:

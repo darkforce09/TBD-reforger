@@ -40,14 +40,15 @@ pub const SPAWN_DETERMINISM_RUNBOOK: &str = "documentation/runbooks/spawn_determ
 /// here invalidates recorded evidence. The fingerprint matches this prefix with
 /// `starts_with`; the trailing slash keeps a sibling whose name merely begins the same way
 /// out of the inputs.
-pub const API_READINESS_EVIDENCE_PREFIX: &str = "documentation/apps/api/verification_evidence/";
+pub const API_READINESS_EVIDENCE_PREFIX: &str =
+    "documentation/crates/api/api_server/verification_evidence/";
 
 /// The API acceptance register: every requirement, the implementation paths it rests on and
 /// the checks that prove it. `cargo xtask verify api-readiness` reads and validates it before
 /// it judges any evidence. It sits under [`API_READINESS_EVIDENCE_PREFIX`], so the source
 /// fingerprint covers it.
 pub const API_READINESS_REGISTER: &str =
-    "documentation/apps/api/verification_evidence/requirements.json";
+    "documentation/crates/api/api_server/verification_evidence/requirements.json";
 
 /// Archived documents, one folder per topic. Frozen: never reworded, and exempt from the size
 /// limit.

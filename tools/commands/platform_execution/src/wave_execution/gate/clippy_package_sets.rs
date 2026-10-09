@@ -21,13 +21,13 @@ use repository_laws::workspace_members::{WorkspaceMember, read_workspace_members
 
 use super::TOOL_MEMBER_FOLDER;
 
-/// The package the native lint names whatever else the workspace holds: the API application.
-pub(super) const ANCHOR_NATIVE_PACKAGE: &str = "api";
+/// The package the native lint names whatever else the workspace holds: the API server.
+pub(super) const ANCHOR_NATIVE_PACKAGE: &str = "api_server";
 
 /// The packages the wave gate's `clippy apps and crates` step lints for the host target: every
 /// workspace member under `repo_root` outside [`TOOL_MEMBER_FOLDER`], outside the frontend family
-/// and outside [`wasm32_clippy_packages`], in member-path order. That is the API application with
-/// every API crate, the native applications, and every other `crates/**` library.
+/// and outside [`wasm32_clippy_packages`], in member-path order. That is the API server with
+/// every API crate, the game server host agent, and every other `crates/**` library.
 ///
 /// # Errors
 /// The workspace cannot be read, the frontend family or the wasm32 members cannot be derived, or
@@ -56,7 +56,7 @@ pub(super) fn native_clippy_packages(repo_root: &Path) -> Result<Vec<String>, St
 
 /// The packages the wave gate's `clippy wasm32 members` step lints for
 /// `wasm32-unknown-unknown`: the `wasm-ci` lane's set, every member whose layout declares
-/// `targets = "wasm32"` and the offline service worker, without the frontend family.
+/// `targets = "wasm32"` outside the frontend family (the offline service worker is in the family).
 ///
 /// # Errors
 /// The `wasm-ci` lane cannot derive its packages.

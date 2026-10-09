@@ -51,9 +51,9 @@ DO NOT edit docs/**.
 
 Verify (all exit 0):
   make map-assets-link
-  cd apps/frontend && npm run build && npm run lint && npm test
+  cd crates/frontend/shell/frontend_application && npm run build && npm run lint && npm test
   make verify-terrain-strict
-  ! rg 'map-assets|fetch.*dem' apps/frontend/src/features/mission-creator/compiler/
+  ! rg 'map-assets|fetch.*dem' crates/frontend/shell/frontend_application/src/features/mission-creator/compiler/
 
 Manual (Everon, dev-login, DEM loaded):
   M1 CUR Z: hill-north 9600,3200 ~221.652 vs valley-inland 5000,5000 ~80.871 (>5m delta)
@@ -72,7 +72,7 @@ Manual (Everon, dev-login, DEM loaded):
 
 | Artifact | Path |
 |----------|------|
-| DEM API | `apps/frontend/src/features/tactical-map/dem/` @ `2c56c2e` |
+| DEM API | `crates/frontend/shell/frontend_application/src/features/tactical-map/dem/` @ `2c56c2e` |
 | Anchor coords | `docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md` §Unit test table |
 
 ```bash

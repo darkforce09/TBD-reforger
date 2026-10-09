@@ -6,7 +6,7 @@
 
 > **Status:** Original product/UI blueprint. §3 data models are **partially stale** (pre-T-008
 > campaign refactor — use the domain model directories `src/<domain>/models/` under
-> [`apps/website/api_v2/src/`](../../../apps/api/src) as API contract).
+> [`apps/website/api_v2/src/`](../../../crates/api/api_server/src) as API contract).
 > §4 UI blueprints remain useful reference. Current status: root [`CLAUDE.md`](../../../CLAUDE.md).
 > **Live stack (T-145 / T-159 / T-171):** Frontend = Leptos CSR (`apps/website/frontend/`); Backend = Rust Axum + sqlx (`apps/website/api_v2/`).
 
@@ -44,7 +44,7 @@ We are building a premium, all-in-one web suite for a tactical Arma Reforger Mil
 
 > **Partially stale (pre-T-008):** Event/mission schema here predates the campaign refactor
 > (`event_missions`, per-mission ORBAT). Use the domain model directories `src/<domain>/models/` under
-> [`apps/website/api_v2/src/`](../../../apps/api/src) as the API contract.
+> [`apps/website/api_v2/src/`](../../../crates/api/api_server/src) as the API contract.
 
 ### Users & Authentication
 - `discord_id` (Primary Key)

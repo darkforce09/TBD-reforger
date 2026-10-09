@@ -28,8 +28,8 @@ DEM peak detection (`dem/peaks.rs`), 80 m importance-distance declutter, procedu
 cargo test -p map-engine-core dem::peaks --all-features   → 5/5 PASS
 cargo test -p map-engine-render                           → 31/31 PASS
 make wasm                                                 → map_engine_wasm_bg.wasm 4,243,030 B
-cd apps/frontend && npm test                        → 355/355 PASS
-cd apps/frontend && npm run build && npm run lint → OK
+cd crates/frontend/shell/frontend_application && npm test                        → 355/355 PASS
+cd crates/frontend/shell/frontend_application && npm run build && npm run lint → OK
 node scripts/map-assets/export-height-labels.mjs          → 10 peaks → packages/map-assets/everon/height-labels.json
 node scripts/map-assets/verify-height-labels.mjs --terrain everon → OK
 ```

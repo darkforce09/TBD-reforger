@@ -21,7 +21,7 @@
 //!
 //! ```text
 //! $ make db-up
-//! cd apps/api && podman compose up -d db
+//! cd crates/api/api_server && podman compose up -d db
 //! /bin/sh: 1: podman: not found
 //! make: *** [Makefile:70: db-up] Error 127
 //! ```
@@ -39,7 +39,7 @@
 //! can work (see `crate::local_database::selftest`).
 
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use process_runner::Run;
 use verification_core::NotRun;
@@ -61,11 +61,15 @@ pub(crate) struct Web {
 
 /// The API crate folder of this checkout.
 pub(crate) fn web() -> Result<Web> {
-    let root = find_repository_root()?;
-    Ok(Web {
+    Ok(web_under(&find_repository_root()?))
+}
+
+/// The API crate folder of the checkout at `repository_root`.
+fn web_under(repository_root: &Path) -> Web {
+    Web {
         rel: WEB.to_string(),
-        abs: root.join(WEB),
-    })
+        abs: repository_root.join(WEB),
+    }
 }
 
 /// The `$(COMPOSE)`/`podman` spelling as make would print it — i.e. WITHOUT the bridge prefix.
@@ -170,34 +174,72 @@ pub(super) fn seed() -> Result<u8> {
 
 // ── registry-import ──────────────────────────────────────────────────────────────────────────
 
-/// `make registry-import` (Makefile:110-113) — a three-line backslash continuation, echoed by make
-/// with its backslashes and leading tabs intact. The port runs the same argv in the same cwd, so
-/// the echo is reproduced exactly, tabs included.
-pub(super) fn registry_import() -> Result<u8> {
-    let web = web()?;
-    const ITEMS: &str = "../../contracts/catalogs/registry-items.workbench.json";
-    const COMPAT: &str = "../../contracts/catalogs/registry-compat.workbench.json";
-    echo(&format!(
-        "cd {} && cargo run --bin import-registry -- \\\n\t--items {ITEMS} \\\n\t--compat {COMPAT}",
-        web.rel
-    ));
-    let argv: Vec<String> = vec![
+/// The API server's registry importer binary.
+const REGISTRY_IMPORTER_BINARY: &str = "import-item-registry";
+
+/// The committed item envelope, as a path from the repository root.
+const REGISTRY_ITEMS_ENVELOPE: &str = "contracts/catalogs/registry-items.workbench.json";
+
+/// The committed compatibility envelope, as a path from the repository root.
+const REGISTRY_COMPAT_ENVELOPE: &str = "contracts/catalogs/registry-compat.workbench.json";
+
+/// The `cargo run` argv of `db registry-import` in the checkout at `repository_root`.
+///
+/// The child runs in the API crate folder, where the importer finds the developer's `.env`; the
+/// envelopes are anchored on the repository root, so their paths hold however deep that folder
+/// sits.
+fn registry_import_arguments(repository_root: &Path) -> Vec<String> {
+    let envelope = |relative: &str| repository_root.join(relative).display().to_string();
+    vec![
         "cargo".into(),
         "run".into(),
         "--bin".into(),
-        "import-registry".into(),
+        REGISTRY_IMPORTER_BINARY.into(),
         "--".into(),
         "--items".into(),
-        ITEMS.into(),
+        envelope(REGISTRY_ITEMS_ENVELOPE),
         "--compat".into(),
-        COMPAT.into(),
-    ];
+        envelope(REGISTRY_COMPAT_ENVELOPE),
+    ]
+}
+
+/// `argv` as the lane echoes it: one line, continued with a backslash and a tab before each
+/// envelope flag, as a shell recipe spells a long command.
+fn registry_import_echo(argv: &[String]) -> String {
+    let mut line = String::new();
+    for (index, argument) in argv.iter().enumerate() {
+        if argument == "--items" || argument == "--compat" {
+            line.push_str(" \\\n\t");
+        } else if index > 0 {
+            line.push(' ');
+        }
+        line.push_str(argument);
+    }
+    line
+}
+
+/// `db registry-import`: the importer over the two committed envelopes, echoed as a three-line
+/// backslash continuation (`cd <API folder> && cargo run --bin import-item-registry -- --items …
+/// --compat …`) before it runs in the API crate folder on the inherited terminal.
+pub(super) fn registry_import() -> Result<u8> {
+    let root = find_repository_root()?;
+    let web = web_under(&root);
+    let argv = registry_import_arguments(&root);
+    echo(&format!(
+        "cd {} && {}",
+        web.rel,
+        registry_import_echo(&argv)
+    ));
     trace(&argv);
     // On the inherited terminal: `cargo run` streams its build and import output as it goes.
     let outcome = Run::new(&argv[0]).args(&argv[1..]).cwd(&web.abs).terminal();
     finish_status(
-        "cargo run --bin import-registry",
+        "cargo run --bin import-item-registry",
         outcome,
-        || "failed to spawn cargo run --bin import-registry",
+        || "failed to spawn cargo run --bin import-item-registry",
     )
 }
+
+#[cfg(test)]
+#[path = "tests/recipe_execution/tests.rs"]
+mod tests;

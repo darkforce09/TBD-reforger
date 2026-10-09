@@ -18,7 +18,7 @@ documentation/standards/templates/
 ├── glossary_entry.md               template for a glossary entry; sample: mission header
 ├── known_bug.md                    template for a known bug; sample: the editor gate boot wedge
 ├── readme_app.md                   README template for an app workspace; sample: the Mission Creator
-├── readme_area_root.md             README template for an area root; sample: the website area
+├── readme_area_root.md             README template for an area root; sample: the product crates
 ├── readme_command_line.md          README template for a command-line folder; sample: developer tools
 ├── readme_crate_root.md            README template for a crate, package or addon root; sample: the API
 ├── readme_data.md                  README template for a data folder; sample: the mission fixtures

@@ -38,13 +38,13 @@ whose note names the path and the error, with no text.
 
 - Depends on: `crate::document_viewer::models`, whose three types it re-exports; the crate's
   `Error` and `Result` (`DocumentRefused`); `std` (files, paths, channels and threads).
-- Used by: the desktop application: `apps/ticketboard/src/application/lifecycle.rs`, which calls
-  `spawn_read` from `open_doc`, with the rest of `apps/ticketboard/src/application/` naming
+- Used by: the desktop application: `tools/tickets/ticketboard_desktop/src/application/lifecycle.rs`, which calls
+  `spawn_read` from `open_doc`, with the rest of `tools/tickets/ticketboard_desktop/src/application/` naming
   `ViewerState` and `LoadedDocument` through this module; the ticket details
-  (`apps/ticketboard/src/ticket_browser/ui/detail_panel/cells.rs` and `body_sections.rs`), which
+  (`tools/tickets/ticketboard_desktop/src/ticket_browser/ui/detail_panel/cells.rs` and `body_sections.rs`), which
   call `wants_viewer` to
   choose between the viewer and the external handler; and
-  `apps/ticketboard/src/document_viewer/ui/`, which names `ViewerState` through it.
+  `tools/tickets/ticketboard_desktop/src/document_viewer/ui/`, which names `ViewerState` through it.
 - Rules: nothing outside the repository root is opened, by `..` or by a symbolic link
   (`resolve_refuses_escapes`, `load_doc_refuses_escape_without_reading`,
   `load_doc_refuses_symlink_escape`); no read passes the cap

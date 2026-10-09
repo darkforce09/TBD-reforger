@@ -1,16 +1,18 @@
 //! The workspace layout model: crate categories, the judged set and the category edge matrix.
 //!
-//! **Role:** answers which members the layout laws judge, which members may stay outside the
+//! **Role:** answers which members the layout laws judge, which two members may stay outside the
 //! judged set, which class a category belongs to, what a crate's declared targets are, and
 //! whether a dependency edge between two categories is allowed (rule 5 of the crate-tier law).
 //! **Position:** shared by [`super::crate_tiers`], `super::crate_firewalls` and
 //! [`super::crate_anatomy`]; reads parsed members only.
 //! **Signals & state:** none; constants and pure functions.
 //! **Invariants:** the judged set is every member that declares `[package.metadata.layout]` plus
-//! every member under `crates/<category…>/<name>` or `tools/<category>/<name>`; a member outside
-//! it is an app under `apps/` or one of [`TOOL_BINARY_PATHS`], and any other is a finding of
-//! rule 2; the class of a category is decided by its folder path alone, and an unknown category
-//! has no class (a finding, never a silent default).
+//! every member under `crates/<category…>/<name>` or `tools/<category>/<name>`; the only members
+//! outside it are the [`TOOL_BINARY_PATHS`], and any other — a crate under `apps/` included — is a
+//! finding of rule 2; the class of a category is decided by its folder path alone, and an unknown
+//! category has no class (a finding, never a silent default). Every arm of the category matrix
+//! lists the classes it allows, so a new class is reachable from no category until an arm names
+//! it.
 
 use crate::workspace_members::WorkspaceMember;
 
@@ -18,8 +20,6 @@ use crate::workspace_members::WorkspaceMember;
 pub const CRATES_ROOT: &str = "crates";
 /// The root folder of the tooling crates.
 pub const TOOLS_ROOT: &str = "tools";
-/// The root folder of the application crates.
-pub const APPS_ROOT: &str = "apps";
 
 /// The engine categories: CPU map engine crates and the graphics crates.
 pub const ENGINE_CATEGORIES: &[&str] = &[
@@ -52,8 +52,8 @@ pub const MISSION_EDITING_ENGINE_CATEGORIES: &[&str] = &[
 pub const STAGING_FIXTURES_PATH: &str = "tools/staging/staging_fixtures";
 
 /// The tool binaries: the two members that sit directly under `tools/`, carry no layout table
-/// and link the tool crates into executables. With the apps under [`APPS_ROOT`] they are the only
-/// members the layout laws do not judge.
+/// and link the tool crates into executables. They are the only members the layout laws do not
+/// judge.
 pub const TOOL_BINARY_PATHS: &[&str] = &["tools/xtask", "tools/developer_tools"];
 
 /// The class of a category, which decides the edges its crates may declare.
@@ -77,7 +77,9 @@ pub enum CategoryClass {
     MissionEditing,
     /// `crates/api`.
     Api,
-    /// `crates/frontend/<layer>`.
+    /// `crates/fleet`: the game server host agent.
+    Fleet,
+    /// `crates/frontend/<layer>`, the layers of [`FRONTEND_LAYER_FOLDERS`].
     Frontend,
     /// `tools` and `tools/<category>`.
     Tools,
@@ -90,14 +92,20 @@ impl CategoryClass {
     }
 }
 
+/// The layer folders under `crates/frontend/`: the frontend categories, lowest layer first, the
+/// shell (the single-page app and the offline service worker) last.
+pub const FRONTEND_LAYER_FOLDERS: &[&str] =
+    &["foundation", "features", "pages", "workspaces", "shell"];
+
 /// The class of `category`, or `None` for a category the layout does not know.
 pub fn category_class(category: &str) -> Option<CategoryClass> {
     if category == TOOLS_ROOT || category.starts_with("tools/") {
         return Some(CategoryClass::Tools);
     }
     if let Some(layer) = category.strip_prefix("crates/frontend/") {
-        let known = ["foundation", "features", "pages", "workspaces"];
-        return known.contains(&layer).then_some(CategoryClass::Frontend);
+        return FRONTEND_LAYER_FOLDERS
+            .contains(&layer)
+            .then_some(CategoryClass::Frontend);
     }
     let class = match category {
         "crates/foundation" => CategoryClass::Foundation,
@@ -108,6 +116,7 @@ pub fn category_class(category: &str) -> Option<CategoryClass> {
         "crates/map_rendering" | "crates/paper_doll" => CategoryClass::Rendering,
         MISSION_EDITING_CATEGORY => CategoryClass::MissionEditing,
         "crates/api" => CategoryClass::Api,
+        "crates/fleet" => CategoryClass::Fleet,
         other if ENGINE_CATEGORIES.contains(&other) => CategoryClass::Engine,
         _ => return None,
     };
@@ -147,22 +156,15 @@ pub fn is_judged(member: &WorkspaceMember) -> bool {
     member.manifest.layout.is_some() || sits_in_layout_folder(&member.path)
 }
 
-/// True when `path` is a member allowed outside the judged set: an app under [`APPS_ROOT`] or
-/// one of [`TOOL_BINARY_PATHS`].
-pub fn is_app_or_tool_binary(path: &str) -> bool {
-    is_under(path, APPS_ROOT) || TOOL_BINARY_PATHS.contains(&path)
+/// True when `path` is a member allowed outside the judged set: one of [`TOOL_BINARY_PATHS`].
+pub fn is_tool_binary(path: &str) -> bool {
+    TOOL_BINARY_PATHS.contains(&path)
 }
 
 /// True for `crates/<category…>/<name>` and `tools/<category>/<name>`.
 pub fn sits_in_layout_folder(path: &str) -> bool {
     let depth = path.split('/').count();
     (path.starts_with("crates/") && depth >= 3) || (path.starts_with("tools/") && depth == 3)
-}
-
-/// True when `path` sits under the root folder `root`.
-pub fn is_under(path: &str, root: &str) -> bool {
-    path.strip_prefix(root)
-        .is_some_and(|rest| rest.starts_with('/'))
 }
 
 /// One side of a dependency edge, as the category matrix reads it.
@@ -208,7 +210,25 @@ pub fn category_edge_allowed(from: EdgeEnd<'_>, to: EdgeEnd<'_>) -> bool {
             to_class,
             Foundation | Contracts | Mission | Ballistics | Api
         ),
-        Frontend => to_class != Api && to_class != Tools,
+        // Foundation crates built for every target and the wire contracts: the host agent runs
+        // natively on a game host and shares nothing with the API but its contracts.
+        Fleet => {
+            (to_class == Foundation && to.targets == Some(TargetPlatforms::Any))
+                || to_class == Contracts
+        }
+        // Everything a page or the app shell draws or reads; never the API, the fleet or a tool.
+        Frontend => matches!(
+            to_class,
+            Foundation
+                | Contracts
+                | Mission
+                | Ballistics
+                | Graphics
+                | Engine
+                | Rendering
+                | MissionEditing
+                | Frontend
+        ),
         Tools => {
             if to.targets == Some(TargetPlatforms::Wasm32) {
                 return false;

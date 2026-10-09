@@ -374,7 +374,7 @@ REFUSING to restore into database `{name}` (outside the restore allow-list).
   so a typo here is unrecoverable without another backup.
 
   This is the same allow-list the integration harness carries at
-  apps/api/tests/common/mod.rs:87, which already stopped one
+  crates/api/api_server/tests/common/mod.rs:87, which already stopped one
   exported TEST_DATABASE_URL from wiping the live database.
 
   If you genuinely mean it (disaster recovery), name it twice:

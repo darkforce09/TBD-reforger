@@ -31,7 +31,7 @@ Administrators (`AdminUser`) write the registry, the credentials, the commands a
 scenarios; every write that changes a credential, a command or a scenario takes its locks, rechecks
 the administrator on that transaction (`authorize_on_connection`) and audits inside it. The programs
 on a game host present a machine credential (`MachineCaller`): the
-[fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) and the
+[game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) and the
 [game runtime](/documentation/glossary/g_to_m.md#game-runtime) claim and report commands, and the game
 runtime starts and ends its runtime session, reporting the
 [artifact](/documentation/glossary/a_to_f.md#artifact) it loaded; each acts only for its own server and
@@ -70,11 +70,11 @@ executor kind.
 - Used by: the domain's `routes.rs`; over HTTP, the server control page and its fleet command,
   deployment and credential panels in `crates/frontend/pages/administration_pages/src/server_control/`,
   the server intel page in `crates/frontend/pages/command_center_pages/src/server_intel/`, the
-  host agent's ledger client in `apps/fleet_host_agent/src/ledger_client/`, and the game runtime's
+  host agent's ledger client in `crates/fleet/game_server_host_agent/src/ledger_client/`, and the game runtime's
   [API](/documentation/glossary/a_to_f.md#api) scripts in
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
-  imports another domain's handlers (`apps/api/src/tests/architecture_rules.rs`); the
+  imports another domain's handlers (`crates/api/api_server/src/tests/architecture_rules.rs`); the
   server writes live under `/api/v1/servers`, not `/api/v1/admin/servers`, because every
   signed-in member may read the servers.
 - Body decoding: every JSON body is read through `ApiError::from_json_rejection`: 413 with

@@ -27,7 +27,7 @@ what that definition is and how its projections stay true to it.
   editor payload, the registry and loadout exports, fleet commands, machine credentials and the
   rest of `contracts/definitions/`) is defined once there, as a JSON Schema, and every
   projection follows it; a new field goes into the schema first. The REST API's other request and
-  response bodies are defined by the Rust models in `apps/api/src/<domain>/models/`
+  response bodies are defined by the Rust models in `crates/api/api_<domain>/src/models/`
   (law 9).
 - **Projections.** `cargo xtask ci schema-codegen` generates Rust types from the schemas into the
   `generated/` folder of the `contract_schema_types` crate
@@ -102,8 +102,8 @@ code as it stands, in the present tense.
 - A change that alters documented behaviour updates the comment in the same diff.
 
 Two test suites hold parts of these rules, and run with their crate's tests:
-`apps/api/src/tests/prose_rules.rs` refuses ticket identifiers, delivery vocabulary,
-narrative about another implementation and retired paths in the API crate's sources, tests,
+`crates/api/api_server/src/tests/prose_rules.rs` refuses ticket identifiers, delivery vocabulary,
+narrative about another implementation and retired paths in the API crates' sources, tests,
 `.env.example`, seeds and migration comments; `tools/checks/repository_checks/src/tests/tooling_prose_rules.rs`
 refuses ticket identifiers, retired names and deleted script names in every tracked file under
 `tools/`. Elsewhere review holds them. The comment below states an engine constraint and the
@@ -118,13 +118,13 @@ invariant that follows from it
 
 ## 5. Rust comments
 
-These rules cover every Rust crate of the workspace, under `apps/`, `crates/` and `tools/`.
+These rules cover every Rust crate of the workspace, under `crates/` and `tools/`.
 
 **Module header.** A non-trivial module opens with a `//!` summary line and the four-point
 contract: `**Role:**` (its responsibility), `**Position:**` (its boundary layer, what feeds it and
 who consumes it), `**Signals & state:**` (mutable state, reactive signals and thread ownership, or
 none) and `**Invariants:**` (the guarantees a change must keep). From
-`apps/frontend/src/app_routes.rs:1-11`:
+`crates/frontend/shell/frontend_application/src/app_routes.rs:1-11`:
 
 ```rust
 //! The router's route table, in render form.
@@ -183,7 +183,7 @@ Two optional parts follow, in this order and each after one space:
 The grammar is closed: a tag of any other shape is an error. `cargo xtask schema citations`
 resolves the schema and pointer of every tag, and the API's `contract_parity_mod_wire` suite reads
 the whole tag on the mod scripts, parsed by
-`apps/api/tests/enfscript_source_support/contract_tag.rs`: every field name and `//!<`
+`crates/api/api_server/tests/enfscript_source_support/contract_tag.rs`: every field name and `//!<`
 JSON key binding of a tagged class must be a property of the cited node, and a class without
 `partial` must carry every required one. A module of such types carries the tag in its `//!`
 header (`crates/api/api_missions/src/models/registry.rs:4`); a single type in its `///`
@@ -311,8 +311,7 @@ documentation/
 ├── architecture/          the workspace layout as it stands
 ├── glossary/              project terms and abbreviations, one file per letter range
 ├── product_roadmap.md     the operator-curated plan
-├── apps/                  mirrors apps/: api/, frontend/ (the app shell), fleet_host_agent/,
-│                          ticketboard/, mod/ (tbd-framework/, tbd-export/, tbd-emcp/)
+├── apps/                  mirrors apps/mod/ alone: mod/ (tbd-framework/, tbd-export/, tbd-emcp/)
 ├── crates/<category>/<crate>/  tools/<category>/<crate>/  contracts/  assets/
 ├── design_system/         tokens, typography, colour, symbology, token exports
 ├── runbooks/              every operator procedure
@@ -330,12 +329,16 @@ documentation/
   documents here; a documentation README indexes its folder.
 - **Mirror naming.** A feature's documents sit at the documentation root plus the path of its
   code without `src/`, keeping the code's folder spellings: the documents on
-  `tools/developer_tools/src/` are in `documentation/tools/developer_tools/`, and those on
-  `apps/api/src/` in `documentation/apps/api/`; the single-page app follows the same rule
-  (`crates/frontend/pages/operations_pages/src/schedule/` is documented under
+  `tools/developer_tools/src/` are in `documentation/tools/developer_tools/`, those on
+  `crates/api/api_server/src/` in `documentation/crates/api/api_server/`, and those on
+  `crates/fleet/game_server_host_agent/src/` in `documentation/crates/fleet/game_server_host_agent/`;
+  the single-page app follows the same rule (`crates/frontend/shell/frontend_application/src/` is
+  documented under `documentation/crates/frontend/shell/frontend_application/`,
+  `crates/frontend/pages/operations_pages/src/schedule/` under
   `documentation/crates/frontend/pages/operations_pages/schedule/`, and
-  `crates/frontend/workspaces/mission_creator_workspace/src/` under `documentation/crates/frontend/workspaces/mission_creator_workspace/`).
-  The mod's scripts have no `src/`: a mirror of the mod keeps `apps/` and leaves out
+  `crates/frontend/workspaces/mission_creator_workspace/src/` under
+  `documentation/crates/frontend/workspaces/mission_creator_workspace/`). `documentation/apps/`
+  mirrors the mod alone, whose scripts have no `src/`: a mirror of the mod keeps `apps/` and leaves out
   `Scripts/Game/TBD/` instead (the screens of `apps/mod/tbd-framework/Scripts/Game/TBD/UI/` are
   documented under `documentation/apps/mod/tbd-framework/UI/`), while the Workbench plugins under
   `Scripts/WorkbenchGame/` keep their path (`documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/`).
@@ -359,7 +362,7 @@ documentation/
   `visual_references/` folder of the feature it depicts; a mod screen's in-game captures sit in
   `reference_screenshots/` beside its sets. Design references are the only images.
 - **Evidence.** Verification evidence sits in a `verification_evidence/` folder of its feature
-  (`documentation/apps/api/verification_evidence/`); hyphenated evidence JSON names keep
+  (`documentation/crates/api/api_server/verification_evidence/`); hyphenated evidence JSON names keep
   their spelling.
 
 ### 8.2 Placement
@@ -391,7 +394,7 @@ link-check, so no application grows a documentation tree of its own.
   whose tables its ticket-column writer parses but leaves unchanged, since their header has no
   `priority` column; that ticket column is kept by hand.
 - **Links.** Links are repository-root (`[README standard](/documentation/standards/readme_standard.md)`,
-  `[API](/apps/api/README.md)`), never `../` climbs. A frozen or archived document's
+  `[API](/crates/api/api_server/README.md)`), never `../` climbs. A frozen or archived document's
   link to code that no longer exists becomes a GitHub permalink with the full commit id,
   `https://github.com/darkforce09/TBD-reforger/blob/<commit>/<path>`.
 - **Paths and commands.** A path written in backticks is repository-relative

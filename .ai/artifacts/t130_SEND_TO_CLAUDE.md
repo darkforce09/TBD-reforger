@@ -60,7 +60,7 @@ Implement **T-130** slices **T-130.1, T-130.2, T-130.3** — Fable audit remaind
 
 ═══ VERIFY ═══
   go test ./internal/services/... ./internal/middleware/... ./internal/handlers/...
-  cd apps/frontend && npm run build && npm run lint
+  cd crates/frontend/shell/frontend_application && npm run build && npm run lint
 
 ═══ RETURN ═══
   SHA(s) on ticket/T-130 · verify log · Ready for Cursor doc sync after full T-130 ships.
@@ -99,7 +99,7 @@ Continue **T-130** on ticket/T-130 — slices **T-130.4, T-130.5, T-130.6** (mod
   5. Tag **T-130** when all slices done · Ready for merge to main
 
 ═══ VERIFY ═══
-  cd apps/frontend && npm run build && npm run lint
+  cd crates/frontend/shell/frontend_application && npm run build && npm run lint
   make test-it  (if db-up)
 
 ═══ RETURN ═══

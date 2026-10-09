@@ -15,7 +15,7 @@ tools/commands/platform_execution/src/wave_execution/changed/
 ## How it works
 
 `tools/commands/platform_execution/src/wave_execution/changed.rs` holds `DEFAULT_BASE`
-(`main...HEAD`) and `FRONTEND_DIR` (`apps/frontend`) and re-exports both files.
+(`main...HEAD`) and `FRONTEND_DIR` (`crates/frontend/shell/frontend_application`) and re-exports both files.
 
 - `changed_rs(base)` is the union of the committed diff against the base and the working tree's
   changes. A listed path may be a deletion, so each caller decides what absence means.

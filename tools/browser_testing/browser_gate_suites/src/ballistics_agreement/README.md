@@ -54,7 +54,7 @@ judge_reading(native, reading) ──▶ case ballistics_wasm_agreement_<id> ...
 
 | Option | Default | Meaning |
 |---|---|---|
-| `--dist` | `apps/frontend/dist` | the built app; relative paths resolve against the repository root |
+| `--dist` | `crates/frontend/shell/frontend_application/dist` | the built app; relative paths resolve against the repository root |
 | `--seed` | 1 | seed of the case lattice |
 | `--count` | 32 | number of cases |
 | `--catalog` | `contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json` | the committed catalog |

@@ -51,14 +51,14 @@ authority.
 
 | Topic | Live replacement |
 |---|---|
-| API completion program | [API verification evidence](/documentation/apps/api/verification_evidence/README.md) |
-| API restructuring | [API documentation](/documentation/apps/api/README.md) |
+| API completion program | [API verification evidence](/documentation/crates/api/api_server/verification_evidence/README.md) |
+| API restructuring | [API documentation](/documentation/crates/api/api_server/README.md) |
 | Assets and contracts moves | [assets](/documentation/assets/README.md), [contracts](/documentation/contracts/README.md) |
 | Documentation move | [documentation entry](/documentation/README.md), [documentation standards](/documentation/standards/documentation_standards.md) |
 | Documentation program records | [documentation entry](/documentation/README.md), [documentation standards](/documentation/standards/documentation_standards.md) |
 | Engine split | [crate boundary rules](/documentation/standards/crate_boundary_rules.md) |
 | Factory runs | [factory waves](/documentation/runbooks/factory_waves/README.md) |
-| Frontend move and Go and React era designs | [frontend documentation](/documentation/apps/frontend/README.md), [Mission Creator](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md), [design system](/documentation/design_system/README.md) |
+| Frontend move and Go and React era designs | [frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md), [Mission Creator](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md), [design system](/documentation/design_system/README.md) |
 | Improved layout proposals | [workspace layout](/documentation/architecture/workspace_layout.md), [crate boundary rules](/documentation/standards/crate_boundary_rules.md) |
 | Workspace restructure program, its agent briefs and research | [workspace layout](/documentation/architecture/workspace_layout.md), [crate boundary rules](/documentation/standards/crate_boundary_rules.md), [relocation manifests](/documentation/relocation_manifests/README.md) |
 | Tooling restructuring | [tooling documentation](/documentation/tools/README.md) |

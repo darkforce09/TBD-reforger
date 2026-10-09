@@ -19,7 +19,7 @@ use tower::ServiceExt;
 /// The shared `dev-login` row's `arma_id`, pinned from `DEV_ARMA_ID` in
 /// `crates/api/api_identity_and_access/src/handlers/developer_login.rs`.
 ///
-/// The API's `apps/api/tests/test_support_self_checks.rs` asserts the handler still carries this
+/// The API's `crates/api/api_server/tests/test_support_self_checks.rs` asserts the handler still carries this
 /// literal for the API's own copy of this constant, so a handler-side change turns into a named
 /// failure there before this fixture can drift out of step with production's row shape.
 pub(crate) const DEV_LOGIN_ARMA_ID: &str = "dev-arma-76561190000000001";

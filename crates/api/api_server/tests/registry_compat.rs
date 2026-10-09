@@ -1,0 +1,618 @@
+//! Registry ingest and the compat API: ingest bijection, idempotency, API fidelity, the
+//! `edge_type` filter, DB referential integrity, any-mod synthetic round-trip with modpack
+//! isolation and prune, and histograms.
+//!
+//! Uses the committed vanilla envelopes as ground truth, imported under a fixed
+//! test-scoped modpack (never `is_current` — `community_content_reads.rs` asserts the
+//! no-current-modpack 404 on this shared DB). Skips unless `TEST_DATABASE_URL`
+//! points at a migrated DB.
+
+use std::collections::{BTreeMap, BTreeSet};
+
+use api_configuration::configuration::Config;
+
+use api_missions::services::registry_import::{import_compat, import_items};
+use api_server::router::router;
+use axum::Router;
+use axum::body::{Body, to_bytes};
+use axum::http::{Request, StatusCode, header};
+use serde_json::{Value, json};
+use sqlx::PgPool;
+use tower::ServiceExt;
+use uuid::Uuid;
+
+mod common;
+
+/// Fixed test-scoped modpacks: the vanilla envelopes + the synthetic "any mod".
+const TEST_MP: &str = "00000000-0000-4000-a000-00000000c0de";
+const TEST_MP2: &str = "00000000-0000-4000-a000-00000000c0d2";
+
+/// A committed Workbench registry envelope under `contracts/catalogs/`.
+fn catalog_path(file: &str) -> std::path::PathBuf {
+    repository_root::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("the repository root above the API package")
+        .join("contracts/catalogs")
+        .join(file)
+}
+
+async fn setup() -> Option<(Router, PgPool, String, String)> {
+    let url = common::require_test_database_url()?;
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
+    // Own rows only — other suites share this DB.
+    for mp in [TEST_MP, TEST_MP2] {
+        let id = Uuid::parse_str(mp).expect("the modpack id literal is a UUID");
+        for q in [
+            "DELETE FROM registry_compat WHERE modpack_id = $1",
+            "DELETE FROM registry_items WHERE modpack_id = $1",
+            "DELETE FROM modpacks WHERE id = $1",
+        ] {
+            sqlx::query(q).bind(id).execute(&pool).await.expect("clean");
+        }
+    }
+    let app = router(api_server::composition::application_state(
+        pool.clone(),
+        Config::for_tests(url, "registry-secret"),
+    ));
+    let maker = dev_login(&app, "mission_maker").await;
+    let enlisted = dev_login(&app, "enlisted").await;
+    Some((app, pool, maker, enlisted))
+}
+
+async fn dev_login(app: &Router, role: &str) -> String {
+    let resp = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(format!("/api/v1/auth/dev-login?role={role}"))
+                .body(Body::empty())
+                .expect("the request builds"),
+        )
+        .await
+        .unwrap();
+    let loc = resp.headers()[header::LOCATION]
+        .to_str()
+        .expect("the Location header is ASCII");
+    loc.split_once('#')
+        .expect("the Location carries a fragment")
+        .1
+        .split('&')
+        .find_map(|p| p.strip_prefix("access_token="))
+        .expect("the fragment carries an access token")
+        .to_string()
+}
+
+async fn get(app: &Router, uri: &str, bearer: &str, etag: Option<&str>) -> (StatusCode, Value) {
+    let mut b = Request::builder()
+        .uri(uri)
+        .header(header::AUTHORIZATION, format!("Bearer {bearer}"));
+    if let Some(t) = etag {
+        b = b.header(header::IF_NONE_MATCH, t);
+    }
+    let resp = app
+        .clone()
+        .oneshot(b.body(Body::empty()).expect("the request builds"))
+        .await
+        .unwrap();
+    let status = resp.status();
+    let bytes = to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .expect("the response body reads to the end");
+    (
+        status,
+        serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+    )
+}
+
+/// Normalized edge tuple: evidence NULL ≡ '' ≡ absent.
+type EdgeKey = (String, String, String, String);
+
+fn edge_key(from: &str, to: &str, ty: &str, ev: Option<&str>) -> EdgeKey {
+    (
+        from.to_string(),
+        to.to_string(),
+        ty.to_string(),
+        ev.unwrap_or("").to_string(),
+    )
+}
+
+fn envelope_edges(env: &Value) -> BTreeSet<EdgeKey> {
+    env["edges"]
+        .as_array()
+        .expect("the `edges` field is an array")
+        .iter()
+        .map(|e| {
+            edge_key(
+                e["from_node"]
+                    .as_str()
+                    .expect("the `from_node` field is a string"),
+                e["to_node"]
+                    .as_str()
+                    .expect("the `to_node` field is a string"),
+                e["edge_type"]
+                    .as_str()
+                    .expect("the `edge_type` field is a string"),
+                e["evidence"].as_str(),
+            )
+        })
+        .collect()
+}
+
+fn envelope_items(env: &Value) -> BTreeSet<(String, String, String, String)> {
+    env["items"]
+        .as_array()
+        .expect("the `items` field is an array")
+        .iter()
+        .map(|it| {
+            (
+                it["resource_name"]
+                    .as_str()
+                    .expect("the `resource_name` field is a string")
+                    .to_string(),
+                it["display_name"]
+                    .as_str()
+                    .expect("the `display_name` field is a string")
+                    .to_string(),
+                it["category"]
+                    .as_str()
+                    .expect("the `category` field is a string")
+                    .to_string(),
+                it["kind"]
+                    .as_str()
+                    .expect("the `kind` field is a string")
+                    .to_string(),
+            )
+        })
+        .collect()
+}
+
+fn histogram(env: &Value, list: &str, field: &str) -> BTreeMap<String, u64> {
+    let mut h = BTreeMap::new();
+    for row in env[list].as_array().expect("the envelope list is an array") {
+        *h.entry(
+            row[field]
+                .as_str()
+                .expect("the histogram field is a string")
+                .to_string(),
+        )
+        .or_insert(0) += 1;
+    }
+    h
+}
+
+async fn db_edges(pool: &PgPool, mp: Uuid) -> BTreeSet<EdgeKey> {
+    let rows: Vec<(String, String, String, Option<String>)> = sqlx::query_as(
+        "SELECT from_node, to_node, edge_type, evidence FROM registry_compat WHERE modpack_id = $1",
+    )
+    .bind(mp)
+    .fetch_all(pool)
+    .await
+    .expect("the read of registry_compat runs");
+    rows.iter()
+        .map(|(f, t, ty, ev)| edge_key(f, t, ty, ev.as_deref()))
+        .collect()
+}
+
+async fn db_items(pool: &PgPool, mp: Uuid) -> BTreeSet<(String, String, String, String)> {
+    let rows: Vec<(String, String, String, String)> = sqlx::query_as(
+        "SELECT resource_name, display_name, category, kind FROM registry_items WHERE modpack_id = $1",
+    )
+    .bind(mp)
+    .fetch_all(pool)
+    .await
+    .expect("the read of registry_items runs");
+    rows.into_iter().collect()
+}
+
+/// Full-row snapshot (ids + timestamps) — byte-level idempotency evidence.
+/// evidence joins the ORDER BY (and qty the row) because the edge key is wide:
+/// several rows can share (from, to, type).
+#[allow(clippy::type_complexity)]
+async fn db_edge_snapshot(
+    pool: &PgPool,
+    mp: Uuid,
+) -> Vec<(
+    Uuid,
+    String,
+    String,
+    String,
+    Option<String>,
+    i32,
+    String,
+    String,
+)> {
+    sqlx::query_as(
+        "SELECT id, from_node, to_node, edge_type, evidence, qty, created_at::text, updated_at::text \
+         FROM registry_compat WHERE modpack_id = $1 \
+         ORDER BY from_node, to_node, edge_type, evidence",
+    )
+    .bind(mp)
+    .fetch_all(pool)
+    .await
+    .expect("the read of registry_compat runs")
+}
+
+fn api_edge_set(body: &Value) -> BTreeSet<EdgeKey> {
+    body["data"]
+        .as_array()
+        .expect("the `data` field is an array")
+        .iter()
+        .map(|e| {
+            edge_key(
+                e["from_node"]
+                    .as_str()
+                    .expect("the `from_node` field is a string"),
+                e["to_node"]
+                    .as_str()
+                    .expect("the `to_node` field is a string"),
+                e["edge_type"]
+                    .as_str()
+                    .expect("the `edge_type` field is a string"),
+                e["evidence"].as_str(), // absent when '' (skip_serializing_if)
+            )
+        })
+        .collect()
+}
+
+#[tokio::test]
+async fn registry_compat_ingest_api_worker_gates() {
+    let Some((app, pool, maker, enlisted)) = setup().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let mp = Uuid::parse_str(TEST_MP).unwrap();
+    let mp2 = Uuid::parse_str(TEST_MP2).unwrap();
+    let items_raw =
+        std::fs::read(catalog_path("registry-items.workbench.json")).expect("read items envelope");
+    let compat_raw = std::fs::read(catalog_path("registry-compat.workbench.json"))
+        .expect("read compat envelope");
+    let items_env: Value = serde_json::from_slice(&items_raw).unwrap();
+    let compat_env: Value = serde_json::from_slice(&compat_raw).unwrap();
+
+    // ── Import the committed vanilla envelopes under the test modpack ────────
+    let ci = import_items(&pool, &items_raw, Some(mp.into()), false)
+        .await
+        .expect("items");
+    let cc = import_compat(&pool, &compat_raw, Some(mp.into()), false)
+        .await
+        .expect("compat");
+    // The committed envelope's census:
+    // 1,857 items (23 drops from the 1,880-item scan) / 20,908 raw
+    // edges = the 4,685 non-cargo edges + 16,223
+    // character_default_cargo emissions (one per InitialInventoryItems
+    // PrefabsToSpawn entry — duplicates are the qty signal). The importer
+    // aggregates duplicates per (from, to, type, evidence): 10,604 unique rows
+    // (4,685 non-cargo + 5,919 cargo).
+    assert_eq!(
+        (ci.total, ci.unique, ci.inserted, ci.updated),
+        (1857, 1857, 1857, 0)
+    );
+    assert_eq!(
+        (cc.total, cc.unique, cc.inserted, cc.updated),
+        (20908, 10604, 10604, 0)
+    );
+
+    // Histograms — importer histograms equal envelope histograms (raw counts, pre-aggregation).
+    assert_eq!(ci.histogram, histogram(&items_env, "items", "kind"));
+    assert_eq!(cc.histogram, histogram(&compat_env, "edges", "edge_type"));
+    assert_eq!(cc.histogram["mag_in_weapon"], 529);
+    assert_eq!(cc.histogram["mag_in_vehicle_weapon"], 134);
+    assert_eq!(cc.histogram["character_default_weapon"], 673);
+    assert_eq!(cc.histogram["character_default_cargo"], 16223);
+
+    // Multiplicity conservation: DB qty sums back to the raw
+    // envelope edge count, and duplicate emissions survive as qty > 1.
+    let (qty_sum, max_qty): (i64, i32) = sqlx::query_as(
+        "SELECT sum(qty)::int8, max(qty) FROM registry_compat WHERE modpack_id = $1",
+    )
+    .bind(mp)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(qty_sum, 20908, "qty conservation: sum(qty) == raw edges");
+    assert!(max_qty > 1, "at least one aggregated cargo edge (qty > 1)");
+    // Grid columns land on items (1,257 = every row with a readable max_volume_cm3).
+    let grids: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM registry_items WHERE modpack_id = $1 AND cargo_grid_w IS NOT NULL",
+    )
+    .bind(mp)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(grids, 1257, "cargo_grid coverage");
+
+    // Ingest bijection: DB row-set ≡ envelope set (items + edges).
+    assert_eq!(db_items(&pool, mp).await, envelope_items(&items_env));
+    assert_eq!(db_edges(&pool, mp).await, envelope_edges(&compat_env));
+
+    // Referential integrity: every edge endpoint is a catalog item.
+    let dangling: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM registry_compat c WHERE c.modpack_id = $1 AND ( \
+           NOT EXISTS (SELECT 1 FROM registry_items i \
+                       WHERE i.modpack_id = c.modpack_id AND i.resource_name = c.from_node) OR \
+           NOT EXISTS (SELECT 1 FROM registry_items i \
+                       WHERE i.modpack_id = c.modpack_id AND i.resource_name = c.to_node))",
+    )
+    .bind(mp)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(dangling, 0, "dangling edge endpoints");
+
+    // ── API fidelity: full graph, named edges, ETag machinery ────────────────
+    let compat_uri = format!("/api/v1/registry/compat?modpack={TEST_MP}");
+    let (st, body) = get(&app, &compat_uri, &maker, None).await;
+    assert_eq!(st, StatusCode::OK);
+    assert_eq!(body["modpack_id"], TEST_MP);
+    assert_eq!(body["data"].as_array().unwrap().len(), 10604);
+    assert_eq!(
+        api_edge_set(&body),
+        envelope_edges(&compat_env),
+        "API ≡ envelope"
+    );
+    let etag = body["etag"].as_str().unwrap().to_string();
+
+    // Named infantry + vehicle-weapon edges from the committed sample.
+    let has = |from: &str, to: &str, ty: &str| {
+        body["data"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|e| e["from_node"] == from && e["to_node"] == to && e["edge_type"] == ty)
+    };
+    assert!(
+        has(
+            "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et",
+            "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+            "mag_in_weapon"
+        ),
+        "STANAG M855 -> M16A2"
+    );
+    assert!(
+        has(
+            "{AAF51CFA75A9CF8B}Prefabs/Weapons/Magazines/Box_762x51_M60_100rnd_4AP_1Tracer.et",
+            "{6AF5FA1A839A4980}Prefabs/Weapons/MachineGuns/M60/MG_M60_Mounted.et",
+            "mag_in_vehicle_weapon"
+        ),
+        "M60 box -> MG_M60_Mounted"
+    );
+
+    // 304 replay.
+    let (st, _) = get(&app, &compat_uri, &maker, Some(&etag)).await;
+    assert_eq!(st, StatusCode::NOT_MODIFIED);
+
+    // edge_type filter: set-equal to the oracle filter; distinct ETag.
+    let filt_uri = format!("{compat_uri}&edge_type=mag_in_weapon");
+    let (st, filt) = get(&app, &filt_uri, &maker, None).await;
+    assert_eq!(st, StatusCode::OK);
+    assert_eq!(filt["data"].as_array().unwrap().len(), 529);
+    let oracle: BTreeSet<EdgeKey> = envelope_edges(&compat_env)
+        .into_iter()
+        .filter(|(_, _, ty, _)| ty == "mag_in_weapon")
+        .collect();
+    assert_eq!(api_edge_set(&filt), oracle, "filtered API ≡ oracle filter");
+    assert_ne!(filt["etag"], etag, "filter-discriminated ETag");
+    // Filtered ETag must not satisfy the unfiltered resource.
+    let (st, _) = get(
+        &app,
+        &compat_uri,
+        &maker,
+        Some(filt["etag"].as_str().unwrap()),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+
+    // Items exposed via the existing route.
+    let (st, items_body) = get(
+        &app,
+        &format!("/api/v1/registry?modpack={TEST_MP}"),
+        &maker,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert_eq!(items_body["data"].as_array().unwrap().len(), 1857);
+
+    // ── Idempotency: re-run touches nothing ──────────────────────────────────
+    let snap = db_edge_snapshot(&pool, mp).await;
+    let ci2 = import_items(&pool, &items_raw, Some(mp.into()), false)
+        .await
+        .unwrap();
+    let cc2 = import_compat(&pool, &compat_raw, Some(mp.into()), false)
+        .await
+        .unwrap();
+    assert_eq!(
+        (ci2.inserted, ci2.updated, ci2.pruned),
+        (0, 0, 0),
+        "idempotent items"
+    );
+    assert_eq!(
+        (cc2.inserted, cc2.updated, cc2.pruned),
+        (0, 0, 0),
+        "idempotent compat"
+    );
+    assert_eq!(
+        db_edge_snapshot(&pool, mp).await,
+        snap,
+        "row snapshot identical"
+    );
+    let (_, body2) = get(&app, &compat_uri, &maker, None).await;
+    assert_eq!(body2["etag"].as_str().unwrap(), etag, "ETag identical");
+
+    // ── Tier + resolution failures ────────────────────────────────────────────
+    let (st, _) = get(&app, &compat_uri, &enlisted, None).await;
+    assert_eq!(st, StatusCode::FORBIDDEN);
+    let (st, _) = get(
+        &app,
+        &format!("/api/v1/registry/compat?modpack={}", Uuid::new_v4()),
+        &maker,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::NOT_FOUND);
+    let (st, _) = get(
+        &app,
+        "/api/v1/registry/compat?modpack=garbage",
+        &maker,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::NOT_FOUND);
+
+    // ── Any-mod synthetic round-trip (all 16 kinds, all 7 edge types, ─────────
+    // regex-edge-case names, one evidence-less edge), isolated second modpack.
+    let kinds = [
+        "character",
+        "gear_primary",
+        "gear_handgun",
+        "gear_launcher",
+        "gear_uniform",
+        "gear_vest",
+        "gear_helmet",
+        "gear_backpack",
+        "magazine",
+        "ammo",
+        "optic",
+        "attachment",
+        "vehicle",
+        "vehicle_weapon",
+        "crate",
+        "other",
+    ];
+    let rn = |i: usize| {
+        format!("{{AB12CD34EF56AB{i:02}}}Prefabs/Any Mod's Pack (v2)/Sub-dir_1.0/Item {i:02}.et")
+    };
+
+    let syn_items: Vec<Value> = kinds
+        .iter()
+        .enumerate()
+        .map(|(i, k)| {
+            json!({
+                "resource_name": rn(i),
+                "display_name": format!("Synthetic {k}"),
+                "category": format!("AnyMod/{k}"),
+                "kind": k,
+            })
+        })
+        .collect();
+    let syn_items_env = json!({
+        "registryItemsVersion": "2",
+        "modpackId": TEST_MP2,
+        "items": syn_items,
+    });
+    // Edge per type; index into `kinds` picks plausible endpoints; the ammo
+    // families prove the pipeline accepts them the moment an export ships them
+    // (test fixture only — the committed vanilla data keeps them empty).
+    let syn_edges = vec![
+        json!({"from_node": rn(8), "to_node": rn(1), "edge_type": "mag_in_weapon", "evidence": "SynWell"}),
+        json!({"from_node": rn(9), "to_node": rn(8), "edge_type": "ammo_in_mag", "evidence": "SynAmmo"}),
+        json!({"from_node": rn(10), "to_node": rn(1), "edge_type": "optic_on_weapon", "evidence": "SynOptic"}),
+        // Evidence-less edge: NULL ≡ '' ≡ absent normalization path.
+        json!({"from_node": rn(11), "to_node": rn(1), "edge_type": "attachment_on_weapon"}),
+        json!({"from_node": rn(8), "to_node": rn(13), "edge_type": "mag_in_vehicle_weapon", "evidence": "SynVWell"}),
+        json!({"from_node": rn(9), "to_node": rn(13), "edge_type": "ammo_in_vehicle_weapon", "evidence": "SynShell"}),
+        json!({"from_node": rn(6), "to_node": rn(0), "edge_type": "character_default_loadout", "evidence": "SynSlot"}),
+    ];
+    // Duplicate emissions (the scanner's cargo qty signal) must
+    // aggregate, not last-wins: ship the first edge three times in one envelope.
+    let mut syn_edges_raw = syn_edges.clone();
+    syn_edges_raw.push(syn_edges[0].clone());
+    syn_edges_raw.push(syn_edges[0].clone());
+    let syn_compat_env = json!({
+        "registryCompatVersion": "1",
+        "modpackId": TEST_MP2,
+        "edges": syn_edges_raw,
+    });
+
+    let si = import_items(
+        &pool,
+        &serde_json::to_vec(&syn_items_env).unwrap(),
+        None,
+        false,
+    )
+    .await
+    .expect("synthetic items (envelope modpackId path)");
+    let sc = import_compat(
+        &pool,
+        &serde_json::to_vec(&syn_compat_env).unwrap(),
+        None,
+        false,
+    )
+    .await
+    .expect("synthetic compat");
+    assert_eq!((si.inserted, sc.inserted), (16, 7));
+    // 9 raw edges (7 distinct + 2 duplicates of the first) aggregate to qty=3.
+    assert_eq!(
+        (sc.total, sc.unique),
+        (9, 7),
+        "duplicates aggregate, not drop"
+    );
+    let syn_qty: i32 = sqlx::query_scalar(
+        "SELECT qty FROM registry_compat WHERE modpack_id = $1 AND edge_type = 'mag_in_weapon'",
+    )
+    .bind(mp2)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(syn_qty, 3, "duplicate emissions land as qty");
+    assert_eq!(
+        db_items(&pool, mp2).await,
+        envelope_items(&syn_items_env),
+        "synthetic items bijection"
+    );
+    assert_eq!(
+        db_edges(&pool, mp2).await,
+        envelope_edges(&syn_compat_env),
+        "synthetic edges bijection"
+    );
+
+    // All 7 edge families present via API for the synthetic modpack.
+    let (st, syn_body) = get(
+        &app,
+        &format!("/api/v1/registry/compat?modpack={TEST_MP2}"),
+        &maker,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    let types: BTreeSet<String> = syn_body["data"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| e["edge_type"].as_str().unwrap().to_string())
+        .collect();
+    assert_eq!(types.len(), 7, "all 7 edge families round-trip");
+
+    // Prune: subset envelope with prune=true ⇒ DB set-equals subset exactly.
+    let subset_env = json!({
+        "registryCompatVersion": "1",
+        "modpackId": TEST_MP2,
+        "edges": [syn_edges[0].clone(), syn_edges[3].clone()],
+    });
+    let sp = import_compat(&pool, &serde_json::to_vec(&subset_env).unwrap(), None, true)
+        .await
+        .unwrap();
+    // updated=1: the kept mag edge drops from qty 3 (triplicate import) back to 1.
+    assert_eq!(
+        (sp.inserted, sp.updated, sp.pruned),
+        (0, 1, 5),
+        "prune counts"
+    );
+    assert_eq!(
+        db_edges(&pool, mp2).await,
+        envelope_edges(&subset_env),
+        "pruned ≡ subset"
+    );
+
+    // Isolation: the vanilla test modpack is untouched by all MP2 traffic.
+    let (_, body3) = get(&app, &compat_uri, &maker, None).await;
+    assert_eq!(body3["etag"].as_str().unwrap(), etag, "MP1 ETag unchanged");
+    assert_eq!(body3["data"].as_array().unwrap().len(), 10604);
+
+    // Invalid envelope is rejected before SQL (schema gate).
+    let bad = json!({"registryCompatVersion": "1", "modpackId": TEST_MP2, "edges": [
+        {"from_node": "not-a-resource-name", "to_node": rn(1), "edge_type": "mag_in_weapon"}
+    ]});
+    let err = import_compat(&pool, &serde_json::to_vec(&bad).unwrap(), None, false).await;
+    assert!(err.is_err(), "schema-invalid envelope must be rejected");
+}

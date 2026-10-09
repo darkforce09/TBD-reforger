@@ -44,9 +44,9 @@ acceptance = [
 ]
 created_at = "2026-09-05T03:30:00Z"
 owns = [
-    "apps/frontend/src/editor/panels/command_palette.rs",
-    "apps/frontend/src/editor/panels/mod.rs",
-    "apps/frontend/src/editor/mission_editor.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/command_palette.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/mod.rs",
+    "crates/frontend/shell/frontend_application/src/editor/mission_editor.rs",
 ]
 
 [scope]

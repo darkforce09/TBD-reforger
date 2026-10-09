@@ -88,7 +88,7 @@ tests, which were then rewritten and re-perturbed.
 
 ### TWO CORRECTIONS TO MY OWN BRIEF — fix before the next wave
 1. **`trunk serve` is bound to the MAIN checkout, not to slice worktrees.** The wasm served on :3000 is
-   byte-identical to `apps/frontend/dist/` in the main checkout and does NOT contain this
+   byte-identical to `crates/frontend/shell/frontend_application/dist/` in the main checkout and does NOT contain this
    slice's new string. So "drive the live editor to verify your button" is NOT available to a worktree
    slice, and the T-702 brief said it was. Either drop that invitation or give the slice its own server.
 2. **`verify file-length` reports 11 SIZE-3 violations on `79b4da61f`, not 10.** The known-issues number

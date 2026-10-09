@@ -102,6 +102,6 @@ All also in `prelude`, the rule ids and flow defaults excepted:
 - [Mission schema](/contracts/definitions/mission.schema.json) — the compiled document.
 - [Mission editor payload schema](/contracts/definitions/mission-editor-payload.schema.json) —
   the saved payload.
-- [Mission artifacts](/documentation/apps/api/verification_evidence/mission_artifacts.md)
+- [Mission artifacts](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
   — what the API does with a compiled document.
 - [Mission Creator feature inventory: data persistence and compile](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/data_persistence_and_compile.md) — when the editor compiles and what Save Version sends.

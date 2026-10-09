@@ -73,7 +73,7 @@ owns = [
     "apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c",
-    "apps/frontend/src/editor/panels/zones_panel.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/zones_panel.rs",
 ]
 
 [scope]

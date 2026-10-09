@@ -75,5 +75,5 @@ deactivation answers 204 with no body.
 
 ## Related documentation
 
-- [API overview](/documentation/apps/api/api_overview.md) — the routes of every API
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — the routes of every API
   domain.

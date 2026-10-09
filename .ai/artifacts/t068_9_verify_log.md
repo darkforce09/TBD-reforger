@@ -99,7 +99,7 @@ make test-it                # 74 passed / 0 failed (registry_compat gates 1.2 s)
 # fresh-DB migration gate (0003 applies; 30 base tables):
 MIGRATE_TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/migrate_it?sslmode=disable \
   cargo test --test db_migrate    # ok
-cd apps/frontend && npm test        # 300 passed (41 files; +15 this slice)
+cd crates/frontend/shell/frontend_application && npm test        # 300 passed (41 files; +15 this slice)
 npm run build                                # clean (1.40 s)
 npm run lint                                 # 1 pre-existing error: router.tsx react-refresh
                                              #   (T-150 log: reproduced on clean HEAD; untouched)
@@ -107,7 +107,7 @@ cd packages/tbd-schema && npm run validate   # All contracts valid.
 make verify-citations       # 26 @contract + 39 TS-6 exports resolve; GO-7 skipped (Go retired @ T-145)
 make verify-coding-standards # 3 pre-existing SIZE-1 warnings, 0 violations; no-select-star clean
 make schema-codegen && git diff --exit-code apps/website/src/contract/generated \
-  apps/frontend/src/types/contract   # codegen-drift clean
+  crates/frontend/shell/frontend_application/src/types/contract   # codegen-drift clean
 make rust-ci                # fmt + clippy -D warnings + build + wasm + test-it: 256 passed / 0 failed
 editorconfig-checker <ticket files>          # clean (repo-wide run: 4,910 pre-existing errors,
                                              #   byte-identical on clean HEAD — local artifacts)

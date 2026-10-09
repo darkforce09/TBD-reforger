@@ -34,8 +34,8 @@ WaterRaster ─▶ water_image_outputs ─▶ -bathymetry, -bathymetry-dark, -de
 
 - The water folder is the first of the export folder, `<terrain>/terrain/water`,
   `<terrain>/water`, `terrain/water`, `water` and `$tbd_framework:worlds/water` that holds a
-  metadata file or the mask grid. `water_meta.json` is preferred over `inland_water_meta.json` and
-  the legacy `TBD_WaterExport_meta.json` / `TBD_InlandWaterExport_meta.json`; an inland metadata
+  metadata file or the mask grid. `water_meta.json` is preferred over `inland_water_meta.json`,
+  and both over `TBD_WaterExport_meta.json` / `TBD_InlandWaterExport_meta.json`; an inland metadata
   file names the images `<terrain>-inland-water-*`, every other `<terrain>-water-*`. Without
   `--out-dir` the images go to `images/` under the water folder.
 - The image grid is the meta's own (`widthPx` × `heightPx`, default 12800) unless `--res` resizes

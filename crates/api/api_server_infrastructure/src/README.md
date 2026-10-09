@@ -41,7 +41,7 @@ domain's, so the API's router and the API crates name no server concept.
 
 Operators never reach a game host directly. An administrator's command becomes a durable row in
 the ledger, and the program that performs it polls the API outbound with its own machine
-credential: the [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) runs process
+credential: the [game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) runs process
 control, the [RCON](/documentation/glossary/n_to_z.md#rcon) player list and console commands, and the
 game runtime runs broadcasts, kicks and in-process [mission](/documentation/glossary/g_to_m.md#mission)
 loads. A [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) in `api_missions`
@@ -56,7 +56,7 @@ action.
 
 ## Public surface
 
-- `routes::routes()`: the table the API's router (`api::router`) merges under `/api/v1`, one route each:
+- `routes::routes()`: the table the API's router (`api_server::router`) merges under `/api/v1`, one route each:
   - `GET` and `POST /api/v1/servers`: `AuthUser` to list the intel cards (active servers; every
     server for an administrator), `AdminUser` to register.
   - `PATCH` and `DELETE /api/v1/servers/{id}`: `AdminUser`; partial update, deactivate.
@@ -88,7 +88,7 @@ action.
 - `models`: `Server`, `ServerStatus` with its `TelemetryQueueStatus`, and the `ServerStatusRow`
   projection, read by the dashboard and the heartbeat. The domain's generated contract types
   (`contract_schema_types::server_infrastructure`) are read by the contract test
-  `apps/api/tests/game_runtime_contract.rs`. `ExecutorKind` and `FleetAction`, which
+  `crates/api/api_server/tests/game_runtime_contract.rs`. `ExecutorKind` and `FleetAction`, which
   `api_match_telemetry`, `api_missions` and `api_operations` read, live in the `fleet_wire_contract` crate.
 
 ## Boundaries
@@ -102,36 +102,36 @@ action.
     session and scenario write; `api_failpoints` for the command claim and result failpoints;
     `api_identifiers` for the typed ids;
   - `fleet_wire_contract` for the fleet command wire shapes, `FleetAction`, `ExecutorKind`, the
-    machine credential prefix and the secret-file limits it shares with the fleet host agent;
+    machine credential prefix and the secret-file limits it shares with the game server host agent;
   - `api_community_content` for the modpack a server requires (`modpack_lookup`), and
     `api_mission_vocabulary` for the terrain a server runs. It names no other domain.
 - Used by:
-  - the API's router (`apps/api/src/router.rs`), which merges the route table, and the
+  - the API's router (`crates/api/api_server/src/router.rs`), which merges the route table, and the
     `server_status_publisher`, `runtime_session_expiry` and `fleet_command_reconciler` workers in
     `crates/api/api_background_workers/src/`;
   - `api_match_telemetry`, `api_missions`, `api_operations` and `api_command_center`, through the surface above,
     and the `staging-fixtures` host tool in `tools/staging/staging_fixtures/`;
   - over HTTP, the [server control](/documentation/glossary/n_to_z.md#server-control) and server intel
-    pages in the page crates under `crates/frontend/pages/`, the fleet host agent in
-    `apps/fleet_host_agent/`, and the game runtime in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.
+    pages in the page crates under `crates/frontend/pages/`, the game server host agent in
+    `crates/fleet/game_server_host_agent/`, and the game runtime in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
-  router merges (`apps/api/src/tests/architecture_rules.rs` checks both); every handler
+  router merges (`crates/api/api_server/src/tests/architecture_rules.rs` checks both); every handler
   carries its `/// @route` tag (`cargo xtask verify route-tags`); the domain's generated contract
   types are written by `cargo xtask ci schema-codegen` and never edited by hand; a machine acts only for its own server
   and executor kind.
 
 ## Related documentation
 
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
-- [API decisions](/documentation/apps/api/decisions.md) — why game hosts are reached only
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
+- [API decisions](/documentation/crates/api/api_server/decisions.md) — why game hosts are reached only
   through commands they claim.
-- [Machine credentials and runtime sessions](/documentation/apps/api/verification_evidence/machine_credentials.md)
+- [Machine credentials and runtime sessions](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md)
   — credentials, the session fence and their consumers.
-- [Match telemetry, fleet status and derived statistics](/documentation/apps/api/verification_evidence/telemetry.md)
+- [Match telemetry, fleet status and derived statistics](/documentation/crates/api/api_server/verification_evidence/telemetry.md)
   — the telemetry queue reading on the status and the configured fleet's scoping.
-- [Fleet command ledger](/documentation/apps/api/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
   — the ledger's commands, states, rules and executors.
-- [Live slot occupancy](/documentation/apps/api/verification_evidence/live_occupancy.md)
+- [Live slot occupancy](/documentation/crates/api/api_server/verification_evidence/live_occupancy.md)
   — how player lives hold a runtime session open.
 - [Server control page](/documentation/crates/frontend/pages/administration_pages/server_control/server_control_page.md)
   — the administrators' console over these routes.

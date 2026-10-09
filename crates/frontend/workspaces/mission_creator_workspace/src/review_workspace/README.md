@@ -71,7 +71,7 @@ Links to this route come from the review record's history and from the
   `crates/frontend/features/mission_review_record/src/`, and, from its own workspace
   `crates/frontend/workspaces/mission_creator_workspace/src/`, `mission_editor::MissionEditorPage`,
   `mission_creator_state::review_mode` and, in its tests, `mission_creator_session::tab_lock`.
-- Used by: the route in `apps/frontend/src/app_routes.rs`; `review_workspace_href` in the
+- Used by: the route in `crates/frontend/shell/frontend_application/src/app_routes.rs`; `review_workspace_href` in the
   review record (`crates/frontend/features/mission_review_record/src/`) and in the
   approvals drawer (`crates/frontend/pages/administration_pages/src/approvals/`) links here.
 - Rules: the editor mounts only after the workspace read, inside review mode

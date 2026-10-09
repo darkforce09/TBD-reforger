@@ -9,19 +9,19 @@ nothing either.
 
 ## Part 1 — `v2/apps/` becomes a compiled module
 
-`apps/frontend/src/v2/mod.rs` declares `core` and `pages` only, so `v2/apps/` — 42 READMEs
+`crates/frontend/shell/frontend_application/src/v2/mod.rs` declares `core` and `pages` only, so `v2/apps/` — 42 READMEs
 and zero lines of Rust — is not part of the crate at all.
 
 - add `pub mod apps;` to `v2/mod.rs`, in the same style as the two lines above it, and extend that
   file's `//!` header so its "Role" sentence names what `apps` holds: the standalone CAD
   workspaces, which consume `core` and are reached from `pages`.
-- create `apps/frontend/src/workspaces/mod.rs` with a `//!` header describing the domain
+- create `crates/frontend/shell/frontend_application/src/workspaces/mod.rs` with a `//!` header describing the domain
   (per CLAUDE.md's atlas: the editor, planner, aar and debug workspaces). It declares nothing yet —
   brief 3B-C adds `pub mod editor;`.
 
 ## Part 2 — the documentation audit gets a dated allowlist
 
-`apps/frontend/src/v2/doc_audit_tests.rs` audits every production `.rs` under `src/v2`
+`crates/frontend/shell/frontend_application/src/v2/doc_audit_tests.rs` audits every production `.rs` under `src/v2`
 (skipping directories named `tests`) for five rules:
 
 ```

@@ -63,11 +63,11 @@ Every inference is prefixed `INFERRED:`. Every count states its command.
 | **All map gestures live in `mission_editor.rs`** — wheel `:1333`, pointerdown `:1395`, pointermove `:1437`, pointerup `:1644`, contextmenu `:1844`, resize `:1972`, dblclick `:1934` | `grep -n 'pointerdown\|wheel\|contextmenu' mission_editor.rs` |
 | `select_tool.rs` holds the **pure** pick/marquee/drag math, no DOM | `grep -nE '^(pub )?fn' select_tool.rs` |
 | `editor_ops.rs` is the doc-mutation surface — 68 `pub fn` | `grep -c '^pub fn ' editor_ops.rs` → 68 |
-| Frontend is **flat** — no directories except `world_assets/` | `find apps/frontend/src -type d` → 2 entries |
+| Frontend is **flat** — no directories except `world_assets/` | `find crates/frontend/shell/frontend_application/src -type d` → 2 entries |
 
 ### A collision the file graph hides: `main.rs`
 
-Rust has no implicit module discovery. `apps/frontend/src/main.rs` is the crate root and
+Rust has no implicit module discovery. `crates/frontend/shell/frontend_application/src/main.rs` is the crate root and
 carries **57 `mod` declarations**, `mod eden_chrome;` at `:36`
 (`grep -c '^mod ' main.rs` → 57). **Every ticket that creates a new module must add a line to
 `main.rs`** — so the four new-module tickets (T-642 `ruler_tool.rs`, T-643 `los_tool.rs`, T-645
@@ -85,7 +85,7 @@ T-655 sharing wave 9 and not.
 ### Two corrections to the drafts, found while deriving
 
 1. **T-635 cites a toggle that does not exist.** The draft says "gate it behind the existing
-   `Ctrl+Alt+D` toggle". `grep -rnw 'alt_key' apps/frontend/src --include='*.rs'` returns
+   `Ctrl+Alt+D` toggle". `grep -rnw 'alt_key' crates/frontend/shell/frontend_application/src --include='*.rs'` returns
    **3 hits** — `mission_history.rs:490`, `mission_editor.rs:1020`, `:1023` — and none is a debug
    toggle. The `Ctrl+Alt+D` HUD shipped in the **React** app (`FpsCounter.tsx`, T-090.5.5), deleted
    at T-159.29.3. **The ticket must build the toggle, not reuse one.** This adds the editor keydown
@@ -105,14 +105,14 @@ T-655 sharing wave 9 and not.
 Paths are repo-root-relative. `NEW:` marks a file the ticket creates (a new file cannot collide,
 which materially improves packing).
 
-Frontend paths abbreviate `apps/frontend/src/` as **`FE/`** in the *Why* column only; the
+Frontend paths abbreviate `crates/frontend/shell/frontend_application/src/` as **`FE/`** in the *Why* column only; the
 `owns` column is always written out in full.
 
 ### Group A — trap removal
 
 #### T-631 — The boot overlay cannot fail
 ```
-apps/frontend/src/mission_editor.rs
+crates/frontend/shell/frontend_application/src/mission_editor.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -127,7 +127,7 @@ same setup block); no second file is claimed.
 
 #### T-632 — Right dock tab strip overflows; MANAGE is clipped
 ```
-apps/frontend/src/eden_chrome.rs
+crates/frontend/shell/frontend_application/src/eden_chrome.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -135,7 +135,7 @@ apps/frontend/src/eden_chrome.rs
 
 #### T-633 — Native range and select controls in the top strip
 ```
-apps/frontend/src/eden_chrome.rs; apps/frontend/src/ui.rs
+crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/ui.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -148,7 +148,7 @@ apps/frontend/src/eden_chrome.rs; apps/frontend/src/ui.rs
 
 #### T-634 — Top strip has no action hierarchy
 ```
-apps/frontend/src/eden_chrome.rs
+crates/frontend/shell/frontend_application/src/eden_chrome.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -156,7 +156,7 @@ apps/frontend/src/eden_chrome.rs
 
 #### T-635 — Debug HUD overlaps the toolbelt readouts
 ```
-apps/frontend/src/mission_editor.rs
+crates/frontend/shell/frontend_application/src/mission_editor.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -164,7 +164,7 @@ apps/frontend/src/mission_editor.rs
 
 #### T-636 — Toolbelt conflates tools with telemetry
 ```
-apps/frontend/src/eden_chrome.rs; apps/frontend/src/mission_editor.rs
+crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/mission_editor.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -173,7 +173,7 @@ apps/frontend/src/eden_chrome.rs; apps/frontend/src/mission_editor.rs
 
 #### T-637 — Dock density: ~85% empty panels, stranded icon column
 ```
-apps/frontend/src/eden_chrome.rs
+crates/frontend/shell/frontend_application/src/eden_chrome.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -185,13 +185,13 @@ apps/frontend/src/eden_chrome.rs
 
 #### T-638 — Collapse and expand both docks
 ```
-apps/frontend/src/eden_chrome.rs; apps/frontend/src/mission_editor.rs; apps/frontend/src/select_tool.rs
+crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/mission_editor.rs; crates/frontend/shell/frontend_application/src/select_tool.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
 | `…/eden_chrome.rs` | `DockLeft` `:2813`, `DockRight` `:2961`, and the four layout constants that must become dynamic — `STRIP_TOP_PX` `:38`, `DOCK_LEFT_PX` `:40`, `DOCK_RIGHT_PX` `:42`, `TOOLBELT_BAND_PX` `:45` | **high** |
 | `…/mission_editor.rs` | Viewport reflow: `e.resize(rect.width(), rect.height(), dpr)` `:1985`, and the **on-canvas hit test** `:1668-1671` reads all four constants directly — a collapsed dock changes what counts as "on canvas". Keys `E` / `R` / `Backspace` go in the keydown at `:1005-1030` | **high** |
-| `…/select_tool.rs` | `:461-466` consumes the same four constants for `farthest_empty_px` (the marquee self-check's empty-space probe). `grep -rn 'DOCK_LEFT_PX' apps/frontend/src` → 4 files, and this is the one nobody would guess | **high** |
+| `…/select_tool.rs` | `:461-466` consumes the same four constants for `farthest_empty_px` (the marquee self-check's empty-space probe). `grep -rn 'DOCK_LEFT_PX' crates/frontend/shell/frontend_application/src` → 4 files, and this is the one nobody would guess | **high** |
 
 > The draft's "confirm it actually resizes rather than stretching" is answered at
 > `mission_editor.rs:1985` — `RenderEngine::resize` is called with real CSS rect dimensions, so the
@@ -203,7 +203,7 @@ apps/frontend/src/eden_chrome.rs; apps/frontend/src/mission_editor.rs; apps/fron
 
 #### T-639 — Zoom-adaptive contour interval
 ```
-crates/map-engine-core/src/world/lod_gates.rs; apps/frontend/src/world_assets/dem_vectors.rs
+crates/map-engine-core/src/world/lod_gates.rs; crates/frontend/shell/frontend_application/src/world_assets/dem_vectors.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -215,7 +215,7 @@ claimed** — keep the name and it is a read-only file.
 
 #### T-640 — Contours as a tint, not a colour; darker summit ring
 ```
-apps/frontend/src/world_assets/dem_vectors.rs; crates/map-engine-core/src/geometry/contours.rs; crates/map-engine-core/src/geometry/vector_compose.rs
+crates/frontend/shell/frontend_application/src/world_assets/dem_vectors.rs; crates/map-engine-core/src/geometry/contours.rs; crates/map-engine-core/src/geometry/vector_compose.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -232,7 +232,7 @@ whole B group.
 
 **T-641a — spot heights (Eden parity, render lane)**
 ```
-apps/frontend/src/world_assets/labels.rs; crates/map-engine-core/src/dem/peaks.rs
+crates/frontend/shell/frontend_application/src/world_assets/labels.rs; crates/map-engine-core/src/dem/peaks.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -249,7 +249,7 @@ apps/frontend/src/world_assets/labels.rs; crates/map-engine-core/src/dem/peaks.r
 
 **T-641b — furniture: scale bar + edge grid reference labels (operator addition)**
 ```
-apps/frontend/src/eden_chrome.rs
+crates/frontend/shell/frontend_application/src/eden_chrome.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -269,7 +269,7 @@ and `:3715-3717` (LoS, `name="visibility"`). Verified by `grep -n 'TOOL_DISABLED
 
 #### T-642 — Ruler: persistent polyline with bearing
 ```
-apps/frontend/src/eden_chrome.rs; apps/frontend/src/mission_editor.rs; apps/frontend/src/select_tool.rs; apps/frontend/src/ruler_tool.rs; apps/frontend/src/main.rs
+crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/mission_editor.rs; crates/frontend/shell/frontend_application/src/select_tool.rs; crates/frontend/shell/frontend_application/src/ruler_tool.rs; crates/frontend/shell/frontend_application/src/main.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -280,7 +280,7 @@ apps/frontend/src/eden_chrome.rs; apps/frontend/src/mission_editor.rs; apps/fron
 
 #### T-643 — Line of Sight: point-to-point ray
 ```
-apps/frontend/src/eden_chrome.rs; apps/frontend/src/mission_editor.rs; apps/frontend/src/los_tool.rs; crates/map-engine-core/src/dem/sample.rs; apps/frontend/src/main.rs
+crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/mission_editor.rs; crates/frontend/shell/frontend_application/src/los_tool.rs; crates/map-engine-core/src/dem/sample.rs; crates/frontend/shell/frontend_application/src/main.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -291,7 +291,7 @@ apps/frontend/src/eden_chrome.rs; apps/frontend/src/mission_editor.rs; apps/fron
 
 #### T-644 — Line of Sight: viewshed raster
 ```
-apps/frontend/src/los_tool.rs; crates/map-engine-render/src/engine.rs; crates/map-engine-core/src/dem/sample.rs
+crates/frontend/shell/frontend_application/src/los_tool.rs; crates/map-engine-render/src/engine.rs; crates/map-engine-core/src/dem/sample.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -307,7 +307,7 @@ apps/frontend/src/los_tool.rs; crates/map-engine-render/src/engine.rs; crates/ma
 
 #### T-645 — Placement helpers: patterns, align, space, orient
 ```
-apps/frontend/src/editor_ops.rs; apps/frontend/src/eden_chrome.rs; apps/frontend/src/place_helpers.rs; apps/frontend/src/main.rs
+crates/frontend/shell/frontend_application/src/editor_ops.rs; crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/place_helpers.rs; crates/frontend/shell/frontend_application/src/main.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -321,7 +321,7 @@ discovery worth its own row.
 
 #### T-646 — Asset browser: `class:` search, submode filter, crew toggle
 ```
-apps/frontend/src/asset_catalog.rs; apps/frontend/src/eden_chrome.rs; apps/frontend/src/editor_ops.rs
+crates/frontend/shell/frontend_application/src/asset_catalog.rs; crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/editor_ops.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -335,7 +335,7 @@ apps/frontend/src/asset_catalog.rs; apps/frontend/src/eden_chrome.rs; apps/front
 
 #### T-647 — Placement interactions: click-then-click, Ctrl multi-place, Alt empty vehicle
 ```
-apps/frontend/src/mission_editor.rs; apps/frontend/src/editor_ops.rs
+crates/frontend/shell/frontend_application/src/mission_editor.rs; crates/frontend/shell/frontend_application/src/editor_ops.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -346,7 +346,7 @@ Supersedes **T-072** and **T-077** (registry rows — confirm before filing).
 
 #### T-648 — Transform: Shift-rotate, snap grid, widget + Space cycle
 ```
-apps/frontend/src/mission_editor.rs; apps/frontend/src/select_tool.rs; apps/frontend/src/editor_ops.rs
+crates/frontend/shell/frontend_application/src/mission_editor.rs; crates/frontend/shell/frontend_application/src/select_tool.rs; crates/frontend/shell/frontend_application/src/editor_ops.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -358,7 +358,7 @@ Supersedes **T-073** and **T-075**.
 
 #### T-649 — Select All, and multi-edit per-field checkboxes
 ```
-apps/frontend/src/mission_editor.rs; apps/frontend/src/select_tool.rs; apps/frontend/src/attributes.rs; apps/frontend/src/editor_ops.rs
+crates/frontend/shell/frontend_application/src/mission_editor.rs; crates/frontend/shell/frontend_application/src/select_tool.rs; crates/frontend/shell/frontend_application/src/attributes.rs; crates/frontend/shell/frontend_application/src/editor_ops.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -369,7 +369,7 @@ apps/frontend/src/mission_editor.rs; apps/frontend/src/select_tool.rs; apps/fron
 
 #### T-650 — Compositions: save and place
 ```
-apps/frontend/src/eden_chrome.rs; apps/frontend/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs
+crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -383,7 +383,7 @@ apps/frontend/src/eden_chrome.rs; apps/frontend/src/editor_ops.rs; crates/map-en
 
 #### T-651 — Editor comments / annotations
 ```
-crates/map-engine-core/src/doc/store.rs; apps/frontend/src/editor_ops.rs; apps/frontend/src/outliner.rs; apps/frontend/src/eden_chrome.rs; apps/frontend/src/mission_editor.rs
+crates/map-engine-core/src/doc/store.rs; crates/frontend/shell/frontend_application/src/editor_ops.rs; crates/frontend/shell/frontend_application/src/outliner.rs; crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/mission_editor.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -440,7 +440,7 @@ design lands.**
 
 #### T-655 — Validation panel: persistent issue list with rollup
 ```
-apps/frontend/src/validation_panel.rs; apps/frontend/src/mission_editor.rs; apps/frontend/src/main.rs
+crates/frontend/shell/frontend_application/src/validation_panel.rs; crates/frontend/shell/frontend_application/src/mission_editor.rs; crates/frontend/shell/frontend_application/src/main.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -482,7 +482,7 @@ Same file. §D.3's live-vs-on-save caveat is answered by `mission_editor.rs:36-9
 
 #### T-659 — Slot census badge + generated mission summary line
 ```
-apps/frontend/src/eden_chrome.rs; apps/frontend/src/editor_ops.rs
+crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/editor_ops.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -499,7 +499,7 @@ crates/map-engine-core/src/mission/validate.rs; crates/map-engine-core/src/missi
 | `crates/…/mission/wire_safety.rs` | `scan_cargo_capacity` `:360`, `CargoPhys` `:338`, `CARGO_CONTAINERS` `:326`, `CARGO_CAPACITY_CAVEAT` `:331` — the cargo policy check already half-exists here and should be extended, not duplicated | **high** |
 
 `INFERRED:` the "no vest / no uniform / missing map-compass-radio" rules read
-`apps/frontend/src/arsenal_rules.rs:49-162` (the 14 pick rows). Read-only if the engine
+`crates/frontend/shell/frontend_application/src/arsenal_rules.rs:49-162` (the 14 pick rows). Read-only if the engine
 lives in core; **not claimed**.
 
 ---
@@ -512,17 +512,17 @@ for.
 
 | File | Tickets | Share of 27 | Ticket ids |
 |---|---|---|---|
-| **`apps/frontend/src/eden_chrome.rs`** | **14** | **52%** | T-632, T-633, T-634, T-636, T-637, T-638, T-641, T-642, T-643, T-645, T-646, T-650, T-651, T-659 |
-| `apps/frontend/src/mission_editor.rs` | **11** | 41% | T-631, T-635, T-636, T-638, T-642, T-643, T-647, T-648, T-649, T-651, T-655 |
-| `apps/frontend/src/editor_ops.rs` | **8** | 30% | T-645, T-646, T-647, T-648, T-649, T-650, T-651, T-659 |
+| **`crates/frontend/shell/frontend_application/src/eden_chrome.rs`** | **14** | **52%** | T-632, T-633, T-634, T-636, T-637, T-638, T-641, T-642, T-643, T-645, T-646, T-650, T-651, T-659 |
+| `crates/frontend/shell/frontend_application/src/mission_editor.rs` | **11** | 41% | T-631, T-635, T-636, T-638, T-642, T-643, T-647, T-648, T-649, T-651, T-655 |
+| `crates/frontend/shell/frontend_application/src/editor_ops.rs` | **8** | 30% | T-645, T-646, T-647, T-648, T-649, T-650, T-651, T-659 |
 | `crates/map-engine-core/src/mission/validate.rs` *(new)* | **4** | 15% | T-656, T-657, T-658, T-660 |
-| `apps/frontend/src/select_tool.rs` | 4 | 15% | T-638, T-642, T-648, T-649 |
-| `apps/frontend/src/world_assets/dem_vectors.rs` | 2 | 7% | T-639, T-640 |
+| `crates/frontend/shell/frontend_application/src/select_tool.rs` | 4 | 15% | T-638, T-642, T-648, T-649 |
+| `crates/frontend/shell/frontend_application/src/world_assets/dem_vectors.rs` | 2 | 7% | T-639, T-640 |
 | `crates/map-engine-core/src/doc/store.rs` | 2 | 7% | T-650, T-651 |
 | `crates/map-engine-core/src/dem/sample.rs` | 2 | 7% | T-643, T-644 |
-| **`apps/frontend/src/main.rs`** *(one `mod` line each)* | **4** | 15% | T-642, T-643, T-645, T-655 — see §1; removable by pre-declaring stubs |
+| **`crates/frontend/shell/frontend_application/src/main.rs`** *(one `mod` line each)* | **4** | 15% | T-642, T-643, T-645, T-655 — see §1; removable by pre-declaring stubs |
 | `crates/map-engine-render/src/engine.rs` | 2 | 7% | T-641, T-644 |
-| `apps/frontend/src/los_tool.rs` *(new)* | 2 | 7% | T-643, T-644 |
+| `crates/frontend/shell/frontend_application/src/los_tool.rs` *(new)* | 2 | 7% | T-643, T-644 |
 | everything else (13 paths) | 1 each | — | — |
 
 **The number that decides the program:**
@@ -779,7 +779,7 @@ are **not in this ticket range** and correctly stayed out.
 
 | Measure | Value | Command |
 |---|---|---|
-| External references to `eden_chrome::` | **17 hits** | `grep -rn 'eden_chrome::' apps/frontend/src --include='*.rs' \| wc -l` |
+| External references to `eden_chrome::` | **17 hits** | `grep -rn 'eden_chrome::' crates/frontend/shell/frontend_application/src --include='*.rs' \| wc -l` |
 | …of which are real code imports | **15**, in **3 files** (`mission_editor.rs` 10, `select_tool.rs` 4, `editor_ops.rs` 1) | the other 2 are a doc comment (`outliner.rs:297`) and a test assertion string (`eden_chrome.rs:4215`) |
 | Distinct symbols crossing the boundary | **12** | `grep -rhoE 'eden_chrome::[A-Za-z_0-9]+' \| sort -u` → `BottomToolbelt`, `DockLeft`, `DockRight`, `DOCK_LEFT_PX`, `DOCK_RIGHT_PX`, `MissionSettingsDialog`, `OrbatManagerDialog`, `STRIP_TOP_PX`, `TOOLBELT_BAND_PX`, `TopCommandStrip`, `guide_spans`, `round_coord` |
 | Tests coupled to the file's own text | **3 uses of `SRC`**, all in **one** test at `:4485-4502` (`const SRC: &str = include_str!("eden_chrome.rs")`) | `grep -c 'SRC\.'` → 3 |
@@ -886,36 +886,36 @@ Tab-separated `ticket <TAB> owns`, semicolon-space separated, repo-root-relative
 `wave_plan.tsv` column 4 uses. **Wave numbers deliberately omitted; §5.2 has them.**
 
 ```
-T-631	apps/frontend/src/mission_editor.rs
-T-632	apps/frontend/src/eden_chrome.rs
-T-633	apps/frontend/src/eden_chrome.rs; apps/frontend/src/ui.rs
-T-634	apps/frontend/src/eden_chrome.rs
-T-635	apps/frontend/src/mission_editor.rs
-T-636	apps/frontend/src/eden_chrome.rs; apps/frontend/src/mission_editor.rs
-T-637	apps/frontend/src/eden_chrome.rs
-T-638	apps/frontend/src/eden_chrome.rs; apps/frontend/src/mission_editor.rs; apps/frontend/src/select_tool.rs
-T-639	crates/map-engine-core/src/world/lod_gates.rs; apps/frontend/src/world_assets/dem_vectors.rs
-T-640	apps/frontend/src/world_assets/dem_vectors.rs; crates/map-engine-core/src/geometry/contours.rs; crates/map-engine-core/src/geometry/vector_compose.rs
-T-641a	apps/frontend/src/world_assets/labels.rs; crates/map-engine-core/src/dem/peaks.rs
-T-641b	apps/frontend/src/eden_chrome.rs
-T-642	apps/frontend/src/eden_chrome.rs; apps/frontend/src/mission_editor.rs; apps/frontend/src/select_tool.rs; apps/frontend/src/ruler_tool.rs; apps/frontend/src/main.rs
-T-643	apps/frontend/src/eden_chrome.rs; apps/frontend/src/mission_editor.rs; apps/frontend/src/los_tool.rs; crates/map-engine-core/src/dem/sample.rs; apps/frontend/src/main.rs
-T-644	apps/frontend/src/los_tool.rs; crates/map-engine-render/src/engine.rs; crates/map-engine-core/src/dem/sample.rs
-T-645	apps/frontend/src/editor_ops.rs; apps/frontend/src/eden_chrome.rs; apps/frontend/src/place_helpers.rs; apps/frontend/src/main.rs
-T-646	apps/frontend/src/asset_catalog.rs; apps/frontend/src/eden_chrome.rs; apps/frontend/src/editor_ops.rs
-T-647	apps/frontend/src/mission_editor.rs; apps/frontend/src/editor_ops.rs
-T-648	apps/frontend/src/mission_editor.rs; apps/frontend/src/select_tool.rs; apps/frontend/src/editor_ops.rs
-T-649	apps/frontend/src/mission_editor.rs; apps/frontend/src/select_tool.rs; apps/frontend/src/attributes.rs; apps/frontend/src/editor_ops.rs
-T-650	apps/frontend/src/eden_chrome.rs; apps/frontend/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs
-T-651	crates/map-engine-core/src/doc/store.rs; apps/frontend/src/editor_ops.rs; apps/frontend/src/outliner.rs; apps/frontend/src/eden_chrome.rs; apps/frontend/src/mission_editor.rs
+T-631	crates/frontend/shell/frontend_application/src/mission_editor.rs
+T-632	crates/frontend/shell/frontend_application/src/eden_chrome.rs
+T-633	crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/ui.rs
+T-634	crates/frontend/shell/frontend_application/src/eden_chrome.rs
+T-635	crates/frontend/shell/frontend_application/src/mission_editor.rs
+T-636	crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/mission_editor.rs
+T-637	crates/frontend/shell/frontend_application/src/eden_chrome.rs
+T-638	crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/mission_editor.rs; crates/frontend/shell/frontend_application/src/select_tool.rs
+T-639	crates/map-engine-core/src/world/lod_gates.rs; crates/frontend/shell/frontend_application/src/world_assets/dem_vectors.rs
+T-640	crates/frontend/shell/frontend_application/src/world_assets/dem_vectors.rs; crates/map-engine-core/src/geometry/contours.rs; crates/map-engine-core/src/geometry/vector_compose.rs
+T-641a	crates/frontend/shell/frontend_application/src/world_assets/labels.rs; crates/map-engine-core/src/dem/peaks.rs
+T-641b	crates/frontend/shell/frontend_application/src/eden_chrome.rs
+T-642	crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/mission_editor.rs; crates/frontend/shell/frontend_application/src/select_tool.rs; crates/frontend/shell/frontend_application/src/ruler_tool.rs; crates/frontend/shell/frontend_application/src/main.rs
+T-643	crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/mission_editor.rs; crates/frontend/shell/frontend_application/src/los_tool.rs; crates/map-engine-core/src/dem/sample.rs; crates/frontend/shell/frontend_application/src/main.rs
+T-644	crates/frontend/shell/frontend_application/src/los_tool.rs; crates/map-engine-render/src/engine.rs; crates/map-engine-core/src/dem/sample.rs
+T-645	crates/frontend/shell/frontend_application/src/editor_ops.rs; crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/place_helpers.rs; crates/frontend/shell/frontend_application/src/main.rs
+T-646	crates/frontend/shell/frontend_application/src/asset_catalog.rs; crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/editor_ops.rs
+T-647	crates/frontend/shell/frontend_application/src/mission_editor.rs; crates/frontend/shell/frontend_application/src/editor_ops.rs
+T-648	crates/frontend/shell/frontend_application/src/mission_editor.rs; crates/frontend/shell/frontend_application/src/select_tool.rs; crates/frontend/shell/frontend_application/src/editor_ops.rs
+T-649	crates/frontend/shell/frontend_application/src/mission_editor.rs; crates/frontend/shell/frontend_application/src/select_tool.rs; crates/frontend/shell/frontend_application/src/attributes.rs; crates/frontend/shell/frontend_application/src/editor_ops.rs
+T-650	crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs
+T-651	crates/map-engine-core/src/doc/store.rs; crates/frontend/shell/frontend_application/src/editor_ops.rs; crates/frontend/shell/frontend_application/src/outliner.rs; crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/mission_editor.rs
 T-652	
 T-653	
 T-654	
-T-655	apps/frontend/src/validation_panel.rs; apps/frontend/src/mission_editor.rs; apps/frontend/src/main.rs
+T-655	crates/frontend/shell/frontend_application/src/validation_panel.rs; crates/frontend/shell/frontend_application/src/mission_editor.rs; crates/frontend/shell/frontend_application/src/main.rs
 T-656	crates/map-engine-core/src/mission/validate.rs; crates/map-engine-core/src/mission/mod.rs
 T-657	crates/map-engine-core/src/mission/validate.rs
 T-658	crates/map-engine-core/src/mission/validate.rs
-T-659	apps/frontend/src/eden_chrome.rs; apps/frontend/src/editor_ops.rs
+T-659	crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/editor_ops.rs
 T-660	crates/map-engine-core/src/mission/validate.rs; crates/map-engine-core/src/mission/wire_safety.rs
 ```
 
@@ -925,7 +925,7 @@ T-660	crates/map-engine-core/src/mission/validate.rs; crates/map-engine-core/src
 If T-641 is filed unsplit, use:
 
 ```
-T-641	apps/frontend/src/world_assets/labels.rs; crates/map-engine-core/src/dem/peaks.rs; apps/frontend/src/eden_chrome.rs; crates/map-engine-render/src/engine.rs
+T-641	crates/frontend/shell/frontend_application/src/world_assets/labels.rs; crates/map-engine-core/src/dem/peaks.rs; crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/map-engine-render/src/engine.rs
 ```
 
 — and accept that it then collides with 14 other tickets instead of 1.
@@ -933,11 +933,11 @@ T-641	apps/frontend/src/world_assets/labels.rs; crates/map-engine-core/src/dem/p
 And the preparatory split ticket from §7.3, which must be **wave 0, alone**:
 
 ```
-T-630.5	apps/frontend/src/eden_chrome.rs; apps/frontend/src/eden_layout.rs; apps/frontend/src/eden_top_strip.rs; apps/frontend/src/eden_env.rs; apps/frontend/src/eden_tree.rs; apps/frontend/src/eden_dock_left.rs; apps/frontend/src/eden_dock_right.rs; apps/frontend/src/eden_vehicles_panel.rs; apps/frontend/src/eden_zones.rs; apps/frontend/src/eden_toolbelt.rs; apps/frontend/src/eden_settings.rs; apps/frontend/src/main.rs
+T-630.5	crates/frontend/shell/frontend_application/src/eden_chrome.rs; crates/frontend/shell/frontend_application/src/eden_layout.rs; crates/frontend/shell/frontend_application/src/eden_top_strip.rs; crates/frontend/shell/frontend_application/src/eden_env.rs; crates/frontend/shell/frontend_application/src/eden_tree.rs; crates/frontend/shell/frontend_application/src/eden_dock_left.rs; crates/frontend/shell/frontend_application/src/eden_dock_right.rs; crates/frontend/shell/frontend_application/src/eden_vehicles_panel.rs; crates/frontend/shell/frontend_application/src/eden_zones.rs; crates/frontend/shell/frontend_application/src/eden_toolbelt.rs; crates/frontend/shell/frontend_application/src/eden_settings.rs; crates/frontend/shell/frontend_application/src/main.rs
 ```
 
 `main.rs` is included because the new modules need `mod` declarations — verify the crate root before
-filing (`apps/frontend/src/main.rs`, 148 lines).
+filing (`crates/frontend/shell/frontend_application/src/main.rs`, 148 lines).
 
 ---
 

@@ -4,7 +4,7 @@
 //! **Role:** builds the projections the board, tree and detail views read, once per load, and
 //! the filter verdicts and facet options, once per filter change.
 //! **Position:** over [`crate::ticket_registry`]; [`crate::application_state`] owns the built
-//! models, and `apps/ticketboard`'s `ticket_browser::ui` paints the borrowed
+//! models, and `tools/tickets/ticketboard_desktop`'s `ticket_browser::ui` paints the borrowed
 //! [`models::view::BrowserView`] and emits [`events::BrowserEvent`]s.
 //! **Signals & state:** none; plain data rebuilt on load or filter change.
 //! **Invariants:** filters never change the registry; nothing here names egui.

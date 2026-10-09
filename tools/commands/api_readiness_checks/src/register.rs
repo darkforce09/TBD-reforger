@@ -1,7 +1,7 @@
 //! The acceptance register binds requirements to independently executable checks.
 //!
 //! **Role:** reads and validates the acceptance register
-//! (`documentation/apps/api/verification_evidence/requirements.json`): its requirements, the
+//! (`documentation/crates/api/api_server/verification_evidence/requirements.json`): its requirements, the
 //! checks they name and the generated-case evidence a property check requires.
 //! **Position:** `readiness_verification.rs` reads it before judging; `operational_recording.rs`
 //! reads a staging check's definition from it; `evidence.rs` judges receipts against its checks.

@@ -39,7 +39,7 @@ Run every command from the repository root.
    cargo xtask db up
    ```
 
-   Expected: `cd apps/api && podman compose up -d db` (with the runtime it found),
+   Expected: `cd deploy && podman compose -f compose.dev.yml up -d db` (with the runtime it found),
    then compose starts `tbd_reforger_db` on host port 5434. Without a compose provider it exits
    125 with "looking up compose provider failed"; an existing container then starts with
    `podman start tbd_reforger_db`.
@@ -186,12 +186,12 @@ the wave gate and the slice gate. Rule ids (FMT-2, LANG-1, TEST-1 and the rest) 
 | no `SELECT *` | `cargo xtask verify no-select-star` | in `verify-coding-standards` | no | no |
 | `@route` tags (GO-7) | `cargo xtask verify route-tags` | in `verify-coding-standards` | no | both |
 | Rust formatting | `cargo xtask mk rust-fmt` | in `rust-ci` | `api` | changed files |
-| API clippy, `-D warnings` (`api` and every `crates/api` package) | `cargo xtask mk rust-clippy` | in `rust-ci` | `api` | changed crates (slice); API (wave) |
-| API build (`api` and every `crates/api` package) | `cargo xtask mk rust-build` | in `rust-ci` | `api` | `cargo check` |
-| the offline service worker: fmt, host clippy `-D warnings`, tests; wasm32 clippy `-D warnings` of it and every crate declaring `targets = "wasm32"` (derived from the workspace) | `cargo xtask mk wasm-ci` | in `rust-ci` | `wasm-ci` | clippy and tests (wave) |
-| API tests with Postgres (TEST-1; `api` and every `crates/api` package) | `cargo xtask ci rust-test-it`; `cargo xtask db test-it` | in `rust-ci` | `api` (`cargo xtask ci api-test`) | wave |
+| API clippy, `-D warnings` (`api_server` and every other `crates/api` package) | `cargo xtask mk rust-clippy` | in `rust-ci` | `api` | changed crates (slice); API (wave) |
+| API build (`api_server` and every other `crates/api` package) | `cargo xtask mk rust-build` | in `rust-ci` | `api` | `cargo check` |
+| wasm32 clippy `-D warnings` of every crate declaring `targets = "wasm32"` outside `crates/frontend` (derived from the workspace); the offline service worker is gated with the frontend family | `cargo xtask mk wasm-ci` | in `rust-ci` | `wasm-ci` | clippy (wave) |
+| API tests with Postgres (TEST-1; `api_server` and every other `crates/api` package) | `cargo xtask ci rust-test-it`; `cargo xtask db test-it` | in `rust-ci` | `api` (`cargo xtask ci api-test`) | wave |
 | tests of every workspace member without a dedicated task (derived from `Cargo.toml`, so a new member is tested by default; the API crates run with the API tests; the binary-only `xtask` and `developer_tools` packages build there) | `cargo xtask ci workspace-member-tests` | yes | `workspace-members` | wave, from the workspace members |
-| app: fmt, clippy `-D warnings` (wasm32 and native), tests, Trunk build (TEST-2) | `cargo xtask mk ci-local-leptos` | yes | `frontend` | wasm32 check, clippy and tests; Trunk when the app changed |
+| frontend family, the app `frontend_application` and the offline service worker among it: fmt, clippy `-D warnings` (wasm32 and native), tests, Trunk build (TEST-2) | `cargo xtask mk ci-local-leptos` | yes | `frontend` | wasm32 check, clippy and tests; Trunk when the app changed |
 | generated contract types current | `cargo xtask ci verify-codegen-fresh` | in `ci-local-schema` | `schema`; `contracts.yml` | no |
 | schema validation (TEST-3, ENF-4) | `cargo xtask ci schema-validate` | in `ci-local-schema` | `schema`; `schema.yml` runs `cargo xtask schema validate` only | both |
 | `@contract` citations (TS-6, ENF-3) | `cargo xtask ci verify-citations` | in `ci-local-schema` | `schema`; `contracts.yml` | both, with the schema step |

@@ -4,7 +4,7 @@ The [ticketboard](/documentation/glossary/n_to_z.md#ticketboard) feature that sh
 [tickets](/documentation/glossary/n_to_z.md#ticket) cost: the measured run receipts in
 `.ai/tickets/metrics/<id>/` and the historical token estimates in `.ai/tickets/estimates/`, loaded,
 checked and summed as two datasets that never share a total. The desktop application draws them
-from `apps/ticketboard/src/execution_metrics/ui/`.
+from `tools/tickets/ticketboard_desktop/src/execution_metrics/ui/`.
 
 ## Contents
 
@@ -60,8 +60,8 @@ order, and a ticket link selects that ticket on the board.
 - Used by: `crate::application_state` (`background_loading.rs`, `workspace_state.rs`,
   `events.rs`); `crate::ticket_browser`, through `estimated`
   (`tools/tickets/ticketboard_model/src/ticket_browser/models/view.rs`); the desktop application:
-  `apps/ticketboard/src/execution_metrics/ui/`, the detail panel in
-  `apps/ticketboard/src/ticket_browser/ui/detail_panel/`, and `apps/ticketboard/src/application/`
+  `tools/tickets/ticketboard_desktop/src/execution_metrics/ui/`, the detail panel in
+  `tools/tickets/ticketboard_desktop/src/ticket_browser/ui/detail_panel/`, and `tools/tickets/ticketboard_desktop/src/application/`
   (`action_dispatch.rs`, `feature_views.rs`, `mod.rs`).
 - Rules:
   - no code path combines a measured and an estimated figure

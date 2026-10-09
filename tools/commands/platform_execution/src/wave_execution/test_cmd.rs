@@ -59,7 +59,7 @@ pub(crate) fn cmd_test(ctx: &Ctx, argv: &[String]) -> u8 {
         wprintln!("test: REFUSING — --slice T-nnn is required.");
         wprintln!("        Bare `cargo test` against the shared CARGO_TARGET_DIR is the");
         wprintln!("        cross-worktree false-binary class. Sanctioned path:");
-        wprintln!("          cargo xtask platform wave test --slice <id> -p frontend");
+        wprintln!("          cargo xtask platform wave test --slice <id> -p frontend_application");
         return 2;
     }
     // `case "$tid" in [Tt]-[0-9]*)`
@@ -83,7 +83,9 @@ pub(crate) fn cmd_test(ctx: &Ctx, argv: &[String]) -> u8 {
             "        An unbounded invocation would inflate the private dir toward a full workspace"
         );
         wprintln!("        build. Keep ad-hoc dirs lean (frontend-only measured ~2.7 GB).");
-        wprintln!("        Example: cargo xtask platform wave test --slice {tid} -p frontend");
+        wprintln!(
+            "        Example: cargo xtask platform wave test --slice {tid} -p frontend_application"
+        );
         return 2;
     }
 
@@ -97,7 +99,9 @@ pub(crate) fn cmd_test(ctx: &Ctx, argv: &[String]) -> u8 {
     });
     if !has_pkg {
         wprintln!("test: REFUSING — cargo test args must include -p / --package <crate>.");
-        wprintln!("        Example: cargo xtask platform wave test --slice {tid} -p frontend");
+        wprintln!(
+            "        Example: cargo xtask platform wave test --slice {tid} -p frontend_application"
+        );
         return 2;
     }
 

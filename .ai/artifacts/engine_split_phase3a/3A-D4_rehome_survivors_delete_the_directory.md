@@ -30,7 +30,7 @@ must never own a `window.confirm`.
 
 ## Naming — Law 4 applies, and "operations" is the word that is going away
 
-Pick homes under `apps/frontend/src/editor/state/`. Do **not** carry the name
+Pick homes under `crates/frontend/shell/frontend_application/src/editor/state/`. Do **not** carry the name
 `operations` forward: after this brief nothing in the frontend performs document operations, so a
 module called that would misdescribe itself from the moment you land it.
 
@@ -73,8 +73,8 @@ visibility that no longer needs to be that wide — but never at the cost of a c
 
 ## Done when
 
-`apps/frontend/src/editor/state/operations.rs` and
-`apps/frontend/src/editor/state/operations/` **do not exist**, every consumer reaches the
+`crates/frontend/shell/frontend_application/src/editor/state/operations.rs` and
+`crates/frontend/shell/frontend_application/src/editor/state/operations/` **do not exist**, every consumer reaches the
 relocated modules, and:
 
 ```

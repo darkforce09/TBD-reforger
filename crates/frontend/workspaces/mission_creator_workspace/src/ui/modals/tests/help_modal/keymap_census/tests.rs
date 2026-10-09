@@ -366,9 +366,9 @@ fn there_is_exactly_one_extractor() {
     // T-776 — scan the WHOLE frontend, not `editor_surface()` + self. A fifth copy in
     // `eden_dock_left` / `editor_ops` / `ui` sat outside the old six-file list and would have
     // passed; this pin enforces T-738's banked "one extractor" instruction, so its input is
-    // every frontend source tree: the app's `src` and the `src` of every crate under
-    // `crates/frontend/<layer>/` — the five Mission Creator crates among them, which the walk
-    // refuses to run without.
+    // every frontend source tree: the `src` of every crate under `crates/frontend/<layer>/`,
+    // each package once — the app's in `shell/` and the five Mission Creator crates among them,
+    // which the walk refuses to run without.
     let repository =
         frontend_test_support::repository_root::repository_root(env!("CARGO_MANIFEST_DIR"));
     let src_roots = crate::frontend_source_roots::frontend_source_roots(&repository);

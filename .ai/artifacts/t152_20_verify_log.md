@@ -23,10 +23,10 @@ keys (was 5). Added the 7 previously UI-hidden toggles **before** the existing 5
 untouched. Toggles use the existing `setClassToggle(<key>, on)` + `useClassToggles()` plumbing.
 
 ## Files
-- **Edit** `apps/frontend/src/features/mission-creator/layout/MissionSettingsDialog.tsx` — 7 `ToggleField` rows + manifest import.
-- **New** `apps/frontend/src/features/mission-creator/layout/worldLayerFields.ts` — `WORLD_LAYER_TOGGLE_LABELS satisfies Record<keyof WorldClassToggles, string>` (compile-time keyof completeness guard).
-- **New** `apps/frontend/src/features/mission-creator/layout/worldLayerFields.test.ts` — completeness test.
-- **Edit** `apps/frontend/src/features/tactical-map/state/worldLayerPrefs.test.ts` — 7 persistence cases (`it.each`).
+- **Edit** `crates/frontend/shell/frontend_application/src/features/mission-creator/layout/MissionSettingsDialog.tsx` — 7 `ToggleField` rows + manifest import.
+- **New** `crates/frontend/shell/frontend_application/src/features/mission-creator/layout/worldLayerFields.ts` — `WORLD_LAYER_TOGGLE_LABELS satisfies Record<keyof WorldClassToggles, string>` (compile-time keyof completeness guard).
+- **New** `crates/frontend/shell/frontend_application/src/features/mission-creator/layout/worldLayerFields.test.ts` — completeness test.
+- **Edit** `crates/frontend/shell/frontend_application/src/features/tactical-map/state/worldLayerPrefs.test.ts` — 7 persistence cases (`it.each`).
 
 Untouched: `worldLayerPrefs.ts` (incl. `DEFAULT_TOGGLES`), `wgpuWorldLoader.ts`, `crates/**`, `docs/**`, `.ai/tickets/**`.
 
@@ -39,7 +39,7 @@ Untouched: `worldLayerPrefs.ts` (incl. `DEFAULT_TOGGLES`), `wgpuWorldLoader.ts`,
 
 ## Verify (all exit 0)
 ```
-cd apps/frontend
+cd crates/frontend/shell/frontend_application
 npm ci --no-audit                # preflight — exit 0
 npm test                         # 49 files, 365 tests PASS (incl. 2 completeness + 7 persistence)
 npm run build                    # tsc + vite — built OK (satisfies guard compiled)

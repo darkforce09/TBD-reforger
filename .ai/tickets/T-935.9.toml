@@ -55,8 +55,8 @@ estimated = ["tokens"]
 owns = [
     "tools/tbd-tools/src/map/water_emit.rs",
     "tools/tbd-tools/src/map/mod.rs",
-    "apps/frontend/src/editor/world_assets/water.rs",
-    "apps/frontend/src/editor/world_assets/mod.rs",
+    "crates/frontend/shell/frontend_application/src/editor/world_assets/water.rs",
+    "crates/frontend/shell/frontend_application/src/editor/world_assets/mod.rs",
     "crates/map-engine-core/src/world/water.rs",
     "crates/map-engine-core/src/world/mod.rs",
 ]

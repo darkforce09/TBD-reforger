@@ -56,7 +56,7 @@ target.
   `web-sys` in the WebAssembly build.
 - Used by: `renderer_core`; the map rendering crates `map_renderer`, `symbology_layers_gpu`,
   `world_layers_gpu` and `map_render_diagnostics`, which build and encode the frame packet; and
-  the single-page app (`apps/frontend`, WebAssembly build only), whose frame pumps run on
+  the single-page app (`crates/frontend/shell/frontend_application`, WebAssembly build only), whose frame pumps run on
   `frame_pump::RafPump`.
 - Rules: graphics tier 1 (`cargo xtask verify crate-tiers`); declares no map noun; fields and
   variants name geometry and GPU handles only; a file that names a GPU or browser type gates

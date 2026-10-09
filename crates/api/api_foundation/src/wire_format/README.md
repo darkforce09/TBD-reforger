@@ -37,8 +37,8 @@ their key order.
 
 - Depends on: `chrono`, `content_digest`, `serde`, `serde_json` and `sqlx`.
 - Used by: the models of all eight domains of the API, and integration suites under
-  `apps/api/tests/`; over HTTP, the single-page app's DTOs and the game server's mod
+  `crates/api/api_server/tests/`; over HTTP, the single-page app's DTOs and the game server's mod
   parse the spellings.
 - Rules: the spellings above are the wire contract, pinned by
-  `apps/api/tests/models_serde.rs`; a change to one changes what the single-page app's
+  `crates/api/api_server/tests/models_serde.rs`; a change to one changes what the single-page app's
   DTO golden tests and the mod parse.

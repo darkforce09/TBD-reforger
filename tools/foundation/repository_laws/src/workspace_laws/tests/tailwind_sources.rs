@@ -4,15 +4,16 @@ use super::*;
 use crate::temporary_checkout::this_repository;
 use crate::workspace_laws::fixture_workspace::{FixtureWorkspace, application_manifest, normal};
 
-const STYLESHEET: &str = "apps/frontend/style/app.css";
+const STYLESHEET: &str = "crates/frontend/shell/frontend_application/style/app.css";
 const APP_LINE: &str = "@source \"../src/**/*.rs\";\n";
-const PAGES_LINE: &str = "@source '../../../crates/frontend/pages/account_pages/src/**/*.rs';\n";
+const PAGES_LINE: &str =
+    "@source '../../../../../crates/frontend/pages/account_pages/src/**/*.rs';\n";
 
 fn workspace(name: &str, stylesheet: &str) -> FixtureWorkspace {
     let mut workspace = FixtureWorkspace::new(name);
     workspace.member(
-        "apps/frontend",
-        &application_manifest("frontend", "leptos = \"0.8\"\n"),
+        "crates/frontend/shell/frontend_application",
+        &application_manifest("frontend_application", "leptos = \"0.8\"\n"),
     );
     workspace.layout_crate(
         "crates/frontend/pages/account_pages",
@@ -61,7 +62,7 @@ fn tailwind_sources_a_leptos_crate_without_its_line_is_a_finding() {
     let workspace = workspace(
         "tailwind-missing-line",
         &format!(
-            "{APP_LINE}@source not \"../../../crates/frontend/pages/account_pages/src/**/*.rs\";\n"
+            "{APP_LINE}@source not \"../../../../../crates/frontend/pages/account_pages/src/**/*.rs\";\n"
         ),
     );
     assert_eq!(findings(&workspace), vec![unnamed_account_pages()]);
@@ -76,9 +77,9 @@ fn tailwind_sources_a_leptos_crate_without_its_line_is_a_finding() {
 #[test]
 fn tailwind_sources_an_ancestor_or_wildcard_folder_no_longer_covers_and_is_stale() {
     for (index, glob) in [
-        "../../../crates/frontend/**/*.rs",
-        "../../../crates/frontend/*/*/src/**/*.rs",
-        "../../../crates/frontend/pages/account_pages/src/*.rs",
+        "../../../../../crates/frontend/**/*.rs",
+        "../../../../../crates/frontend/*/*/src/**/*.rs",
+        "../../../../../crates/frontend/pages/account_pages/src/*.rs",
     ]
     .into_iter()
     .enumerate()
@@ -100,18 +101,20 @@ fn tailwind_sources_a_stale_or_duplicate_line_is_a_finding() {
     let workspace = workspace(
         "tailwind-stale",
         &format!(
-            "{APP_LINE}{PAGES_LINE}@source \"../../../crates/mission/mission_model/src/**/*.rs\";\n\
-             @source \"../../../crates/frontend/pages/retired_pages/src/**/*.rs\";\n\
-             @source \"../../../../../outside/src/**/*.rs\";\n@source \"./../src/**/*.rs\";\n"
+            "{APP_LINE}{PAGES_LINE}@source \"../../../../../crates/mission/mission_model/src/**/*.rs\";\n\
+             @source \"../../../../../crates/frontend/pages/retired_pages/src/**/*.rs\";\n\
+             @source \"../../../../../../../outside/src/**/*.rs\";\n@source \"./../src/**/*.rs\";\n"
         ),
     );
     assert_eq!(
         findings(&workspace),
         vec![
-            format!("2 @source lines of {STYLESHEET} name apps/frontend/src/**/*.rs; keep one"),
-            stale("../../../crates/mission/mission_model/src/**/*.rs"),
-            stale("../../../crates/frontend/pages/retired_pages/src/**/*.rs"),
-            stale("../../../../../outside/src/**/*.rs"),
+            format!(
+                "2 @source lines of {STYLESHEET} name crates/frontend/shell/frontend_application/src/**/*.rs; keep one"
+            ),
+            stale("../../../../../crates/mission/mission_model/src/**/*.rs"),
+            stale("../../../../../crates/frontend/pages/retired_pages/src/**/*.rs"),
+            stale("../../../../../../../outside/src/**/*.rs"),
         ]
     );
 }
@@ -146,6 +149,9 @@ fn tailwind_sources_reads_quoted_globs_and_skips_not_lines() {
 
 #[test]
 fn tailwind_sources_this_checkout_passes() {
-    let report = check_tailwind_sources(&this_repository(), "apps/frontend/style/aegis.css");
+    let report = check_tailwind_sources(
+        &this_repository(),
+        "crates/frontend/shell/frontend_application/style/aegis.css",
+    );
     assert_eq!(report.exit_code, 0, "{}", report.lines.join("\n"));
 }

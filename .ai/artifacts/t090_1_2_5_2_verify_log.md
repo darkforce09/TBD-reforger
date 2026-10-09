@@ -42,7 +42,7 @@ verify-tile-pyramid: OK everon — levels [0,1,2,3,4,5,6], 5461 tiles, 256px, 54
 $ make verify-terrain
 verify-terrain-alignment: OK   (maxDeltaM 0.204, anchors unchanged)
 
-$ cd apps/frontend && npm run build && npm run lint
+$ cd crates/frontend/shell/frontend_application && npm run build && npm run lint
 build + lint clean
 ```
 

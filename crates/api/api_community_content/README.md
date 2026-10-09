@@ -37,7 +37,7 @@ cargo xtask db test-it --test community_content_reads --test contract_parity_equ
 
 The unit tests need no database: the wiki markup reader with its block goldens (validated against
 `contracts/definitions/wiki-page.schema.json`), the upload format checks and store, the vehicle
-body validation and the announcement handler source pins. The integration suites of `apps/api`
+body validation and the announcement handler source pins. The integration suites of `crates/api/api_server`
 prove the routes against Postgres.
 
 ## Configuration
@@ -64,16 +64,16 @@ No feature and no variable of its own; the handlers read the upload directory
   `api_equipment_datasets`, `api_audit_log`, `api_identifiers`, `contract_schema_types`,
   `fleet_wire_contract`, `http_url_guard`; axum, sqlx, pulldown-cmark, serde, tokio, tracing and
   uuid; the tables of `crates/api/api_database/migrations/`.
-- Used by: the API application (`apps/api`): its router, the server infrastructure, missions and
+- Used by: the API application (`crates/api/api_server`): its router, the server infrastructure, missions and
   command center domains (the modpack and announcement models and lookups) and the integration
   suites.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md); a domain crate names no
   domain outside its edges of the domain graph, here none
-  (`apps/api/src/tests/architecture_rules.rs`).
+  (`crates/api/api_server/src/tests/architecture_rules.rs`).
 
 ## Related documentation
 
 - [API community content source](/crates/api/api_community_content/src/README.md) — the routes
   and how the feed, the wiki, the vehicles, the modpacks and the uploads work.
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.

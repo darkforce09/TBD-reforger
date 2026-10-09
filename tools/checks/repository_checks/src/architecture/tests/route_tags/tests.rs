@@ -87,7 +87,7 @@ impl Repo {
         let mut p = std::env::temp_dir();
         p.push(format!("tbd-rt-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&p);
-        std::fs::create_dir_all(p.join("apps/api/src")).unwrap();
+        std::fs::create_dir_all(p.join("crates/api/api_server/src")).unwrap();
         std::fs::create_dir_all(p.join("crates/api/api_server_infrastructure/src/handlers"))
             .unwrap();
         let r = Repo(p);
@@ -99,7 +99,7 @@ impl Repo {
         r
     }
     fn router(&self, body: &str) {
-        std::fs::write(self.0.join("apps/api/src/router.rs"), body).unwrap();
+        std::fs::write(self.0.join("crates/api/api_server/src/router.rs"), body).unwrap();
     }
     fn table(&self, domain: &str, body: &str) {
         let dir = self.0.join("crates/api").join(domain).join("src");
@@ -234,7 +234,7 @@ fn inputs_that_were_never_read_do_not_pass() {
     let all = out.join("\n");
     assert_eq!(code, 2, "a check that never ran must not exit 0:\n{all}");
     assert!(
-        all.contains("target file missing: apps/api/src/router.rs"),
+        all.contains("target file missing: crates/api/api_server/src/router.rs"),
         "{all}"
     );
     assert!(
@@ -323,7 +323,7 @@ fn a_merge_from_the_app_tree_is_not_invisible() {
         "        .merge(api_event_calendar::routes())\n        .merge(crate::local_tables::routes())\n",
     ));
     r.file(
-        "apps/api/src/local_tables/routes.rs",
+        "crates/api/api_server/src/local_tables/routes.rs",
         "pub fn routes() -> Router<AppState> {\n    Router::new().route(\"/x\", get(handlers::x::x))\n}\n",
     );
     r.expect(
@@ -341,13 +341,13 @@ fn a_merge_from_the_app_tree_is_not_invisible() {
 fn a_tag_in_the_app_tree_is_swept() {
     let r = Repo::new("app-tree-tag");
     r.file(
-        "apps/api/src/bin/extra.rs",
+        "crates/api/api_server/src/bin/extra.rs",
         "/// @route GET /api/v1/unwired\npub async fn unwired() {}\n",
     );
     r.expect(
         1,
         &[
-            "  apps/api/src/bin/extra.rs:1",
+            "  crates/api/api_server/src/bin/extra.rs:1",
             "checked 7 @route tag(s) against 6 registered route(s) in 3 route file(s) under crates/api",
             "ROUTE-TAG CHECK: FAIL — 1 unwired tag(s), 0 undocumented route(s)",
         ],
@@ -374,14 +374,26 @@ fn only_a_routes_file_directly_in_a_crate_src_is_a_table() {
     assert!(!all.contains("deep"), "{all}");
 }
 
-/// The router read, the crates folder missing: the check did not run, it did not pass.
+/// The API crates folder missing inside a real checkout: the server's `router.rs` lives in that
+/// folder, so its loss is a missing router — both shape pins report the target missing and the run
+/// exits DID NOT RUN before any table is discovered or any tag/route verdict is issued.
 #[test]
 fn a_missing_crates_folder_did_not_run() {
     let r = Repo::new("no-crates");
     std::fs::remove_dir_all(r.0.join("crates/api")).unwrap();
-    let all = r.expect(2, &[PARSE_FAIL]);
+    let missing = "target file missing: crates/api/api_server/src/router.rs";
+    let all = r.expect(
+        2,
+        &[
+            "router.rs no longer defines `fn api_v1_routes`",
+            "router.rs no longer nests api_v1_routes at `/api/v1`",
+            missing,
+            SHAPE_FAIL,
+        ],
+    );
+    assert_eq!(all.matches(missing).count(), 2, "{all}");
     assert!(
-        all.contains("could not be discovered under crates/api") && !all.contains("PASS"),
+        !all.contains("PASS") && !all.contains(PARSE_FAIL) && !all.contains("parsed NOTHING"),
         "{all}"
     );
 }
@@ -554,4 +566,34 @@ fn collation_reproduces_measured_glibc_order() {
         "DELETE /api/v1/missions/{id}/bookmark remove_bookmark",
     ];
     assert!(sorted(live).starts_with("DELETE /api/v1/missions/{id}/bookmark"));
+}
+
+/// The `@route` sweep reads each API file once on this checkout: no file sits under two of the
+/// configured roots, the server's router is among the files, and a root nested in another (the
+/// server's `src` beside the API crates' folder) adds no file a second time.
+#[test]
+fn the_tag_sweep_reads_every_api_file_once_on_this_checkout() {
+    let root =
+        repository_root::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR"))).unwrap();
+    let mut seen = BTreeSet::new();
+    for sweep_root in TAG_SWEEP_ROOTS {
+        let files =
+            scan::walk_files(&[&root.join(sweep_root)], scan::with_extension(&["rs"])).unwrap();
+        for file in files {
+            assert!(
+                seen.insert(file.clone()),
+                "{} is read under two sweep roots of {TAG_SWEEP_ROOTS:?}",
+                file.display()
+            );
+        }
+    }
+    assert!(
+        seen.contains(&root.join(ROUTER_RS_REL)),
+        "the server's router is swept"
+    );
+    let swept = tag_sweep_files(&root, TAG_SWEEP_ROOTS).unwrap();
+    assert_eq!(swept.len(), seen.len());
+    let nested =
+        tag_sweep_files(&root, &[API_CRATES_DIR_REL, "crates/api/api_server/src"]).unwrap();
+    assert_eq!(nested, swept, "a nested root reads no file twice");
 }

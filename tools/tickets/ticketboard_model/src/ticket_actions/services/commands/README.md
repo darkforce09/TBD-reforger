@@ -61,7 +61,7 @@ forgiven; `descendants` lists the corpus ids that extend an id with a dot, in nu
 - Depends on: `crate::ticket_registry::models::projection` (`id_sort_key`); `ticket_model`
   (`StatusName`); `std::fs` to read ticket files for the fingerprint.
 - Used by: the rest of `crate::ticket_actions`; the desktop application:
-  `apps/ticketboard/src/ticket_actions/ui/`, and `apps/ticketboard/src/application/`, whose
+  `tools/tickets/ticketboard_desktop/src/ticket_actions/ui/`, and `tools/tickets/ticketboard_desktop/src/application/`, whose
   `command_execution.rs` checks `cas_ok`, drives the queue and applies the hint and success tail
   (with `tests/rendering.rs`).
 - Rules:

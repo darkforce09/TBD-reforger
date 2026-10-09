@@ -73,7 +73,7 @@ and the deadline from `TBD_GATE_LOCK_MAX` (3600 s), in
   `xtask`: its command groups under
   `tools/xtask/src/commands/` (the lock holders are the platform wave driver and the MCP broker
   start in `tools/commands/enfusion_mcp/src/call.rs`); and `api`, as a
-  dev-dependency, whose `apps/api/tests/engineering_laws.rs` uses its patterns and scans.
+  dev-dependency, whose `crates/api/api_server/tests/engineering_laws.rs` uses its patterns and scans.
 - Rules:
   - the crate depends on no workspace crate
     (`foundation_crates_depend_only_on_lower_foundation_crates` in

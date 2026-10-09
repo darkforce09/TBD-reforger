@@ -73,7 +73,7 @@ each other either.
 ### 3. BLOCKER — T-946.64's scope silently skipped the file this very wave changed
 
 Also mine. `wasm_scope_touched` is a prefix test over `Cargo.toml` `path =` deps, resolving to
-`apps/frontend`, `crates/map-engine-core`, `crates/map-engine-render`. But the frontend suite
+`crates/frontend/shell/frontend_application`, `crates/map-engine-core`, `crates/map-engine-render`. But the frontend suite
 compiles files from **outside** that graph through `include_str!`:
 `packages/tbd-schema/schema/mission.schema.json` (`editor/panels/zones_panel.rs:650`),
 `loadout-export.schema.json` (`arsenal/`), `apps/website/api/src/app.rs` (four `pages/` census tests),

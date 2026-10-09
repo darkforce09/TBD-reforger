@@ -66,8 +66,8 @@ estimated = [
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 owns = [
     "Makefile",
-    "apps/frontend/src/eden_layout.rs",
-    "apps/frontend/src/eden_tree.rs",
+    "crates/frontend/shell/frontend_application/src/eden_layout.rs",
+    "crates/frontend/shell/frontend_application/src/eden_tree.rs",
 ]
 
 [scope]

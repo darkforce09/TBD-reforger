@@ -35,18 +35,26 @@ fn workspace(root: &Path, members: &[(&str, &str)]) {
     }
 }
 
-/// The app heads the family, then every crate under `crates/frontend` in path order; members
-/// elsewhere, a `crates/frontend_tools` look-alike among them, stay out.
+/// The app heads the family, then every crate under `crates/frontend` in path order, the offline
+/// service worker beside the app among them; members elsewhere, a `crates/frontend_tools`
+/// look-alike among them, stay out.
 #[test]
 fn the_family_is_the_app_then_every_frontend_crate_in_path_order() {
     let root = fixture_root("family");
     workspace(
         &root,
         &[
-            ("apps/api", "api"),
-            ("apps/frontend", "frontend"),
+            ("apps/server", "api"),
+            (
+                "crates/frontend/shell/frontend_application",
+                "frontend_application",
+            ),
             ("crates/foundation/browser_platform", "browser_platform"),
             ("crates/frontend/pages/operations_pages", "operations_pages"),
+            (
+                "crates/frontend/shell/offline_service_worker",
+                "offline_service_worker",
+            ),
             ("crates/frontend/foundation/frontend_ui", "frontend_ui"),
             (
                 "crates/frontend/foundation/frontend_api_dtos",
@@ -61,10 +69,11 @@ fn the_family_is_the_app_then_every_frontend_crate_in_path_order() {
     assert_eq!(
         packages,
         [
-            "frontend",
+            "frontend_application",
             "frontend_api_dtos",
             "frontend_ui",
             "operations_pages",
+            "offline_service_worker",
             "debug_benches",
         ]
         .map(String::from)
@@ -76,12 +85,21 @@ fn the_family_is_the_app_then_every_frontend_crate_in_path_order() {
 #[test]
 fn a_born_frontend_crate_joins_every_line() {
     let root = fixture_root("born");
-    workspace(&root, &[("apps/frontend", "frontend")]);
+    workspace(
+        &root,
+        &[(
+            "crates/frontend/shell/frontend_application",
+            "frontend_application",
+        )],
+    );
     let before = frontend_line_argv(&root, FrontendLine::Test).expect("the fixture reads");
     workspace(
         &root,
         &[
-            ("apps/frontend", "frontend"),
+            (
+                "crates/frontend/shell/frontend_application",
+                "frontend_application",
+            ),
             ("crates/frontend/pages/zz_probe_pages", "zz_probe_pages"),
         ],
     );
@@ -99,10 +117,10 @@ fn a_born_frontend_crate_joins_every_line() {
     })
     .collect();
     let _ = std::fs::remove_dir_all(&root);
-    assert_eq!(before.join(" "), "cargo test -p frontend");
+    assert_eq!(before.join(" "), "cargo test -p frontend_application");
     for line in &after {
         assert!(
-            format!("{line} ").contains("-p frontend -p zz_probe_pages "),
+            format!("{line} ").contains("-p frontend_application -p zz_probe_pages "),
             "the born crate is not named: {line}"
         );
     }
@@ -118,7 +136,10 @@ fn a_workspace_without_the_app_is_refused() {
     );
     let refused = frontend_packages(&root).expect_err("no app is refused");
     let _ = std::fs::remove_dir_all(&root);
-    assert!(refused.to_string().contains("`frontend`"), "{refused}");
+    assert!(
+        refused.to_string().contains("`frontend_application`"),
+        "{refused}"
+    );
 }
 
 /// A folder with no root manifest is an error, never an empty family.
@@ -133,24 +154,26 @@ fn an_unreadable_workspace_is_an_error_not_an_empty_family() {
 /// Each line names every package, then its own words, with the flags of the ci.yml frontend job.
 #[test]
 fn each_line_names_every_package_then_its_own_words() {
-    let packages = ["frontend", "frontend_ui"].map(String::from).to_vec();
+    let packages = ["frontend_application", "frontend_ui"]
+        .map(String::from)
+        .to_vec();
     let rendered = |line| frontend_cargo_argv(line, &packages).join(" ");
     assert_eq!(
         rendered(FrontendLine::Format),
-        "cargo fmt -p frontend -p frontend_ui --check"
+        "cargo fmt -p frontend_application -p frontend_ui --check"
     );
     assert_eq!(
         rendered(FrontendLine::Wasm32Clippy),
-        "cargo clippy -p frontend -p frontend_ui --target wasm32-unknown-unknown --all-targets \
-         -- -D warnings"
+        "cargo clippy -p frontend_application -p frontend_ui --target wasm32-unknown-unknown \
+         --all-targets -- -D warnings"
     );
     assert_eq!(
         rendered(FrontendLine::NativeClippy),
-        "cargo clippy -p frontend -p frontend_ui --all-targets --locked -- -D warnings"
+        "cargo clippy -p frontend_application -p frontend_ui --all-targets --locked -- -D warnings"
     );
     assert_eq!(
         rendered(FrontendLine::Test),
-        "cargo test -p frontend -p frontend_ui"
+        "cargo test -p frontend_application -p frontend_ui"
     );
 }
 
@@ -161,7 +184,10 @@ fn the_family_argv_wraps_the_callers_words() {
     workspace(
         &root,
         &[
-            ("apps/frontend", "frontend"),
+            (
+                "crates/frontend/shell/frontend_application",
+                "frontend_application",
+            ),
             ("crates/frontend/foundation/frontend_ui", "frontend_ui"),
         ],
     );
@@ -170,22 +196,39 @@ fn the_family_argv_wraps_the_callers_words() {
     let _ = std::fs::remove_dir_all(&root);
     assert_eq!(
         argv.join(" "),
-        "env A=1 cargo test -p frontend -p frontend_ui --quiet"
+        "env A=1 cargo test -p frontend_application -p frontend_ui --quiet"
     );
 }
 
 /// Over this checkout the family is headed by the app and holds exactly the members under
-/// `crates/frontend`.
+/// `crates/frontend`, the app and the offline service worker among them, each once.
 #[test]
 fn this_checkout_family_is_the_app_and_the_frontend_crates() {
     let root = tool_test_support::test_repo_root();
     let members = read_workspace_members(&root).expect("the workspace members read");
     let packages = frontend_packages(&root).expect("the frontend family derives");
-    assert_eq!(packages.first().map(String::as_str), Some("frontend"));
+    assert_eq!(
+        packages.first().map(String::as_str),
+        Some(FRONTEND_APPLICATION)
+    );
+    for package in &packages {
+        assert_eq!(
+            packages.iter().filter(|other| *other == package).count(),
+            1,
+            "{package} is named twice: {packages:?}"
+        );
+    }
+    assert!(
+        packages
+            .iter()
+            .any(|package| package == "offline_service_worker"),
+        "{packages:?}"
+    );
     let expected: Vec<&str> = members
         .iter()
         .filter(|member| member.path.starts_with("crates/frontend/"))
         .map(|member| member.package_name.as_str())
+        .filter(|package| *package != FRONTEND_APPLICATION)
         .collect();
     let crates: Vec<&str> = packages[1..].iter().map(String::as_str).collect();
     assert_eq!(crates, expected);

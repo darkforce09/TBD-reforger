@@ -37,7 +37,7 @@ page's files, calls and states.
 - Used by: the page's in-code README, the operations pages README and the operations domain
   README, which link the feature doc; the [service record](/documentation/glossary/n_to_z.md#service-record)
   glossary entry; the ORBAT selection feature doc; the web app README's page table in
-  `documentation/apps/frontend/`.
+  `documentation/crates/frontend/shell/frontend_application/`.
 - Rules: the feature doc keeps its name, which those links use; the blueprint set stays as it was
   captured and is never edited to match the built page.
 

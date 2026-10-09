@@ -54,7 +54,7 @@ mod treats as permanent. Reports about a source the server has not registered ar
 
 ## Public surface
 
-- `routes::routes()`: the table the API's router (`apps/api/src/router.rs`) merges
+- `routes::routes()`: the table the API's router (`crates/api/api_server/src/router.rs`) merges
   under `/api/v1`:
   - `POST /api/v1/game-runtime/sessions/{sessionId}/heartbeats`: `mod_runtime` machine
     credential; the session-fenced live status.
@@ -84,25 +84,25 @@ mod treats as permanent. Reports about a source the server has not registered ar
     `api_member_activity` for attendance attribution, the statistics and the leaderboard;
     `api_audit_log` for the audit writers; `api_mission_vocabulary` for the terrain a match played.
 - Used by:
-  - the API's router (`apps/api/src/router.rs`), which merges the route table, and
+  - the API's router (`crates/api/api_server/src/router.rs`), which merges the route table, and
     `api_operations`, through the match models;
   - over HTTP, the game runtime in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`: the runtime
     session loop posts heartbeats, and the telemetry delivery in `MatchTelemetry/Delivery/` posts
     the registrations, results revisions and event batches its durable queue holds.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
-  router merges (`apps/api/src/tests/architecture_rules.rs` checks both); every handler
+  router merges (`crates/api/api_server/src/tests/architecture_rules.rs` checks both); every handler
   carries its `/// @route` tag (`cargo xtask verify route-tags`); every wire model carries its
   `@contract` tag into `match-telemetry.schema.json` (`cargo xtask schema citations`); the
   generated types are regenerated, never edited (`cargo xtask ci schema-codegen`).
 
 ## Related documentation
 
-- [Match telemetry, fleet status and derived statistics](/documentation/apps/api/verification_evidence/telemetry.md)
+- [Match telemetry, fleet status and derived statistics](/documentation/crates/api/api_server/verification_evidence/telemetry.md)
   — registration, revisions, detailed events, the lock order and the game runtime's queue.
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
-- [Machine credentials and runtime sessions](/documentation/apps/api/verification_evidence/machine_credentials.md)
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
+- [Machine credentials and runtime sessions](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md)
   — the credential every ingest requires and the session fence a heartbeat passes.
-- [Reservation and attendance separation](/documentation/apps/api/verification_evidence/reservation_attendance.md)
+- [Reservation and attendance separation](/documentation/crates/api/api_server/verification_evidence/reservation_attendance.md)
   — how a match report attributes and corrects attendance.
-- [Identity transactions](/documentation/apps/api/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
   — the lock order and gameplay attribution a report shares with identity linking.

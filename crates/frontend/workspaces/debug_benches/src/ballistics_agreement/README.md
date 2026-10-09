@@ -68,7 +68,7 @@ newest listed version of that catalog; needs `catalog`). A malformed parameter f
   (`catalog`); `frontend_transport::client::public_reads::public_get` and the
   catalog DTOs of `frontend_api_dtos::ballistics_catalogs`; `gloo_timers`, `serde_json`
   and `web_sys` in the browser build.
-- Used by: the `/debug/ballistics-agreement` route in `apps/frontend/src/app_routes.rs`,
+- Used by: the `/debug/ballistics-agreement` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`,
   with its row in `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the gate
   `tools/browser_testing/browser_gate_suites/src/ballistics_agreement/`, which mirrors the
   reading's shape.

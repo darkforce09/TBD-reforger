@@ -81,7 +81,7 @@ fn an_exemption_table_is_a_declared_name() {
 fn the_scan_finds_every_shape_and_nothing_else() {
     let checkout = TemporaryCheckout::with_law_roots("exemptions");
     checkout.write(
-        "apps/frontend/src/tests/doc_audit/allowlist.rs",
+        "crates/frontend/shell/frontend_application/src/tests/doc_audit/allowlist.rs",
         "//! Rows.\n",
     );
     checkout.write(".coding-standards-allowlist.yaml", "- path: a.rs\n");
@@ -109,7 +109,8 @@ fn the_scan_finds_every_shape_and_nothing_else() {
         [
             (
                 ExemptionKind::ExemptionFile,
-                "apps/frontend/src/tests/doc_audit/allowlist.rs".to_string(),
+                "crates/frontend/shell/frontend_application/src/tests/doc_audit/allowlist.rs"
+                    .to_string(),
                 None
             ),
             (

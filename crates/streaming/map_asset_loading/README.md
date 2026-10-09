@@ -68,7 +68,7 @@ No feature. The live budget reads `?memBudgetMb` and `window.__memBudgetMb` on t
   `place_names`, `map_draw_lanes`, `label_layout`, `world_line_of_sight`, `spatial_indexes`,
   `map_coordinates`, `render_primitives`, `browser_platform`, `time_source`; `serde_json`, `futures` and the
   browser bindings; the files under `/map-assets/<terrain>/`.
-- Used by: `map_streaming_host`; the single-page app (`apps/frontend`, WebAssembly build only),
+- Used by: `map_streaming_host`; the single-page app (`crates/frontend/shell/frontend_application`, WebAssembly build only),
   which imports the loaders and `live_memory_budget` directly.
 - Rules:
   - streaming category, tier 6, wasm32: no GPU crate and no rendering crate

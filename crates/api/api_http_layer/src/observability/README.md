@@ -20,7 +20,7 @@ crates/api/api_http_layer/src/observability/
 ## How it works
 
 The metrics live in one `Registry` per application state: `AppState::new` creates it as
-`AppState::metrics_registry`, so no metric is process-global state, and the API's router (`api::router`)
+`AppState::metrics_registry`, so no metric is process-global state, and the API's router (`api_server::router`)
 shares it with `observe`, `/metrics` and `/healthz`. `observe` sits inside the
 access log but outside panic recovery and the rate limiter, so a panic's `500` and a throttle's
 `429` are both counted. Its `route` label is the matched route template (`/api/v1/missions/{id}`,
@@ -47,7 +47,7 @@ one `info` line with target `discord_reconciliation` and the fields `outcome`, `
 (`main` or `partner`), `retry_after_ms` (failures only) and `revision`; it names no account, guild
 id or token. The Discord client reads `HTTPS_PROXY` when it is built, so a proxy on a closed port
 turns every request into `unavailable`, which
-`apps/api/tests/discord_client_proxy_environment.rs` proves over loopback only.
+`crates/api/api_server/tests/discord_client_proxy_environment.rs` proves over loopback only.
 
 `GET /healthz` runs two checks, either of which turns it red: `database`, a `SELECT 1` bounded at
 2 s, and `migrations`, which reads `_sqlx_migrations` and fails when the table is unreadable or
@@ -65,11 +65,11 @@ each check's status, latency and error, the migration counts and the pool gauges
   `_sqlx_migrations` table.
 - Used by:
   - `api_state`'s `AppState`, which owns the `Registry`;
-  - the API's router (`api::router`), which mounts `observe` and serves `/metrics` and `/healthz`;
+  - the API's router (`api_server::router`), which mounts `observe` and serves `/metrics` and `/healthz`;
   - `api_identity_and_access::services::discord_rest_reconciliation`, which counts each
     Discord membership request into the application state's `Registry`;
-  - the integration suites `apps/api/tests/observability.rs` and
-    `apps/api/tests/discord_client_proxy_environment.rs`;
+  - the integration suites `crates/api/api_server/tests/observability.rs` and
+    `crates/api/api_server/tests/discord_client_proxy_environment.rs`;
   - over HTTP: the Caddy site in `deploy/caddy/Caddyfile` publishes
     `/healthz`, and `cargo xtask platform preflight`, the `editor-api-boot` task of
     `cargo xtask ci` and the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)
@@ -77,6 +77,6 @@ each check's status, latency and error, the migration counts and the pool gauges
     without credentials.
 - Rules: `observe` stays outside panic recovery and the rate limiter, which the router's own tests
   check (`throttled_requests_are_counted` in
-  `apps/api/src/tests/router.rs`); `/healthz` discloses nothing beyond
+  `crates/api/api_server/src/tests/router.rs`); `/healthz` discloses nothing beyond
   `status` without the token (`healthz_discloses_nothing_to_an_unauthenticated_caller`); the
   `route` label is always a template, never a raw path.

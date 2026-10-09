@@ -39,8 +39,8 @@ per-ticket verdicts, the selection and comparison, and whether wave 0 is expande
   sort helpers); `crate::wave_plan::services::lock_file` (`WaveLock`, `LockState`);
   `ticket_model` (`StatusName`, `Ticket`).
 - Used by: `crate::application_state::workspace_state`, which builds the model from a loaded lock;
-  the desktop application, whose `apps/ticketboard/src/application/feature_views.rs` lends the view
-  and whose `apps/ticketboard/src/wave_plan/ui/` paints it.
+  the desktop application, whose `tools/tickets/ticketboard_desktop/src/application/feature_views.rs` lends the view
+  and whose `tools/tickets/ticketboard_desktop/src/wave_plan/ui/` paints it.
 - Rules:
   - lanes keep the lock's order and membership, and the viewer never recomputes packing
     (`lanes_render_the_lock_verbatim_never_sorted` in `tests/wave_projection.rs`);

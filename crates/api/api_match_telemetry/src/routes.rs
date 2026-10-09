@@ -1,7 +1,7 @@
 //! The `/api/v1` route table for match telemetry.
 //!
 //! Paths are written relative to the `/api/v1` nest the API's router
-//! (`apps/api/src/router.rs`) applies. The heartbeat and the three ingest routes take a
+//! (`crates/api/api_server/src/router.rs`) applies. The heartbeat and the three ingest routes take a
 //! `mod_runtime` machine credential (`MachineCaller`); the event read takes a signed-in user
 //! (`AuthUser`). Each is enforced per-handler by the extractor it takes, so the tier travels with
 //! the handler rather than with the registration.

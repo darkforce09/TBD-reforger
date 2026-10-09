@@ -4,7 +4,7 @@
 
 The design token sheets that Stitch exported with the mockups: design-phase references kept for
 colour and layout context, not implementation sources. The built interface is the Leptos code under
-`apps/frontend/src/` and the mod's `TBD_UITheme`; the
+`crates/frontend/shell/frontend_application/src/` and the mod's `TBD_UITheme`; the
 [design tokens](/documentation/design_system/design_tokens.md) document says what the code
 uses.
 
@@ -41,7 +41,7 @@ several screens share it; one screen's tokens go into its set's `design_tokens.m
 
 ## Code
 
-- [Aegis stylesheet](/apps/frontend/style/README.md) — the website's built tokens, which
+- [Aegis stylesheet](/crates/frontend/shell/frontend_application/style/README.md) — the website's built tokens, which
   follow the Aegis export.
 - [Mod interface core](/apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/README.md) — `TBD_UITheme`,
   which mirrors the website's tokens and carries the mod mockups' extra colours.

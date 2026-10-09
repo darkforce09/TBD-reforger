@@ -1,10 +1,12 @@
 //! The fleet deploy pipeline, and the plan `--dry-run` prints instead of running it.
 //!
 //! **Role:** [`deploy`] runs the whole fleet deploy in order: the website API check, the host's
-//! secret files and single-instance check, the rsync, the migration when asked, each instance's
-//! files and V2–V4 smoke, the units and the game server restart, a boot verdict per instance, the
-//! relay and the host agents, and the log check per instance; [`dry_run_plan`] is the same walk as
-//! text.
+//! secret files, the single-instance check and the retired host agent name check, the probe of the
+//! API's `.env` and then the rsync, the single-instance migration when asked, each instance's files
+//! and V2–V4 smoke, the units and the game server restart, a boot verdict per instance, the relay
+//! and the host agents, and the log check per instance; [`dry_run_plan`] is the same walk as text.
+//! With `--migrate-host-agent-name` it runs the host agent name migration alone
+//! (`migrate_host_agent_name`) and stops.
 //!
 //! **Position:** called by `run` in `tools/commands/deployment/src/staging.rs` through
 //! [`super::deploy`]; it sends through [`super::Runner`] and takes every remote script from the
@@ -13,8 +15,9 @@
 //! **Signals & state:** none held; one run spawns `rsync`, `ssh` and one `mod remote-logs` child
 //! per instance.
 //!
-//! **Invariants:** nothing on the host changes before its secret files are proven present; the
-//! deploy stops at the first step that fails, with that step's code, except that every instance
+//! **Invariants:** nothing on the host changes before its secret files are proven present; no
+//! rsync runs before the host's API `.env` is proven present
+//! ([`crate::api_environment_file_preflight`]); the deploy stops at the first step that fails, with that step's code, except that every instance
 //! gets its boot verdict before a failing one stops the deploy; it runs no compose command, because
 //! the website stack on the host belongs to `cargo xtask deploy website`; no secret appears in an
 //! argument vector, a payload or a printed line.
@@ -22,7 +25,13 @@
 use super::super::acknowledgement_relay::relay_install_payload;
 use super::super::fleet_server_config::{fleet_mods_json, render_instance_server_config};
 use super::super::fleet_units::{game_servers_restart_payload, units_install_payload};
-use super::super::host_agent::host_agents_install_payload;
+use super::super::host_agent::{
+    HOST_AGENT_CONFIGURATION_UNDER_HOME, HOST_AGENT_PACKAGE, host_agents_install_payload,
+};
+use super::super::host_agent_name_migration::{
+    migration_payload as host_agent_name_migration_payload, migration_plan_lines,
+    retired_names_absent_payload, retired_names_absent_plan_line,
+};
 use super::super::legacy_single_instance_migration::{
     migration_payload, migration_plan_line, single_instance_units_absent_payload,
     units_absent_plan_line,
@@ -31,6 +40,7 @@ use super::super::payloads::{
     fleet_secret_files_check_payload, instance_files_payload, smoke_payload,
 };
 use super::*;
+use crate::api_environment_file_preflight::{probe_script, rsync_only_when_present};
 
 /// What `--dry-run` prints after the settings load: every step, every instance, no socket.
 pub(crate) fn dry_run_plan(env: &Env, instances: &[FleetInstance], migrate: bool) -> Vec<String> {
@@ -44,6 +54,11 @@ pub(crate) fn dry_run_plan(env: &Env, instances: &[FleetInstance], migrate: bool
     if !migrate {
         plan.push(units_absent_plan_line());
     }
+    plan.push(retired_names_absent_plan_line());
+    plan.push(format!(
+        "[dry-run] the API's .env, refusing the rsync unless the host answers 0: {}",
+        probe_script(&env.remote_dir)
+    ));
     plan.push(format!(
         "[dry-run] rsync -avz --delete ... {}/",
         env.remote_dir
@@ -76,7 +91,7 @@ pub(crate) fn dry_run_plan(env: &Env, instances: &[FleetInstance], migrate: bool
         ));
     }
     plan.push(format!(
-        "[dry-run] install tbd-reforger@.service (server {}, -addonsDir {}), fleet_host_agent@.service, acknowledgement-dropping-relay@.service; restart {}",
+        "[dry-run] install tbd-reforger@.service (server {}, -addonsDir {}), {HOST_AGENT_PACKAGE}@.service, acknowledgement-dropping-relay@.service; restart {}",
         env.server_dir,
         env.addons_staging,
         super::super::fleet_units::unit_list(instances, FleetInstance::game_server_unit)
@@ -89,11 +104,59 @@ pub(crate) fn dry_run_plan(env: &Env, instances: &[FleetInstance], migrate: bool
         ));
     }
     plan.push(format!(
-        "[dry-run] build fleet_host_agent; write ~/.config/fleet_host_agent/instance-N/agent.toml; restart {}",
+        "[dry-run] build {HOST_AGENT_PACKAGE}; write ~/{HOST_AGENT_CONFIGURATION_UNDER_HOME}/instance-N/agent.toml; restart {}",
         super::super::fleet_units::unit_list(instances, FleetInstance::host_agent_unit)
     ));
     plan.push("[dry-run] mod remote-logs --file over each instance's console.log".into());
     plan
+}
+
+/// `--migrate-host-agent-name`: print the migration and its script under `--dry-run`, else send the
+/// script to the host and return its status. Nothing else of the deploy runs.
+fn migrate_host_agent_name(env: &Env, dry_run: bool) -> u8 {
+    let host = env.deploy_host.ssh_destination();
+    if dry_run {
+        for line in migration_plan_lines(&host) {
+            println!("{line}");
+        }
+        return 0;
+    }
+    println!("==> migrate the host agent names on {host}");
+    let base = SshBase::from_settings(env.ssh_pass.as_deref(), env.ssh_identity_file.as_deref());
+    let runner = Runner { dry_run: false };
+    match remote_step(&runner, &base, &host, host_agent_name_migration_payload()) {
+        Ok(()) => {
+            println!("==> host agent names migrated; deploy next, without the flag");
+            0
+        }
+        Err(code) => code,
+    }
+}
+
+/// The `--delete` rsync of the checkout to `remote_dir`.
+fn rsync_checkout(base: &SshBase, paths: &Paths, host: &str, remote_dir: &str) -> Result<(), u8> {
+    println!("==> rsync to {remote_dir}");
+    if let Err(e) = process_runner::which("rsync") {
+        return Err(not_run_exit(&e));
+    }
+    let mut rsync = base.with_password(Run::new("rsync"));
+    for a in ssh_argv::rsync_argv(base, &paths.mono_root, host, remote_dir)
+        .iter()
+        .skip(1)
+    {
+        rsync = rsync.arg(a);
+    }
+    match rsync.timeout(Duration::from_secs(7200)).merged_output() {
+        Ok(o) => {
+            let _ = io::stdout().write_all(o.text.as_bytes());
+            if o.code == 0 {
+                Ok(())
+            } else {
+                Err(o.code as u8)
+            }
+        }
+        Err(e) => Err(not_run_exit(&e)),
+    }
 }
 
 /// One `ssh … bash -s` step that must succeed.
@@ -114,6 +177,9 @@ pub(crate) fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
     // socket.
     if let Some(out) = cli.render_only_out.as_deref() {
         return Ok(super::super::fleet_server_config::render_only(&env, out));
+    }
+    if cli.migrate_host_agent_name {
+        return Ok(migrate_host_agent_name(&env, cli.dry_run));
     }
     let instances = env.fleet.instances();
     println!("==> publicAddress {}", env.public_address);
@@ -151,26 +217,22 @@ pub(crate) fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
             return Ok(code);
         }
     }
+    println!("==> retired host agent names");
+    if let Err(code) = step(retired_names_absent_payload()) {
+        return Ok(code);
+    }
 
-    println!("==> rsync to {}", env.remote_dir);
-    if let Err(e) = process_runner::which("rsync") {
-        return Ok(not_run_exit(&e));
-    }
-    let mut rsync = base.with_password(Run::new("rsync"));
-    for a in ssh_argv::rsync_argv(&base, &paths.mono_root, &host, &env.remote_dir)
-        .iter()
-        .skip(1)
-    {
-        rsync = rsync.arg(a);
-    }
-    match rsync.timeout(Duration::from_secs(7200)).merged_output() {
-        Ok(o) => {
-            let _ = io::stdout().write_all(o.text.as_bytes());
-            if o.code != 0 {
-                return Ok(o.code as u8);
-            }
-        }
-        Err(e) => return Ok(not_run_exit(&e)),
+    println!("==> the API's .env on the host");
+    let probe_exit = runner.ssh(
+        &base,
+        &host,
+        &bash_stdin(),
+        Some(probe_script(&env.remote_dir)),
+    );
+    if let Err(code) = rsync_only_when_present(probe_exit, &env.remote_dir, || {
+        rsync_checkout(&base, paths, &host, &env.remote_dir)
+    }) {
+        return Ok(code);
     }
 
     if cli.migrate_single_instance {

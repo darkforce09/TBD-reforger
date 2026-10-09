@@ -18,12 +18,12 @@ deploy/caddy/
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s WebAssembly needs
 (`Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: credentialless`). It
 proxies `/api/*`, `/uploads/*`, `/map-assets/*` and `/healthz` to `127.0.0.1:8080`, and serves every
-other path from the built app's `apps/frontend/dist` with an `index.html` fallback; the
+other path from the built app's `crates/frontend/shell/frontend_application/dist` with an `index.html` fallback; the
 offline service worker loader `/service_worker.js` carries `Cache-Control: no-cache`, so every
 update check revalidates it.
 
 Its paths are the `caddy` container's. The service in `deploy/compose.staging.yml` mounts this
-folder read-only at `/etc/tbd-caddy` and `apps/frontend/` read-only at `/srv/tbd-frontend`, and
+folder read-only at `/etc/tbd-caddy` and `crates/frontend/shell/frontend_application/` read-only at `/srv/tbd-frontend`, and
 starts Caddy on `/etc/tbd-caddy/Caddyfile`, so the site root `/srv/tbd-frontend/dist` is the built
 app wherever the checkout sits. Both mounts are folders rather than single files, because the
 deploy's rsync replaces a file by renaming a new one over it and a single-file mount keeps the
@@ -31,7 +31,7 @@ file it was started with.
 
 ```text
 deploy/caddy/ ──mounted read-only at /etc/tbd-caddy──▶ caddy container ──:3080──▶ cloudflared, LAN
-apps/frontend/ ──mounted read-only at /srv/tbd-frontend──▶ site root /srv/tbd-frontend/dist
+crates/frontend/shell/frontend_application/ ──mounted read-only at /srv/tbd-frontend──▶ site root /srv/tbd-frontend/dist
 /api/*, /uploads/*, /map-assets/*, /healthz ──reverse_proxy──▶ API on 127.0.0.1:8080
 ```
 
@@ -57,10 +57,10 @@ Its location in the checkout is `CADDYFILE` in `tools/foundation/repository_layo
 
 - Depends on: the `caddy` service of `deploy/compose.staging.yml` (the `caddy:2` image, host
   networking, the two read-only mounts); the API on `127.0.0.1:8080`; the app built into
-  `apps/frontend/dist`.
+  `crates/frontend/shell/frontend_application/dist`.
 - Used by: `cargo xtask deploy website`, whose web server step names the file at
   `/etc/tbd-caddy/Caddyfile` (`tools/commands/deployment/src/website/remote_steps.rs`); the
-  Cloudflare Tunnel, which targets `http://127.0.0.1:3080`; `apps/api/tests/forwarded_for_trust.rs`,
+  Cloudflare Tunnel, which targets `http://127.0.0.1:3080`; `crates/api/api_server/tests/forwarded_for_trust.rs`,
   which pins the `reverse_proxy 127.0.0.1:8080` upstream; the deploy tests in
   `tools/commands/deployment/src/tests/website/tests.rs`.
 - Rules: this folder holds the Caddy site alone, since everything in it is readable inside the

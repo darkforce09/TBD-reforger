@@ -20,7 +20,7 @@
 //! `TBD_FLEET_RCON_PORT_BASE + N`; every port of the fleet, the relay port and the relay's upstream
 //! port are distinct; only instance 1 is listed in the server browser; instance N's files sit under
 //! `~/tbd/fleet/instance-N/` (its `profile/`, `secrets/` and `server.config.json`) and its units
-//! are `tbd-reforger@N`, `fleet_host_agent@N` and, for the relay instance,
+//! are `tbd-reforger@N`, `game_server_host_agent@N` and, for the relay instance,
 //! `acknowledgement-dropping-relay@N`.
 
 use std::collections::BTreeMap;
@@ -347,9 +347,13 @@ impl FleetInstance {
         game_server_unit_of(self.number)
     }
 
-    /// The host agent unit, an instance of `fleet_host_agent@.service`.
+    /// The game server host agent unit, an instance of `game_server_host_agent@.service`.
     pub fn host_agent_unit(&self) -> String {
-        format!("fleet_host_agent@{}.service", self.number)
+        format!(
+            "{}@{}.service",
+            super::host_agent::HOST_AGENT_PACKAGE,
+            self.number
+        )
     }
 
     /// The relay unit, an instance of `acknowledgement-dropping-relay@.service`, for the relay

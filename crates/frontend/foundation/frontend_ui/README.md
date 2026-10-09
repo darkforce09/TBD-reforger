@@ -42,7 +42,7 @@ cargo test -p frontend_ui   # the overlay stack, the form controls, the split pa
 ## Configuration
 
 None: no feature, no environment variable. The Material Symbols Outlined font the icons draw
-with is loaded by `apps/frontend/index.html`.
+with is loaded by `crates/frontend/shell/frontend_application/index.html`.
 
 ## Public surface
 
@@ -65,7 +65,7 @@ with is loaded by `apps/frontend/index.html`.
 - Depends on: `leptos`; `http_url_guard`, for the avatar sanitiser; `time_source`, for the
   countdown's clock; `web-sys`, `js-sys`,
   `wasm-bindgen` and `wasm-bindgen-futures` in the wasm32 build only.
-- Used by: the single-page app (`apps/frontend`): its route guard, content gates, app frame,
+- Used by: the single-page app (`crates/frontend/shell/frontend_application`): its route guard, content gates, app frame,
   features, pages and the Mission Creator, whose dialogs and menus join the overlay stack and
   whose chrome layout re-exports the state classes.
 - Rules: only the topmost open overlay answers Escape
@@ -80,5 +80,5 @@ with is loaded by `apps/frontend/index.html`.
   spacing, radii and motion the primitives follow.
 - [Interaction patterns](/documentation/design_system/interaction_patterns.md) — the split pane,
   create-over-list dialog and slide-over sheet the pages build from these primitives.
-- [Frontend documentation](/documentation/apps/frontend/README.md#design) — the design references
+- [Frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md#design) — the design references
   and tokens of the app.

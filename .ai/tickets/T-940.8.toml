@@ -51,7 +51,7 @@ owns = [
     "apps/website/api/src/handlers/content/wiki.rs",
     "apps/website/api/src/handlers/content/vehicles.rs",
     "apps/website/api/src/handlers/content/mod.rs",
-    "apps/frontend/src/core/dto.rs",
+    "crates/frontend/shell/frontend_application/src/core/dto.rs",
 ]
 
 [scope]

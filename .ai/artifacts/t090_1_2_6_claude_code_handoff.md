@@ -27,7 +27,7 @@ Stream **B** — safe alongside **T-090.1.2.5** on `main` (no shared files). Do 
 ## Verify
 
 ```bash
-cd apps/frontend && npm run build && npm run lint
+cd crates/frontend/shell/frontend_application && npm run build && npm run lint
 ```
 
 Manual **B1–B5** in spec @ Satellite + hillshade on.

@@ -2,26 +2,29 @@
 //!
 //! **Role:** judges rules 1–7 of the crate-tier law over a checkout: every manifest under the
 //! sweep roots is a workspace member (1); each judged member declares its layout, and every member
-//! outside the judged set is an app or a tool binary (2); each judged member sits at its category
-//! plus its name (3); tiers are recomputed from dependencies and edges point strictly down (4);
-//! the category edge matrix and the wasm-only edge rule hold (5); the firewalls hold (6,
-//! `super::crate_firewalls`); and dev-dependencies never point at `apps/` (7).
+//! outside the judged set is a tool binary (2); each judged member sits at its category plus its
+//! name (3); tiers are recomputed from dependencies and edges point strictly down (4); the
+//! category edge matrix and the wasm-only edge rule hold (5); the firewalls hold (6,
+//! `super::crate_firewalls`); and no member depends on an application package, in any table (7).
 //! **Position:** `cargo xtask verify crate-tiers` prints [`check_crate_tiers`]; xtask passes the
-//! sweep roots. Reads [`crate::workspace_members`].
+//! [`CrateTierConfiguration`] (the sweep roots and the application packages). Reads
+//! [`crate::workspace_members`].
 //! **Signals & state:** none; reads the checkout.
 //! **Invariants:** a member's tier is 0 with no judged workspace dependency and otherwise 1 plus
 //! the highest tier among them, over normal and build edges in every target table; the declared
 //! tier must equal it. A sweep root that does not exist holds no manifest and is named in a note.
-//! The apps and the tool binaries ([`super::crate_layout::is_app_or_tool_binary`]) are listed in a
-//! note; any other member outside the judged set is a rule 2 finding.
+//! The tool binaries ([`super::crate_layout::is_tool_binary`]) are listed in a note; any other
+//! member outside the judged set is a rule 2 finding. Rule 7 reads every member's every table —
+//! normal, build, dev and target-specific — under each edge's real package name, a crate's edge
+//! onto itself excepted; an application package that is no member is a rule 7 finding, never a
+//! pass.
 
 use std::collections::HashMap;
 use std::path::Path;
 
 use super::crate_layout::{
-    APPS_ROOT, EdgeEnd, TOOL_BINARY_PATHS, TargetPlatforms, category_class, category_edge_allowed,
-    declared_targets, effective_category, is_app_or_tool_binary, is_judged, is_under,
-    is_wasm32_only_cfg,
+    EdgeEnd, TOOL_BINARY_PATHS, TargetPlatforms, category_class, category_edge_allowed,
+    declared_targets, effective_category, is_judged, is_tool_binary, is_wasm32_only_cfg,
 };
 use super::{LawOutcome, WorkspaceLawReport, crate_firewalls};
 use crate::workspace_members::{WorkspaceMember, child_folder_names, read_workspace_members};
@@ -37,20 +40,30 @@ pub const SWEEP_SKIPPED_FOLDERS: &[&str] = &[
     "node_modules",
 ];
 
-/// The crate-tier report over the checkout at `repo_root`, sweeping `manifest_sweep_roots`
-/// (repository-relative folders) for manifests that are not members.
-pub fn check_crate_tiers(repo_root: &Path, manifest_sweep_roots: &[&str]) -> WorkspaceLawReport {
-    WorkspaceLawReport::from_outcome(
-        "crate-tiers",
-        crate_tier_outcome(repo_root, manifest_sweep_roots),
-    )
+/// What the crate-tier law reads that moves with the tree; xtask passes it in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CrateTierConfiguration<'a> {
+    /// Repository-relative folders whose every manifest must be a member (rule 1).
+    pub manifest_sweep_roots: &'a [&'a str],
+    /// The application packages, by package name: each must be a member, and no member depends
+    /// on one in any table (rule 7).
+    pub application_packages: &'a [&'a str],
+}
+
+/// The crate-tier report over the checkout at `repo_root` under `configuration`.
+pub fn check_crate_tiers(
+    repo_root: &Path,
+    configuration: &CrateTierConfiguration<'_>,
+) -> WorkspaceLawReport {
+    WorkspaceLawReport::from_outcome("crate-tiers", crate_tier_outcome(repo_root, configuration))
 }
 
 /// The findings and notes of the crate-tier law; [`NotRun`] when an input could not be read.
 pub fn crate_tier_outcome(
     repo_root: &Path,
-    manifest_sweep_roots: &[&str],
+    configuration: &CrateTierConfiguration<'_>,
 ) -> Result<LawOutcome, NotRun> {
+    let manifest_sweep_roots = configuration.manifest_sweep_roots;
     let members = read_workspace_members(repo_root)?;
     let judged: Vec<&WorkspaceMember> = members.iter().filter(|m| is_judged(m)).collect();
     let mut outcome = LawOutcome {
@@ -75,6 +88,10 @@ pub fn crate_tier_outcome(
         outcome.findings.extend(declaration_findings(member));
     }
     outcome.findings.extend(edge_findings(&members, &judged));
+    outcome.findings.extend(application_edge_findings(
+        &members,
+        configuration.application_packages,
+    ));
     outcome.findings.extend(crate_firewalls::firewall_findings(
         repo_root, &members, &judged,
     )?);
@@ -82,10 +99,10 @@ pub fn crate_tier_outcome(
         .iter()
         .filter(|member| !is_judged(member))
         .map(|member| member.path.as_str())
-        .partition(|path| is_app_or_tool_binary(path));
+        .partition(|path| is_tool_binary(path));
     if !allowed.is_empty() {
         outcome.notes.push(format!(
-            "{} member(s) outside the judged set, each an app or a tool binary: {}",
+            "{} member(s) outside the judged set, each a tool binary: {}",
             allowed.len(),
             allowed.join(", ")
         ));
@@ -94,12 +111,43 @@ pub fn crate_tier_outcome(
         outcome.findings.push(format!(
             "rule 2: {path} is a member outside the judged set — move it to \
              crates/<category>/<name> or tools/<category>/<name> with a \
-             [package.metadata.layout] table; only the apps under {APPS_ROOT}/ and the tool \
-             binaries ({}) stay outside",
+             [package.metadata.layout] table; only the tool binaries ({}) stay outside",
             TOOL_BINARY_PATHS.join(", ")
         ));
     }
     Ok(outcome)
+}
+
+/// Rule 7 over every member: no dependency edge, in any table, names an application package (a
+/// crate's edge onto itself excepted), and every application package is a member.
+fn application_edge_findings(
+    members: &[WorkspaceMember],
+    application_packages: &[&str],
+) -> Vec<String> {
+    let mut findings: Vec<String> = application_packages
+        .iter()
+        .filter(|package| !members.iter().any(|m| m.package_name == **package))
+        .map(|package| {
+            format!(
+                "rule 7: application package `{package}` is no workspace member — the \
+                 application list names members only"
+            )
+        })
+        .collect();
+    for member in members {
+        for edge in &member.manifest.dependencies {
+            if edge.package != member.package_name
+                && application_packages.contains(&edge.package.as_str())
+            {
+                findings.push(format!(
+                    "rule 7: {}/Cargo.toml:{}: [{}] depends on the application {} — no member \
+                     depends on an application package, in any table",
+                    member.path, edge.line_no, edge.table, edge.package
+                ));
+            }
+        }
+    }
+    findings
 }
 
 /// The manifests the sweep found.
@@ -202,7 +250,7 @@ fn declaration_findings(member: &WorkspaceMember) -> Vec<String> {
     findings
 }
 
-/// Rules 4, 5 and 7 over every dependency edge of the judged members.
+/// Rules 4 and 5 over every normal and build edge of the judged members.
 fn edge_findings(members: &[WorkspaceMember], judged: &[&WorkspaceMember]) -> Vec<String> {
     let by_package: HashMap<&str, &WorkspaceMember> = members
         .iter()
@@ -237,17 +285,10 @@ fn edge_findings(members: &[WorkspaceMember], judged: &[&WorkspaceMember]) -> Ve
             if target.package_name == member.package_name {
                 continue;
             }
-            let at = format!("{}/Cargo.toml:{}", member.path, edge.line_no);
             if edge.is_dev_dependency() {
-                if is_under(&target.path, APPS_ROOT) {
-                    findings.push(format!(
-                        "rule 7: {at}: dev-dependency on {} — dev-dependencies never point at \
-                         apps/",
-                        target.path
-                    ));
-                }
                 continue;
             }
+            let at = format!("{}/Cargo.toml:{}", member.path, edge.line_no);
             let target_tier = target
                 .manifest
                 .layout
@@ -336,3 +377,7 @@ fn computed_tier<'a>(
 #[cfg(test)]
 #[path = "tests/crate_tiers.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "tests/crate_tiers_application_boundaries.rs"]
+mod application_boundary_tests;

@@ -10,15 +10,15 @@ slice/T-939.1
 ```
 ---- editor::panels::outliner_drag::tests::verify_defect_first stdout ----
 
-thread 'editor::panels::outliner_drag::tests::verify_defect_first' (1159280) panicked at apps/frontend/src/editor/panels/outliner_drag.rs:35:9:
+thread 'editor::panels::outliner_drag::tests::verify_defect_first' (1159280) panicked at crates/frontend/shell/frontend_application/src/editor/panels/outliner_drag.rs:35:9:
 assertion `left == right` failed: Dragging with 2 selected rows currently moves only the clicked row
   left: 1
  right: 2
 ```
 
 ## changes
-1. Created pure drag-planning module `apps/frontend/src/editor/panels/outliner_drag.rs` defining `DragSet { anchor, ids }` and `plan_drop` which preserves visual/relative ordering and rejects self/descendant drops. Registered in `apps/frontend/src/editor/panels/mod.rs` alphabetically before `outliner_tree`.
-2. Modified `apps/frontend/src/editor/panels/outliner_tree.rs` to drag the whole multi-selection when the clicked row is in the selection set, or drag only the clicked row if unselected.
+1. Created pure drag-planning module `crates/frontend/shell/frontend_application/src/editor/panels/outliner_drag.rs` defining `DragSet { anchor, ids }` and `plan_drop` which preserves visual/relative ordering and rejects self/descendant drops. Registered in `crates/frontend/shell/frontend_application/src/editor/panels/mod.rs` alphabetically before `outliner_tree`.
+2. Modified `crates/frontend/shell/frontend_application/src/editor/panels/outliner_tree.rs` to drag the whole multi-selection when the clicked row is in the selection set, or drag only the clicked row if unselected.
 3. Wrapped multi-item drop in a single transaction (`with_batch`) so a single Ctrl+Z reverts the entire move.
 4. Added drag ghost count badge when `ids.len() > 1`.
 5. Folded in T-946.69 UI button: Added `Phase Line` tactical draw button in the outliner header invoking `begin_tactical_draw("phase_line")` without keyboard shortcuts.
@@ -30,7 +30,7 @@ test editor::panels::outliner_drag::tests::perturbation_check ... FAILED
 
 failures:
 ---- editor::panels::outliner_drag::tests::perturbation_check stdout ----
-thread 'editor::panels::outliner_drag::tests::perturbation_check' panicked at apps/frontend/src/editor/panels/outliner_drag.rs:50:9:
+thread 'editor::panels::outliner_drag::tests::perturbation_check' panicked at crates/frontend/shell/frontend_application/src/editor/panels/outliner_drag.rs:50:9:
 assertion `left == right` failed: Truncating multi-item drag set dropped items from move plan
   left: 1
  right: 3

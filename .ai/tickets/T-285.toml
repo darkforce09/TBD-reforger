@@ -42,7 +42,7 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-owns = ["apps/frontend/src/mortar.rs"]
+owns = ["crates/frontend/shell/frontend_application/src/mortar.rs"]
 
 [scope]
 domain = "website"

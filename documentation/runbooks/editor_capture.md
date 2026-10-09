@@ -21,7 +21,7 @@ binary of `tools/developer_tools`, described in the
   [Local development](/documentation/runbooks/local_development.md): `cargo xtask db up`,
   `cargo xtask mk rust-api`, then `cargo xtask mk leptos` (release) or `cargo xtask mk leptos-debug`
   (`trunk serve` without `--release`). Check: `http://localhost:3000/` answers.
-- `APP_ENV=development` in `apps/api/.env`, for the
+- `APP_ENV=development` in `crates/api/api_server/.env`, for the
   [dev login](/documentation/glossary/a_to_f.md#dev-login) the capture signs in with.
 - The id of a [mission](/documentation/glossary/g_to_m.md#mission) to open, from the mission library.
 

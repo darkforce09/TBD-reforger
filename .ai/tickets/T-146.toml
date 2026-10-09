@@ -39,7 +39,7 @@ citations = [
     "gap_analysis RIGHT-MODE partial",
     "T-809 absorption note",
 ]
-owns = ["apps/frontend/src/editor/arsenal/asset_catalog.rs"]
+owns = ["crates/frontend/shell/frontend_application/src/editor/arsenal/asset_catalog.rs"]
 
 [scope]
 domain = "website"

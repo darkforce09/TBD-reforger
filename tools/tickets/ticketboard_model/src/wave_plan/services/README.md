@@ -43,9 +43,9 @@ working.
   (`WaveLockUnparsable`); `serde` and `toml`.
 - Used by: `crate::wave_plan::models`; `crate::application_state::background_loading`, which
   calls `load_lock` on the load thread; the desktop application:
-  `apps/ticketboard/src/wave_plan/ui/`, the comparison view in
-  `apps/ticketboard/src/ticket_browser/ui/detail_panel/comparison.rs` (`colliding_pairs`, beside
-  `ticket_wave_lock::collides`), and `apps/ticketboard/src/application/tests/rendering.rs`.
+  `tools/tickets/ticketboard_desktop/src/wave_plan/ui/`, the comparison view in
+  `tools/tickets/ticketboard_desktop/src/ticket_browser/ui/detail_panel/comparison.rs` (`colliding_pairs`, beside
+  `ticket_wave_lock::collides`), and `tools/tickets/ticketboard_desktop/src/application/tests/rendering.rs`.
 - Rules:
   - reading only: nothing in the viewer writes the lock
     (`missing_lock_is_the_did_not_run_refusal`, `unparsable_lock_refuses_with_verbatim_error` in

@@ -176,13 +176,13 @@ fn test_file_reachability_trybuild_cases_a_reached_file_names_are_reached() {
 #[test]
 fn test_file_reachability_lists_the_unreachable_files_with_their_package() {
     let mut workspace = green_workspace("reachability-listing");
-    workspace.member("apps/api", &application_manifest("api", ""));
-    workspace.write("apps/api/src/main.rs", "fn main() {}\n");
-    workspace.write("apps/api/tests/common/helpers.rs", "\n");
+    workspace.member("apps/server", &application_manifest("api", ""));
+    workspace.write("apps/server/src/main.rs", "fn main() {}\n");
+    workspace.write("apps/server/tests/common/helpers.rs", "\n");
     assert_eq!(
         unreachable_test_files(workspace.root()).unwrap(),
         vec![UnreachableTestFile {
-            path: "apps/api/tests/common/helpers.rs".to_owned(),
+            path: "apps/server/tests/common/helpers.rs".to_owned(),
             package: "api".to_owned(),
         }]
     );

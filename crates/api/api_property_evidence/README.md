@@ -48,7 +48,7 @@ because each property owns its case count. No feature.
 - Depends on: `content_digest` (`Sha256Hasher::update_length_framed`), `proptest`, `serde` and
   `serde_json`.
 - Used by: the API's operations unit tests (event access, reservation planning, seat matching,
-  quota selection) and its property suites under `apps/api/tests/`, all through
+  quota selection) and its property suites under `crates/api/api_server/tests/`, all through
   `[dev-dependencies]`.
 - Rules: never a normal dependency of any crate; a property's record is evidence only when its
   executed case count equals its requested count.
@@ -56,4 +56,4 @@ because each property owns its case count. No feature.
 ## Related documentation
 
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.
-- [Website API](/apps/api/README.md) — the property suites that run through the recorder.
+- [Website API](/crates/api/api_server/README.md) — the property suites that run through the recorder.

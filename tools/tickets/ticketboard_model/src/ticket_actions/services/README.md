@@ -45,8 +45,8 @@ target file and takes none.
 - Depends on: `crate::ticket_actions::models` (`Dialog`, `TicketActionContext`);
   `crate::ticket_registry::models` (`Corpus` and the `projection` view, `id_sort_key`);
   `ticket_model` (`StatusName`, `Ticket`).
-- Used by: the desktop application: `apps/ticketboard/src/ticket_actions/ui/` (menus and dialogs)
-  and `apps/ticketboard/src/application/` (`command_execution.rs`, `action_dispatch.rs`,
+- Used by: the desktop application: `tools/tickets/ticketboard_desktop/src/ticket_actions/ui/` (menus and dialogs)
+  and `tools/tickets/ticketboard_desktop/src/application/` (`command_execution.rs`, `action_dispatch.rs`,
   `ticket_command_views.rs`, `mod.rs`, `tests/rendering.rs`).
 - Rules: nothing here names egui (the test
   `model_dependency_boundaries_and_external_test_placement_are_enforced` in

@@ -63,7 +63,7 @@ No feature and no environment variable.
 - Used by: `map_streaming_host`; `map_asset_loading`: the world, occluder, forest, label, water
   and relief loaders, the satellite loads and the live memory ledger; `map_renderer`, whose render
   engine implements the sink (`crates/map_rendering/map_renderer/src/asset_sink.rs`); and the
-  single-page app (`apps/frontend`, every target), whose map view and Mission Creator import the
+  single-page app (`crates/frontend/shell/frontend_application`, every target), whose map view and Mission Creator import the
   preferences, bootstrap scope and boot progress types directly.
 - Rules:
   - streaming category, tier 1, any target: no browser crate, no GPU crate

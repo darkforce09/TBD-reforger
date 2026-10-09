@@ -64,7 +64,7 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 8 commit subject(s)"
-owns = ["apps/frontend/src/arsenal_rules.rs"]
+owns = ["crates/frontend/shell/frontend_application/src/arsenal_rules.rs"]
 
 [scope]
 domain = "website"

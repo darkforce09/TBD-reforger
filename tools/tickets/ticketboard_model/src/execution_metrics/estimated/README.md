@@ -52,10 +52,10 @@ only when `tokens` is listed, and says so when no valid estimate file backs it.
   `workspace_state.rs` calls `build_state`); `crate::ticket_browser`
   (`tools/tickets/ticketboard_model/src/ticket_browser/models/view.rs`);
   `crate::execution_metrics::models` and `events`; the desktop application:
-  `apps/ticketboard/src/application/action_dispatch.rs` calls `sort_rows`,
-  `apps/ticketboard/src/ticket_browser/ui/detail_panel/metadata.rs` and `cells.rs` call
+  `tools/tickets/ticketboard_desktop/src/application/action_dispatch.rs` calls `sort_rows`,
+  `tools/tickets/ticketboard_desktop/src/ticket_browser/ui/detail_panel/metadata.rs` and `cells.rs` call
   `stamp_cell` and `tokens_cell` and draw `ESTIMATE_GLYPH` and `ABSENT_ESTIMATED_MARKER`, and
-  `apps/ticketboard/src/execution_metrics/ui/` paints the tables.
+  `tools/tickets/ticketboard_desktop/src/execution_metrics/ui/` paints the tables.
 - Rules:
   - estimated totals are the `EstimatedTokens` type and live in their own row, totals and model
     types, so no code path adds them to a measured total without an explicit unwrap

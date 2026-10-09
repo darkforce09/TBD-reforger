@@ -1,22 +1,20 @@
-# The TBD Reforger workspace: the website applications (API, single-page app, offline service
-# worker), the library crates under `crates/` (the mission domain, the Mission Creator's editing
-# layer, the map streaming and rendering crates and the GPU crates among them), the fleet host
-# agent, the ticketboard and the repository tooling.
+# The TBD Reforger workspace: the crates under `crates/` (the applications among them: the API
+# server, the single-page app, the offline service worker and the game server host agent; the API's
+# library crates, the mission domain, the Mission Creator's editing layer, the map streaming and
+# rendering crates and the GPU crates), the tool crates under `tools/` (the ticketboard desktop
+# viewer among them) and the two tool binaries `tools/xtask` and `tools/developer_tools`.
 [workspace]
 resolver = "3"
 members = [
-    "apps/fleet_host_agent",
-    "apps/ticketboard",
-    "apps/api",
-    "apps/frontend",
-    "apps/offline_service_worker",
-    # The library crates, one glob per category (`crates/<category>/<name>`, and
+    # The product crates, one glob per category (`crates/<category>/<name>`, and
     # `crates/frontend/<layer>/<name>` for the single-page app's crates): every manifest under
     # these folders is a member. A new category adds its own glob here; the crate-tier law fails
     # on a manifest under `crates/` that no glob reaches.
     "crates/api/*",
     "crates/ballistics/*",
     "crates/contracts/*",
+    # The fleet crates: the game server host agent that carries out the API's fleet commands.
+    "crates/fleet/*",
     "crates/foundation/*",
     "crates/frontend/*/*",
     "crates/geometry/*",
@@ -219,7 +217,7 @@ deterministic_random = { path = "crates/foundation/deterministic_random" }
 # (`tools/checks/documentation_checks`).
 documentation_checks = { path = "tools/checks/documentation_checks" }
 csv = "1.4.0"
-# The RCon packet checksum of the fleet host agent.
+# The RCon packet checksum of the game server host agent.
 crc32fast = "1.5.0"
 dotenvy = "0.15.7"
 # Ear-clipping polygon triangulation behind `render_primitives`.
@@ -252,7 +250,7 @@ fire_mission_planning = { path = "crates/ballistics/fire_mission_planning" }
 field_tools_pages = { path = "crates/frontend/pages/field_tools_pages" }
 flate2 = "1"
 # The fleet-command wire shapes, executor kind and machine credential format the API and the
-# fleet host agent share (`crates/contracts/fleet_wire_contract`).
+# game server host agent share (`crates/contracts/fleet_wire_contract`).
 fleet_wire_contract = { path = "crates/contracts/fleet_wire_contract" }
 # The single-page app's API wire types and their typed identifiers
 # (`crates/frontend/foundation/frontend_api_dtos`).

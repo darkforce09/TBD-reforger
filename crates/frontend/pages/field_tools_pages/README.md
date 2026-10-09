@@ -17,7 +17,7 @@ crates/frontend/pages/field_tools_pages/
 
 ## How it works
 
-The app's route table (`apps/frontend/src/app_routes.rs`) mounts `MortarCalculatorPage` at
+The app's route table (`crates/frontend/shell/frontend_application/src/app_routes.rs`) mounts `MortarCalculatorPage` at
 `/tools/mortar`, open to every viewer. The page reads the public ballistics catalogs, or the copy
 the offline pack saved, and solves every gun with `fire_mission_planning`'s
 `solve_fire_mission`, the assembler the [API](/documentation/glossary/a_to_f.md#api) re-solves a
@@ -63,8 +63,8 @@ None: no feature, no environment variable.
   `serde_json`; on `wasm32`, `frontend_transport`, `frontend_session`, `frontend_ui`,
   `frontend_map_view`, `map_draw_lanes`, `unit_symbology`, `wasm-bindgen` and `web-sys`;
   `frontend_test_support` and `offline_cache_policy` for its tests only.
-- Used by: the single-page app (`apps/frontend`), whose route table mounts the page; the API test
-  `apps/api/tests/fire_mission_solution.rs`, which reads `src/mortar/saved_fires/restore.rs` as
+- Used by: the single-page app (`crates/frontend/shell/frontend_application`), whose route table mounts the page; the API test
+  `crates/api/api_server/tests/fire_mission_solution.rs`, which reads `src/mortar/saved_fires/restore.rs` as
   text to pin its copy of the legacy grid reader.
 - Rules: a page crate depends on foundation and feature crates only, never on another page crate,
   a workspace or the app (`cargo xtask ci verify-workspace-laws`); the page solves with the

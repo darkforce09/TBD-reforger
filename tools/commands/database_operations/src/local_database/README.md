@@ -12,14 +12,14 @@ modules.
 ```text
 tools/commands/database_operations/src/local_database/
 ├── ab.rs                         the self-test's plumbing: bridged argv, make runs, scratch databases
-├── api_test_packages.rs          the packages the API lanes cover: `api`, every `crates/api` member and their users
+├── api_test_packages.rs          the packages the API lanes cover: `api_server`, every `crates/api` member and their users, once each
 ├── development_compose.rs        the development compose project: folder, `-f` file, echoed line
 ├── recipe_execution.rs           the recipe runner: echo, API folder, runtime, exit status; compose, seed, registry import
 ├── recipes.rs                    the recipe lines the lane echoes, and a Makefile recipe reader
 ├── repair_migration_checksum.rs  `db repair-migration-checksum`: repoints comments-only edits
 ├── selftest.rs                   `db selftest`: six arms over the recipes, the guard and the cleanup
 ├── test_it.rs                    `db test-it`: one isolated database per run, then its cleanup
-└── tests/                        unit tests for the plumbing, API packages, compose, recipes, repair and test-it
+└── tests/                        unit tests for the plumbing, API packages, compose, recipes, recipe execution, repair and test-it
 ```
 
 ## How it works
@@ -35,26 +35,30 @@ whichever runtime `resolve_runtime` finds. The maintenance database `IT_MAINT_DB
   prints the real argv), spawns the child straight to the terminal and returns its own exit code,
   reporting a signalled child as a signal. `db up`, `db down`, `db logs`, `db seed` (each seed with
   `psql -v ON_ERROR_STOP=1`, stopping at the first failed file) and `db registry-import` run here.
+  `db registry-import` runs `cargo run --bin import-item-registry` in the API crate folder, where
+  the importer finds the developer's `.env`, and names both envelopes by their absolute path from
+  the repository root, never by a path that climbs out of that folder.
 - `test_it::run` prints the property-test marker, validates the label in `TBD_IT_BASE_DB`
   (default `rust_it`) against the scratch allow-list (`rust_it`, `tbd_gate*`, `*_cold`, `*_it`,
   `*_probe`, never `tbd_reforger`), and claims a fresh database named
   `i<first five label characters>_<32 random hex>_it` with `CREATE DATABASE`, so a collision
   fails without touching another run's database. It runs
-  `cargo test --locked --no-fail-fast -p api -p <API crate>... -p <API crate user>... [--lib] [--test <binary>]... -- --show-output [<filter>]`
-  in `apps/api` (a `--test` selection names `-p api` alone, the package that holds the
+  `cargo test --locked --no-fail-fast -p api_server -p <API crate>... -p <API crate user>... [--lib] [--test <binary>]... -- --show-output [<filter>]`
+  in `crates/api/api_server` (a `--test` selection names `-p api_server` alone, the package that holds the
   integration binaries) with `TEST_DATABASE_URL` on port 5434, `TBD_API_VERIFICATION=true` and the
   marker's `PROPTEST_RNG_SEED`. The cleanup then always runs, whatever the tests did: it selects
   the run's database and every `<name>_<suite>_it` the harnesses in
-  `apps/api/tests/common/database.rs` and `tools/staging/staging_fixtures/tests/common/database.rs`
+  `crates/api/api_server/tests/common/database.rs` and `tools/staging/staging_fixtures/tests/common/database.rs`
   derived from it, re-checks each row's ownership
   and drops it with `FORCE`.
 - `api_test_packages::api_test_packages` derives the API lanes' packages from the workspace:
-  `api`, then every member directly under `crates/api`, then every other member with a normal or
-  development dependency on one of them (the staging fixtures tool in
+  `api_server`, then every other member directly under `crates/api`, then every other member with
+  a normal or development dependency on one of them (the staging fixtures tool in
   `tools/staging/staging_fixtures`, whose suites need the API's database), each group in
-  member-path order, so an API crate and its users are tested, linted and built from the moment
-  the root manifest names them. Its library-less package runs no case under `--lib`. An unreadable workspace or
-  one without `api` is an error. The CI task table, the `mk` build lane and the wave gate's
+  member-path order and every package once (`api_server` itself sits under `crates/api`, and a
+  package named twice would be built and tested twice), so an API crate and its users are tested,
+  linted and built from the moment the root manifest names them. Its library-less package runs no case under `--lib`. An unreadable workspace or
+  one without `api_server` is an error. The CI task table, the `mk` build lane and the wave gate's
   `test api` step derive their API lines through it.
 - `development_compose::ComposeProject` names `deploy/compose.dev.yml` (`DEVELOPMENT_COMPOSE_FILE`
   in `repository_layout`) with `-f` and runs compose in `deploy/`, the folder its

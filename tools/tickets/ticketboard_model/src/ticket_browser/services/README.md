@@ -42,7 +42,7 @@ applies the filters, and rebuilds the visible board rows and tree rows from the 
   `executor_label`, `column_of`); `ticket_model` (`StatusName`, `Ticket`, `ScopeVocab`).
 - Used by: `crate::application_state` (`workspace_state.rs`, and `background_loading.rs`, which
   loads the vocabulary on the worker thread); the desktop application's filter bar,
-  `apps/ticketboard/src/ticket_browser/ui/filter_bar.rs`.
+  `tools/tickets/ticketboard_desktop/src/ticket_browser/ui/filter_bar.rs`.
 - Rules:
   - filters change the projection, never the registry, and clearing restores the full count
     (`clear_restores_the_full_measured_count`, `filters_compose_as_intersection` in

@@ -61,7 +61,7 @@ None: no feature, no environment variable. The pack route is `/tools/mortar`
 - Depends on: `frontend_transport`, `frontend_api_dtos`, `offline_cache_policy`, `leptos`,
   `leptos_router`, `serde`, `serde_json`, `thiserror`, `url`; `web-sys`, `js-sys`,
   `wasm-bindgen`, `wasm-bindgen-futures`, `futures` and `gloo-timers` in the wasm32 build only.
-- Used by: the single-page app (`apps/frontend`): its entry point and the mortar calculator; the
+- Used by: the single-page app (`crates/frontend/shell/frontend_application`): its entry point and the mortar calculator; the
   offline browser gate reads the document-element attributes this crate writes.
 - Rules: the pack writes every file under the cache and key the worker reads; the attribute words
   never change, since the browser gate reads them; the crate depends on no frontend crate above
@@ -69,7 +69,7 @@ None: no feature, no environment variable. The pack route is `/tools/mortar`
 
 ## Related documentation
 
-- [Offline service worker](/apps/offline_service_worker/README.md) — the worker and how it answers
+- [Offline service worker](/crates/frontend/shell/offline_service_worker/README.md) — the worker and how it answers
   each request class.
 - [Offline cache policy](/crates/contracts/offline_cache_policy/README.md) — the request classes,
   caches and terrain pack list the worker and the page share.

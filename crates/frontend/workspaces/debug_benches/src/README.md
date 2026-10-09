@@ -42,7 +42,7 @@ lanes of the map engine's lane table, and never borrow a terrain lane. Each spli
 (`building_interior.rs`, the building viewer's `geom`, `world_los_scene.rs`), which the native test
 build covers, and a browser half (the `live` modules and the route component), which compiles for
 `wasm32` only. The route components (the data viewer's too) exist in the browser build only,
-because the app's mount chain that names them, `apps/frontend/src/app_routes.rs`, is browser-only.
+because the app's mount chain that names them, `crates/frontend/shell/frontend_application/src/app_routes.rs`, is browser-only.
 The data viewer's panel modules and the components they share across modules are public in the
 browser build, since leptos's component builder always has a `pub` `build` method.
 

@@ -24,7 +24,7 @@ not repeated:
 | Executable | What it does | Code |
 |---|---|---|
 | `staging-load` | runs the member load a plan describes and prints its report, for the `staging_procedures` load procedure | [`staging_load_generator`](/tools/staging/staging_load_generator/README.md), over [`staging_load_plan`](/tools/staging/staging_load_plan/README.md) |
-| `acknowledgement-dropping-relay` | on the staging host, relays one fleet host agent's calls and, when armed, withholds one claim or result answer | [`acknowledgement_dropping_relay`](/tools/staging/acknowledgement_dropping_relay/README.md) |
+| `acknowledgement-dropping-relay` | on the staging host, relays one game server host agent's calls and, when armed, withholds one claim or result answer | [`acknowledgement_dropping_relay`](/tools/staging/acknowledgement_dropping_relay/README.md) |
 
 Both executables are one-line `developer_tools` binaries
 ([executables README](/tools/developer_tools/src/bin/README.md)); the procedures that run them

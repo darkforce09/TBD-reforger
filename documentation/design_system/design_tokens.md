@@ -8,11 +8,11 @@ Developers and agents read it before writing a class string, a layout colour or 
 
 ## Where it lives
 
-- Website: [`apps/frontend/style/aegis.css`](/apps/frontend/style/README.md), the
+- Website: [`crates/frontend/shell/frontend_application/style/aegis.css`](/crates/frontend/shell/frontend_application/style/README.md), the
   Tailwind CSS 4 entry. Its `@theme` block defines the `--color-*`, `--font-*`, `--text-*`,
   spacing and radius tokens, which become classes such as `bg-surface-container` and
   `text-label-sm`; its `:root` block sets the shadcn-style variables that `@theme inline` maps.
-  `apps/frontend/index.html` puts `class="dark"` on `<html>` and loads the Material
+  `crates/frontend/shell/frontend_application/index.html` puts `class="dark"` on `<html>` and loads the Material
   Symbols Outlined font.
 - [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) chrome: the class constants in
   `crates/frontend/workspaces/mission_creator_state/src/layout.rs` (`HOVER_FILL`, `TOGGLED_PLATE`,
@@ -94,7 +94,7 @@ Icons are Material Symbols Outlined glyphs through `MaterialIcon`
 
 `@theme` defines `--spacing-navbar-height` (4rem), `--spacing-gutter` (1.5rem) and
 `--spacing-container-max` (90rem), but no Rust view uses them: the top bar is `h-16` (64px) and
-the sidebar `w-80` (320px) in `apps/frontend/src/shell/`, and everything
+the sidebar `w-80` (320px) in `crates/frontend/shell/frontend_application/src/shell/`, and everything
 else uses Tailwind's 4px spacing scale. `SplitPane`'s master column defaults to `22rem`.
 
 `--radius` is 0.375rem, and the `@theme inline` block derives the radius classes from it, which
@@ -189,7 +189,7 @@ value takes 8): `RADIUS_PANEL` 12, `RADIUS_PILL` 10, `RADIUS_ROW` 8 and `RADIUS_
 ## Data
 
 No call reads the tokens: Tailwind compiles them into the stylesheet that Trunk writes into
-`apps/frontend/dist/`, and the mod compiles them into its scripts. `cargo xtask verify
+`crates/frontend/shell/frontend_application/dist/`, and the mod compiles them into its scripts. `cargo xtask verify
 editor-orbat-coherency` pins the map's side tints to their RGBA literals; nothing checks that
 `TBD_UITheme` matches `aegis.css`. The `save-dialog-rect` editor smoke
 (`tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/save_dialog_rect.rs`) measures

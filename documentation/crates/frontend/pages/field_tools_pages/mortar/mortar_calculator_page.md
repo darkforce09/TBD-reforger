@@ -27,7 +27,7 @@ line can reload it.
     where administrators publish the catalogs the page solves with;
   - the [offline core](/crates/frontend/foundation/frontend_offline/src/README.md) and the
     [offline mortar page runbook](/documentation/runbooks/offline_mortar_page.md);
-  - the [game ballistics design note](/documentation/apps/api/verification_evidence/game_ballistics.md),
+  - the [game ballistics design note](/documentation/crates/api/api_server/verification_evidence/game_ballistics.md),
     which records the model, the tolerances and the operator decisions.
 
 ## Behaviour

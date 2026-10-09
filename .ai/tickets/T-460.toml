@@ -62,7 +62,7 @@ estimated = [
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 owns = [
     "scripts/mod/verify-t456-mission-rest-size-gate.sh",
-    "apps/frontend/src/ui.rs",
+    "crates/frontend/shell/frontend_application/src/ui.rs",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
 ]
 

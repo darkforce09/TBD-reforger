@@ -79,7 +79,7 @@ cd apps/website && go build ./...
 
 | File | Role |
 |------|------|
-| `apps/frontend/src/features/mission-creator/compiler/compile.ts` | Flatten hook |
+| `crates/frontend/shell/frontend_application/src/features/mission-creator/compiler/compile.ts` | Flatten hook |
 | `apps/website/internal/handlers/missions.go` (or new) | `/compiled` handler |
 | `apps/website/internal/handlers/handlers.go` | Route registration |
 | `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | API path fix |
@@ -91,7 +91,7 @@ cd apps/website && go build ./...
 ```bash
 cd packages/tbd-schema && npm run validate
 make test-it
-cd apps/frontend && npm run build && npm run lint
+cd crates/frontend/shell/frontend_application && npm run build && npm run lint
 curl -sS -H "X-Service-Token: $SERVICE_TOKEN" \
   http://localhost:8080/api/v1/missions/{id}/compiled | jq .schemaVersion
 ```

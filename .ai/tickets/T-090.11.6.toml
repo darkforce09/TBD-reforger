@@ -41,7 +41,7 @@ estimated = [
     "tokens",
 ]
 owns = [
-    "apps/frontend/src/pages/debug",
+    "crates/frontend/shell/frontend_application/src/pages/debug",
     "packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.scene.json",
 ]
 

@@ -119,6 +119,33 @@ impl FixtureWorkspace {
     }
 }
 
+/// A green workspace for the crate-tier tests: two foundation crates, a mission crate, a tool
+/// foundation crate and the application `crates/api/api_server` over the mission crate.
+pub(super) fn green_workspace(name: &str) -> FixtureWorkspace {
+    let mut workspace = FixtureWorkspace::new(name);
+    workspace.layout_crate("crates/foundation/newtype_ids", 0, "any", &[]);
+    workspace.layout_crate(
+        "crates/foundation/time_source",
+        1,
+        "any",
+        &[normal("newtype_ids")],
+    );
+    workspace.layout_crate(
+        "crates/mission/mission_model",
+        2,
+        "any",
+        &[normal("time_source")],
+    );
+    workspace.layout_crate("tools/foundation/repository_layout", 0, "any", &[]);
+    workspace.layout_crate(
+        "crates/api/api_server",
+        3,
+        "any",
+        &[normal("mission_model")],
+    );
+    workspace
+}
+
 /// A plain application manifest named `name` with the `[dependencies]` lines `dependencies`.
 pub(super) fn application_manifest(name: &str, dependencies: &str) -> String {
     format!("[package]\nname = \"{name}\"\nedition = \"2024\"\n\n[dependencies]\n{dependencies}")

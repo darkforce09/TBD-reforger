@@ -57,8 +57,8 @@ owns = [
     "crates/map-engine-core/src/mission/extensions.rs",
     "crates/map-engine-core/src/mission/win_conditions.rs",
     "crates/map-engine-core/src/mission/mod.rs",
-    "apps/frontend/src/editor/panels/win_conditions_card.rs",
-    "apps/frontend/src/editor/panels/mod.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/win_conditions_card.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/mod.rs",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_WinConditionEvaluator.c",
 ]
 

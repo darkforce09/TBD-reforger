@@ -64,7 +64,7 @@ No feature and no environment variable.
   live memory budget); `map_streaming_model`; `terrain_elevation`, `terrain_relief`,
   `world_chunks`, `world_line_of_sight`, `water_bodies`, `label_layout`; `browser_platform`; `time_source`;
   `serde`, `serde_json`, `futures` and the browser bindings.
-- Used by: the single-page app (`apps/frontend`, WebAssembly build only): its map view and the
+- Used by: the single-page app (`crates/frontend/shell/frontend_application`, WebAssembly build only): its map view and the
   Mission Creator import the host directly.
 - Rules:
   - streaming category, tier 7, wasm32: no GPU crate and no rendering crate

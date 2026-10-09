@@ -19,7 +19,7 @@ browser ──▶ Cloudflare Tunnel (optional, Phase E) ──▶ Caddy :3080  (
             whose X-Forwarded-For Caddy keeps         │
                                                       ├── /api/*, /uploads/*, /map-assets/*, /healthz
                                                       │     ──▶ API 0.0.0.0:8080  (tbd-website-api.service, Phase D)
-                                                      └── every other path ──▶ apps/frontend/dist
+                                                      └── every other path ──▶ crates/frontend/shell/frontend_application/dist
 API ──▶ Postgres tbd_staging_db on 127.0.0.1:${TBD_POSTGRES_HOST_PORT:-5432}
 API uploads ──▶ ~/.local/state/tbd-website-api/uploads  (outside the checkout)
 API equipment data ──▶ ~/.local/state/tbd-website-api/equipment  (outside the checkout)
@@ -95,9 +95,11 @@ Run the development-machine steps from the repository root; a step that runs on 
    ```
 
    Expected, exit 0: `==> deploy-website → <TBD_SSH_HOST>:<TBD_REMOTE_DIR>`, then the map-asset
-   probe, the rsync with one `[dry-run]   --exclude=` line per protected path (`.git/`,
-   `target/`, the gate build folders, `node_modules/`, `apps/frontend/dist/`, the server's
-   `apps/api/.env`, `deploy/deploy.env`, `assets/terrains/`,
+   probe, `==> preflight: the API's .env on the host` with its probe of
+   `<TBD_REMOTE_DIR>/crates/api/api_server/.env`, the rsync with one `[dry-run]   --exclude=` line
+   per protected path (`.git/`, `target/`, the gate build folders, `node_modules/`, the paths the
+   host owns, `crates/api/api_server/.env`, the host's own tools folder .tools beside it, and
+   `crates/frontend/shell/frontend_application/dist/`, then `deploy/deploy.env`, `assets/terrains/`,
    `assets/scratch/`, `packages/` and the reference mod folders, then what only the
    development machine holds, anchored at the checkout root: `/target-*/` and the other build
    folders, the worktrees under `.ai/artifacts/worktrees/`, the wave gate's receipts, and the
@@ -112,9 +114,9 @@ Run the development-machine steps from the repository root; a step that runs on 
    | Remote step, as printed | What runs on the host |
    |---|---|
    | `staging Postgres (docker compose)` | `compose -f deploy/compose.staging.yml up -d postgres` with `TBD_POSTGRES_HOST_PORT`; skipped by `TBD_SKIP_COMPOSE=1` |
-   | `cargo build --release -p api --bin api` | the release API into `target/release/api`; skipped by `TBD_SKIP_API_BUILD=1` |
+   | `cargo build --release -p api_server --bin api-server` | the release API server into `target/release/api-server`, proven by `test -x target/release/api-server`; skipped by `TBD_SKIP_API_BUILD=1` |
    | `cargo build --release: the staging host tools (staging-fixtures, acknowledgement-dropping-relay)` | `cargo build --release -p staging_fixtures --bin staging-fixtures`, then `-p developer_tools --bin acknowledgement-dropping-relay`, each proven by `test -x target/release/<executable>`: the staging verification harness runs `staging-fixtures` on the host, and `cargo xtask deploy staging` installs the relay; skipped by `TBD_SKIP_API_BUILD=1` |
-   | `trunk build --release (Leptos SPA → frontend/dist)` | the app into `apps/frontend/dist`; skipped by `TBD_SKIP_SPA_BUILD=1` |
+   | `trunk build --release (Leptos SPA → crates/frontend/shell/frontend_application/dist/)` | the app into `crates/frontend/shell/frontend_application/dist`; skipped by `TBD_SKIP_SPA_BUILD=1` |
    | `staging Caddy on :3080 (docker compose), then reload its Caddyfile` | `compose … up -d caddy`, then `compose … exec -T caddy caddy reload --config /etc/tbd-caddy/Caddyfile --adapter caddyfile`, up to 5 attempts a second apart; skipped by `TBD_SKIP_COMPOSE=1`, and still run with `TBD_SKIP_SPA_BUILD=1`, serving the `dist` already on the host |
    | `repoint the checksums of comments-only migration edits` | `TBD_DB_CONTAINER=tbd_staging_db cargo xtask db repair-migration-checksum --force` |
 
@@ -126,14 +128,20 @@ Run the development-machine steps from the repository root; a step that runs on 
 
 ### Phase B — Prepare the host
 
-3. Create the checkout folder. The deploy's first act is a probe that `cd`s into it and refuses
-   when it cannot (probe exit 12).
+3. Create the checkout folder with the API server's settings file in it, from the template in
+   this checkout. The deploy's first act is a probe that `cd`s into the folder and refuses when it
+   cannot (probe exit 12); its second refuses the rsync until
+   `<TBD_REMOTE_DIR>/crates/api/api_server/.env` is a readable file, because the rsync never
+   carries that file and `--delete` would remove one left anywhere else. A host deployed before
+   the API server's folder moved already holds its `.env` and the API's .tools folder: move
+   both into `<TBD_REMOTE_DIR>/crates/api/api_server/` instead, and keep the file's mode.
 
    ```bash
-   ssh <TBD_SSH_HOST> 'mkdir -p <TBD_REMOTE_DIR>'
+   ssh <TBD_SSH_HOST> 'mkdir -p <TBD_REMOTE_DIR>/crates/api/api_server && install -m 600 /dev/stdin <TBD_REMOTE_DIR>/crates/api/api_server/.env' < crates/api/api_server/.env.example
    ```
 
-   Expected: no output.
+   Expected: no output; the file on the host is the template, readable by the deploy user only.
+   Step 6 fills it in.
 
 4. On the host, let the deploy user's systemd user units run while nobody is logged in; the API
    unit and the backup timers need it.
@@ -169,8 +177,8 @@ the password its volume was first created with. The database listens on the host
    while the unit is missing, and `==> done` either way.
 
 The rsync mirrors the checkout with `--delete`: a file on the host outside the excluded paths
-disappears at the next deploy, so the server keeps its own files only at `apps/api/.env`,
-under `assets/terrains/` and outside the checkout. The glyph atlas `assets/glyphs/` is not
+disappears at the next deploy, so the server keeps its own files only at `crates/api/api_server/.env`,
+in the .tools folder beside it, under `assets/terrains/`, and outside the checkout. The glyph atlas `assets/glyphs/` is not
 excluded; it is tracked and arrives with every deploy. An excluded path that is already on the
 host is neither updated nor deleted: a development machine's build folder or tool state found
 there stays until it is removed by hand.
@@ -184,15 +192,10 @@ checkout, with `terrain-registry.json` at its top; see
 
 ### Phase D — Install and run the API
 
-6. On the host, create the server's API settings from the template that arrived with the rsync.
-
-   ```bash
-   install -m 600 <TBD_REMOTE_DIR>/apps/api/.env.example <TBD_REMOTE_DIR>/apps/api/.env
-   ```
-
-   Expected: no output; the file is readable by the deploy user only. Set these values; the full
-   list, with defaults and failure modes, is
-   [API environment variables](/documentation/apps/api/environment_variables.md).
+6. Fill in the server's API settings. No command: on the host, edit
+   `<TBD_REMOTE_DIR>/crates/api/api_server/.env`, the template step 3 put there, keeping its mode
+   600. Set these values; the full list, with defaults and failure modes, is
+   [API environment variables](/documentation/crates/api/api_server/environment_variables.md).
 
    | Variable | Value on the host |
    |---|---|
@@ -228,7 +231,7 @@ checkout, with `terrain-registry.json` at its top; see
    sed 's|TBD_REPO_DIR_PLACEHOLDER|<TBD_REMOTE_DIR without its leading slash>|g' deploy/systemd/tbd-website-api.service > ~/.config/systemd/user/tbd-website-api.service
    ```
 
-   Expected: no output. The unit runs `target/release/api` from `apps/api`, loads that
+   Expected: no output. The unit runs `target/release/api-server` from `crates/api/api_server`, loads that
    folder's `.env`, pins `MAP_ASSETS_DIR` and `GLYPH_ASSETS_DIR` to the checkout's
    `assets/terrains` and `assets/glyphs`, and keeps uploads and the imported equipment data
    under its state directory (`StateDirectory=tbd-website-api`); the
@@ -272,7 +275,7 @@ run one or the other.
     deploy starts the compose file's `caddy` service, container `tbd_staging_caddy`, and reloads
     `deploy/caddy/Caddyfile` in it, so an edited Caddyfile applies with the next
     deploy. The service mounts `deploy/caddy/` at `/etc/tbd-caddy` and
-    `apps/frontend/` at `/srv/tbd-frontend`, both read-only, and serves
+    `crates/frontend/shell/frontend_application/` at `/srv/tbd-frontend`, both read-only, and serves
     `/srv/tbd-frontend/dist`, wherever the checkout sits.
 
     ```bash
@@ -351,7 +354,7 @@ is shown once, and revoking it stops its executor at the next request.
 | Executor | Credential kind | File on the host | Commands it runs |
 |---|---|---|---|
 | the game runtime (the mod) | `mod_runtime` | `~/tbd/fleet/instance-N/secrets/mod-runtime-credential`, written into the instance profile's `TBD_BackendConfig.json` as `machineCredential` | `broadcast`, `kick`, `load_mission`; runtime sessions, heartbeats, roster reads |
-| the [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) | `host_agent` | `~/tbd/fleet/instance-N/secrets/host-agent-credential`, named by `~/.config/fleet_host_agent/instance-N/agent.toml` | `start`, `stop`, `restart`, `list_players`, `restart_with_mission`, `console_command` (one line to the server's RCON console, sent once) |
+| the [game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) | `host_agent` | `~/tbd/fleet/instance-N/secrets/host-agent-credential`, named by `~/.config/game_server_host_agent/instance-N/agent.toml` | `start`, `stop`, `restart`, `list_players`, `restart_with_mission`, `console_command` (one line to the server's RCON console, sent once) |
 
 Which mission a server runs is a
 [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment). The fleet, its
@@ -432,6 +435,8 @@ On a Podman host, `podman exec` takes the same arguments.
 | `<path>:<line>: TBD_SSH_HOST: …`, or `<path>:<line>: <message>`, exit 1 | the value on that line of the file is not `user@host`, or the line is not `KEY=VALUE` | fix that line |
 | `Refusing to deploy: TBD_SSH_HOST must name the deploy user (user@host) …`, exit 1 | `TBD_SSH_HOST` names no user, so there is no `/home/<user>/tbd/` to hold `TBD_REMOTE_DIR` | write `user@host` |
 | `Refusing to deploy: TBD_REMOTE_DIR must be under …`, or `… must not contain 'prairielearn'`, exit 1 | the folder is outside `/home/<user>/tbd/`, contains `..`, or names the other service | point `TBD_REMOTE_DIR` inside `/home/<user>/tbd/`, or leave it unset |
+| `ERROR: the API's .env is missing or unreadable on the host: <TBD_REMOTE_DIR>/crates/api/api_server/.env`, exit 1, before the rsync | the host holds no `.env` at the API server's folder: a fresh host, or one whose `.env` still sits where an earlier folder layout kept it | step 3 |
+| `ERROR: could not determine whether the host holds <path> (probe exit <n>).`, exit 1 | the probe of the `.env` could not run, as when ssh fails | check ssh with the Verify row, then deploy again |
 | `ERROR: could not determine the server's map asset layout (probe exit 12)` | `TBD_REMOTE_DIR` does not exist on the host; exit 255 means ssh itself failed | step 3; check ssh with the Verify row |
 | `ERROR: <dir>/assets/terrains is missing, but the pre-relocation packages/map-assets is present.` | the host keeps its terrain tree at the old place, which this build does not serve | on the host, move `packages/map-assets/everon`, `arland` and `terrain-registry.json` into `assets/terrains/`, as the message prints, then deploy again |
 | `sshpass: command not found`, exit 127 | `TBD_SSH_PASS` is set without sshpass installed | install sshpass, or use `TBD_SSH_IDENTITY_FILE` |
@@ -439,16 +444,16 @@ On a Podman host, `podman exec` takes the same arguments.
 | `WARN: systemctl restart failed — is tbd-website-api.service installed?` | the unit is not installed, or its boot failed | Phase D; the journal shows why a boot failed |
 | the API refuses to boot with `migration N was previously applied but has been modified` | a comments-only edit to an applied migration; sqlx hashes the whole file | the deploy repairs it before each restart; by hand, [repair a migration checksum](/documentation/runbooks/database_operations.md#repair-a-migration-checksum) (step 2 there, on the host). Never reset the database for it |
 | the journal shows `DISCORD_CLIENT_ID is required` (or the secret or redirect) | outside development the three Discord settings are required | step 6 |
-| `UPLOAD_DIR is required` | the API was started without the unit, which sets it | start it through the unit (steps 8 to 10) |
+| `UPLOAD_DIR is required`, or the same for `MAP_ASSETS_DIR` or `GLYPH_ASSETS_DIR` | the API was started without the unit, which sets all three outside development | start it through the unit (steps 8 to 10) |
 | `UPLOAD_DIR is malformed: must be an absolute path outside development` | the `.env` sets `UPLOAD_DIR` to a relative path, and a value in the `.env` overrides the unit's | delete that line from the `.env` (step 6), then `systemctl --user restart tbd-website-api.service` |
 | `EQUIPMENT_DATA_DIR is malformed: must be an absolute path outside development` | the `.env` sets `EQUIPMENT_DATA_DIR` to a relative path, and a value in the `.env` overrides the unit's | delete that line from the `.env` (step 6), then `systemctl --user restart tbd-website-api.service` |
-| every `/map-assets` request answers 404 and the journal says nothing | the terrain tree is missing, or the API runs with another working directory; the asset server never checks its root | put the tree at `assets/terrains/`, and run the API through the unit, which pins both folders |
+| every `/map-assets` request answers 404 and the requests log nothing | the terrain tree is missing at the `MAP_ASSETS_DIR` the unit pins to the checkout's `assets/terrains`; the boot logs one warning naming the folder, and the asset server never checks its root again | put the tree at `assets/terrains/`, and run the API through the unit, which pins both folders |
 | the Mission Creator reports that `SharedArrayBuffer` is missing | the page is not served through the Caddyfile, so it lacks the cross-origin isolation headers | open the site through Caddy on port 3080 or the tunnel (step 12) |
 | the deploy stops at `staging Caddy on :3080 …`, and `docker logs tbd_staging_caddy` shows `address already in use` | another process holds port 3080 or Caddy's admin port 2019 on the host, such as a Caddy started outside the compose file | stop it (`caddy stop` for such a Caddy; `ss -tlnp` names the holder), then deploy again |
 | the deploy stops at the Caddy step with `adapting config using caddyfile: …` | the Caddyfile does not parse; a running Caddy keeps its previous configuration | fix `deploy/caddy/Caddyfile`, then deploy again |
 | the deploy stops at `cargo build --release: the staging host tools …` | the checkout does not build `staging-fixtures` or `acknowledgement-dropping-relay`, or a package no longer declares that `[[bin]]` | fix the build on the development machine (`cargo build --release -p <package> --bin <executable>`), then deploy again; `TBD_SKIP_API_BUILD=1` skips both cargo steps |
 | `rate_limit_buckets` gains only `strict\|127.0.0.1` rows for tunnel traffic | Caddy runs a Caddyfile without the `servers { trusted_proxies … }` block, or cloudflared reaches Caddy from an address other than `127.0.0.1` | deploy again so the Caddy step reloads the committed Caddyfile; point the tunnel's service at `http://127.0.0.1:3080` (step 14) |
-| every page but the API paths answers 404 | there is no `apps/frontend/dist` on the host: the app build was skipped (`TBD_SKIP_SPA_BUILD=1`) or never ran | deploy without `TBD_SKIP_SPA_BUILD` |
+| every page but the API paths answers 404 | there is no `crates/frontend/shell/frontend_application/dist` on the host: the app build was skipped (`TBD_SKIP_SPA_BUILD=1`) or never ran | deploy without `TBD_SKIP_SPA_BUILD` |
 | Caddy and Postgres are gone after a reboot | the container runtime does not start at boot | `sudo systemctl enable --now docker`; on a Podman host, `systemctl --user enable --now podman-restart.service` with lingering on (step 4) |
 | the API stops when the deploy user logs out | lingering is off | step 4 |
 | the backup timers fail to find their container | the backup units name `tbd_reforger_db`; the deploy's compose starts `tbd_staging_db` | [Database operations](/documentation/runbooks/database_operations.md#schedule-the-home-servers-backups) |
@@ -465,7 +470,7 @@ On a Podman host, `podman exec` takes the same arguments.
   that call the host tools this deploy builds.
 - [Testing and CI](/documentation/runbooks/testing_and_ci.md) — the gates a change passes before
   it is deployed.
-- [API environment variables](/documentation/apps/api/environment_variables.md) — every
+- [API environment variables](/documentation/crates/api/api_server/environment_variables.md) — every
   setting of the server's `.env`.
 - [Deployment templates](/deploy/README.md) — `deploy.env`, the Caddyfile and the
   units; [the deploy commands](/tools/commands/deployment/src/website/README.md) — how

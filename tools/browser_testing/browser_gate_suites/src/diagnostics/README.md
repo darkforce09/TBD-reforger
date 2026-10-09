@@ -31,7 +31,7 @@ aborts the browser. `chrome_devtools_protocol::launch_with_gpu` hands the same f
 | memory | `MemAvailable` in `/proc/meminfo` against `limits.min_mem_available_mib` (1024) | below the floor warns |
 | processes | `/proc/*/comm` named `chrome` or `chrome-headless` | any stray warns |
 | fonts | Chromium's log for `Could not find any font`, watched for 5 s | the marker fails; a probe that could not run warns |
-| dist | `<dist>/index.html`, `apps/frontend/dist` by default | missing warns |
+| dist | `<dist>/index.html`, `crates/frontend/shell/frontend_application/dist` by default | missing warns |
 | liveness | the Mission Creator at `/missions/smoke/edit?force=webgl&sat=preview` | not ready, or the browser died, fails |
 
 The pins live in `tools/browser_testing/browser_gate_suites/gate-env.json`. The liveness probe serves the dist on

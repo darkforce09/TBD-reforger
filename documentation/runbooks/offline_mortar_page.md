@@ -99,9 +99,9 @@ response header, COOP and COEP included.
   — the page, its offline behaviour and its save.
 - [Offline core](/crates/frontend/foundation/frontend_offline/src/README.md) — the pack download, the
   quota check and the offline state.
-- [Offline service worker](/apps/offline_service_worker/README.md) — the request classes,
+- [Offline service worker](/crates/frontend/shell/offline_service_worker/README.md) — the request classes,
   the caches and the Range answers.
 - [Mortar offline gate](/tools/browser_testing/browser_gate_suites/src/mortar_offline/README.md) —
   what each gate step checks.
-- [Game ballistics design note](/documentation/apps/api/verification_evidence/game_ballistics.md#offline-design)
+- [Game ballistics design note](/documentation/crates/api/api_server/verification_evidence/game_ballistics.md#offline-design)
   — the offline design and the operator decisions behind it.

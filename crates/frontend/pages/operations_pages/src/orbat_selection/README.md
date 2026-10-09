@@ -56,7 +56,7 @@ selector's change callback fetches the event again, so the notices stay live.
   `api_get` client, `EventHub`); `frontend_ui` (`AuthGate`, `MaterialIcon`); the
   `AuthStore` context and `use_params_map`.
 - Used by: the `/events/:id/missions/:emid/orbat` route in
-  `apps/frontend/src/app_routes.rs`; the
+  `crates/frontend/shell/frontend_application/src/app_routes.rs`; the
   [deployments](/documentation/glossary/a_to_f.md#deployment) page's active orders link to it
   (`crates/frontend/pages/operations_pages/src/deployments/active_orders.rs`).
 - Rules: the slotting tree is the event hub page's selector, never a second implementation; the

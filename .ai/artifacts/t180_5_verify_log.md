@@ -38,7 +38,7 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 133 filtered out
 ### E1 — no F-key palette row (UI)
 
 ```text
-$ rg -n 'F1|F2|F3|F4|F5|F6' apps/frontend/src/eden_chrome.rs | head
+$ rg -n 'F1|F2|F3|F4|F5|F6' crates/frontend/shell/frontend_application/src/eden_chrome.rs | head
 ```
 
 Matches are **comments + unit-test ban asserts only** — no F1–F6 mode row / buttons in DockRight.

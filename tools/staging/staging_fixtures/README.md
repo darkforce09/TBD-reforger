@@ -27,7 +27,7 @@ argv ─▶ the subcommand's flags parse ─▶ the API env file's DATABASE_URL 
 run the executable cargo builds for them (`CARGO_BIN_EXE_staging-fixtures`) against a database of
 their own and read the result back: the rows, the files, and, for the load fixtures, the API itself,
 which `tests/common/api_under_test.rs` composes from the same api crates and middleware chain as
-the `api` application, since a tool crate never depends on an application.
+the `api_server` application, since a tool crate never depends on an application.
 
 ## Getting started
 
@@ -45,7 +45,7 @@ an allow-listed base database (`rust_it`, `tbd_gate*`, `*_cold`, `*_it` or `*_pr
 
 ## Configuration
 
-Every setting of a run comes from the tool's flags and from the API env file, `apps/api/.env` relative to the working directory unless `--api-env-file` names
+Every setting of a run comes from the tool's flags and from the API env file, `crates/api/api_server/.env` relative to the working directory unless `--api-env-file` names
 another, read without touching the process environment:
 
 | Key | Default | Required | Read by |
@@ -68,7 +68,7 @@ default API env file resolves; the staging procedures run it as
 
 - Synopsis: `staging-fixtures <subcommand> [flags] --confirm-database <name> [--apply]
   [--api-env-file <path>]`, and `staging-fixtures --help`, which lists the subcommands.
-- Does: reads the API env file (`apps/api/.env` relative to the working directory
+- Does: reads the API env file (`crates/api/api_server/.env` relative to the working directory
   unless `--api-env-file` names another) without touching the process environment, connects to
   its `DATABASE_URL`, refuses unless `current_database()` equals `--confirm-database`, prints the
   count of accounts in the reserved synthetic range (Discord ids 9100000000000000000 to
@@ -158,7 +158,8 @@ default API env file resolves; the staging procedures run it as
 - Depends on: the api crates `api_audit_log`, `api_caller_identity`, `api_database`,
   `api_discord`, `api_foundation`, `api_http_layer`, `api_identifiers`,
   `api_identity_and_access`, `api_operations` and `api_server_infrastructure`; `fleet_wire_contract`
-  and `mission_model`; `time_source` (the member reads' clock); sqlx, reqwest, rustls, dotenvy,
+  and `mission_model`; `time_source` (the member reads' clock); `repository_layout` (the
+  default API env file path); sqlx, reqwest, rustls, dotenvy,
   chrono, tokio and `tracing-subscriber`. The
   suites add `api_configuration`, `api_state`, `api_missions`, `api_equipment_datasets`, axum,
   tower and `tower-http`.
@@ -168,7 +169,7 @@ default API env file resolves; the staging procedures run it as
   builds it on the host (`tools/commands/deployment/src/website/remote_steps.rs`).
 - Rules: tier 10 of `tools/staging`, the only tool crate with api crate edges
   (`STAGING_FIXTURES_PATH` in `tools/foundation/repository_laws/src/workspace_laws/crate_layout.rs`);
-  it never depends on `apps/api`; the executable name `staging-fixtures` and its release path
+  it never depends on `crates/api/api_server`; the executable name `staging-fixtures` and its release path
   `target/release/staging-fixtures` are stable, because the staging procedures and the deploy call
   them; test functions start with `staging_fixtures_`, which the readiness register's
   `staging_fixture_tool` check counts.
@@ -176,7 +177,7 @@ default API env file resolves; the staging procedures run it as
 ## Related documentation
 
 - [Staging tool crates](/tools/staging/README.md) — the staging crates side by side.
-- [Staging design note](/documentation/apps/api/verification_evidence/staging.md) — the staging
+- [Staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md) — the staging
   procedures and the cases the host tool's runs feed.
 - [Machine credentials and mission deployment](/documentation/runbooks/game_server_staging/machine_credentials_and_mission_deployment.md)
   — provisioning the fleet with `provision-fleet` and rotating credentials.

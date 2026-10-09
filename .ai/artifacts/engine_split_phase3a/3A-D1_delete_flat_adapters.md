@@ -13,7 +13,7 @@ adapters adapt now lives engine-side.
 | `reassign.rs` | 103 | 4 |
 | `slot_ids.rs` | 7 | 1 (a bare `pub use`) |
 
-Under `apps/frontend/src/editor/state/operations/`. The eight `entity/` adapters belong to
+Under `crates/frontend/shell/frontend_application/src/editor/state/operations/`. The eight `entity/` adapters belong to
 `3A-D2`; the façade and the `3A-C` shims belong to `3A-D3`. **Touch neither.**
 
 ## How the call sites actually look — read this before planning

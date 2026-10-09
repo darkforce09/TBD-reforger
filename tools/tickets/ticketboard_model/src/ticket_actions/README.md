@@ -3,7 +3,7 @@
 The [ticketboard](/documentation/glossary/n_to_z.md#ticketboard) feature that changes
 [tickets](/documentation/glossary/n_to_z.md#ticket): it builds each `cargo xtask ticket` command,
 guards it against a ticket file changed on disk, queues commands one at a time, and models the
-dialogs, the running command and the toasts that `apps/ticketboard/src/ticket_actions/ui/` paints.
+dialogs, the running command and the toasts that `tools/tickets/ticketboard_desktop/src/ticket_actions/ui/` paints.
 It never writes a ticket file itself.
 
 ## Contents
@@ -31,7 +31,7 @@ TicketCommandQueue ──idle──▶ cargo run --package xtask -- ticket <verb
 ```
 
 1. The desktop application's card menu and action strip
-   (`apps/ticketboard/src/ticket_actions/ui/menus.rs`) offer the transitions the ticket's status
+   (`tools/tickets/ticketboard_desktop/src/ticket_actions/ui/menus.rs`) offer the transitions the ticket's status
    allows (`services/commands`), and each opens a dialog from `services/dialog_builders.rs` carrying the `FileChangeGuard` of the ticket
    file.
 2. The dialog shows the exact command line; "Run" emits `TicketActionEvent::Dispatch`.
@@ -54,7 +54,7 @@ TicketCommandQueue ──idle──▶ cargo run --package xtask -- ticket <verb
   `services::dialog_builders::add_dialog` and `anchor_dialog`.
 
 The menus, dialogs and feedback renderers that paint these models live in the desktop application,
-under `apps/ticketboard/src/ticket_actions/ui/`.
+under `tools/tickets/ticketboard_desktop/src/ticket_actions/ui/`.
 
 ## Boundaries
 
@@ -63,7 +63,7 @@ under `apps/ticketboard/src/ticket_actions/ui/`.
   `cargo xtask ticket`, which the desktop application spawns.
 - Used by: `crate::application_state::events`, which converts `TicketActionEvent` into an
   `Action`; `crate::ticket_browser`, whose `BrowserEvent::TicketAction` carries it; the desktop
-  application: `apps/ticketboard/src/ticket_actions/ui/` and `apps/ticketboard/src/application/`
+  application: `tools/tickets/ticketboard_desktop/src/ticket_actions/ui/` and `tools/tickets/ticketboard_desktop/src/application/`
   (`mod.rs`, `command_execution.rs`, `action_dispatch.rs`, `feature_views.rs`,
   `ticket_command_views.rs` and `tests/rendering.rs`).
 - Rules:

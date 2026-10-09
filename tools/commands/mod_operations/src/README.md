@@ -138,7 +138,7 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 - Does: sets up the MCP game root, installs the pinned `enfusion-mcp` package, launches Workbench
   on `apps/mod/tbd-export/addon.gproj` when its Net API port (`ENFUSION_WORKBENCH_PORT`, 5775) is
   closed, warms the MCP daemon, checks `wb_connect`, and validates both addons. `--api` runs
-  `podman start tbdevent-postgres` and a detached `npm run dev` in `apps/api/`;
+  `cargo xtask db up` (reporting a failure) and then a detached `cargo xtask mk rust-api`;
   `--server` runs `setup server-profile` and then `mod dev-server` with no arguments. Every step
   but the Net API check and `wb_connect` reports a failure and continues.
 - Exit codes: 0 ready; 1 the Net API never opened, `wb_connect` failed, or the `tbd-emcp`
@@ -176,7 +176,7 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 
 - Synopsis: `mod seed-announcement`
 - Does: inserts the pinned first-milestone announcement into the website database when it is not
-  there, using `DATABASE_URL` from the environment or `apps/api/.env`.
+  there, using `DATABASE_URL` from the environment or `crates/api/api_server/.env`.
 - Exit codes: 0 inserted or present; 1 no `psql` and no database container, or no `DATABASE_URL`.
 - Example: `cargo xtask mod seed-announcement`
 

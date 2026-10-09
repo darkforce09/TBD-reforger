@@ -9,7 +9,7 @@
 //! (the realtime hub, the durable rate limiter), `api_member_activity`, `api_equipment_datasets`
 //! and the domain crates whose services each pass calls (`api_administration`,
 //! `api_identity_and_access`, `api_missions`, `api_operations`, `api_server_infrastructure`). The
-//! API binary (`apps/api/src/bin/api.rs`) is its one production caller; integration suites run
+//! API binary (`crates/api/api_server/src/bin/api_server.rs`) is its one production caller; integration suites run
 //! single passes directly.
 //! **Signals & state:** one Tokio task per worker, each owning the clone of the state, the pool
 //! or the hub it was handed; the work queues and leases live in Postgres.

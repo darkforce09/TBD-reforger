@@ -39,7 +39,7 @@ natively.
 ## Public surface
 
 - `login::LoginPage`, `auth_callback::AuthCallbackPage` and `settings::SettingsPage` (`wasm32`):
-  the route components `apps/frontend/src/app_routes.rs` binds to `/login`, `/auth/callback` and
+  the route components `crates/frontend/shell/frontend_application/src/app_routes.rs` binds to `/login`, `/auth/callback` and
   `/settings`, also in `prelude`; each is reachable at its page module too
   (`<page>::page::<Component>`), so the props type leptos derives for it is public.
 - The `arma-link` anchor on `/settings`, which the top bar's "Link Arma Identity" menu item
@@ -53,13 +53,13 @@ natively.
   the icons, the toast queue and the avatar URL guard); over HTTP, the
   [identity and access](/documentation/glossary/g_to_m.md#identity-and-access) routes of the
   [API](/documentation/glossary/a_to_f.md#api).
-- Used by: the route table in `apps/frontend/src/app_routes.rs` and
+- Used by: the route table in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the frame in
-  `apps/frontend/src/shell/`, which renders `/login` and `/auth/callback`
+  `crates/frontend/shell/frontend_application/src/shell/`, which renders `/login` and `/auth/callback`
   bare and links `/login` and `/settings` from its top bar.
 - Rules: `/login` and `/auth/callback` stay reachable signed out and stay named in the frame's
   `classify_frame` (`classify_frame_kinds` in
-  `apps/frontend/src/shell/tests/layout.rs`); the callback scrubs the token
+  `crates/frontend/shell/frontend_application/src/shell/tests/layout.rs`); the callback scrubs the token
   fragment with a history replace before it installs the session.
 
 ## Related documentation
@@ -68,7 +68,7 @@ natively.
   behaviour and design of sign-in, the callback and settings.
 - [Identity and access domain](/crates/api/api_identity_and_access/src/README.md) — the API
   routes behind these pages.
-- [App layout and navigation](/documentation/apps/frontend/shell/app_layout_and_navigation.md)
+- [App layout and navigation](/documentation/crates/frontend/shell/frontend_application/shell/app_layout_and_navigation.md)
   — the frame that renders sign-in bare and the account menu that links settings.
 - [Local development](/documentation/runbooks/local_development.md) — the dev login and the
   Discord sign-in on a workstation.

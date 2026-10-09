@@ -129,7 +129,7 @@ fill bar driven by the server's `percent`, clamped to 0 to 100.
   `crate::foundation::ui` (`AuthGate`, `SplitPane`, `SplitPaneEmpty`, `MaterialIcon`, the badge
   classes), `crate::foundation::utils` (countdown and local date formatting), the `AuthStore` context,
   and `event_hub_view` from `crates/frontend/pages/operations_pages/src/event_detail/`.
-- Used by: the `/events` route in `apps/frontend/src/app_routes.rs`; the source pins in
+- Used by: the `/events` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`; the source pins in
   `crates/frontend/foundation/frontend_test_support/src/pins.rs` read its three source files.
 - Rules: briefings render through `event_hub_view`, which `tests/schedule.rs` pins; the detail
   column never shows a hub fetched for another event.

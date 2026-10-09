@@ -58,7 +58,7 @@ fn a_run_target_that_was_never_built_is_green() {
 #[test]
 fn binaries_built_from_head_in_this_checkout_are_green() {
     let t = Tmp::new("fresh");
-    let run = t.run_target("debug", &["api"], Some(stamp(HEAD, &t.0)));
+    let run = t.run_target("debug", &["api-server"], Some(stamp(HEAD, &t.0)));
     let st = run_target_state(&run, HEAD, &t.0);
     assert_eq!(
         st,
@@ -77,11 +77,11 @@ fn binaries_built_from_head_in_this_checkout_are_green() {
 #[test]
 fn a_stamp_that_disagrees_with_head_blocks_and_names_the_binary() {
     let t = Tmp::new("stale");
-    let run = t.run_target("debug", &["api", "world"], Some(stamp(OTHER, &t.0)));
+    let run = t.run_target("debug", &["api-server", "world"], Some(stamp(OTHER, &t.0)));
     let st = run_target_state(&run, HEAD, &t.0);
     let (block, detail) = run_target_detail(&st, &run, HEAD);
     assert!(block, "a wrong sha read as green: {detail}");
-    assert!(detail.contains("api,world"), "{detail}");
+    assert!(detail.contains("api-server,world"), "{detail}");
     assert!(detail.contains("1f486e5"), "{detail}");
     assert!(detail.contains("4b2cca4"), "{detail}");
     assert!(detail.contains("cargo clean --target-dir"), "{detail}");
@@ -94,7 +94,7 @@ fn a_stamp_that_disagrees_with_head_blocks_and_names_the_binary() {
 fn a_stamp_from_a_worktree_at_the_same_sha_still_blocks_and_names_the_checkout() {
     let t = Tmp::new("foreign");
     let wt = t.0.join(".ai/artifacts/worktrees/T-300");
-    let run = t.run_target("debug", &["api"], Some(stamp(HEAD, &wt)));
+    let run = t.run_target("debug", &["api-server"], Some(stamp(HEAD, &wt)));
     let st = run_target_state(&run, HEAD, &t.0);
     let (block, detail) = run_target_detail(&st, &run, HEAD);
     assert!(block, "a foreign checkout read as green: {detail}");
@@ -106,7 +106,7 @@ fn a_stamp_from_a_worktree_at_the_same_sha_still_blocks_and_names_the_checkout()
 #[test]
 fn binaries_with_no_stamp_block_rather_than_pass() {
     let t = Tmp::new("unstamped");
-    let run = t.run_target("release", &["api"], None);
+    let run = t.run_target("release", &["api-server"], None);
     let st = run_target_state(&run, HEAD, &t.0);
     let (block, detail) = run_target_detail(&st, &run, HEAD);
     assert!(block, "unstamped binaries read as green: {detail}");
@@ -118,7 +118,7 @@ fn binaries_with_no_stamp_block_rather_than_pass() {
 #[test]
 fn an_unresolvable_head_blocks_rather_than_certifies() {
     let t = Tmp::new("nohead");
-    let run = t.run_target("debug", &["api"], Some(stamp(HEAD, &t.0)));
+    let run = t.run_target("debug", &["api-server"], Some(stamp(HEAD, &t.0)));
     let st = run_target_state(&run, "", &t.0);
     let (block, detail) = run_target_detail(&st, &run, "");
     assert!(block, "empty HEAD read as green: {detail}");
@@ -130,7 +130,7 @@ fn an_unresolvable_head_blocks_rather_than_certifies() {
 #[test]
 fn the_release_profile_is_checked_too() {
     let t = Tmp::new("release");
-    let run = t.run_target("release", &["api"], Some(stamp(OTHER, &t.0)));
+    let run = t.run_target("release", &["api-server"], Some(stamp(OTHER, &t.0)));
     assert!(run_target_detail(&run_target_state(&run, HEAD, &t.0), &run, HEAD).0);
 }
 
@@ -162,15 +162,15 @@ fn run_binaries_lists_executables_and_skips_the_stamp_and_depfiles() {
     let t = Tmp::new("bins");
     let d = t.0.join("debug");
     fs::create_dir_all(d.join("deps")).expect("mkdir");
-    for (name, mode) in [("api", 0o755), ("world", 0o755), ("notes", 0o644)] {
+    for (name, mode) in [("api-server", 0o755), ("world", 0o755), ("notes", 0o644)] {
         let p = d.join(name);
         fs::write(&p, b"x").expect("write");
         fs::set_permissions(&p, fs::Permissions::from_mode(mode)).expect("chmod");
     }
-    fs::write(d.join("api.d"), b"dep").expect("write");
+    fs::write(d.join("api-server.d"), b"dep").expect("write");
     write_run_stamp(&d, &stamp(HEAD, &t.0)).expect("stamp");
     assert_eq!(
         run_binaries(&d),
-        vec!["api".to_string(), "world".to_string()]
+        vec!["api-server".to_string(), "world".to_string()]
     );
 }

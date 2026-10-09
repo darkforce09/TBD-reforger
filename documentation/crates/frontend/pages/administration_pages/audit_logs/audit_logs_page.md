@@ -76,7 +76,7 @@ the DTOs it reads. Server-side:
   given cannot be replayed, then continues from the tail. It is woken by Postgres notifications,
   falling back to a 2-second poll, and ends with `event: authorization_expired` when the session
   or the role lapses; the page then refreshes the session and reconnects. The design note's
-  [audit replay and reset](/documentation/apps/api/verification_evidence/administration_and_content.md#audit-replay-and-reset)
+  [audit replay and reset](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md#audit-replay-and-reset)
   gives the protocol.
 
 - `GET /api/v1/admin/audit-logs`, then `?before=<id>` for each further page (`list_audit_logs` in

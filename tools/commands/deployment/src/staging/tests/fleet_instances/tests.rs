@@ -125,7 +125,7 @@ fn only_instance_one_is_listed_and_every_instance_has_its_name_folder_and_units(
     assert_eq!(third.server_name(), "TBD Staging 3");
     assert_eq!(third.home_relative_folder(), "tbd/fleet/instance-3");
     assert_eq!(third.game_server_unit(), "tbd-reforger@3.service");
-    assert_eq!(third.host_agent_unit(), "fleet_host_agent@3.service");
+    assert_eq!(third.host_agent_unit(), "game_server_host_agent@3.service");
     assert_eq!(third.relay_unit(), None);
 }
 

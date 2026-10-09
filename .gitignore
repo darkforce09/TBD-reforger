@@ -51,11 +51,11 @@ __pycache__/
 target-*/
 
 # ==============================================================================
-# 6. Frontend Build Output (apps/frontend)
+# 6. Frontend Build Output (crates/frontend/shell/frontend_application)
 # ==============================================================================
 # Trunk frontend build outputs
-/apps/frontend/dist/
-/apps/frontend/dist-debug/
+/crates/frontend/shell/frontend_application/dist/
+/crates/frontend/shell/frontend_application/dist-debug/
 
 # ==============================================================================
 # 7. Mod Suite (apps/mod)

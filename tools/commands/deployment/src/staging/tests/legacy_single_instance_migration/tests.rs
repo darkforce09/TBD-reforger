@@ -70,8 +70,9 @@ fn without_the_flag_an_installed_single_instance_unit_stops_the_deploy() {
     assert!(p.contains("  exit 1\n"));
 }
 
-/// The migration names only what the single instance installed: no snake_case name the fleet
-/// installs appears in it, so it can never retire a fleet instance's unit, folder or binary.
+/// The migration names only what the single instance installed: no snake_case name a fleet
+/// installs, current or retired, appears in it, so it can never retire a fleet instance's unit,
+/// folder or binary.
 #[test]
 fn the_migration_never_names_what_the_fleet_installs() {
     let env = base();
@@ -79,7 +80,12 @@ fn the_migration_never_names_what_the_fleet_installs() {
         migration_payload(&env.profile_dir, &env.single_instance_server_config()),
         single_instance_units_absent_payload(),
     ] {
-        assert!(!payload.contains("fleet_host_agent"), "{payload}");
+        for fleet_name in [
+            crate::staging::host_agent::HOST_AGENT_PACKAGE,
+            crate::staging::host_agent_name_migration::RETIRED_HOST_AGENT_NAME,
+        ] {
+            assert!(!payload.contains(fleet_name), "{fleet_name} in {payload}");
+        }
     }
 }
 
@@ -93,7 +99,9 @@ fn the_migration_moves_the_files_into_one_archive_under_a_local_bash() {
     let _ = std::fs::remove_dir_all(&home);
     let agent = home.join(".config/fleet-host-agent");
     let binary = home.join(".local/bin/fleet-host-agent");
-    let fleet_agent = home.join(".config/fleet_host_agent/instance-1/agent.toml");
+    let fleet_agent = home
+        .join(crate::staging::host_agent::HOST_AGENT_CONFIGURATION_UNDER_HOME)
+        .join("instance-1/agent.toml");
     let units = home.join(".config/systemd/user");
     std::fs::create_dir_all(home.join("tbd/profile/profile")).unwrap();
     std::fs::create_dir_all(&agent).unwrap();

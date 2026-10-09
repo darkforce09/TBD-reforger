@@ -48,11 +48,11 @@ order as its steps 3 to 5.
    file before it commits the servers and refuses a server name already registered, a credential
    file that already exists, and a secrets folder open to group or others. Each executor claims
    only its own [fleet commands](/documentation/glossary/a_to_f.md#fleet-command): the
-   [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) runs the unit and
+   [game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) runs the unit and
    [RCON](/documentation/glossary/n_to_z.md#rcon) actions, and the
    [game runtime](/documentation/glossary/g_to_m.md#game-runtime) runs `broadcast`, `kick` and
    `load_mission` (the
-   [fleet command ledger](/documentation/apps/api/verification_evidence/fleet_command_ledger.md#commands)
+   [fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md#commands)
    lists every action and its executor).
 
 2. On the host, write the join password every instance requires.
@@ -129,7 +129,7 @@ the new one beside the live one, promote it, let the instance read it, then revo
    an unrevoked credential of that server and executor.
 
 3. Let the instance read it. The host agent reads its credential file when
-   `fleet_host_agent@<N>.service` starts; the mod reads the copy in its profile's
+   `game_server_host_agent@<N>.service` starts; the mod reads the copy in its profile's
    `TBD_BackendConfig.json`, which every staging deploy writes from the live file. A deploy covers
    both, because it rewrites every profile and restarts every host agent.
 
@@ -139,7 +139,7 @@ the new one beside the live one, promote it, let the instance read it, then revo
 
    Expected: `==> deploy complete: 5 instance(s)`, exit 0, with the instance's line
    `V2 instance <N> game-runtime deployment: HTTP 200` (or `HTTP 404` before its first
-   deployment). For a `host_agent` rotation alone, `systemctl --user restart fleet_host_agent@<N>.service`
+   deployment). For a `host_agent` rotation alone, `systemctl --user restart game_server_host_agent@<N>.service`
    on the host is enough.
 
 4. Revoke the old credential. No command: in `/admin/server`, select "TBD Staging <N>", open
@@ -221,7 +221,7 @@ Expected: `{"version":2,"eventId":…,"missionId":…,"assignments":[…],"slots
 | `[TBD][Mission] NO MISSION - …` (ERROR) in an instance's log | nothing is deployed to its server; the instance stays in LOADING | step 5 |
 | `[TBD][Runtime] runtime session loop STOPPED` (ERROR) | another runtime started a session with the same credential, or the credential was revoked or rejected | rotate the instance's `mod_runtime` credential and deploy again |
 | every player hears that the event roster has not loaded on this server yet | the roster fetch fails; the `[TBD][Roster]` ERROR says why | fix the cause (no `machineCredential`, 403, 401); a running server retries on its own |
-| a host command in server control stays `queued` until it expires | the instance's host agent does not run | `systemctl --user status fleet_host_agent@<N>.service` on the host; deploy again ([staging deploy](/documentation/runbooks/game_server_staging/staging_deploy.md#host-agent)) |
+| a host command in server control stays `queued` until it expires | the instance's host agent does not run | `systemctl --user status game_server_host_agent@<N>.service` on the host; deploy again ([staging deploy](/documentation/runbooks/game_server_staging/staging_deploy.md#host-agent)) |
 
 ## Related
 
@@ -233,7 +233,7 @@ Expected: `{"version":2,"eventId":…,"missionId":…,"assignments":[…],"slots
   `provision-fleet` and `rotate-credential` subcommands and their guards.
 - [Server infrastructure domain](/crates/api/api_server_infrastructure/src/README.md) — the
   credential, session and fleet command routes.
-- [Fleet command execution](/documentation/apps/fleet_host_agent/fleet_command_execution.md) — how a
+- [Fleet command execution](/documentation/crates/fleet/game_server_host_agent/fleet_command_execution.md) — how a
   command moves from `queued` to `succeeded`.
 - [Boot and log verification](/documentation/runbooks/game_server_staging/boot_and_log_verification.md)
   — the log lines of each step above.

@@ -62,11 +62,11 @@ across the repository.
 - [factory](/documentation/glossary/a_to_f.md#factory)
 - [feature doc](/documentation/glossary/a_to_f.md#feature-doc)
 - [fleet command](/documentation/glossary/a_to_f.md#fleet-command)
-- [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent)
 - [fleet instance](/documentation/glossary/a_to_f.md#fleet-instance)
 - [fleet scenario](/documentation/glossary/a_to_f.md#fleet-scenario)
 - [frame packet](/documentation/glossary/a_to_f.md#frame-packet)
 - [game runtime](/documentation/glossary/g_to_m.md#game-runtime)
+- [game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent)
 - [gate](/documentation/glossary/g_to_m.md#gate)
 - [graphics engine](/documentation/glossary/g_to_m.md#graphics-engine)
 - [identity and access](/documentation/glossary/g_to_m.md#identity-and-access)
@@ -115,12 +115,14 @@ across the repository.
 
 ## Code
 
-- [Applications](/apps/README.md) — the API domains, pages, Mission Creator, host agent and
-  ticketboard most entries name; the map crates are in [crates/](/crates/README.md).
+- [Library crates](/crates/README.md) — the API server and its domains, the single-page app and
+  its pages, the Mission Creator, the game server host agent and the map crates most entries name.
 - [Mod suite](/apps/mod/README.md) — the addons, EnfScript, safe start and the game runtime.
 - [Developer tools](/tools/README.md) — tickets, waves, slices, gates and the oracles.
-- [Fleet host agent](/apps/fleet_host_agent/README.md) — the fleet host agent and RCON.
-- [Ticketboard](/apps/ticketboard/README.md) — the ticket viewer.
+- [Website API](/crates/api/api_server/README.md) — the API server crate and its binaries.
+- [Game server host agent](/crates/fleet/game_server_host_agent/README.md) — the game server host
+  agent and RCON.
+- [Ticketboard](/tools/tickets/ticketboard_desktop/README.md) — the ticket viewer.
 
 ## Boundaries
 

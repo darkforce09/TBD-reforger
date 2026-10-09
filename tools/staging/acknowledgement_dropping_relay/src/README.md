@@ -103,7 +103,7 @@ takes the command id from the route and the fencing token from the report the ag
 
 ## Related documentation
 
-- [Staging design note](/documentation/apps/api/verification_evidence/staging.md) — the
+- [Staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md) — the
   fleet procedure's waves W13 and W14 and the lost-acknowledgement cases they judge.
 - [Acknowledgement-dropping relay](/tools/staging/acknowledgement_dropping_relay/README.md) — the
   crate this folder is the source of.

@@ -18,7 +18,7 @@ No ydoc code change needed (`updateEnvironment` already takes `Partial<environme
 ## Automated gates (all exit 0)
 
 ```
-cd apps/frontend
+cd crates/frontend/shell/frontend_application
 npm run build   → tsc -b && vite build … ✓ built in 640ms          EXIT 0
 npm run lint    → eslint .                                          EXIT 0
 npm test -- --run → Test Files 5 passed (5) · Tests 43 passed (43)  EXIT 0

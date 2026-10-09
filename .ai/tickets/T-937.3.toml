@@ -46,7 +46,7 @@ completed_at = "2026-09-07T16:43:10Z"
 estimated = ["tokens"]
 owns = [
     "crates/map-engine-core/src/doc/store.rs",
-    "apps/frontend/src/editor/state/operations/entity.rs",
+    "crates/frontend/shell/frontend_application/src/editor/state/operations/entity.rs",
 ]
 
 [scope]

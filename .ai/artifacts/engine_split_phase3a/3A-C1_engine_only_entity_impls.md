@@ -25,7 +25,7 @@ Every name is free engine-side — verified, no collisions.
 | `entity/refile.rs` | 85 |
 | `entity/selection_index.rs` | 34 |
 
-Source: `apps/frontend/src/editor/state/operations/entity/`.
+Source: `crates/frontend/shell/frontend_application/src/editor/state/operations/entity/`.
 Destination: `crates/mission/mission_operations/src/entity/`.
 
 ### Two that need reading before you move them

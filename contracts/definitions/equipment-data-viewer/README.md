@@ -58,7 +58,7 @@ wire field, and refuses every `negative/` one.
   - `cargo xtask ci schema-codegen`, which generates the API models;
   - the API handlers and services under `crates/api/api_community_content/src/`, through
     the generated models;
-  - `apps/api/tests/contract_parity_equipment_viewer.rs`, which imports a committed
+  - `crates/api/api_server/tests/contract_parity_equipment_viewer.rs`, which imports a committed
     export, validates every route's answer against its schema and requires it to equal its
     golden, the `positive/` fixtures among them;
   - the frontend DTO parity tests named above, and the equipment data viewer bench in

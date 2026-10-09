@@ -76,7 +76,7 @@ owns = [
     "apps/website/api/src/app.rs",
     "apps/website/api/migrations",
     "apps/website/api/tests/t587_fire_mission_solution.rs",
-    "apps/frontend/src/mortar.rs",
+    "crates/frontend/shell/frontend_application/src/mortar.rs",
 ]
 
 [scope]

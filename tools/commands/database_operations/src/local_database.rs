@@ -77,7 +77,7 @@
 //!   `rust_it` is safe by construction; the port adds `TBD_IT_BASE_DB` (the selftest needs a
 //!   scratch base to avoid racing sibling slices), which would be a loaded gun without a guard. It
 //!   goes through the SAME drop allow-list the integration harness carries
-//!   (`apps/api/tests/common/mod.rs:87` ⇄ [`crate::container_database::
+//!   (`crates/api/api_server/tests/common/mod.rs:87` ⇄ [`crate::container_database::
 //!   is_safe_scratch_database_name`]), and every individual name is re-checked immediately before
 //!   its `DROP`. `tbd_reforger` is refused twice over.
 //! - **The reap was skipped on exactly the runs that leak.** `cargo test` failing aborts the make
@@ -107,8 +107,8 @@ pub mod test_it;
 // with no Makefile beside them, the consts are what survives — which is why the pin lives here and not
 // only in a test that reads a file that is going away.
 
-/// `WEB := apps/api` (Makefile:3).
-pub const WEB: &str = "apps/api";
+/// `WEB`: the API server crate folder the API recipes run in (Makefile:3).
+pub const WEB: &str = repository_layout::workspace_folders::API_SERVER_CRATE_DIR;
 
 /// `seed:` — five appliers, in order (Makefile:78-83). Order is contractual: `registry_dev`
 /// references roles seeded by `discord_roles`.

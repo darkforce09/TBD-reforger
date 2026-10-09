@@ -81,8 +81,14 @@ fn the_project_instructions_and_every_readme_are_judged() {
         area("crates/frontend/foundation/README.md"),
         Some(DocumentArea::Readmes)
     );
-    assert_eq!(area("apps/frontend/NOTES.md"), None);
-    assert_eq!(area("apps/frontend/readme.md"), None);
+    assert_eq!(
+        area("crates/frontend/shell/frontend_application/NOTES.md"),
+        None
+    );
+    assert_eq!(
+        area("crates/frontend/shell/frontend_application/readme.md"),
+        None
+    );
     assert_eq!(area("apps/CLAUDE.md"), None);
 }
 

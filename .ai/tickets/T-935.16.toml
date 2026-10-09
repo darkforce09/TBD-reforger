@@ -11,7 +11,7 @@ executor = "claude-code"
 notes = """
 ORDER 7536 -> 7995 ON 2026-09-08, wave 256 pre-dispatch. This row must sequence WITH the T-935.15 program,
 not ahead of it: both own tools/tbd-tools/src/world/build.rs and
-apps/frontend/src/editor/world_assets/world_host.rs, and this ticket's own approach already says
+crates/frontend/shell/frontend_application/src/editor/world_assets/world_host.rs, and this ticket's own approach already says
 they cannot share a wave. T-935.15 was pulled from wave 256 and split into children that own those files;
 this row now packs after them. Its requirement 2 (build.rs stops writing chunks/{key}.json.gz and
 chunks/manifest.json) is a strict subset of what the T-935.15 children delete, so re-read its acceptance
@@ -44,7 +44,7 @@ approach = [
 ]
 verify = [
     "cargo test -p map-engine-core --all-features",
-    "cargo test -p frontend",
+    "cargo xtask mk ci-local-leptos",
     "cargo xtask schema validate",
     "cargo xtask platform wave gate --slice T-935.16",
 ]
@@ -56,7 +56,7 @@ acceptance = [
 created_at = "2026-09-07T19:37:56Z"
 owns = [
     "tools/tbd-tools/src/world/build.rs",
-    "apps/frontend/src/editor/world_assets/world_host.rs",
+    "crates/frontend/shell/frontend_application/src/editor/world_assets/world_host.rs",
     "crates/map-engine-core/Cargo.toml",
     "assets/terrains/everon/manifest.json",
 ]

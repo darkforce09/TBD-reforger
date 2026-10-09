@@ -130,7 +130,7 @@ fn child_id_classification() {
     assert!(is_child_id(&TicketId::new("T-915.10")));
 }
 
-/// Manual smoke against the LIVE repo corpus (`cargo test -p ticketboard -- --ignored`):
+/// Manual smoke against the LIVE repo corpus (`cargo test -p ticketboard_model -- --ignored`):
 /// proves every real ticket file parses through this exact load path, so the
 /// board's first launch cannot hit a surprise refusal. Ignored by default —
 /// the normal test run stays hermetic (scratch dirs only).

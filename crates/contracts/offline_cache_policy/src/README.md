@@ -31,7 +31,7 @@ index and the served-path helpers.
 ## Boundaries
 
 - Depends on: `serde`, `serde_json`, `thiserror` and `url`.
-- Used by: the worker's handlers in `apps/offline_service_worker/src/` and the frontend's offline
+- Used by: the worker's handlers in `crates/frontend/shell/offline_service_worker/src/` and the frontend's offline
   core.
 - Rules: no module imports `web_sys`, `js_sys` or `wasm_bindgen`; tests live in `tests/`, one file
   per module.

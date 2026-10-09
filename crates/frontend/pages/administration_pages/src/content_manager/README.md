@@ -87,7 +87,7 @@ because a publish refuses a relative one. Every request runs in the browser buil
   `ListDetailItem`, `MaterialIcon`, the toast queue); over HTTP, the
   announcement and upload routes of the
   [community content](/documentation/glossary/a_to_f.md#community-content) domain.
-- Used by: the `/admin/content` route in `apps/frontend/src/app_routes.rs` and
+- Used by: the `/admin/content` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Comms Broadcaster" link in
   `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; `content_source` in
   `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`, which joins the page's sources for its

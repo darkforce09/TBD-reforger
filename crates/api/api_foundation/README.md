@@ -57,10 +57,10 @@ No feature and no environment variable.
 - Depends on: `content_digest` and external crates (`ammonia`, `axum`, `chrono`, `serde`,
   `serde_json`, `sqlx`, `thiserror`, `tracing`).
 - Used by: `api_failpoints`, whose injected failure converts into `ApiError`; the API application
-  (`apps/api`): every domain's handlers, services and models, its middleware and its integration
+  (`crates/api/api_server`): every domain's handlers, services and models, its middleware and its integration
   suites.
 - Rules: nothing here names a domain or an API crate above it; the wire spellings are contract,
-  pinned by `apps/api/tests/models_serde.rs` and the golden tests.
+  pinned by `crates/api/api_server/tests/models_serde.rs` and the golden tests.
 
 ## Related documentation
 

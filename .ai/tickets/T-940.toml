@@ -35,7 +35,7 @@ context = [
 requirement = [
     "Every slice verifies its defect on main with a failing integration test before coding and pastes the red verbatim.",
     "Migrations are numbered from 0022 upward; a slice takes the next free number at ship time if an earlier wave used its planned one.",
-    "Every schema change is mirrored in models/ and, where the frontend reads it, in apps/frontend/src/core/dto.rs.",
+    "Every schema change is mirrored in models/ and, where the frontend reads it, in crates/frontend/shell/frontend_application/src/core/dto.rs.",
 ]
 verify = [
     "cargo xtask db test-it",

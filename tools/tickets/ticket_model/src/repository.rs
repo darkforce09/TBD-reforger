@@ -27,21 +27,19 @@ pub fn handoff_doc(slug: &str) -> String {
 /// that cannot build xtask cannot run a single gate. `.cargo` rides with it for the command
 /// aliases that make `cargo xtask` resolve at all.
 ///
-/// A `website` slice carries the three website applications, everything they depend on through
-/// `path =` dependencies (the shared crates under `crates/`), the deployment folder that builds
-/// and serves them, and every `contracts/` file those crates compile in through `include_str!`
+/// A `website` slice carries `crates/`, which holds the three website applications (the API
+/// server and the single-page app with its offline service worker) and every crate they depend
+/// on through `path =` dependencies, the deployment folder that builds and serves them, and every `contracts/` file those crates compile in through `include_str!`
 /// or `include_bytes!`: the JSON Schemas (which the API's typed models are also generated from),
 /// the API golden responses, the ballistics
 /// catalog and calibration fixtures, the mission and registry fixtures, the equipment matching
 /// rules and the kit aliases. A `website` or `mod` slice checks out its documentation mirror
-/// beside the code, because documentation ships with the code it describes.
+/// beside the code, because documentation ships with the code it describes. No entry of a set
+/// lies inside another entry of the same set.
 pub const SPARSE_CHECKOUT_SETS: &[(&str, &[&str])] = &[
     (
         "website",
         &[
-            "apps/api",
-            "apps/frontend",
-            "apps/offline_service_worker",
             "crates",
             "deploy",
             "contracts/definitions",
@@ -52,7 +50,6 @@ pub const SPARSE_CHECKOUT_SETS: &[(&str, &[&str])] = &[
             "contracts/catalogs/ballistics",
             "contracts/rules/equipment-gameplay",
             "contracts/rules/kit-aliases.json",
-            documentation::APPS_DOCUMENTATION_DIR,
             documentation::CRATES_DOCUMENTATION_DIR,
         ],
     ),
@@ -82,16 +79,13 @@ pub mod documentation {
     use repository_layout::QUEUE_JSON;
     use repository_layout::documentation::DOCUMENTATION_ROOT;
 
-    /// The applications' documentation, which mirrors `apps/`, the game mod's
-    /// [`MOD_DOCUMENTATION_DIR`] inside it. A `website` slice checks it out beside the code.
-    pub const APPS_DOCUMENTATION_DIR: &str = "documentation/apps";
-
     /// The library crates' documentation, which mirrors `crates/`. A `website` slice checks it out
-    /// beside the code, because the website's applications depend on those crates.
+    /// beside the code, because the website's applications and the crates they depend on live
+    /// there.
     pub const CRATES_DOCUMENTATION_DIR: &str = "documentation/crates";
 
-    /// The game mod's documentation, which mirrors `apps/mod` inside [`APPS_DOCUMENTATION_DIR`]. A
-    /// `mod` slice checks it out beside the code.
+    /// The game mod's documentation, which mirrors `apps/mod` inside `documentation/apps`. A `mod`
+    /// slice checks it out beside the code.
     pub const MOD_DOCUMENTATION_DIR: &str = "documentation/apps/mod";
 
     /// One four-section plan document per ticket, named by [`plan_path`].

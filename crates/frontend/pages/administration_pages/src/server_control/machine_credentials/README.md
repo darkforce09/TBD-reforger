@@ -31,7 +31,7 @@ says it is stored or the sheet closes. It is never written to storage or a log. 
 checks a request as the API bounds it before it is sent: a trimmed label of 1 to 128 bytes, and a
 trimmed revocation reason of 1 to 512 bytes, which the audit trail keeps. The issue form offers the
 two program kinds, `mod_runtime` (the [game runtime](/documentation/glossary/g_to_m.md#game-runtime))
-and `host_agent` (the [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent)); a kind
+and `host_agent` (the [game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent)); a kind
 this build does not know shows as the API spells it. Every request runs in the browser build only.
 
 ## Boundaries
@@ -58,5 +58,5 @@ this build does not know shows as the API spells it. Every request runs in the b
 
 - [Server control page](/documentation/crates/frontend/pages/administration_pages/server_control/server_control_page.md)
   — the sheet's behaviour and what the credential routes mean server-side.
-- [Machine credentials evidence](/documentation/apps/api/verification_evidence/machine_credentials.md)
+- [Machine credentials evidence](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md)
   — how the API issues, verifies and revokes credentials.

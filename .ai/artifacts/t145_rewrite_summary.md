@@ -18,7 +18,7 @@ byte/semantically-identical, each with a proof:
 
 | Invariant | Proof |
 |---|---|
-| Frontend wire API (`apps/frontend`) | differential `≡` (G5) |
+| Frontend wire API (`crates/frontend/shell/frontend_application`) | differential `≡` (G5) |
 | PostgreSQL schema (29 tables, 12 enums, indexes, MV) | `pg_dump --schema-only` diff empty (G2) |
 | Mod compiled-doc + export envelope | `≡` + schema-valid + field assertions (G6) |
 | Cross-boundary codegen (`packages/tbd-schema`) | `make schema-codegen` → `git diff` empty (G4) |

@@ -130,10 +130,10 @@ pub(crate) fn gate_wave_number(ctx: &Ctx) -> Option<String> {
 /// Drop `tbd_gate_w*` databases older than the last two waves (keep N and N-1). Only names matching
 /// `^tbd_gate_w[0-9]+$` — never `tbd_gate_it`, `tbd_gate_migrate`, or operator `TBD_GATE_DB` names.
 ///
-/// The wave DB is no longer the only thing to reap. `cargo test -p api` now gives
-/// each test BINARY its own database, derived as `<base>_<suite>_it` by
-/// `apps/api/tests/common/mod.rs` (`per_binary_database_name`) — so one gate run against
-/// `tbd_gate_w60` also leaves `tbd_gate_w60_admin_field_it`, `…_events_it`, … 25 of them, measured.
+/// The wave DB is no longer the only thing to reap. `cargo test -p api_server` gives each test
+/// BINARY its own database, derived as `<base>_<suite>_it` by
+/// `crates/api/api_server/tests/common/mod.rs` (`per_binary_database_name`) — so one gate run
+/// against `tbd_gate_w60` also leaves `tbd_gate_w60_admin_field_it`, `…_events_it`, … 25 of them, measured.
 /// They are dropped and recreated on every run, so they do not grow per run — but without this they
 /// would accumulate 25 per WAVE forever, because the old `^tbd_gate_w[0-9]+$` pattern matched none
 /// of them. The wave number is now parsed out of the leading segment so a derived name is reaped
@@ -298,8 +298,8 @@ pub(crate) fn ensure_gate_db(ctx: &Ctx, state: &GateState) -> i32 {
     0
 }
 
-/// `cargo test -p api -p <every crates/api package>`, but a run where the DB tests skipped is a
-/// FAILURE, not a pass. The packages come from [`ci_task_catalog::api_package_lane`], the
+/// `cargo test -p api_server -p <every crates/api package>`, but a run where the DB tests skipped
+/// is a FAILURE, not a pass. The packages come from [`ci_task_catalog::api_package_lane`], the
 /// derivation `cargo xtask db test-it` and the CI `api-test` row run over, so an API crate is
 /// tested here from the moment the workspace names it.
 /// CARGO_TARGET_DIR IS PRIVATE HERE — read before removing it.

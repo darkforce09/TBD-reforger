@@ -51,7 +51,7 @@ instead of re-running the suite, so a paraphrase destroys the only evidence ther
 
 ## The doc_audit ratchet - the thing that makes 3B different from 3A
 
-`apps/frontend/src/v2/doc_audit_tests.rs` audits EVERY production `.rs` under `src/v2`
+`crates/frontend/shell/frontend_application/src/v2/doc_audit_tests.rs` audits EVERY production `.rs` under `src/v2`
 (it skips directories literally named `tests`) and enforces five rules:
 
 ```
@@ -132,7 +132,7 @@ there.
 
 ## Gates outside the frontend name frontend paths
 
-`xtask/src/gate_t180.rs` holds a table of `apps/frontend/src/editor/...` paths and
+`xtask/src/gate_t180.rs` holds a table of `crates/frontend/shell/frontend_application/src/editor/...` paths and
 `fs::copy(...).unwrap()`s every row, so ONE stale path panics EVERY test in that gate. `ai.rs`
 and `migrate_v2.rs` also carry `src/editor/` string literals. **Grep `xtask/` and `tools/` for
 any path under the tree you touch before you finish.**

@@ -139,11 +139,11 @@ or a strike.
    nothing derives it from the slots' loadouts. Does an Arsenal edit update the armory, or do the
    two stay apart? No ticket.
 2. **Mission planner.** No ticket covers the planned workspace, which has no code yet
-   ([design notes](/documentation/apps/frontend/workspaces/planner/mission_planner.md)). File one,
+   ([design notes](/documentation/crates/frontend/workspaces/planner/mission_planner.md)). File one,
    or strike the planner row above.
 3. **Where the replay lives.** T-136's plan puts the replay among the routed pages and names code
    paths that no longer exist, while the after-action review is planned as a workspace crate
-   under `crates/frontend/workspaces/` ([after-action review notes](/documentation/apps/frontend/workspaces/aar/after_action_review.md)).
+   under `crates/frontend/workspaces/` ([after-action review notes](/documentation/crates/frontend/workspaces/aar/after_action_review.md)).
    The [mod design](/documentation/apps/mod/tbd-framework/mod_design.md) also records full after-action
    recording as deferred by the operator while T-136 is ready: which one stands?
 4. **Team kills.** The debrief scoreboard counts team kills

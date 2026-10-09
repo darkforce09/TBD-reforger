@@ -43,9 +43,9 @@ citations = [
 estimated = ["scope"]
 owns = [
     "apps/website/api/src/models/telemetry.rs",
-    "apps/frontend/src/dto.rs",
-    "apps/frontend/src/sse.rs",
-    "apps/frontend/src/server_intel.rs",
+    "crates/frontend/shell/frontend_application/src/dto.rs",
+    "crates/frontend/shell/frontend_application/src/sse.rs",
+    "crates/frontend/shell/frontend_application/src/server_intel.rs",
 ]
 
 [scope]

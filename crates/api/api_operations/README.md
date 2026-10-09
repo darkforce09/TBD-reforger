@@ -78,20 +78,20 @@ through the dev-only `api_property_evidence`.
   `ballistics_model`, `ballistics_solver`, `fire_mission_planning` and `ballistics_calibration`,
   `content_digest`, `fleet_wire_contract`, `http_url_guard`, sqlx, axum, serde, chrono,
   thiserror, tokio, tracing and uuid. It names no other domain.
-- Used by: the API application (`apps/api`): its router merges `routes`, its background workers
+- Used by: the API application (`crates/api/api_server`): its router merges `routes`, its background workers
   run the lifecycle sweep and the reservation re-evaluation, the command center domain reads the
   event models, the staging fixtures tool seeds events through the event authoring services, and
   the integration suites reach the services directly. Over HTTP: the operations, event manager
   and mortar calculator pages and the game runtime's roster and deployment queues.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md);
-  `apps/api/src/tests/architecture_rules.rs` checks its route table, its handlers and its
+  `crates/api/api_server/src/tests/architecture_rules.rs` checks its route table, its handlers and its
   imports against the domain graph.
 
 ## Related documentation
 
 - [API operations source](/crates/api/api_operations/src/README.md) — the files, the routes, the
   reservation lock order and the fire-mission re-solve.
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
-- [Event eligibility and allocation](/documentation/apps/api/verification_evidence/event_eligibility_allocation.md)
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
+- [Event eligibility and allocation](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
   — access, visibility, pools, promotion, re-evaluation and derived attendance.
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.

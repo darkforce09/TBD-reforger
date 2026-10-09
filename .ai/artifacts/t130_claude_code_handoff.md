@@ -99,7 +99,7 @@ Mirror [`cms.go`](../../apps/website/internal/handlers/cms.go) archive pattern:
 
 ```bash
 go test ./internal/services/... ./internal/middleware/... ./internal/handlers/...
-cd apps/frontend && npm run build && npm run lint
+cd crates/frontend/shell/frontend_application && npm run build && npm run lint
 make test-it   # when db-up
 ```
 

@@ -6,7 +6,7 @@ Design-phase reference for a visual diff of two [mission](/documentation/glossar
 versions in the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator): the changes
 between versions drawn on the map instead of read as text. It gives colour and layout context and
 is not an implementation source; the built UI is the Leptos code under
-`apps/frontend/src/`.
+`crates/frontend/shell/frontend_application/src/`.
 
 ## Contents
 

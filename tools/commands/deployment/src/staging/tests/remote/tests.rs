@@ -87,7 +87,7 @@ fn rsync_argv_keeps_every_exclude_in_order() {
     for needed in [
         "--exclude=apps/mod/References/",
         &deploy_env_exclude,
-        "--exclude=apps/api/.env",
+        "--exclude=crates/api/api_server/.env",
         "--exclude=apps/mod/tbd-export/",
         "--exclude=apps/mod/tbd-emcp/",
         // Build output and map assets: a game-server host needs neither, and `--delete` would
@@ -97,13 +97,38 @@ fn rsync_argv_keeps_every_exclude_in_order() {
         "--exclude=assets/scratch/",
         "--exclude=assets/equipment/",
         // The app the website deploy built on the host, which the staging Caddy serves.
-        "--exclude=apps/frontend/dist/",
+        "--exclude=crates/frontend/shell/frontend_application/dist/",
     ] {
         assert!(argv.iter().any(|a| a == needed), "missing {needed}");
     }
     // Source has a trailing slash (rsync copies CONTENTS) and so does the destination.
     assert_eq!(argv[argv.len() - 2], "/repo/");
     assert_eq!(argv[argv.len() - 1], "deploy@h:/home/deploy/tbd/repo/");
+}
+
+/// The two deploys agree on what the host owns: each rsync excludes every host-owned path, so
+/// neither deploy's `--delete` reaches what the other relies on the host to keep.
+#[test]
+fn both_rsyncs_exclude_every_host_owned_path() {
+    let staging = rsync_argv(
+        &SshBase::Plain,
+        Path::new("/repo"),
+        "deploy@h",
+        "/home/deploy/tbd/repo",
+    );
+    let website =
+        crate::website::rsync_argv::rsync_argv("ssh", "/repo/", "deploy@h:/home/deploy/tbd/repo/");
+    for path in crate::host_owned_paths::HOST_OWNED_PATHS {
+        let exclusion = format!("--exclude={path}");
+        assert!(
+            staging.contains(&exclusion),
+            "deploy staging lacks {exclusion}"
+        );
+        assert!(
+            website.contains(&exclusion),
+            "deploy website lacks {exclusion}"
+        );
+    }
 }
 
 /// Both deploys exclude what only a development machine holds; this lane appends it after its own
@@ -118,7 +143,7 @@ fn rsync_argv_excludes_every_development_machine_only_path() {
     );
     let last_own_exclusion = argv
         .iter()
-        .position(|a| a == "--exclude=apps/frontend/dist/")
+        .position(|a| a == "--exclude=crates/frontend/shell/frontend_application/dist/")
         .expect("the lane's own last exclusion");
     for pattern in DEVELOPMENT_MACHINE_ONLY_PATHS {
         let needed = format!("--exclude={pattern}");
@@ -196,10 +221,14 @@ fn the_dry_run_plan_walks_every_instance_and_prints_no_secret() {
         ),
         "{plan}"
     );
-    assert!(plan.contains("fleet_host_agent@.service"), "{plan}");
+    assert!(
+        plan.contains(", game_server_host_agent@.service, "),
+        "{plan}"
+    );
     assert!(
         plan.contains(
-            "[dry-run] build fleet_host_agent; write ~/.config/fleet_host_agent/instance-N/agent.toml"
+            "[dry-run] build game_server_host_agent; write \
+             ~/.config/game_server_host_agent/instance-N/agent.toml"
         ),
         "{plan}"
     );
@@ -213,6 +242,31 @@ fn the_dry_run_plan_walks_every_instance_and_prints_no_secret() {
         "[dry-run] refuse while tbd-reforger.service or fleet-host-agent.service is installed"
     ));
     assert!(!without.contains("[dry-run] migrate:"));
+}
+
+/// Before the rsync the plan refuses while a retired host agent name is left, then probes the
+/// host's API `.env` with the exact script the live run sends, with and without the migration.
+#[test]
+fn the_dry_run_plan_checks_the_retired_names_and_the_api_environment_file_before_the_rsync() {
+    let env = base();
+    for migrate in [false, true] {
+        let plan = dry_run_plan(&env, &env.fleet.instances(), migrate);
+        let at = |needle: &str| {
+            plan.iter()
+                .position(|line| line.starts_with(needle))
+                .unwrap_or_else(|| panic!("no line starting {needle:?} in {plan:#?}"))
+        };
+        let retired = at("[dry-run] check on the host: no fleet_host_agent name is left");
+        let probe = at("[dry-run] the API's .env, refusing the rsync unless the host answers 0: ");
+        let rsync = at("[dry-run] rsync -avz --delete ... ");
+        assert!(retired < probe && probe < rsync, "{plan:#?}");
+        assert!(
+            plan[probe].ends_with(&crate::api_environment_file_preflight::probe_script(
+                "/home/deploy/tbd/repo"
+            ))
+        );
+        assert!(plan[probe].contains("/home/deploy/tbd/repo/crates/api/api_server/.env"));
+    }
 }
 
 #[test]

@@ -8,7 +8,7 @@ part: a browser that cannot reach its host still gets a `ready` pack, flagged as
 the server cannot answer (unreachable, or a `5xx` from a proxy whose API is down) the saved copies
 stand in: a re-run pack stays `ready` while every essential file is still cached, and pages read
 the saved catalog copies back through `saved_copies`. The worker itself lives in
-`apps/offline_service_worker/`; the policy both halves share is the `offline_cache_policy` crate
+`crates/frontend/shell/offline_service_worker/`; the policy both halves share is the `offline_cache_policy` crate
 (`crates/contracts/offline_cache_policy/`).
 
 ## Contents
@@ -57,7 +57,7 @@ main.rs start_app
 
 Each file lands in the cache the worker's `RequestClass::cache_name` names for its URL, under the
 worker's `cache_key`, with every response header it arrived with. The shell cache carries the
-build identifier: the hash Trunk puts in `frontend-<hash>.js`, which is also the `build`
+build identifier: the hash Trunk puts in `frontend_application-<hash>.js`, which is also the `build`
 query the worker is registered under, so page and worker agree on the cache names.
 
 Every file is essential except the cross-origin icon font's stylesheet and font files
@@ -119,7 +119,7 @@ under.
   `network_fallback`, `TerrainId`); `leptos` and `leptos_router` (the signals and the route
   watcher); `serde`, `serde_json`, `thiserror` and `url`; `web-sys`, `js-sys`, `wasm-bindgen`,
   `wasm-bindgen-futures`, `futures` and `gloo-timers` in the wasm32 build only.
-- Used by: the app's entry point (`apps/frontend/src/main.rs`), which registers the worker and
+- Used by: the app's entry point (`crates/frontend/shell/frontend_application/src/main.rs`), which registers the worker and
   mounts the watcher; the mortar
   calculator, which renders `offline_status` and `offline_optional_files`; the offline browser
   gate, which waits on `data-offline-state` and reads `data-offline-optional`.
@@ -142,7 +142,7 @@ under.
 
 ## Related documentation
 
-- [Offline service worker](/apps/offline_service_worker/README.md) — the worker and how it
+- [Offline service worker](/crates/frontend/shell/offline_service_worker/README.md) — the worker and how it
   answers each request class.
 - [Offline cache policy](/crates/contracts/offline_cache_policy/README.md) — the request classes,
   caches and terrain pack list the worker and the page share.

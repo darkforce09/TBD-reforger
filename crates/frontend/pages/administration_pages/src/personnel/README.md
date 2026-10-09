@@ -105,7 +105,7 @@ build renders the failure branch.
   `use_location`, `use_navigate`) and the `url` crate's form encoding; over HTTP,
   the roster, ban, warning and role resync routes of the
   [administration](/documentation/glossary/a_to_f.md#administration) domain.
-- Used by: the `/admin/personnel` route in `apps/frontend/src/app_routes.rs` and
+- Used by: the `/admin/personnel` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Personnel Roster" link in
   `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; `personnel_source` in
   `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`, which joins the page's sources for its

@@ -15,9 +15,9 @@ working context.
 | Work | Read first |
 |---|---|
 | any work | the [ticket](/documentation/glossary/n_to_z.md#ticket), its spec and its plan (`cargo xtask ticket brief <id>`) |
-| the app's pages | [Frontend documentation](/documentation/apps/frontend/README.md): every route, its page folder and its feature doc |
+| the app's pages | [Frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md): every route, its page folder and its feature doc |
 | the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) | its [roadmap](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md) and [decisions](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md) |
-| the [API](/documentation/glossary/a_to_f.md#api) | the [API overview](/documentation/apps/api/api_overview.md) and the code in `apps/api/` |
+| the [API](/documentation/glossary/a_to_f.md#api) | the [API overview](/documentation/crates/api/api_server/api_overview.md) and the code in `crates/api/api_server/` |
 | where a new file goes | [Where does X go?](/documentation/standards/where_does_x_go.md) |
 | comments and cross-boundary tags | [Documentation standards](/documentation/standards/documentation_standards.md) |
 | code rules and their gates | [Coding standards](/documentation/standards/coding_standards/README.md) |
@@ -29,10 +29,10 @@ working context.
 |---|---|
 | a ticket shipped | `cargo xtask ticket ship <id>` (it runs `ticket sync`), then after the commit `cargo xtask ticket stamp-sha <id> <sha>`; the feature doc's Open work |
 | a program's active slice | `cargo xtask ticket advance-slice <id>` |
-| a route added or removed | `apps/frontend/src/app_routes.rs` and `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the route table of the [frontend documentation](/documentation/apps/frontend/README.md); the page's feature doc and README |
+| a route added or removed | `crates/frontend/shell/frontend_application/src/app_routes.rs` and `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the route table of the [frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md); the page's feature doc and README |
 | a page's visible surface | the page's feature doc and its code folder's README |
-| the navigation or sidebar | `apps/frontend/src/shell/` and [App layout and navigation](/documentation/apps/frontend/shell/app_layout_and_navigation.md) |
-| an API model | the model in `apps/api/src/<domain>/models/`, the DTO in `crates/frontend/foundation/frontend_api_dtos/src/` and its R-api golden (CLAUDE.md law 9) |
+| the navigation or sidebar | `crates/frontend/shell/frontend_application/src/shell/` and [App layout and navigation](/documentation/crates/frontend/shell/frontend_application/shell/app_layout_and_navigation.md) |
+| an API model | the model in `crates/api/api_<domain>/src/models/`, the DTO in `crates/frontend/foundation/frontend_api_dtos/src/` and its R-api golden (CLAUDE.md law 9) |
 | a cross-boundary type or handler | its `@contract`, `@route` or `@authority` tag, per the documentation standards |
 | a schema | the definition in `contracts/definitions/`, its fixture, and the regenerated types (`cargo xtask ci schema-codegen`) |
 | the Mission Creator | [decisions](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md), the [feature inventory](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md) or the [Eden gap analysis](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_gap_analysis.md), as the change touches them |
@@ -53,9 +53,9 @@ working context.
 - The frozen records: `documentation/tickets/` once a ticket ships or is cancelled, and
   `documentation/archive/`. Only their links change.
 - The design exports in a `visual_references/` folder, which are references, not the source of
-  the UI; the live UI is the Leptos code under `apps/frontend/src/`.
+  the UI; the live UI is the Leptos code under `crates/frontend/shell/frontend_application/src/`.
 
-Markdown never goes under a `docs` folder in `apps/`, `contracts/` or `assets/`; it goes in
+Markdown never goes under a `docs` folder in `apps/`, `crates/`, `tools/`, `contracts/` or `assets/`; it goes in
 `documentation/`, beside the feature it describes.
 
 ## Verify before committing

@@ -151,8 +151,8 @@ fn every_website_source_perturbation_bites() {
     for (name, extra, wrong) in [
         (
             "overlay-outside",
-            " -f apps/api/docker-compose.staging.yml",
-            "apps/api/docker-compose.staging.yml",
+            " -f crates/api/api_server/docker-compose.staging.yml",
+            "crates/api/api_server/docker-compose.staging.yml",
         ),
         ("overlay-root", " -f 'compose.yml'", "compose.yml"),
         (
@@ -223,7 +223,7 @@ fn a_cd_into_the_compose_folder_bites_under_every_quoting() {
     for (name, line) in [
         (
             "cd-elsewhere",
-            "let c = \"cd '{remote_dir}/apps/frontend' && true\";",
+            "let c = \"cd '{remote_dir}/crates/frontend/shell/frontend_application' && true\";",
         ),
         ("cd-home", "let c = \"cd /home/deploy/tbd/repo && true\";"),
     ] {

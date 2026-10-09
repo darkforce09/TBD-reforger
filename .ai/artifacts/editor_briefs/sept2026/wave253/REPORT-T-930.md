@@ -22,8 +22,8 @@ test slots_gpu::tests::pack_vehicle_instances_disc_yellow ... ok
 | path | why |
 |---|---|
 | `crates/map-engine-core/src/slots_gpu.rs` | Document that `pack_vehicle_instances` is not first-paint. Test: default zoom (−2 → 4 m/px) `pack_vehicle_symbology` is a silhouette cell, not `SLOT_GLYPH_DISC`. |
-| `apps/frontend/src/editor/mission_editor.rs` | First bind also `vehicles_bind_symbology` from `vehicle_lane_fields()`. Class-R pins for first bind + place-time invalidate. |
-| `apps/frontend/src/editor/state/operations/entity.rs` | Catalog `Pending::Vehicle` sets `placed_vehicle`; after `after_local_edit` calls `rebind_vehicle_lane_after_place` (`vehicles_bind_symbology` + `mark_dirty`). |
+| `crates/frontend/shell/frontend_application/src/editor/mission_editor.rs` | First bind also `vehicles_bind_symbology` from `vehicle_lane_fields()`. Class-R pins for first bind + place-time invalidate. |
+| `crates/frontend/shell/frontend_application/src/editor/state/operations/entity.rs` | Catalog `Pending::Vehicle` sets `placed_vehicle`; after `after_local_edit` calls `rebind_vehicle_lane_after_place` (`vehicles_bind_symbology` + `mark_dirty`). |
 
 T-819 crewed-slot hide unchanged (`t819_crewed` 8 passed). Move path still `after_doc_change` / drag preview.
 
@@ -34,7 +34,7 @@ Skipped the `rebind_vehicle_lane_after_place()` call in `place_at_impl` (empty `
 **red VERBATIM:**
 
 ```
-thread 'editor::mission_editor::t930_vehicle_first_paint::place_path_invalidates_vehicle_lane' (19230) panicked at apps/frontend/src/editor/mission_editor.rs:3509:9:
+thread 'editor::mission_editor::t930_vehicle_first_paint::place_path_invalidates_vehicle_lane' (19230) panicked at crates/frontend/shell/frontend_application/src/editor/mission_editor.rs:3509:9:
 T-930: place_at_impl must call the place-time vehicle invalidate; body:
 ...
         if placed_vehicle {

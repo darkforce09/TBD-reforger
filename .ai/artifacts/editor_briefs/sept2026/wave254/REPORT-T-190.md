@@ -114,7 +114,7 @@ The one the brief specifies — skip the merge (`merge_before_write(...)` → ba
 ```
 test ...t190_run_save_merges_the_stored_record_before_it_writes ... FAILED
 
-panicked at apps/frontend/src/editor/state/tab_lock.rs:802:13:
+panicked at crates/frontend/shell/frontend_application/src/editor/state/tab_lock.rs:802:13:
 run_save must READ the record it is about to overwrite. run=async fn run_save(id: &str, pending: PendingSave) {
     let lock = lock_for(id);
     let _guard = lock.lock().await;
@@ -122,7 +122,7 @@ run_save must READ the record it is about to overwrite. run=async fn run_save(id
 test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1356 filtered out; finished in 0.09s
 ```
 Restored with `git checkout --` **and `touch`ed** (T-421 trap); the green run carries
-`Compiling frontend v0.1.0 (.../worktrees/T-190/apps/frontend)`.
+`Compiling frontend v0.1.0 (.../worktrees/T-190/crates/frontend/shell/frontend_application)`.
 
 Four more, so no pin here is vacuous — each applied, rebuilt (`Compiling` present every time), RED,
 restored + `touch`ed, green:

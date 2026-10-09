@@ -4,7 +4,7 @@
 use super::*;
 
 fn packages() -> Vec<String> {
-    ["api", "api_database", "api_state"]
+    ["api_server", "api_database", "api_state"]
         .map(String::from)
         .to_vec()
 }
@@ -14,23 +14,23 @@ fn each_line_names_every_package_then_its_own_words() {
     let rendered = |line| api_cargo_argv(line, &packages()).join(" ");
     assert_eq!(
         rendered(ApiLine::Test),
-        "cargo test -p api -p api_database -p api_state"
+        "cargo test -p api_server -p api_database -p api_state"
     );
     assert_eq!(
         rendered(ApiLine::UnitTests),
-        "cargo test -p api -p api_database -p api_state --lib --bins"
+        "cargo test -p api_server -p api_database -p api_state --lib --bins"
     );
     assert_eq!(
         rendered(ApiLine::Clippy),
-        "cargo clippy -p api -p api_database -p api_state --all-targets -- -D warnings"
+        "cargo clippy -p api_server -p api_database -p api_state --all-targets -- -D warnings"
     );
     assert_eq!(
         rendered(ApiLine::Build),
-        "cargo build -p api -p api_database -p api_state --all-targets"
+        "cargo build -p api_server -p api_database -p api_state --all-targets"
     );
 }
 
-/// This checkout's lines name `api` and every API crate on disk.
+/// This checkout's lines name `api_server` first and every API crate on disk, each once.
 #[test]
 fn this_checkout_lines_name_every_api_crate() {
     let root = tool_test_support::test_repo_root();
@@ -40,7 +40,14 @@ fn this_checkout_lines_name_every_api_crate() {
         .filter(|pair| pair[0] == "-p")
         .map(|pair| pair[1].as_str())
         .collect();
-    assert_eq!(named.first(), Some(&"api"), "{argv:?}");
+    assert_eq!(named.first(), Some(&"api_server"), "{argv:?}");
+    for package in &named {
+        assert_eq!(
+            named.iter().filter(|other| *other == package).count(),
+            1,
+            "{package} is named twice: {argv:?}"
+        );
+    }
     for crate_folder in std::fs::read_dir(root.join("crates/api"))
         .expect("crates/api exists")
         .filter_map(|entry| entry.ok())

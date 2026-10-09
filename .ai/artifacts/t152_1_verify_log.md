@@ -34,7 +34,7 @@ Automated Gn all PASS — advance allowed per hub (Mn may stay PENDING until T-1
 - `crates/map-engine-core/src/label.rs`
 - `crates/map-engine-render/src/text_layout.rs` + `draw_order` WorldLabels
 - `crates/map-engine-wasm` TextLabelStore + serde_json
-- `apps/frontend/.../wgpuTextLane.ts` + WgpuTacticalMap mount
+- `crates/frontend/shell/frontend_application/.../wgpuTextLane.ts` + WgpuTacticalMap mount
 
 ## Verdict
 

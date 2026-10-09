@@ -17,14 +17,15 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 5. **Categorize Variants & Primitives (Avoid Flat Dumps)**:
    Avoid flat dumping of dozens of files or variant variations into a single folder. Related variants, numerical sets (e.g. column counts, rounded radius variants), and functional primitives should be grouped into dedicated, well-named subfolders to maintain clean directory comprehension.
 6. **Strict Boundary Layers**:
-   - Every library crate sits at `crates/<category>/<crate>` (the frontend's at `crates/frontend/<layer>/<crate>`) and every tool crate at `tools/<category>/<crate>`, declaring its `category`, `tier` and `targets`. The crate-tier law (`cargo xtask verify crate-tiers`) holds every dependency edge: tiers point strictly down, the category matrix allows the edge, and the external-crate firewalls hold. The only members outside the layout are the apps under `apps/` and the two tool binaries. The [crate boundary rules](/documentation/standards/crate_boundary_rules.md) state every rule as the code enforces it.
+   - Every product crate sits at `crates/<category>/<crate>` (the frontend's at `crates/frontend/<layer>/<crate>`) and every tool crate at `tools/<category>/<crate>`, declaring its `category`, `tier` and `targets`; the applications are crates like any other (`api_server`, `frontend_application`, `offline_service_worker`, `game_server_host_agent`, `ticketboard_desktop`), and no member depends on one of them. The crate-tier law (`cargo xtask verify crate-tiers`) holds every dependency edge: tiers point strictly down, the category matrix allows the edge, and the external-crate firewalls hold. The only members outside the layout are the two tool binaries `tools/xtask` and `tools/developer_tools`; `apps/` holds the game mod and no crate. The [crate boundary rules](/documentation/standards/crate_boundary_rules.md) state every rule as the code enforces it.
    - Foundation and contracts (`crates/foundation/`, `crates/contracts/`): Leaf crates and one-boundary contract crates. Foundation depends on foundation only; contracts on foundation and contracts.
    - Graphics crates (`crates/graphics/`: `render_primitives`, `gpu_device`, `gpu_frame`, `renderer_core`): Map-agnostic rendering — byte layouts, the GPU context, the frame vocabulary, pipelines, draw encoding, the renderer contracts. Knows **zero** map concepts (no map noun in a declared name); depends on foundation and graphics crates only.
    - Map engine crates (the engine categories `crates/geometry/`, `crates/world_formats/`, `crates/terrain/`, `crates/world_objects/`, `crates/line_of_sight/`, `crates/map_overlay/`, `crates/streaming/` over graphics, and the rendering categories `crates/map_rendering/` and `crates/paper_doll/` above them): spatial computation, world and terrain formats, streaming, the render engine and its typed GPU layers. Streaming crates never depend on rendering crates; `wgpu` lives only in `crates/map_rendering/` and the GPU packages. Zero UI/Leptos dependencies.
    - Mission domain (`crates/mission/`, over foundation and geometry crates) and ballistics (`crates/ballistics/`, over foundation): no map, GPU or browser code. The Mission Creator's editing layer (`crates/mission_editing/`) adds the static-world engine categories and names no browser crate or browser token.
-   - Frontend (`crates/frontend/` and the thin app `apps/frontend/`): Presentation, navigation, and CAD workspaces as Leptos crates (leptos only here) in the layers foundation < features < pages and workspaces < the app shell; pages and workspaces are peers that never depend on each other. Consumes every crate but the api and tool crates.
-   - API (`crates/api/` and the thin app `apps/api/`): Axum REST API and SSE realtime hub. The domain code lives in the api crates (infrastructure < kernel < domains < workers), which depend on foundation, contracts, mission, ballistics and api crates; `apps/api` assembles them into the binary. sqlx and axum live only in api crates, with axum also in the `tools/browser_testing` and `tools/staging` harness servers and sqlx also in `tools/staging/staging_fixtures`.
-   - Tools (`tools/<category>/`): Depend on foundation, contracts, mission, ballistics and tool crates and on engine crates built for every target; never on a wasm-only or frontend crate, nor an api crate outside `staging_fixtures`. The binaries `tools/xtask` and `tools/developer_tools` depend on tool crates only, and the dependency closure of xtask holds no tokio, axum, reqwest, resvg or image.
+   - Frontend (`crates/frontend/`): Presentation, navigation, and CAD workspaces as Leptos crates (leptos only here) in the layers foundation < features < pages and workspaces < shell; pages and workspaces are peers that never depend on each other. The shell layer `crates/frontend/shell/` holds the single-page app `frontend_application` and the `offline_service_worker`, two peers that never name each other. Consumes every crate but the api, fleet and tool crates.
+   - API (`crates/api/`): Axum REST API and SSE realtime hub. The domain code lives in the api crates (infrastructure < kernel < domains < workers < the server), which depend on foundation, contracts, mission, ballistics and api crates; the server crate `crates/api/api_server` assembles them into the `api-server` binary. sqlx and axum live only in api crates, with axum also in the `tools/browser_testing` and `tools/staging` harness servers and sqlx also in `tools/staging/staging_fixtures`.
+   - Fleet (`crates/fleet/`): The `game_server_host_agent` beside each game-server instance, which carries out the API's fleet commands; depends on foundation crates built for every target and contracts crates only.
+   - Tools (`tools/<category>/`): Depend on foundation, contracts, mission, ballistics and tool crates and on engine crates built for every target; never on a wasm-only or frontend crate, nor an api crate outside `staging_fixtures`. The ticketboard desktop viewer `ticketboard_desktop` is a `tools/tickets` crate. The binaries `tools/xtask` and `tools/developer_tools` depend on tool crates only, and the dependency closure of xtask holds no tokio, axum, reqwest, resvg or image.
 7. **File Size Limits & Test Placement (Hard Ceilings — Zero Exemptions)**:
    - Production files must stay **at or under 500 lines**.
    - Test files (inside a `tests/` folder or named `*_tests.rs`) must stay **at or under 1000 lines**.
@@ -34,7 +35,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 8. **In-Code Documentation Standards (Rust & Enfusion)**:
    - **Present-Tense, Context-Free Invariants (Universal)**:
      Comments and docstrings must describe strictly what the code does *now* and *why* (invariants, mathematical models, engine/hardware constraints, failure modes). Never document historical transitions (no "rewritten from X", "fixed in Y"), ticket references in source comments, or references to retired codebases (no "mirrors old TS file"). Commit history owns history.
-   - **Rust Code Standards (`rustdoc` — `apps/`, `crates/`, `tools/`)**:
+   - **Rust Code Standards (`rustdoc` — `crates/`, `tools/`)**:
      - **Module Headers (`//!`)**: Non-trivial modules must carry a 4-point architectural contract header:
        - `**Role:**` Primary responsibility of this module in the subsystem.
        - `**Position:**` Boundary layer and data flow context (what feeds it, who consumes it).
@@ -72,55 +73,42 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 The [workspace layout](/documentation/architecture/workspace_layout.md) explains the top-level folders and every workspace member.
 
 ```text
-apps/
-├── api/                                 <-- Axum + sqlx REST API and SSE backend (:8080): the thin app the crates/api/ crates assemble into
-│   ├── src/                             <-- lib.rs · router.rs (route tables, mounts, middleware chain) · composition.rs (state with concrete services)
-│   │   ├── bin/                         <-- The `api` server and the `import-registry` tool
-│   │   └── tests/                       <-- Executable layout rules (crate graph, domain graph) and prose rules, router pins
-│   └── tests/                           <-- 150 integration binaries, each on its own database
-├── frontend/                            <-- Leptos 0.8 CSR single-page app (Trunk/WASM, :3000): the thin app the crates/frontend/ crates assemble into
-│   ├── src/                             <-- main.rs (entry point, mounts the shell) · app_routes.rs (the render form of the route table)
-│   │   ├── shell/                       <-- App frame around every route: layout, top nav, sidebar, membership status, not-found page
-│   │   └── tests/doc_audit/             <-- Documentation audit of every production file of the app and of every frontend crate
-│   └── style/                           <-- Tailwind v4 stylesheet: one @source line for the app and one per leptos crate
-├── offline_service_worker/              <-- Rust/WASM service worker: offline pack caches, Range→206 from cache (no JS policy)
-├── fleet_host_agent/                    <-- Agent per game-server instance: claims fleet commands from the API, runs process control, RCON reads and console lines, mission header switches
-├── mod/                                 <-- Enfusion engine mod suite (three addons)
-│   ├── tbd-framework/                   <-- Shipping game mod (TBD_Framework; depends on vanilla only)
-│   │   ├── Configs/                     <-- Menu presets, input contexts, key actions
-│   │   ├── Data/                        <-- Alias spawn registry, backend config template
-│   │   ├── Missions/                    <-- Mission headers a server boots (TBD Dev POC on Everon)
-│   │   ├── Prefabs/                     <-- Game mode with its manager components, player controller
-│   │   ├── worlds/                      <-- TBD Dev POC world and the layer that places the game mode
-│   │   ├── Scripts/Game/TBD/            <-- Gameplay scripts (compiled into game runtime)
-│   │   │   ├── API/                     <-- Platform bridge: game-runtime session, fleet commands, identity links, results
-│   │   │   ├── Core/                    <-- Structured log, prefab registry, player chat, SHA-256
-│   │   │   ├── Gamemode/                <-- Stage machine, safe start, objectives, tasks, end conditions
-│   │   │   ├── Session/                 <-- Mission selection, lobby, briefing, spectator, post-game
-│   │   │   ├── Systems/                 <-- Mission load, spawns, loadouts, zones, AI, audio, markers, radio
-│   │   │   └── UI/                      <-- Menu framework, components, HUD, mock catalogs
-│   │   └── UI/                          <-- UI layout definitions and textures
-│   │       ├── Textures/                <-- Rounded-shape disc, hero art, masks, icons
-│   │       └── layouts/                 <-- Enfusion widget layout files (.layout)
-│   │           ├── Common/              <-- Reusable design system primitives (panels, rows, chips, inputs)
-│   │           ├── Hud/                 <-- Objective panel shown during live play
-│   │           └── Session/             <-- Pre-game screens, post-game overlays, shared bars and panels
-│   ├── tbd-export/                      <-- Workbench export addon (TBD_Export; depends on vanilla + TBD_EMCP, not the framework)
-│   │   ├── Missions/                    <-- Export mission header (Everon export world)
-│   │   ├── Prefabs/                     <-- Export game mode carrying the road export component
-│   │   ├── worlds/                      <-- Standalone export world over vanilla Eden
-│   │   └── Scripts/
-│   │       ├── Game/TBD/Export/         <-- Runtime road-network export component; ballistics oracle play-mode simulation run
-│   │       └── WorkbenchGame/           <-- Workbench export plugins (MapExport, EquipmentExport, EquipmentVehicleExport, VehicleExport, BallisticsOracle, registry)
-│   ├── tbd-emcp/                        <-- Enfusion MCP bridge handler scripts (TBD_EMCP)
-│   │   └── Scripts/WorkbenchGame/EnfusionMCP/ <-- 19 committed NetAPI automation handlers
-│   └── References/                      <-- Licensed upstream reference lanes, gitignored except README
-│       ├── crf_framework/               <-- Upstream Coalition Reforger Framework scripts and assets
-│       ├── vanilla_reference/           <-- Extracted vanilla Reforger scripts and Script API pages
-│       └── playable_selector/           <-- PlayableSelector checkout (design-mirror only)
-└── ticketboard/                         <-- Native egui/eframe desktop viewer for .ai/tickets; its models live in tools/tickets/ticketboard_model
+apps/                                    <-- The Enfusion game mod and its README; no Rust crate lives here
+└── mod/                                 <-- Enfusion engine mod suite (three addons)
+    ├── tbd-framework/                   <-- Shipping game mod (TBD_Framework; depends on vanilla only)
+    │   ├── Configs/                     <-- Menu presets, input contexts, key actions
+    │   ├── Data/                        <-- Alias spawn registry, backend config template
+    │   ├── Missions/                    <-- Mission headers a server boots (TBD Dev POC on Everon)
+    │   ├── Prefabs/                     <-- Game mode with its manager components, player controller
+    │   ├── worlds/                      <-- TBD Dev POC world and the layer that places the game mode
+    │   ├── Scripts/Game/TBD/            <-- Gameplay scripts (compiled into game runtime)
+    │   │   ├── API/                     <-- Platform bridge: game-runtime session, fleet commands, identity links, results
+    │   │   ├── Core/                    <-- Structured log, prefab registry, player chat, SHA-256
+    │   │   ├── Gamemode/                <-- Stage machine, safe start, objectives, tasks, end conditions
+    │   │   ├── Session/                 <-- Mission selection, lobby, briefing, spectator, post-game
+    │   │   ├── Systems/                 <-- Mission load, spawns, loadouts, zones, AI, audio, markers, radio
+    │   │   └── UI/                      <-- Menu framework, components, HUD, mock catalogs
+    │   └── UI/                          <-- UI layout definitions and textures
+    │       ├── Textures/                <-- Rounded-shape disc, hero art, masks, icons
+    │       └── layouts/                 <-- Enfusion widget layout files (.layout)
+    │           ├── Common/              <-- Reusable design system primitives (panels, rows, chips, inputs)
+    │           ├── Hud/                 <-- Objective panel shown during live play
+    │           └── Session/             <-- Pre-game screens, post-game overlays, shared bars and panels
+    ├── tbd-export/                      <-- Workbench export addon (TBD_Export; depends on vanilla + TBD_EMCP, not the framework)
+    │   ├── Missions/                    <-- Export mission header (Everon export world)
+    │   ├── Prefabs/                     <-- Export game mode carrying the road export component
+    │   ├── worlds/                      <-- Standalone export world over vanilla Eden
+    │   └── Scripts/
+    │       ├── Game/TBD/Export/         <-- Runtime road-network export component; ballistics oracle play-mode simulation run
+    │       └── WorkbenchGame/           <-- Workbench export plugins (MapExport, EquipmentExport, EquipmentVehicleExport, VehicleExport, BallisticsOracle, registry)
+    ├── tbd-emcp/                        <-- Enfusion MCP bridge handler scripts (TBD_EMCP)
+    │   └── Scripts/WorkbenchGame/EnfusionMCP/ <-- 19 committed NetAPI automation handlers
+    └── References/                      <-- Licensed upstream reference lanes, gitignored except README
+        ├── crf_framework/               <-- Upstream Coalition Reforger Framework scripts and assets
+        ├── vanilla_reference/           <-- Extracted vanilla Reforger scripts and Script API pages
+        └── playable_selector/           <-- PlayableSelector checkout (design-mirror only)
 
-crates/                                  <-- Library crates grouped by category (crates/<category>/<crate>); every manifest under it is a workspace member declaring its tier
+crates/                                  <-- Product crates grouped by category (crates/<category>/<crate>), the applications among them; every manifest under it is a workspace member declaring its tier
 ├── foundation/                          <-- Base crates: tier 0 leaves, plus orbat_slot_ids on newtype_ids
 │   ├── http_url_guard/                  <-- The HTTP(S) URL check the API and the single-page app share, with its one case table
 │   ├── newtype_ids/                     <-- Macros declaring serde-transparent typed ids (string, integer, uuid; an sqlx form expanded at the call site)
@@ -191,7 +179,7 @@ crates/                                  <-- Library crates grouped by category 
 │   ├── fire_mission_planning/           <-- Fire-mission assembler: battery solutions, time fuzes, client/server comparison, wording
 │   ├── ballistics_calibration/          <-- Catalog calibration against the game's native tables, wind tables and engine oracle samples
 │   └── ballistics_agreement_cases/      <-- Seeded lattice of battery fire problems and their solution bit patterns (native and wasm32 agreement)
-├── api/                                 <-- The API's library crates (the product's only sqlx and axum); infrastructure < kernel < domains < workers
+├── api/                                 <-- The API's crates (the product's only sqlx and axum); infrastructure < kernel < domains < workers < the server
 │   ├── api_identifiers/                 <-- Infrastructure: serde- and sqlx-transparent typed ids of every table key, Discord snowflake, game runtime key
 │   ├── api_foundation/                  <-- Infrastructure: handler error envelope, JSON wire formats, text policies, request parameters
 │   ├── api_failpoints/                  <-- Infrastructure: `fail_point!`; in test builds the failpoint catalogue and arming registry
@@ -214,8 +202,16 @@ crates/                                  <-- Library crates grouped by category 
 │   ├── api_match_telemetry/             <-- Domain: game-runtime heartbeats, match registration, results revisions, event batches
 │   ├── api_operations/                  <-- Domain: events, ORBAT slotting, reservations, service records, fire missions, ballistics catalogs
 │   ├── api_command_center/              <-- Domain: dashboard, leaderboards, per-player statistics
-│   └── api_background_workers/          <-- Workers: the interval tasks the API binary arms at boot
-├── frontend/                            <-- The single-page app's crates (Leptos only here): foundation < features < pages, workspaces < the app shell
+│   ├── api_background_workers/          <-- Workers: the interval tasks the API binary arms at boot
+│   └── api_server/                      <-- Server: the Axum + sqlx REST API and SSE backend (:8080) the api crates assemble into
+│       ├── src/                         <-- lib.rs · router.rs (route tables, mounts, middleware chain) · composition.rs (state with concrete services)
+│       │   ├── bin/                     <-- The `api-server` server and the `import-item-registry` tool
+│       │   └── tests/                   <-- Executable layout rules (crate graph, domain graph) and prose rules, router pins
+│       ├── tests/                       <-- 150 integration binaries, each on its own database
+│       └── .env.example                 <-- Local configuration template, copied to the untracked .env
+├── fleet/                               <-- The game-server fleet crates over the fleet wire contract
+│   └── game_server_host_agent/          <-- Game server host agent per game-server instance: claims fleet commands from the API, runs process control, RCON reads and console lines, mission header switches
+├── frontend/                            <-- The single-page app's crates (Leptos only here): foundation < features < pages, workspaces < shell
 │   ├── foundation/                      <-- Shared foundations every layer builds on, lowest crate first
 │   │   ├── frontend_ui/                 <-- Reusable design system primitives (dialogs, sheets, selects, toasts); time formatting, clipboard, sanitising helpers
 │   │   ├── frontend_api_dtos/           <-- API request and response DTOs, the role ladder, the frontend's typed ids
@@ -235,13 +231,20 @@ crates/                                  <-- Library crates grouped by category 
 │   │   ├── field_tools_pages/           <-- Mortar calculator: catalog-driven on-device firing solutions, map picker, offline pack
 │   │   ├── doctrine_pages/              <-- Markdown doctrine wiki, vehicle identification index, modpack manifests
 │   │   └── administration_pages/        <-- Event manager, server control, personnel, approvals, content manager, audit logs, ballistics catalogs
-│   └── workspaces/                      <-- Standalone CAD workspaces & interactive tools
-│       ├── mission_creator_state/       <-- Mission Creator state: layout tokens, review mode, world-layer prefs, asset catalog and rules, outliner model, zones
-│       ├── mission_creator_engine_bridge/ <-- Engine seam: boot, viewport and frame timing, hosted mission document, overlays; pointer/keyboard input -> map tools
-│       ├── mission_creator_session/     <-- Per-tab session: IndexedDB drafts, hydrate, cross-tab lock, save status, conflict dialog
-│       ├── mission_creator_arsenal/     <-- Loadout domain, gear catalog trees, Arsenal tab, 3D paper doll
-│       ├── mission_creator_workspace/   <-- Mission Creator page (top-down 2D CAD): docks, outliner, inspectors, modals, canvas mount, read-only review workspace
-│       └── debug_benches/               <-- URL-only benches: building viewer, building interior, world line of sight, ballistics agreement, data viewer
+│   ├── workspaces/                      <-- Standalone CAD workspaces & interactive tools
+│   │   ├── mission_creator_state/       <-- Mission Creator state: layout tokens, review mode, world-layer prefs, asset catalog and rules, outliner model, zones
+│   │   ├── mission_creator_engine_bridge/ <-- Engine seam: boot, viewport and frame timing, hosted mission document, overlays; pointer/keyboard input -> map tools
+│   │   ├── mission_creator_session/     <-- Per-tab session: IndexedDB drafts, hydrate, cross-tab lock, save status, conflict dialog
+│   │   ├── mission_creator_arsenal/     <-- Loadout domain, gear catalog trees, Arsenal tab, 3D paper doll
+│   │   ├── mission_creator_workspace/   <-- Mission Creator page (top-down 2D CAD): docks, outliner, inspectors, modals, canvas mount, read-only review workspace
+│   │   └── debug_benches/               <-- URL-only benches: building viewer, building interior, world line of sight, ballistics agreement, data viewer
+│   └── shell/                           <-- The shell layer: the single-page app and the offline service worker, two peers
+│       ├── frontend_application/        <-- Leptos 0.8 CSR single-page app (Trunk/WASM, :3000) the frontend crates assemble into
+│       │   ├── src/                     <-- main.rs (entry point, mounts the shell) · app_routes.rs (the render form of the route table)
+│       │   │   ├── shell/               <-- App frame around every route: layout, top nav, sidebar, membership status, not-found page
+│       │   │   └── tests/doc_audit/     <-- Documentation audit of every production file of the app and of every frontend crate
+│       │   └── style/                   <-- Tailwind v4 stylesheet: one @source line for the app and one per leptos crate
+│       └── offline_service_worker/      <-- Rust/WASM service worker: offline pack caches, Range→206 from cache (no JS policy)
 ├── map_rendering/                       <-- The map's typed GPU layers and its renderer (may name map things; wgpu)
 │   ├── map_render_diagnostics/          <-- The renderer's byte-exact readback self-checks, scene readback, frame benchmark, stress pool
 │   ├── map_renderer/                    <-- The render engine: GPU context, pipelines, camera, batch list, lane sinks, upload belts, statistics, asset sink
@@ -264,7 +267,7 @@ tools/                                   <-- Every developer tool in the reposit
 ├── foundation/                          <-- The tools' tiered base crates
 │   ├── verification_core/               <-- Fail-closed verdicts, pattern scans, gates, the repository verification lock
 │   ├── process_runner/                  <-- Child processes (deadlines; terminal, binary, file, detached and streaming modes), host-bridge execution, the secure shell transport
-│   ├── repository_laws/                 <-- Every repository law: crate tiers, anatomy, test-file reachability, frontend layering, Tailwind sources, file length, test placement, app dependency directions
+│   ├── repository_laws/                 <-- Every repository law: crate tiers, anatomy, test-file reachability, frontend layering, Tailwind sources, file length, test placement, test-only features
 │   ├── repository_layout/               <-- The paths every tool shares; its prelude re-exports repository_root's checkout-root finder
 │   ├── deploy_settings/                 <-- The one reader of deploy/deploy.env and its precedence over exported variables
 │   └── tool_test_support/               <-- Test locks and the checkout root the tool crates' tests share (dev-only)
@@ -273,7 +276,8 @@ tools/                                   <-- Every developer tool in the reposit
 │   ├── ticket_metrics/                  <-- Slice-run receipts and token estimates
 │   ├── ticket_wave_lock/                <-- Wave lock compiler, reader and checker
 │   ├── ticket_registry/                 <-- Ticket operations, validation, queue and roadmap sync, the `ticket` verbs
-│   └── ticketboard_model/               <-- The ticketboard's headless half: models, events, egui-free application state
+│   ├── ticketboard_model/               <-- The ticketboard's headless half: models, events, egui-free application state
+│   └── ticketboard_desktop/             <-- Native egui/eframe desktop viewer for .ai/tickets over ticketboard_model
 ├── commands/                            <-- Command crates behind the xtask groups
 │   ├── agent_context_guards/            <-- AI agent tool-call guard (Bash and Read rules, the session read set) and the filtered command runner (`ai`)
 │   ├── ci_task_catalog/                 <-- CI task table and runner (`ci`, `help`), build lane recipes (`mk`), cargo target pin, CI workflow checks, map asset checks
@@ -359,7 +363,7 @@ documentation/                           <-- All documentation; entry, map and a
 
 ## 3. Canonical Commands (`cargo xtask`)
 
-Configuration lives in `apps/api/.env`, copied from `apps/api/.env.example` (`APP_ENV=development`, Postgres on port 5434). Step-by-step setup: [local development](/documentation/runbooks/local_development.md).
+Configuration lives in `crates/api/api_server/.env`, copied from `crates/api/api_server/.env.example` (`APP_ENV=development`, Postgres on port 5434). Step-by-step setup: [local development](/documentation/runbooks/local_development.md).
 
 ```bash
 # Local stack, in this order (Postgres :5434)

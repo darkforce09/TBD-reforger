@@ -47,7 +47,7 @@ of the xtask binary's dependency closure.
   `cargo xtask deploy website`, which build and run `staging-fixtures` on the host.
 - Rules: a crate here sits at `tools/staging/<name>` and declares `category = "tools/staging"`
   (`cargo xtask verify crate-tiers`); `staging_fixtures` is the one tool crate that may depend on
-  the api crates, and never on `apps/api`; an engine never writes a credential to disk, a log or its
+  the api crates, and never on `crates/api/api_server`; an engine never writes a credential to disk, a log or its
   report.
 
 ## Related documentation

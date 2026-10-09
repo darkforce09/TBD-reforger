@@ -10,7 +10,7 @@ links one.
 ### acknowledgement-dropping relay
 
 A loopback HTTP relay on the staging host between the API and the
-[fleet host agent](#fleet-host-agent) of one [fleet instance](#fleet-instance) (instance 5). Armed
+[game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) of one [fleet instance](#fleet-instance) (instance 5). Armed
 over its control socket, it holds back the API's next 200 answer to a claim or to a result past the
 agent's 20-second timeout and then closes the connection, so the staging fleet check proves that a
 lost acknowledgement neither repeats nor loses a [fleet command](#fleet-command); it never stores or
@@ -36,17 +36,17 @@ scoreboard; on the website, a map replay that is planned and not built, as a wor
 
 In code: `apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/`; the website's replay has no code yet.
 
-See: [After-action review](/documentation/apps/frontend/workspaces/aar/after_action_review.md).
+See: [After-action review](/documentation/crates/frontend/workspaces/aar/after_action_review.md).
 
 ### API
 
 The website's backend: the Axum REST API under `/api/v1` and its Server-Sent Events streams over
 Postgres, in eight domains beside a shared `core` and the [background workers](#background-workers).
-Documents say the API; the crate is `api`, in the folder `apps/api/`.
+Documents say the API; the crate is `api_server`, in the folder `crates/api/api_server/`.
 
-In code: `apps/api/` (library `api`, binaries `api` and `import-registry`); `apps/api/src/router.rs` merges the domain route tables.
+In code: `crates/api/api_server/` (library `api_server`, binaries `api-server` and `import-item-registry`); `crates/api/api_server/src/router.rs` merges the domain route tables.
 
-See: [Website API](/apps/api/README.md).
+See: [Website API](/crates/api/api_server/README.md).
 
 ### approvals
 
@@ -85,7 +85,7 @@ current version into an artifact, a review decides exactly that artifact, and a
 
 In code: `MissionArtifact` in `crates/api/api_missions/src/services/mission_artifacts/artifact_store.rs`; `mission_submission.rs` and `game_runtime_missions.rs` in `crates/api/api_missions/src/handlers/`.
 
-See: [Mission artifacts evidence](/documentation/apps/api/verification_evidence/mission_artifacts.md).
+See: [Mission artifacts evidence](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md).
 
 ### audit logs
 
@@ -154,14 +154,14 @@ See: [Community content domain](/crates/api/api_community_content/src/README.md)
 
 The [fleet command](#fleet-command) `console_command`: one line an administrator types (1 to 256
 bytes, no control characters, no leading `@`), sent to the game server's
-[RCON](/documentation/glossary/n_to_z.md#rcon) console by its [fleet host agent](#fleet-host-agent).
+[RCON](/documentation/glossary/n_to_z.md#rcon) console by its [game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent).
 The agent may repeat the login but transmits the line once and never resends it; the outcome keeps
 the reply up to 4,096 bytes with a truncation flag, and without a reply the command may or may not
 have run.
 
-In code: `FleetAction::ConsoleCommand` in `crates/contracts/fleet_wire_contract/src/fleet_action.rs`; `HostCommand::ConsoleCommand` in `apps/fleet_host_agent/src/command_execution/host_command.rs` and `SessionRequest::ExecuteOnce` in `apps/fleet_host_agent/src/rcon/rcon_session.rs`; `console_command_form.rs` in `crates/frontend/pages/administration_pages/src/server_control/fleet_commands/`.
+In code: `FleetAction::ConsoleCommand` in `crates/contracts/fleet_wire_contract/src/fleet_action.rs`; `HostCommand::ConsoleCommand` in `crates/fleet/game_server_host_agent/src/command_execution/host_command.rs` and `SessionRequest::ExecuteOnce` in `crates/fleet/game_server_host_agent/src/rcon/rcon_session.rs`; `console_command_form.rs` in `crates/frontend/pages/administration_pages/src/server_control/fleet_commands/`.
 
-See: [RCON](/documentation/glossary/n_to_z.md#rcon), [API decisions](/documentation/apps/api/decisions.md).
+See: [RCON](/documentation/glossary/n_to_z.md#rcon), [API decisions](/documentation/crates/api/api_server/decisions.md).
 
 ### content manager
 
@@ -292,30 +292,17 @@ outcome; [mission deployments](/documentation/glossary/g_to_m.md#mission-deploym
 
 In code: `FleetAction` in `crates/contracts/fleet_wire_contract/src/fleet_action.rs`; `fleet_commands.rs` and `fleet_executor.rs` in `crates/api/api_server_infrastructure/src/handlers/`.
 
-See: [fleet host agent](#fleet-host-agent), [console command](#console-command), [game runtime](/documentation/glossary/g_to_m.md#game-runtime), [server control](/documentation/glossary/n_to_z.md#server-control).
-
-### fleet host agent
-
-The program beside each Arma Reforger dedicated server of a game host, one per fleet instance: it
-polls the API outbound over HTTPS for the [fleet commands](#fleet-command) addressed to its server,
-performs process control, [RCON](/documentation/glossary/n_to_z.md#rcon) commands and scenario switches, and reports each step; the API never connects in.
-
-In code: `apps/fleet_host_agent/`; `deploy/systemd/fleet_host_agent@.service`, one
-`fleet_host_agent@N.service` per fleet instance. The package name `fleet_host_agent` is also the
-binary, the configuration folder `~/.config/fleet_host_agent/instance-N/` and the HTTP user agent
-`fleet_host_agent/<version>`.
-
-See: [machine credential](/documentation/glossary/g_to_m.md#machine-credential), [Fleet host agent](/apps/fleet_host_agent/README.md).
+See: [game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent), [console command](#console-command), [game runtime](/documentation/glossary/g_to_m.md#game-runtime), [server control](/documentation/glossary/n_to_z.md#server-control).
 
 ### fleet instance
 
 One of the game servers a staging host runs side by side, numbered 1 to `TBD_FLEET_INSTANCES`
 (five on staging): instance N is the registered server "TBD Staging N", with its own dedicated server
-unit `tbd-reforger@N.service`, its own [fleet host agent](#fleet-host-agent)
-`fleet_host_agent@N.service`, its own [machine credentials](/documentation/glossary/g_to_m.md#machine-credential) and RCON password, and the game port
+unit `tbd-reforger@N.service`, its own [game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent)
+`game_server_host_agent@N.service`, its own [machine credentials](/documentation/glossary/g_to_m.md#machine-credential) and RCON password, and the game port
 2000+N, the A2S port 17776+N and the loopback RCON port 19998+N.
 
-In code: `tools/commands/deployment/src/staging/fleet_instances.rs`; `deploy/systemd/tbd-reforger@.service` and `fleet_host_agent@.service`; on the host, `~/tbd/fleet/instance-N/`.
+In code: `tools/commands/deployment/src/staging/fleet_instances.rs`; `deploy/systemd/tbd-reforger@.service` and `game_server_host_agent@.service`; on the host, `~/tbd/fleet/instance-N/`.
 
 See: [acknowledgement-dropping relay](#acknowledgement-dropping-relay), [Deploy staging](/tools/commands/deployment/src/staging/README.md).
 

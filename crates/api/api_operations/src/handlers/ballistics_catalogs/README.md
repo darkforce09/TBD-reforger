@@ -43,7 +43,7 @@ crates/api/api_operations/src/handlers/ballistics_catalogs/
   `api_foundation` for `PathParams` and `ApiError`.
 - Used by: `crates/api/api_operations/src/routes.rs`; over HTTP, the mortar calculator in
   `crates/frontend/pages/field_tools_pages/src/mortar/` and the offline service worker; the
-  test `apps/api/tests/game_ballistics_catalog_upload.rs`.
+  test `crates/api/api_server/tests/game_ballistics_catalog_upload.rs`.
 - Rules: the reads take no identity extractor; the upload takes `AdminUser`, so a lower caller is
   refused before the body is read; a refused upload stores nothing and writes no audit line.
 

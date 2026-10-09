@@ -8,8 +8,8 @@ do not touch anything else.**
 An earlier draft of this brief claimed three tests were dropped. **Only one was.** Measured:
 
 ```
-#[test] in apps/frontend/src/editor/     at a4b86912d : 1117
-#[test] in apps/frontend/src/editor/     at HEAD      : 1000     -> 117 lost
+#[test] in crates/frontend/shell/frontend_application/src/editor/     at a4b86912d : 1117
+#[test] in crates/frontend/shell/frontend_application/src/editor/     at HEAD      : 1000     -> 117 lost
 #[test] in legacy/map_engine/src/editing/  at HEAD      :  116     -> 116 gained
                                                                             net -1
 ```
@@ -31,11 +31,11 @@ enforced. Operator decision, explicit: **repair, do not duplicate.**
 ### 1 · One test is genuinely gone
 
 `the_exporter_grid_ref_is_the_map_furnitures_own_label_text`, formerly in
-`apps/frontend/src/editor/state/commands_hotkeys.rs`. It is the net -1. Recover the
+`crates/frontend/shell/frontend_application/src/editor/state/commands_hotkeys.rs`. It is the net -1. Recover the
 original with:
 
 ```
-git show a4b86912d:apps/frontend/src/editor/state/commands_hotkeys.rs
+git show a4b86912d:crates/frontend/shell/frontend_application/src/editor/state/commands_hotkeys.rs
 ```
 
 It is behavioural, not a scrub: it builds an `OrthoCamera`, calls
@@ -83,7 +83,7 @@ These read as lies today:
 |---|---|
 | `crates/mission_editing/map_editing_tools/src/line_of_sight/tests/capture.rs:152` | `no_los_doc_writes` |
 | `crates/mission_editing/map_editing_tools/src/line_of_sight/tests/capture.rs:158` | `no_los_doc_writes` |
-| `apps/frontend/src/editor/panels/toolbelt.rs:1369` | `no_ruler_doc_writes` |
+| `crates/frontend/shell/frontend_application/src/editor/panels/toolbelt.rs:1369` | `no_ruler_doc_writes` |
 
 Repoint them at the live engine test names. A fourth,
 `crates/mission_editing/mission_editing_commands/src/document_text/selection_digest.rs:24`, cites the test from item 1

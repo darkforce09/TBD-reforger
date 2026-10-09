@@ -48,7 +48,7 @@ cargo test -p map_draw_lanes   # the paint order, wire id round trips and zoom g
 - Used by: `unit_symbology` and `overlay_instances` (caption sizing, fire-mission lanes); the
   map rendering crates (the frame builder, the typed layers and the diagnostics), the streaming
   crates (residency, draw buffers and loaders) and `vegetation`, which read the lanes and gates;
-  the single-page app (`apps/frontend`): the mortar map
+  the single-page app (`crates/frontend/shell/frontend_application`): the mortar map
   picker, the Mission Creator's document host and select tool, and the debug benches; the
   frontend's debug bench test reads `src/lane_roles.rs` to pin its lane id
   mirror (`lane_ids_match_the_render_crate`).

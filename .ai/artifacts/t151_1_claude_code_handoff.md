@@ -67,7 +67,7 @@ test "$(git rev-parse --show-toplevel)" = "$(pwd)"
 git status --porcelain             # empty @ f019512d+
 # Do NOT checkout or create branches; do NOT run ./scripts/ticket run
 git lfs pull && make map-assets-link
-cd apps/frontend && npm ci && cd ../../..
+cd crates/frontend/shell/frontend_application && npm ci && cd ../../..
 make wasm
 ```
 
@@ -77,22 +77,22 @@ Toolchain: same as T-151.0 (rustc 1.95, wasm-pack 0.15, node 26). `make wasm` be
 
 | Concern | Path |
 |---|---|
-| TBDS parse + pickBaseLevel | `apps/frontend/src/features/tactical-map/layers/satelliteUnified.ts` |
-| Deck basemap resolve + LOD (oracle) | `apps/frontend/src/features/tactical-map/layers/useTerrainBasemapLayer.ts` |
-| Tile Y inversion (single point) | `apps/frontend/src/features/tactical-map/layers/tileUrl.ts` |
-| Hillshade Deck layer | `apps/frontend/src/features/tactical-map/layers/useDemLayer.ts` |
-| Grid Deck layer | `apps/frontend/src/features/tactical-map/layers/useBaseMapLayer.ts` |
-| Map style / satOpacity / paperTint | `apps/frontend/src/features/tactical-map/worldmap/styleModes.ts` |
-| Manifest loader | `apps/frontend/src/features/tactical-map/coords/terrainManifest.ts` |
+| TBDS parse + pickBaseLevel | `crates/frontend/shell/frontend_application/src/features/tactical-map/layers/satelliteUnified.ts` |
+| Deck basemap resolve + LOD (oracle) | `crates/frontend/shell/frontend_application/src/features/tactical-map/layers/useTerrainBasemapLayer.ts` |
+| Tile Y inversion (single point) | `crates/frontend/shell/frontend_application/src/features/tactical-map/layers/tileUrl.ts` |
+| Hillshade Deck layer | `crates/frontend/shell/frontend_application/src/features/tactical-map/layers/useDemLayer.ts` |
+| Grid Deck layer | `crates/frontend/shell/frontend_application/src/features/tactical-map/layers/useBaseMapLayer.ts` |
+| Map style / satOpacity / paperTint | `crates/frontend/shell/frontend_application/src/features/tactical-map/worldmap/styleModes.ts` |
+| Manifest loader | `crates/frontend/shell/frontend_application/src/features/tactical-map/coords/terrainManifest.ts` |
 | Everon manifest | `packages/map-assets/everon/manifest.json` |
-| wgpu mount (replace calibration) | `apps/frontend/src/features/tactical-map/WgpuTacticalMap.tsx` |
-| Editor flag + props | `apps/frontend/src/features/mission-creator/MissionCreatorPage.tsx` |
+| wgpu mount (replace calibration) | `crates/frontend/shell/frontend_application/src/features/tactical-map/WgpuTacticalMap.tsx` |
+| Editor flag + props | `crates/frontend/shell/frontend_application/src/features/mission-creator/MissionCreatorPage.tsx` |
 | Engine batch list | `crates/map-engine-render/src/engine.rs` |
 | WGSL (extend) | `crates/map-engine-render/src/shader.wgsl` |
 | Rust hillshade | `crates/map-engine-core/src/dem/hillshade.rs` |
 | Wasm DEM exports | `crates/map-engine-wasm/src/lib.rs` (`hillshade`, `dem_decode_png_to_meters`) |
-| Hillshade Class T test | `apps/frontend/src/features/_wasm/hillshade.parity.test.ts` |
-| Spike regression (do not break) | `apps/frontend/src/features/_spike/wgpu/WgpuCanvas.tsx` |
+| Hillshade Class T test | `crates/frontend/shell/frontend_application/src/features/_wasm/hillshade.parity.test.ts` |
+| Spike regression (do not break) | `crates/frontend/shell/frontend_application/src/features/_spike/wgpu/WgpuCanvas.tsx` |
 
 ## Gotchas
 

@@ -1,4 +1,4 @@
-**Status:** archived — see [the API v2 verification checkpoint](/documentation/apps/api/verification_evidence/progress_checkpoint.md)
+**Status:** archived — see [the API v2 verification checkpoint](/documentation/crates/api/api_server/verification_evidence/progress_checkpoint.md)
 
 # API v2 completion — milestone C execution record
 

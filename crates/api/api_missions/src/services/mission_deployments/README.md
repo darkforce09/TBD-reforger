@@ -76,7 +76,7 @@ before every deployment read, and in `reconcile_mission_deployments`; every outc
   `crates/api/api_operations/src/handlers/game_runtime_roster.rs` (`deployment_in_effect`,
   `lock_and_settle`); the `mission_deployment_reconciler` worker in
   `crates/api/api_background_workers/src/`, every 5 s; the integration test
-  `apps/api/tests/mission_deployment_transitions.rs`.
+  `crates/api/api_server/tests/mission_deployment_transitions.rs`.
 - Rules: at most one deployment per server is in flight, checked under the server lock and held by
   the `mission_deployments_one_in_flight_per_server` index of
   `crates/api/api_database/migrations/0053_mission_deployments.sql`; a selection is validated before
@@ -84,12 +84,12 @@ before every deployment read, and in `reconcile_mission_deployments`; every outc
   (`mission_transitions_selection_is_validated_before_anything_is_persisted`); only a later session
   reporting the exact artifact confirms
   (`deployment_confirmation_requires_the_exact_artifact_from_a_later_session`), both in
-  `apps/api/tests/mission_deployment_transitions.rs`; a compiled slot binds to at most
+  `crates/api/api_server/tests/mission_deployment_transitions.rs`; a compiled slot binds to at most
   one seat (`two_seats_at_one_position_bind_once` in `tests/slot_bindings.rs`).
 
 ## Related documentation
 
-- [Mission artifacts, reviews and deployment](/documentation/apps/api/verification_evidence/mission_artifacts.md)
+- [Mission artifacts, reviews and deployment](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
   — the deployment design, its refusals and the game runtime's side.
-- [Live slot occupancy](/documentation/apps/api/verification_evidence/live_occupancy.md)
+- [Live slot occupancy](/documentation/crates/api/api_server/verification_evidence/live_occupancy.md)
   — how deployment authorization reads the slot bindings.

@@ -1,7 +1,7 @@
 id = "T-090.12.7"
 kind = "work"
 title = "T-090.12.7 — Docs pass: LOS tool, world-los bench, map-assets, MCP"
-summary = "Cursor documentation pass: documentation/crates/frontend/workspaces/mission_creator_workspace/ux_spec.md LOS + viewshed section, new documentation/crates/frontend/workspaces/debug_benches/world_los_page.md + documentation/apps/frontend/README.md rows, map-assets README objects/prefabs rows, documentation/runbooks/enfusion_mcp_tooling.md wbcall + TbdBlueprint actions, program hub status line, tbd-export README."
+summary = "Cursor documentation pass: documentation/crates/frontend/workspaces/mission_creator_workspace/ux_spec.md LOS + viewshed section, new documentation/crates/frontend/workspaces/debug_benches/world_los_page.md + documentation/crates/frontend/shell/frontend_application/README.md rows, map-assets README objects/prefabs rows, documentation/runbooks/enfusion_mcp_tooling.md wbcall + TbdBlueprint actions, program hub status line, tbd-export README."
 class = "docs"
 status = "ready"
 order = 7080
@@ -18,7 +18,7 @@ context = [
 ]
 requirement = [
     "documentation/crates/frontend/workspaces/mission_creator_workspace/ux_spec.md gains a LOS + viewshed section (object verdict wording, coverage honesty, palette).",
-    "New documentation/crates/frontend/workspaces/debug_benches/world_los_page.md + documentation/apps/frontend/README.md rows and count; documentation/crates/frontend/workspaces/debug_benches/building_viewer_page.md gains the T-090.11.6 URL flags.",
+    "New documentation/crates/frontend/workspaces/debug_benches/world_los_page.md + documentation/crates/frontend/shell/frontend_application/README.md rows and count; documentation/crates/frontend/workspaces/debug_benches/building_viewer_page.md gains the T-090.11.6 URL flags.",
     "packages/map-assets/README.md rows for objects/ (chunks v2, prefabs.json.gz) and prefabs/ (blas, descriptors, blas-manifest).",
     "documentation/runbooks/enfusion_mcp_tooling.md: cargo xtask mcp wbcall + every EMCP_WB_TbdBlueprint action including world-parity; hub status line; tbd-export README.",
     "documentation/runbooks/enfusion_mcp_tooling.md also: wb_execute_action fires the full-export plugin after a compile; map world-los --pairs / --dem / --dump-misses replay lane.",
@@ -35,7 +35,7 @@ owns = [
     "documentation/crates/frontend/workspaces/mission_creator_workspace/ux_spec.md",
     "documentation/crates/frontend/workspaces/debug_benches/world_los_page.md",
     "documentation/crates/frontend/workspaces/debug_benches/building_viewer_page.md",
-    "documentation/apps/frontend/README.md",
+    "documentation/crates/frontend/shell/frontend_application/README.md",
     "packages/map-assets/README.md",
     "documentation/runbooks/enfusion_mcp_tooling.md",
     "apps/mod/tbd-export/README.md",

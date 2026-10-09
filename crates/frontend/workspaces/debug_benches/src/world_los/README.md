@@ -74,7 +74,7 @@ east, up, north), `&eye=` (the cut height above the ground, default 1.8 m) and `
   `web_sys`.
 - Used by: `crates/frontend/workspaces/debug_benches/src/world_los.rs`, which declares `live` in the
   browser build and calls `live::mount` from `WorldLosPage`, the component of the
-  `/debug/world-los` route in `apps/frontend/src/app_routes.rs`.
+  `/debug/world-los` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`.
 - Rules: the bench reads committed assets only and never touches the
   [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s code; it loads objects
   through the same `OccluderHost` the Mission Creator's line-of-sight tool reads.

@@ -2,8 +2,8 @@
 
 # Frontend code
 
-Rules TS-1 to TS-7 and LOG-2: the rules for the single-page app, `apps/frontend/`
-(package `frontend`, Leptos compiled to WebAssembly), and its library crates under
+Rules TS-1 to TS-7 and LOG-2: the rules for the single-page app, `crates/frontend/shell/frontend_application/`
+(package `frontend_application`, Leptos compiled to WebAssembly), and its library crates under
 `crates/frontend/`. The codes keep their TS prefix
 because the rules were first written for a TypeScript app; no TypeScript remains. Each rule below
 states its Rust form and whether anything checks it. Where the app's files go is in
@@ -24,7 +24,7 @@ states its Rust form and whether anything checks it. Where the app's files go is
   `crates/frontend/foundation/frontend_api_dtos/src/`. Status: retired as a separate rule; the Rust type
   system carries it.
 - **TS-6 (Readability) — A cross-boundary type mirrors its API model exactly.** Rust form: each
-  DTO mirrors the snake_case model in `apps/api/src/<domain>/models/`, and the API wins
+  DTO mirrors the snake_case model in `crates/api/api_<domain>/src/models/`, and the API wins
   a disagreement (CLAUDE.md law 9). The R-api golden tests in
   `crates/frontend/foundation/frontend_api_dtos/src/tests/` hold each DTO to an answer captured from the
   API: re-serialising reproduces the capture byte for byte, and the keys no field reads are
@@ -46,8 +46,8 @@ states its Rust form and whether anything checks it. Where the app's files go is
   workspaces show; `pages/` holds the platform pages, one crate per navigation area;
   `workspaces/` holds the standalone workspaces, such as the five crates of the
   [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) and the debug benches. The
-  app `apps/frontend` is the shell: the frame around every route in `src/shell/`, and the routes
-  in `apps/frontend/src/app_routes.rs`. A crate depends only on the layers below it (foundation
+  app `crates/frontend/shell/frontend_application` is the shell: the frame around every route in `src/shell/`, and the routes
+  in `crates/frontend/shell/frontend_application/src/app_routes.rs`. A crate depends only on the layers below it (foundation
   < features < pages, workspaces < shell), page crates never depend on each other, and inside a
   layer folder a crate depends only on the crates before it in its crate order (foundation:
   `frontend_ui` < `frontend_api_dtos` < {`frontend_transport`, `frontend_route_table`} <

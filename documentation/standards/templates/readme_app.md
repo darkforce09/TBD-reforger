@@ -49,8 +49,7 @@ clause; the child's own README holds the detail.>
 
 ## Related documentation
 
-- [<document title>](/documentation/apps/frontend/workspaces/<workspace>/<doc>.md) — <what it
-  covers>
+- [<document title>](/documentation/crates/frontend/workspaces/<workspace>/<doc>.md) — <what it covers>
 ````
 
 ## Worked sample
@@ -117,8 +116,8 @@ it and every write path refuses.
   `map_streaming_model`, `map_asset_loading`, `map_render_diagnostics`, `paper_doll_renderer`)
   and `web_sys` in the browser build.
 - Used by:
-  - `apps/frontend/src/app_routes.rs`, the route table;
-  - `apps/frontend/src/main.rs`, which registers `purge_local_documents` as a sign-out hook;
+  - `crates/frontend/shell/frontend_application/src/app_routes.rs`, the route table;
+  - `crates/frontend/shell/frontend_application/src/main.rs`, which registers `purge_local_documents` as a sign-out hook;
   - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, which drive the
     `/missions/:id/edit` route.
 - Rules: a document mutation goes through the hosted commands of `mission_editing_commands`,

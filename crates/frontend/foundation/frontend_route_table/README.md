@@ -15,7 +15,7 @@ crates/frontend/foundation/frontend_route_table/
 
 ## How it works
 
-The route table exists twice. `apps/frontend/src/app_routes.rs` is the render form: the
+The route table exists twice. `crates/frontend/shell/frontend_application/src/app_routes.rs` is the render form: the
 `<Routes>` that binds each path to its component, with `NotFoundPage` as the fallback.
 `src/routes.rs` here is the contract: each `RouteDef` in `ROUTES` names the path, the component,
 the `full_bleed` and `chromeless` layout flags and the `auth` tier. A path is matched segment by
@@ -94,14 +94,14 @@ renders padded in a scrolling one.
 - `routes`: `ROUTES`, `RouteDef` and the readers `breadcrumb`, `full_bleed`, `chromeless`,
   `role_may_enter` and `auth_denial_redirect`, all re-exported at the crate root.
 - `navigation_menu`: `NAVIGATION`, `NavSection` and `NavItem`, read by the sidebar in
-  `apps/frontend/src/shell/`.
+  `crates/frontend/shell/frontend_application/src/shell/`.
 - `prelude`: `RouteDef` and the five readers.
 
 ## Boundaries
 
 - Depends on: `frontend_api_dtos` (`Role` and `has_min_role_authed` from its `role` module).
 - Used by: the route guard of the session (`crates/frontend/foundation/frontend_session/src/`); the frame, the
-  top bar and the sidebar in `apps/frontend/src/shell/`; the route drift gate in
+  top bar and the sidebar in `crates/frontend/shell/frontend_application/src/shell/`; the route drift gate in
   `tools/browser_testing/browser_gate_suites/src/route_drift.rs`, which reads `src/routes.rs` as
   text; the headless browser gates of `tools/browser_testing/browser_gate_suites/`, which drive
   the built app by its routes.
@@ -122,7 +122,7 @@ renders padded in a scrolling one.
 
 ## Related documentation
 
-- [App layout and navigation](/documentation/apps/frontend/shell/app_layout_and_navigation.md)
+- [App layout and navigation](/documentation/crates/frontend/shell/frontend_application/shell/app_layout_and_navigation.md)
   — the frame, the sidebar, the top bar and the not-found page.
-- [Frontend documentation](/documentation/apps/frontend/README.md) — each route with its code
+- [Frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md) — each route with its code
   folder and feature doc.

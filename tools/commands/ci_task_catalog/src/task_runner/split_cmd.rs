@@ -169,8 +169,8 @@ pub(super) fn spawn(cwd: Option<&str>, argv: &[&str]) -> i32 {
         Some(d) => root.join(d),
         None => root.clone(),
     };
-    // A shell updates `PWD` when it `cd`s; `Run::cwd` does not, and the Makefile's recipes are
-    // `cd $(WEB) && …` under sh. Left stale it would name the wrong directory to any child that
+    // A shell updates `PWD` when it `cd`s; `Run::cwd` does not, and task lines spell their folder
+    // as `cd <folder> && …`. Left stale it would name the wrong directory to any child that
     // trusts it (`xtask fetch vanilla-api` in this very binary reads `$PWD`).
     let child = Run::new(argv[0])
         .args(&argv[1..])

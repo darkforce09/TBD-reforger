@@ -36,5 +36,5 @@ documentation/crates/frontend/pages/
 
 ## Related documentation
 
-- [Frontend documentation](/documentation/apps/frontend/README.md) — every route with its code
+- [Frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md) — every route with its code
   folder and feature doc.

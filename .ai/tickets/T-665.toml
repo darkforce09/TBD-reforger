@@ -62,9 +62,9 @@ estimated = [
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 owns = [
     "crates/map-engine-core/src/doc/store.rs",
-    "apps/frontend/src/editor_ops.rs",
-    "apps/frontend/src/outliner.rs",
-    "apps/frontend/src/eden_tree.rs",
+    "crates/frontend/shell/frontend_application/src/editor_ops.rs",
+    "crates/frontend/shell/frontend_application/src/outliner.rs",
+    "crates/frontend/shell/frontend_application/src/eden_tree.rs",
 ]
 
 [scope]

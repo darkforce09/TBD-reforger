@@ -29,7 +29,7 @@ commands and what each asserts are listed in the
 [browser gate suites](/tools/browser_testing/browser_gate_suites/README.md). Every command also
 exits 2 on a clap usage error.
 
-`cargo xtask mk leptos-gates` runs `trunk build --release` in `apps/frontend/`, then
+`cargo xtask mk leptos-gates` runs `trunk build --release` in `crates/frontend/shell/frontend_application/`, then
 `gate doctor`, `gate editor-suite` and `gate v-suite verify`, each through
 `cargo run -q -p developer_tools --bin gate`, stopping at the first failure;
 `cargo xtask mk gate-doctor` runs the build and the doctor alone. The `hydrate` smoke in the suite

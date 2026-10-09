@@ -91,8 +91,8 @@ the fourth independent instance of *a grep answering a different question than t
 Eden-style snapping:
 
 ```
-grep -ri  "snap" apps/frontend/src --include="*.rs" | wc -l   # 142  — looks like snapping
-grep -riw "snap" apps/frontend/src --include="*.rs" | wc -l   #  37  — still looks like it
+grep -ri  "snap" crates/frontend/shell/frontend_application/src --include="*.rs" | wc -l   # 142  — looks like snapping
+grep -riw "snap" crates/frontend/shell/frontend_application/src --include="*.rs" | wc -l   #  37  — still looks like it
 ```
 
 The word-boundary filter removed `snapshot`/`Snapshot` and **still returned 37 apparently-positive
@@ -119,7 +119,7 @@ Stage explicit paths, not directories, while any agent is still running.
 contradicted a document written in the same session:
 
 - **T-641 claims "we currently render zero height annotations."** False.
-  `crates/map-engine-core/src/dem/peaks.rs` and `apps/frontend/src/world_assets/labels.rs`
+  `crates/map-engine-core/src/dem/peaks.rs` and `crates/frontend/shell/frontend_application/src/world_assets/labels.rs`
   both exist, and `world_layer_prefs.rs:72` carries `("heights", self.heights, "Height labels")` —
   a live, user-toggleable layer. **`editor_inventory_mission_settings.md` in this very directory
   says so explicitly** ("Note for the contour tickets: `Contours` and `Height labels` are already

@@ -55,6 +55,6 @@ the camera, 1 a textured quad's texture, 2 an atlas.
 - Depends on: `bytemuck`, `render_primitives` and `thiserror`; `wgpu`, `wasm-bindgen` and `web-sys` in the
   WebAssembly build.
 - Used by: `renderer_core`, the map rendering crates (`crates/map_rendering/`) and the
-  single-page app's frame pumps (`apps/frontend`).
+  single-page app's frame pumps (`crates/frontend/shell/frontend_application`).
 - Rules: no module names a thing in the world being drawn; a module that names a GPU type gates
   itself on `wasm32`.

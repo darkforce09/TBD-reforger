@@ -3,7 +3,7 @@
 # API code structure and route tags
 
 Rules GO-1 to GO-9: how the [API](/documentation/glossary/a_to_f.md#api) crate
-(`apps/api/`, package `api`) is laid out, how it treats database errors, and how
+(`crates/api/api_server/`, package `api_server`) is laid out, how it treats database errors, and how
 its handlers are tagged. The codes keep their GO prefix because the rules were first written for a
 Go backend; no Go remains, and each rule now states its Rust form or is retired. GO-7 is live and
 gated; the rest are either conventions that the Rust type system, clippy and the crate's layout
@@ -25,14 +25,14 @@ snake_case database and wire contract. The eight domains are `administration`, `
 - **GO-9 (Scalability) — Handlers reach other code through services and models only.** Rust form:
   a kernel crate depends on no domain crate, a domain crate depends only along the domain graph, no
   crate imports another domain's handlers, `api_background_workers` is linked only by the binary,
-  every domain crate exports one route table that the router merges, and `apps/api/src` holds only
+  every domain crate exports one route table that the router merges, and `crates/api/api_server/src` holds only
   the thin app (library root, router, composition root, binaries, tests). Gate: CI-BLOCK, the tests
   `kernel_crates_depend_on_no_domain`, `domain_crates_depend_only_along_the_domain_graph`,
   `no_crate_imports_a_foreign_domains_handlers`, `background_workers_used_only_by_the_binary`,
   `every_domain_crate_exports_one_route_table_the_router_merges`,
   `the_application_source_holds_only_the_thin_app` and
   `the_crate_graph_refuses_upward_off_graph_and_kernel_to_domain_edges` in
-  [architecture_rules.rs](/apps/api/src/tests/architecture_rules.rs), run by the API's
+  [architecture_rules.rs](/crates/api/api_server/src/tests/architecture_rules.rs), run by the API's
   `cargo test`.
 
 ## Errors and lints
@@ -71,8 +71,8 @@ clippy and `cargo fmt` stand in for the Go-era rules GO-2 to GO-8 and FMT-1 toge
 
 - **GO-7 (Readability) — Every handler that a route table registers carries `@route` in its doc
   comment, and the tag matches the wired route.** The route side is the eight
-  `apps/api/src/<domain>/routes.rs` tables that `api_v1_routes` in
-  [http_router.rs](/apps/api/src/router.rs) merges under `/api/v1`. The
+  `crates/api/api_<domain>/src/routes.rs` tables that `api_v1_routes` in
+  [http_router.rs](/crates/api/api_server/src/router.rs) merges under `/api/v1`. The
   check runs in both directions: every `/// @route METHOD PATH` tag names a route registered on
   that method for that handler, and every registered route carries a matching tag, keyed on
   method, path and handler function. Gate: CI-SCRIPT, `cargo xtask verify route-tags`, run by

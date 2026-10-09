@@ -26,7 +26,7 @@ documentation/crates/frontend/pages/administration_pages/server_control/
   fleet command, fleet scenario and machine credential routes.
 - [Missions domain](/crates/api/api_missions/src/) — the
   [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) routes.
-- [Fleet host agent](/apps/fleet_host_agent/) — the executor of process control and the player
+- [Game server host agent](/crates/fleet/game_server_host_agent/) — the executor of process control and the player
   list.
 
 ## Boundaries
@@ -41,7 +41,7 @@ documentation/crates/frontend/pages/administration_pages/server_control/
 
 ## Related documentation
 
-- [Fleet command ledger evidence](/documentation/apps/api/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger evidence](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
   — the verification of the command ledger the console follows.
-- [Machine credentials evidence](/documentation/apps/api/verification_evidence/machine_credentials.md)
+- [Machine credentials evidence](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md)
   — the verification of issuing, using and revoking credentials.

@@ -1,9 +1,10 @@
 # The home server's web site: the built Leptos app, with the API's paths proxied to the API.
 #
 # Served by the `caddy` service of deploy/compose.staging.yml, which mounts this
-# folder read-only at /etc/tbd-caddy and apps/frontend read-only at /srv/tbd-frontend, so
-# the paths below are the container's. `cargo xtask deploy website` rsyncs this file, starts the
-# service and runs `caddy reload` on it, so an edit here reaches the host with the next deploy.
+# folder read-only at /etc/tbd-caddy and crates/frontend/shell/frontend_application read-only at
+# /srv/tbd-frontend, so the paths below are the container's. `cargo xtask deploy website` rsyncs
+# this file, starts the service and runs `caddy reload` on it, so an edit here reaches the host
+# with the next deploy.
 #
 # A Cloudflare Tunnel targets http://127.0.0.1:3080 (documentation/runbooks/website_deployment.md
 # Phase E).

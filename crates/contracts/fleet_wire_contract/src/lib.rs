@@ -1,4 +1,4 @@
-//! The fleet-command wire contract shared by the platform API and the fleet host agent.
+//! The fleet-command wire contract shared by the platform API and the game server host agent.
 //!
 //! **Role:** owns every shape of `contracts/definitions/fleet-command.schema.json` that crosses
 //! the API's fleet routes — the action and its rules, the operator request, receipt and list,
@@ -6,10 +6,10 @@
 //! outcome — with both `Serialize` and `Deserialize`, plus the executor kind, the RFC 3339
 //! timestamp spelling those shapes use, the machine credential format and the secret-file
 //! limits both sides of a credential file apply.
-//! **Position:** contracts tier, depending on no workspace crate. Consumed by `api` (the ledger
-//! services, the fleet handlers and the staging fixtures tool, which keep their own database
-//! rows and file I/O), by `fleet_host_agent` (the ledger client and the secret-file reader) and
-//! by `xtask` (the credential prefix).
+//! **Position:** contracts tier, depending on no workspace crate. Consumed by the API crates (the
+//! ledger services and the fleet handlers, which keep their own database rows) and the
+//! `staging_fixtures` tool (its credential files), by `game_server_host_agent` (the ledger client
+//! and the secret-file reader) and by `mod_operations` (the credential prefix).
 //! **Signals & state:** none; plain data, constants and pure functions.
 //! **Invariants:** one type per shape serves both directions, so the bytes the API writes are the
 //! bytes the agent reads and the reverse; every instant is written in UTC with a `Z` suffix and

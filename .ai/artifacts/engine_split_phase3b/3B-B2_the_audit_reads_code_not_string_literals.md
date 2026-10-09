@@ -4,13 +4,13 @@ Read `00_rules_every_agent_obeys.md` first. Every rule there applies to this bri
 
 ## The defect
 
-`apps/frontend/src/tests/doc_audit/mod.rs` decides whether a line declares a
+`crates/frontend/shell/frontend_application/src/tests/doc_audit/mod.rs` decides whether a line declares a
 documentable item by looking at the line's text. It has no idea whether that line is code or the
 inside of a string literal. This codebase pins behaviour by source inspection constantly, so its
 tests are full of fixture strings holding Rust source — and every `pub fn` inside one of those
 fixtures reads to the audit as an undocumented public item.
 
-It has already forced a hack. `apps/frontend/src/editor/state/title_prefer.rs` carries two
+It has already forced a hack. `crates/frontend/shell/frontend_application/src/editor/state/title_prefer.rs` carries two
 `///` lines **inside** fixture string literals, written for no reason other than to quiet this
 false positive. They describe decoys in a fixture, they document nothing, and they are the kind of
 ad-hoc patch CLAUDE.md Law 3 exists to prevent. As the remaining Phase 3B briefs land 73 more
@@ -45,7 +45,7 @@ Add them beside the existing mechanism tests, against fixture text, not the live
 ## Scope
 
 `v2/tests/doc_audit/mod.rs`, its tests, and the two-line revert in
-`apps/frontend/src/editor/state/title_prefer.rs`. Nothing else. No file moves. If the fix
+`crates/frontend/shell/frontend_application/src/editor/state/title_prefer.rs`. Nothing else. No file moves. If the fix
 makes the audit report a file it previously passed, that file owes a real doc comment — report
 what you found and write it; do not add a grandfather row for it, because the header and
 documented-item rules are not exemptible.
@@ -58,7 +58,7 @@ CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
 ```
 
 Expected: >= 1327 passed plus your new tests, 0 failed; fmt silent. Paste both verbatim, plus the
-audit's finding count over `apps/frontend/src/editor/` before and after your change.
+audit's finding count over `crates/frontend/shell/frontend_application/src/editor/` before and after your change.
 
 Commit directly to `main`:
 

@@ -145,7 +145,7 @@ OPERATOR DECISIONS ALREADY MADE — do not re-ask:
      2027-06-30 for xtask, the largest holder and not shipped code.
   4. Two task chips are already filed and are NOT 3C's work: unifying the three Rust source-masking
      lexers, and fixing `mk ci-local-leptos` leaking a relative `CARGO_TARGET_DIR` into
-     `apps/frontend/target-container/` (839 MB, gitignored, structural — the command
+     `crates/frontend/shell/frontend_application/target-container/` (839 MB, gitignored, structural — the command
      reproduces it, it is not agent error).
 
 KNOWN RED BEFORE 3C TOUCHES ANYTHING — not yours, not regressions:

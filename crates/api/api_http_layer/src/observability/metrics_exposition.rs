@@ -2,7 +2,7 @@
 //!
 //! **Role:** renders every metric family as Prometheus text and answers the scrape.
 //! **Position:** `api_http_layer::observability`; reads the application state's [`Registry`],
-//! and is served by the API router (`api::router::router`) behind the
+//! and is served by the API router (`api_server::router::router`) behind the
 //! `OBSERVABILITY_TOKEN` bearer.
 //! **Signals & state:** none of its own; each scrape samples a database ping and the pool depth.
 //! **Invariants:** every family carries its `# HELP` and `# TYPE` lines even with no series; label

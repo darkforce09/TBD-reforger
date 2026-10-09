@@ -34,7 +34,7 @@ estimated = [
     "scope",
     "tokens",
 ]
-owns = ["apps/frontend/src/editor/canvas/"]
+owns = ["crates/frontend/shell/frontend_application/src/editor/canvas/"]
 
 [scope]
 domain = "website"

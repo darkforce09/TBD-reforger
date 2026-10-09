@@ -87,5 +87,5 @@ network domain enabled so each response says whether the service worker answered
   page, its inputs and its solution panel.
 - [Offline core](/crates/frontend/foundation/frontend_offline/src/README.md) — the pack download and the
   `data-offline-state` values.
-- [Offline service worker](/apps/offline_service_worker/README.md) — the worker the reload
+- [Offline service worker](/crates/frontend/shell/offline_service_worker/README.md) — the worker the reload
   is answered by.

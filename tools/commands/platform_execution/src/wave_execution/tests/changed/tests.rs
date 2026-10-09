@@ -49,6 +49,34 @@ fn the_wasm_scope_follows_the_frontends_dependency_graph() {
     );
 }
 
+/// This checkout's wasm scope names every folder once: the app is the walk's root and a member
+/// of the frontend family, and the `shell` layer holding it and the offline service worker is
+/// covered once, never twice.
+#[test]
+fn the_wasm_scope_names_each_folder_once() {
+    let root = tool_test_support::test_repo_root();
+    let scope = wasm_scope_prefixes(&root);
+    for folder in &scope {
+        assert_eq!(
+            scope.iter().filter(|other| *other == folder).count(),
+            1,
+            "{folder} is in the wasm scope twice: {scope:?}"
+        );
+    }
+    let shell: Vec<&String> = scope
+        .iter()
+        .filter(|folder| folder.starts_with("crates/frontend/shell/"))
+        .collect();
+    assert_eq!(
+        shell,
+        [
+            "crates/frontend/shell/frontend_application",
+            "crates/frontend/shell/offline_service_worker",
+        ],
+        "{scope:?}"
+    );
+}
+
 /// Follow-up, filed by the wave-255 verify: **the dependency graph is not the frontend
 /// suite's whole input set.**
 ///
@@ -118,12 +146,16 @@ fn the_frontends_include_str_inputs_are_in_scope_and_the_apis_are_not() {
 
 #[test]
 fn join_rel_resolves_dotdot_and_refuses_to_climb_out() {
-    // The subjects are `path = "../…"` values of the workspace's shape: an application climbs out
-    // of `apps/` to reach a renderer crate, and that crate reaches a graphics crate in a sibling
-    // category. Each expected half is the join of its own inputs, so the test is about `..`
-    // resolution rather than about a crate name.
+    // The subjects are `path = "../…"` values of the workspace's shape: the single-page app climbs
+    // out of its layer and category to reach a renderer crate, and that crate reaches a graphics
+    // crate in a sibling category. Each expected half is the join of its own inputs, so the test is
+    // about `..` resolution rather than about a crate name.
     assert_eq!(
-        join_rel("apps/frontend", "../../crates/map_rendering/map_renderer").as_deref(),
+        join_rel(
+            "crates/frontend/shell/frontend_application",
+            "../../../map_rendering/map_renderer"
+        )
+        .as_deref(),
         Some("crates/map_rendering/map_renderer")
     );
     assert_eq!(
@@ -148,12 +180,12 @@ fn edition_falls_back_to_2021_when_nothing_says_otherwise() {
 
 #[test]
 fn edition_is_read_from_the_nearest_manifest() {
-    // The real workspace: apps/api is edition 2024, and hardcoding 2021 made every
+    // The real workspace: crates/api/api_server is edition 2024, and hardcoding 2021 made every
     // slice touching it fail a gate it did not cause. `file_edition` takes a repository-relative
     // path, so the test runs at the repository root under the process-wide cwd lock: another
     // test may move the cwd at any moment otherwise.
     let cwd = tool_test_support::CwdGuard::enter(&tool_test_support::test_repo_root());
-    let edition = file_edition("apps/api/src/lib.rs");
+    let edition = file_edition("crates/api/api_server/src/lib.rs");
     drop(cwd);
     assert_eq!(edition, "2024");
 }
@@ -202,7 +234,7 @@ fn workspace_members_parse_is_not_empty_on_the_real_manifest() {
         "members: {members:?}"
     );
     assert!(
-        members.contains(&"apps/api".to_string()),
+        members.contains(&"crates/api/api_server".to_string()),
         "members: {members:?}"
     );
 }
@@ -231,23 +263,25 @@ fn the_wasm_scope_follows_workspace_inherited_edges_into_crates_members() {
         &[
             (
                 "Cargo.toml",
-                "[workspace]\nmembers = [\"apps/frontend\", \"apps/api\", \"engines/engine\", \
-                 \"engines/renderer\", \"crates/*/*\"]\n\n[workspace.dependencies]\n\
+                "[workspace]\nmembers = [\"crates/frontend/shell/frontend_application\", \
+                 \"apps/server\", \"engines/engine\", \"engines/renderer\", \"crates/*/*\"]\n\n\
+                 [workspace.dependencies]\n\
                  policy = { path = \"crates/contracts/policy\" }\n\
                  guard = { path = \"crates/foundation/guard\" }\n\
                  unrelated = { path = \"crates/foundation/unrelated\" }\nserde = \"1\"\n",
             ),
             (
-                "apps/frontend/Cargo.toml",
-                "[package]\nname = \"frontend\"\n\n[dependencies]\npolicy = { workspace = true }\n\
-                 serde = { workspace = true }\n\n\
+                "crates/frontend/shell/frontend_application/Cargo.toml",
+                "[package]\nname = \"frontend_application\"\n\n[dependencies]\n\
+                 policy = { workspace = true }\nserde = { workspace = true }\n\n\
                  [target.'cfg(target_arch = \"wasm32\")'.dependencies]\n\
-                 engine = { path = \"../../engines/engine\" }\n\n\
+                 engine = { path = \"../../../../engines/engine\" }\n\n\
                  [dev-dependencies]\nguard.workspace = true\n",
             ),
             (
-                "apps/api/Cargo.toml",
-                "[package]\nname = \"api\"\n\n[dependencies]\nunrelated = { workspace = true }\n\
+                "apps/server/Cargo.toml",
+                "[package]\nname = \"api_server\"\n\n[dependencies]\n\
+                 unrelated = { workspace = true }\n\
                  engine = { path = \"../../engines/engine\" }\n",
             ),
             (
@@ -283,15 +317,15 @@ fn the_wasm_scope_follows_workspace_inherited_edges_into_crates_members() {
         touched("crates/contracts/policy/src/lib.rs"),
         touched("crates/foundation/guard/src/lib.rs"),
         touched("crates/foundation/unrelated/src/lib.rs"),
-        touched("apps/api/src/lib.rs"),
+        touched("apps/server/src/lib.rs"),
     );
     let _ = std::fs::remove_dir_all(&root);
     assert_eq!(
         scope,
         [
-            "apps/frontend",
             "crates/contracts/policy",
             "crates/foundation/guard",
+            "crates/frontend/shell/frontend_application",
             "engines/engine",
             "engines/renderer",
         ]
@@ -390,7 +424,8 @@ fn a_fragment_with_no_package_ancestor_resolves_to_the_packages_that_include_it(
 
 /// Every crate of the frontend family is in the wasm scope, with what it compiles in, even one
 /// the app does not depend on yet: the walk starts at the app and at every member under
-/// `crates/frontend`.
+/// `crates/frontend`, the offline service worker beside the app among them, and names the app
+/// once although it is both the walk's root and a member of the family.
 #[test]
 fn the_wasm_scope_starts_at_every_frontend_crate() {
     let root = scratch_tree(
@@ -403,10 +438,17 @@ fn the_wasm_scope_starts_at_every_frontend_crate() {
                  guard = { path = \"crates/foundation/guard\" }\n",
             ),
             (
-                "apps/frontend/Cargo.toml",
-                "[package]\nname = \"frontend\"\n",
+                "crates/frontend/shell/frontend_application/Cargo.toml",
+                "[package]\nname = \"frontend_application\"\n",
             ),
-            ("apps/api/Cargo.toml", "[package]\nname = \"api\"\n"),
+            (
+                "crates/frontend/shell/offline_service_worker/Cargo.toml",
+                "[package]\nname = \"offline_service_worker\"\n",
+            ),
+            (
+                "apps/server/Cargo.toml",
+                "[package]\nname = \"api_server\"\n",
+            ),
             (
                 "crates/frontend/pages/zz_probe_pages/Cargo.toml",
                 "[package]\nname = \"zz_probe_pages\"\n\n[dependencies]\n\
@@ -423,9 +465,10 @@ fn the_wasm_scope_starts_at_every_frontend_crate() {
     assert_eq!(
         scope,
         [
-            "apps/frontend",
             "crates/foundation/guard",
             "crates/frontend/pages/zz_probe_pages",
+            "crates/frontend/shell/frontend_application",
+            "crates/frontend/shell/offline_service_worker",
         ]
     );
 }

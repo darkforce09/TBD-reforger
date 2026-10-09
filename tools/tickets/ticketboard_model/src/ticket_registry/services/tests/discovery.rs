@@ -41,7 +41,7 @@ fn ancestor_found_from_nested_cwd() {
     let s = Scratch::new("walk-up");
     let repo = s.path().join("repo");
     mk_repo(&repo);
-    let cwd = repo.join("apps/ticketboard/src");
+    let cwd = repo.join("tools/tickets/ticketboard_desktop/src");
     fs::create_dir_all(&cwd).unwrap();
     assert_eq!(resolve_repo_root(None, Some(&cwd)), Some(repo.clone()));
     // The repo root itself also resolves (ancestors() includes self).

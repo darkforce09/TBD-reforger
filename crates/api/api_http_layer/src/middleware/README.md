@@ -21,7 +21,7 @@ crates/api/api_http_layer/src/middleware/
 
 ## How it works
 
-The API's router (`api::router`) applies the chain, outermost first: `request_id`, `logging`, the
+The API's router (`api_server::router`) applies the chain, outermost first: `request_id`, `logging`, the
 metrics observer of `crate::observability`, panic recovery, `cors`, the default body limit
 `MAX_JSON_BODY` (1 MiB), and `rate_limit`. The `/api/v1/cms/uploads` route raises its own limit to
 `MAX_MULTIPART_BODY` (6 MiB), the [mission](/documentation/glossary/g_to_m.md#mission) version save
@@ -73,7 +73,7 @@ callers' extractors live with the code that owns them: `MachineCaller` for game 
 stream: before each delivery, and at least every five seconds, it asks the session authority
 again, and it ends the stream with an `authorization_expired` SSE event as soon as the session or
 its role stops qualifying. It also races the stream against
-`api_configuration::process_lifecycle::process_shutdown`: once the `api` binary begins shutting down,
+`api_configuration::process_lifecycle::process_shutdown`: once the `api-server` binary begins shutting down,
 the body ends with no further event, ahead of a ready delivery and without waiting for a
 re-authorization in flight, so the graceful drain never waits on an open stream and the client
 reconnects with `Last-Event-ID` as after any end of stream.
@@ -85,7 +85,7 @@ reconnects with `Last-Event-ID` as after any end of stream.
   `api_configuration::process_lifecycle` (the shutdown the event streams end on), `governor` for the
   in-memory buckets, and the `rate_limit_buckets` table of migration `0021`.
 - Used by:
-  - the API's router (`api::router`), which mounts the chain and the exempt asset mounts;
+  - the API's router (`api_server::router`), which mounts the chain and the exempt asset mounts;
   - the handlers of all eight domains, through the extractors and `json_error`; `role_rank` in the
     mission write lock, [mission deployments](/documentation/glossary/g_to_m.md#mission-deployment), the
     approval queue, reservation authority,
@@ -95,20 +95,20 @@ reconnects with `Last-Event-ID` as after any end of stream.
   - `authorize_event_stream`, in the audit log feed of `api_administration` and the server status
     stream of `api_server_infrastructure`;
   - the `ratelimit_cleanup_worker` background worker, through `PgRateLimiter`;
-  - integration suites under `apps/api/tests/`, among them `http_middleware.rs`,
+  - integration suites under `crates/api/api_server/tests/`, among them `http_middleware.rs`,
     `durable_rate_limit.rs`, `forwarded_for_trust.rs`, `map_assets_rate_limit_exemption.rs` and
     `audit_replay_shutdown.rs`.
 - Rules:
   - `STRICT_PREFIXES` is the only path test in the limiter; the asset exemption is where the
     router mounts them, below the layer (`the_exempt_mount_is_registered_below_the_rate_limit_layer`
-    in `apps/api/src/tests/router.rs`, and
-    `apps/api/tests/map_assets_rate_limit_exemption.rs`);
+    in `crates/api/api_server/src/tests/router.rs`, and
+    `crates/api/api_server/tests/map_assets_rate_limit_exemption.rs`);
   - the durable tier fails closed, and its numbers equal the in-memory strict tier's
     (`durable_strict_policy_matches_the_in_memory_strict_policy` in
     `crates/api/api_state/src/tests/application_state.rs`);
   - `RATE_LIMIT_BUCKETS_DDL` is migration `0021` verbatim
     (`migration_0021_is_the_ddl_constant_verbatim` in
-    `apps/api/tests/durable_rate_limit.rs`);
+    `crates/api/api_server/tests/durable_rate_limit.rs`);
   - `mission_maker` outranks `leader` in `role_rank` on purpose;
   - every SSE handler passes its stream through `authorize_event_stream`, the one place a stream
     ends at shutdown (`shutdown_closes_an_idle_stream_without_an_event` and its neighbours in
@@ -116,5 +116,5 @@ reconnects with `Last-Event-ID` as after any end of stream.
 
 ## Related documentation
 
-- [Identity transactions](/documentation/apps/api/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
   — how a bearer token's persisted session supplies the caller's current authority.

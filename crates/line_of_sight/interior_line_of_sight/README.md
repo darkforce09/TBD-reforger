@@ -70,7 +70,7 @@ cargo test -p interior_line_of_sight   # compound walk, verdicts, washes, sliced
   - `map_editing_tools`: its line-of-sight tool and visibility scheduler's wash lane
     (`crates/mission_editing/map_editing_tools/src/`);
   - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s input handlers,
-    the debug building viewer and interior bench in `apps/frontend/`, and the blueprint tooling
+    the debug building viewer and interior bench in `crates/frontend/shell/frontend_application/`, and the blueprint tooling
     in `tools/map_assets/blueprint_compiler/src/`.
 - Rules: glass and foliage conceal but never block
   (`glass_conceals_five_percent_per_pane_and_never_blocks`,

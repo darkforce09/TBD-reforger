@@ -2,7 +2,9 @@
 //! workspaces: layer order, page peers, the foundation and workspace crate orders, test-only
 //! crates, placement and absent configured crates.
 
-use super::super::{FrontendLayering, SubAreaTier, check_frontend_layering};
+use super::super::{
+    FrontendLayering, SubAreaTier, check_frontend_layering, frontend_layering_outcome,
+};
 use super::*;
 use crate::workspace_laws::fixture_workspace::{
     Dependency, FixtureWorkspace, application_manifest,
@@ -532,4 +534,111 @@ fn frontend_crate_edges_a_missing_app_or_root_manifest_did_not_run() {
         check_frontend_layering(workspace.root(), &layering(CONFIG)).exit_code,
         2
     );
+}
+
+const SHELL: &str = "crates/frontend/shell";
+const APP: &str = "crates/frontend/shell/frontend_application";
+const WORKER: &str = "crates/frontend/shell/offline_service_worker";
+
+/// The shell layer folder beside the foundation, its two crates one tier of peers, the app the
+/// shell crate: the configuration xtask passes for `crates/frontend/shell`.
+const SHELL_CONFIG: FrontendCrateEdges = FrontendCrateEdges {
+    shell_crate: APP,
+    crates_root: "crates/frontend",
+    layer_folders: &[
+        FrontendLayerFolder {
+            path: FOUNDATION,
+            layer: FrontendLayer::Foundation,
+        },
+        FrontendLayerFolder {
+            path: SHELL,
+            layer: FrontendLayer::Shell,
+        },
+    ],
+    crate_orders: &[SubAreaOrder {
+        parent: SHELL,
+        tiers: &[SubAreaTier::peers(&[
+            "frontend_application",
+            "offline_service_worker",
+        ])],
+        test_only: &[],
+    }],
+};
+
+/// The app over `frontend_ui`, the worker beside it, plus `from` depending on `package` from
+/// `table` when given.
+fn shell_workspace(planted: Option<(&str, &str, &str)>) -> FixtureWorkspace {
+    let mut workspace = FixtureWorkspace::new("crate-edges-shell");
+    workspace.layout_crate("crates/frontend/foundation/frontend_ui", 0, "any", &[]);
+    for (path, base) in [(APP, Some("frontend_ui")), (WORKER, None)] {
+        let mut dependencies: Vec<Dependency<'_>> = base
+            .map(|package| Dependency {
+                package,
+                table: NORMAL,
+            })
+            .into_iter()
+            .collect();
+        if let Some((from, package, table)) = planted
+            && from == path
+        {
+            dependencies.push(Dependency { package, table });
+        }
+        workspace.layout_crate(path, 1, "any", &dependencies);
+    }
+    workspace
+}
+
+/// The single-page app and the offline service worker are peers: neither names the other, in
+/// either direction, from a normal or a dev table, and each planted edge is exactly one finding
+/// of the law.
+#[test]
+fn frontend_crate_edges_the_two_shell_crates_never_name_each_other() {
+    let green = crate_edge_scan(shell_workspace(None).root(), &SHELL_CONFIG).unwrap();
+    assert_eq!(green.edges, Vec::new());
+    assert_eq!(green.misplaced, Vec::<String>::new());
+    assert_eq!(
+        green.crates,
+        vec!["crates/frontend/foundation/frontend_ui", APP, WORKER]
+    );
+    for (from, to, from_label, to_label) in [
+        (
+            APP,
+            "offline_service_worker",
+            "shell/frontend_application",
+            "shell/offline_service_worker",
+        ),
+        (
+            WORKER,
+            "frontend_application",
+            "shell/offline_service_worker",
+            "shell/frontend_application",
+        ),
+    ] {
+        for table in [NORMAL, DEV] {
+            let workspace = shell_workspace(Some((from, to, table)));
+            let scan = crate_edge_scan(workspace.root(), &SHELL_CONFIG).unwrap();
+            assert_eq!(
+                scan.edges,
+                vec![LayeringEdge {
+                    file: format!("{from}/Cargo.toml"),
+                    line_no: line_of(&workspace, from, to),
+                    test: table == DEV,
+                    from: from_label.to_string(),
+                    to: to_label.to_string(),
+                }],
+                "{from} -> {to} [{table}]"
+            );
+            // The red text the law prints, which for the worker naming the app is the finding
+            // that replaced the retired worker deny-list row.
+            let kind = if table == DEV { "dev" } else { "normal" };
+            let red = format!(
+                "{kind} crate edge {from}/Cargo.toml:{}: {from_label} depends on {to_label}",
+                line_of(&workspace, from, to)
+            );
+            let findings = frontend_layering_outcome(workspace.root(), &layering(SHELL_CONFIG))
+                .expect("the law runs")
+                .findings;
+            assert_eq!(findings, vec![red], "{from} -> {to} [{table}]");
+        }
+    }
 }

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generator": "apps/frontend/scripts/gen-deckgl-ortho-goldens.mjs",
+    "generator": "crates/frontend/shell/frontend_application/scripts/gen-deckgl-ortho-goldens.mjs",
     "deckglVersion": "9.3.5",
     "nodeVersion": "v26.4.0",
     "flipY": false,

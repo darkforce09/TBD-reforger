@@ -44,7 +44,7 @@ owns = [
     "crates/map-engine-core/src/world/residency.rs",
     "crates/map-engine-core/src/world/eviction.rs",
     "crates/map-engine-core/src/world/mod.rs",
-    "apps/frontend/src/editor/world_assets/world_host.rs",
+    "crates/frontend/shell/frontend_application/src/editor/world_assets/world_host.rs",
 ]
 
 [scope]

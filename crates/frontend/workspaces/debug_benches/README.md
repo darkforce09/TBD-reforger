@@ -88,7 +88,7 @@ chromeless, with no navigation entry:
   `browser_platform`, `leptos_router`, `futures`, `gloo-net`, `gloo-timers`, `js-sys`,
   `wasm-bindgen` and `web-sys`; `frontend_route_table` and `frontend_test_support` for its tests
   only.
-- Used by: the four routes in `apps/frontend/src/app_routes.rs`, with their rows in
+- Used by: the four routes in `crates/frontend/shell/frontend_application/src/app_routes.rs`, with their rows in
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; nothing in the navigation
   links to them.
 - Rules:

@@ -70,7 +70,9 @@ fn frontend_layering_the_layer_table_maps_every_frontend_source_and_holds_no_edg
 fn frontend_layering_every_frontend_crate_sits_in_its_layer_folder_and_order_with_no_edge() {
     let scan = crate_edge_scan(&this_repo(), &FRONTEND_LAYERS.crate_edges).unwrap();
     assert!(
-        scan.crates.iter().any(|path| path == "apps/frontend"),
+        scan.crates
+            .iter()
+            .any(|path| path == "crates/frontend/shell/frontend_application"),
         "the app is the shell: {:?}",
         scan.crates
     );

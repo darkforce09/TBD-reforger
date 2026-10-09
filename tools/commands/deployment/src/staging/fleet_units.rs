@@ -1,6 +1,6 @@
 //! The three systemd template units of the fleet and the payloads that install and restart them.
 //!
-//! **Role:** embeds `tbd-reforger@.service`, `fleet_host_agent@.service` and
+//! **Role:** embeds `tbd-reforger@.service`, `game_server_host_agent@.service` and
 //! `acknowledgement-dropping-relay@.service` from `deploy/systemd/`, renders the
 //! game server template's two folder placeholders ([`game_server_unit`]), and builds the payloads
 //! that write the three units, disable the units the fleet does not run, and restart the game
@@ -18,6 +18,7 @@
 
 use super::config::Env;
 use super::fleet_instances::{FleetInstance, MAXIMUM_FLEET_INSTANCES};
+use super::host_agent::{HOST_AGENT_PACKAGE, HOST_AGENT_UNIT_TEMPLATE};
 
 /// The game server template, with `/TBD_SERVER_DIR_PLACEHOLDER` and
 /// `/TBD_ADDONS_STAGING_PLACEHOLDER`.
@@ -25,7 +26,7 @@ pub(super) const GAME_SERVER_TEMPLATE: &str =
     include_str!("../../../../../deploy/systemd/tbd-reforger@.service");
 /// The host agent template, installed byte for byte.
 pub(super) const HOST_AGENT_TEMPLATE: &str =
-    include_str!("../../../../../deploy/systemd/fleet_host_agent@.service");
+    include_str!("../../../../../deploy/systemd/game_server_host_agent@.service");
 /// The relay template, installed byte for byte.
 pub(super) const RELAY_TEMPLATE: &str =
     include_str!("../../../../../deploy/systemd/acknowledgement-dropping-relay@.service");
@@ -49,20 +50,20 @@ UNITS="$HOME/.config/systemd/user"
 mkdir -p "$UNITS"
 cat > "$UNITS/tbd-reforger@.service" <<'UNITEOF'
 @GAME_SERVER@UNITEOF
-cat > "$UNITS/fleet_host_agent@.service" <<'UNITEOF'
+cat > "$UNITS/@HOST_AGENT_UNIT_TEMPLATE@" <<'UNITEOF'
 @HOST_AGENT@UNITEOF
 cat > "$UNITS/acknowledgement-dropping-relay@.service" <<'UNITEOF'
 @RELAY@UNITEOF
 loginctl enable-linger "$(id -un)" 2>/dev/null || true
 systemctl --user daemon-reload
 for n in @SURPLUS@; do
-  systemctl --user disable --now "tbd-reforger@$n.service" "fleet_host_agent@$n.service" 2>/dev/null || true
+  systemctl --user disable --now "tbd-reforger@$n.service" "@HOST_AGENT_PACKAGE@@$n.service" 2>/dev/null || true
 done
 for n in @NOT_RELAYED@; do
   systemctl --user disable --now "acknowledgement-dropping-relay@$n.service" 2>/dev/null || true
 done
 systemctl --user enable @GAME_SERVER_UNITS@
-echo "  installed tbd-reforger@, fleet_host_agent@ and acknowledgement-dropping-relay@; enabled @GAME_SERVER_UNITS@"
+echo "  installed tbd-reforger@, @HOST_AGENT_PACKAGE@@ and acknowledgement-dropping-relay@; enabled @GAME_SERVER_UNITS@"
 "#;
 
 /// Numbers from `range` as a shell word list.
@@ -93,6 +94,8 @@ pub(super) fn units_install_payload(env: &Env, instances: &[FleetInstance]) -> S
             "@GAME_SERVER_UNITS@",
             &unit_list(instances, FleetInstance::game_server_unit),
         )
+        .replace("@HOST_AGENT_UNIT_TEMPLATE@", HOST_AGENT_UNIT_TEMPLATE)
+        .replace("@HOST_AGENT_PACKAGE@", HOST_AGENT_PACKAGE)
         .replace("@HOST_AGENT@", HOST_AGENT_TEMPLATE)
         .replace("@RELAY@", RELAY_TEMPLATE)
         .replace("@GAME_SERVER@", &game_server_unit(env))

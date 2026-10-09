@@ -49,9 +49,9 @@ citations = [
 ]
 estimated = ["scope"]
 owns = [
-    "apps/frontend/src/editor/panels/outliner.rs",
-    "apps/frontend/src/editor/panels/dock_right.rs",
-    "apps/frontend/src/editor/panels/attributes_modal.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/outliner.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/dock_right.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/attributes_modal.rs",
 ]
 
 [scope]

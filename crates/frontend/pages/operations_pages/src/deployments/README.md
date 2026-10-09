@@ -86,7 +86,7 @@ again after a submit or a decision; approve and deny show only on a pending requ
   `DataEnvelope`, `Paginated`), `frontend_session` (`AuthStore`, `Role`), `http_url_guard`,
   `frontend_ui` (`AuthGate`, `MaterialIcon`, `badge_class`, the toasts) and
   `frontend_ui` (countdown and date formatting).
-- Used by: the `/deployments` route in `apps/frontend/src/app_routes.rs`;
+- Used by: the `/deployments` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`;
   `deployments_source` in `crates/frontend/pages/operations_pages/src/tests/source_pins.rs` reads its source
   files.
 - Rules: the replay cell emits an `href` only for an `http(s)` URL

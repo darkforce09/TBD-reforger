@@ -36,9 +36,9 @@ Those tests asserted `environment.spawnModules` is **not** copied onto the paylo
 | `crates/map-engine-core/src/mission/audio.rs` | Same pin flip. |
 | `crates/map-engine-core/src/mission/tasks.rs` | Unlisted dummy is `tacticalGraphics`. |
 | `crates/map-engine-core/src/mission/flatten.rs` | Named fields for `weatherTimeline` / `audio` / `spawnModules`; `authored_blocks_root` copies every AUTHORED_BLOCKS key. Acceptance test: wave+garrison flattens. |
-| `apps/frontend/src/editor/panels/spawn_modules.rs` | Undoable module list (kind, faction, template, x/z XOR zone, count, interval, maxAlive, trigger). |
-| `apps/frontend/src/editor/panels/mod.rs` | Register `spawn_modules`. |
-| `apps/frontend/src/editor/panels/settings_modal.rs` | Mount `{spawn_modules_panel(ctrl)}` + Class-R source pin. |
+| `crates/frontend/shell/frontend_application/src/editor/panels/spawn_modules.rs` | Undoable module list (kind, faction, template, x/z XOR zone, count, interval, maxAlive, trigger). |
+| `crates/frontend/shell/frontend_application/src/editor/panels/mod.rs` | Register `spawn_modules`. |
+| `crates/frontend/shell/frontend_application/src/editor/panels/settings_modal.rs` | Mount `{spawn_modules_panel(ctrl)}` + Class-R source pin. |
 | `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_DynamicSpawner.c` | Server waves on interval/trigger up to maxAlive; garrison once; cleanup on END. |
 | `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_DynamicSpawner.c` | Export twin (byte-identical). |
 

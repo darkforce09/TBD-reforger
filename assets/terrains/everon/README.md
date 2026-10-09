@@ -116,7 +116,7 @@ towns and road names from the archive and finds the spot heights on the elevatio
 - Depends on: the terrain registry entry in `assets/terrains/terrain-registry.json`, which
   names this folder's manifest; the schemas in `contracts/definitions/`; the classification
   rules in `contracts/rules/prefab-classify.json`.
-- Used by: the API's `/map-assets` mount (`apps/api/src/router.rs`), the map
+- Used by: the API's `/map-assets` mount (`crates/api/api_server/src/router.rs`), the map
   engine, the developer tools, the xtask schema, verify and `ci` commands, and the CI workflows
   listed above.
 - Rules: `manifest.json` keeps `worldBounds`, the height range, `storageDecimals` 3 and

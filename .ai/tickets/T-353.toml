@@ -65,15 +65,15 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
 owns = [
-    "apps/frontend/src/event_hub.rs",
+    "crates/frontend/shell/frontend_application/src/event_hub.rs",
     "crates/frontend/foundation/frontend_route_table/src/routes.rs",
-    "apps/frontend/src/app_routes.rs",
-    "apps/frontend/src/datefmt.rs",
-    "apps/frontend/src/announcements.rs",
-    "apps/frontend/src/server_intel.rs",
-    "apps/frontend/src/dashboard.rs",
-    "apps/frontend/src/events.rs",
-    "apps/frontend/src/audit.rs",
+    "crates/frontend/shell/frontend_application/src/app_routes.rs",
+    "crates/frontend/shell/frontend_application/src/datefmt.rs",
+    "crates/frontend/shell/frontend_application/src/announcements.rs",
+    "crates/frontend/shell/frontend_application/src/server_intel.rs",
+    "crates/frontend/shell/frontend_application/src/dashboard.rs",
+    "crates/frontend/shell/frontend_application/src/events.rs",
+    "crates/frontend/shell/frontend_application/src/audit.rs",
     "tools/tbd-tools/fixtures/t159/manifests/routes.csv",
 ]
 

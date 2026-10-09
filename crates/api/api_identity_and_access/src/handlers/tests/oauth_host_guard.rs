@@ -84,7 +84,7 @@ const ALIGNED_REDIRECT: &str = "http://localhost:8080/api/v1/auth/discord/callba
 /// The committed template, compiled in. Reading the file the repo actually ships is the
 /// whole point — a constant restating the intended values would pass while `.env.example`
 /// said something else.
-const ENV_EXAMPLE: &str = include_str!("../../../../../../apps/api/.env.example");
+const ENV_EXAMPLE: &str = include_str!("../../../../api_server/.env.example");
 
 /// First non-comment `KEY=` assignment in a dotenv-style file.
 fn env_example_value(key: &str) -> String {

@@ -61,5 +61,5 @@ digest never depends on storage order.
 
 ## Related documentation
 
-- [Mission artifacts, reviews and deployment](/documentation/apps/api/verification_evidence/mission_artifacts.md)
+- [Mission artifacts, reviews and deployment](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
   — what an artifact records, and how reviews decide it and servers load it.

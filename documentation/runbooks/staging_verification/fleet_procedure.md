@@ -5,7 +5,7 @@
 How the orchestrator and the operator run `cargo xtask staging fleet --record`: the checks
 before it, the approval of its numbered waves, what to do at each `AWAIT` line of waves W1 to W8
 (every server at once) and W9 to W14 (one server each), and how to read the receipt. What each wave proves is in the
-[staging design note](/documentation/apps/api/verification_evidence/staging.md#fleet-procedure-staging_fleet).
+[staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md#fleet-procedure-staging_fleet).
 
 ## Prerequisites
 
@@ -92,8 +92,8 @@ before it, the approval of its numbered waves, what to do at each `AWAIT` line o
    | `w10_kick` | Kick on "TBD Staging 1": the linked Arma id, the runtime session it runs now, a reason | the kick `succeeded` naming the linked id; `console.log` holds `[TBD][Fleet] kicked command=<id>` | 120 s |
    | `w10_ended_session_kick` | Kick again, naming the runtime session that confirmed W7's Arland deployment (W8 ended it); save the page's answer | the answer is 409 `RUNTIME_SESSION_ENDED`; no second kick recorded | 900 s from the step's start |
    | `w11_stage_host_agent_credential` | the harness stages a new `host_agent` credential of "TBD Staging 1" | one new credential beside one live one | 120 s from the step's start |
-   | `w11_revoke_host_agent_credential` | "TBD Staging 1", Credentials: Revoke the older `host_agent` credential with a reason | the old one revoked; the agent's claims answered 401 `machine credential revoked` in `fleet_host_agent@1`'s journal | 120 s |
-   | `w11_promote_host_agent_credential` | the harness promotes the staged credential and restarts `fleet_host_agent@1` | the new credential authenticates; the revoked one authenticated nothing after its revocation | 180 s from the step's start |
+   | `w11_revoke_host_agent_credential` | "TBD Staging 1", Credentials: Revoke the older `host_agent` credential with a reason | the old one revoked; the agent's claims answered 401 `machine credential revoked` in `game_server_host_agent@1`'s journal | 120 s |
+   | `w11_promote_host_agent_credential` | the harness promotes the staged credential and restarts `game_server_host_agent@1` | the new credential authenticates; the revoked one authenticated nothing after its revocation | 180 s from the step's start |
    | `w12_stage_mod_runtime_credential` | the harness stages a new `mod_runtime` credential of "TBD Staging 2" | as W11 | 120 s from the step's start |
    | `w12_revoke_mod_runtime_credential` | "TBD Staging 2", Credentials: Revoke the older `mod_runtime` credential | the old one revoked; its session ended `credential_revoked`; `console.log` shows the session loop stopped over the machine credential | 180 s |
    | `w12_promote_mod_runtime_credential` | the harness promotes the staged credential, rewrites the instance profile's `TBD_BackendConfig.json` with the staging deploy's own profile commands, and restarts `tbd-reforger@2` | a newer generation opened with the new credential heartbeats | 600 s from the step's start |
@@ -141,5 +141,5 @@ the SHA-256 of an archived artifact in that folder.
 - [Recovery and cleanup](/documentation/runbooks/staging_verification/recovery_and_cleanup.md)
   — the fleet recovery list: relay disarm, stopped units, the Everon deployment, a credential
   rotation left midway.
-- [Staging design note](/documentation/apps/api/verification_evidence/staging.md) — the
+- [Staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md) — the
   witness rules and the receipt format.

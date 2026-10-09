@@ -13,9 +13,10 @@
 //!
 //! **Invariants:** every name this module retires is spelled as the single-instance install wrote
 //! it on the host, in kebab-case (`fleet-host-agent.service`, `~/.config/fleet-host-agent/`,
-//! `~/.local/bin/fleet-host-agent`), while everything the fleet installs carries the package's
-//! snake_case name `fleet_host_agent`; so the old configuration folder holds nothing of the fleet
-//! and is retired whole, and this module names no snake_case agent path. The migration moves and
+//! `~/.local/bin/fleet-host-agent`), while everything a fleet installs carries a snake_case package
+//! name (`game_server_host_agent`, and on a host not yet through `--migrate-host-agent-name` the
+//! retired `fleet_host_agent`); so the old configuration folder holds nothing of the fleet and is
+//! retired whole, and this module names no snake_case agent path. The migration moves and
 //! never deletes: everything it retires lands in one new folder
 //! `~/tbd/retired/single-instance-<UTC time>/` under a fixed archive name; it refuses a profile
 //! inside the fleet root; with nothing left to retire it creates no folder and succeeds; it ends

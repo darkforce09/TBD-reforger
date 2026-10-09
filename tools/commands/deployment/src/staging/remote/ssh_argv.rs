@@ -9,10 +9,14 @@
 //! **Signals & state:** none; pure functions.
 //!
 //! **Invariants:** no argument vector carries the ssh password (`sshpass -e` reads it from the
-//! spawned process's environment); the rsync excludes every path the host keeps for itself, which
-//! `--delete` then leaves alone, and every path only a development machine holds.
+//! spawned process's environment); the rsync excludes every path the host keeps for itself
+//! ([`crate::host_owned_paths`] among them), which `--delete` then leaves alone, and every path
+//! only a development machine holds.
 
 use super::*;
+use crate::host_owned_paths::{
+    API_ENVIRONMENT_FILE, API_HOST_TOOLS_FOLDER, BUILT_APPLICATION_FOLDER,
+};
 
 /// The full `rsync` argv. The exclude list is the licence boundary described in [`super`]'s header;
 /// the ORDER is the bash's, because a wave log diff should not show reordered flags. The paths
@@ -35,8 +39,8 @@ pub(crate) fn rsync_argv(
         "--exclude=apps/mod/Tbd_framework/".into(),
         "--exclude=apps/mod/.local-test-profile/".into(),
         "--exclude=**/node_modules/".into(),
-        "--exclude=apps/api/.tools/".into(),
-        "--exclude=apps/api/.env".into(),
+        format!("--exclude={API_HOST_TOOLS_FOLDER}"),
+        format!("--exclude={API_ENVIRONMENT_FILE}"),
         "--exclude=apps/mod/tbd-export/".into(),
         "--exclude=apps/mod/tbd-emcp/".into(),
         format!("--exclude={}", repository_layout::DEPLOY_ENV),
@@ -50,7 +54,7 @@ pub(crate) fn rsync_argv(
         // The app `cargo xtask deploy website` built on the host, in the checkout both deploys
         // share, and which the staging Caddy serves: this rsync must neither replace it with the
         // development machine's build nor delete it.
-        "--exclude=apps/frontend/dist/".into(),
+        format!("--exclude={BUILT_APPLICATION_FOLDER}"),
     ];
     argv.extend(crate::development_machine_only_paths::exclude_arguments());
     argv.push(format!("{}/", mono_root.display()));

@@ -1,0 +1,20 @@
+# Stage S13 W1, second of four: the single-page app and its offline service worker leave `apps/`
+# for the new frontend layer folder `crates/frontend/shell/`, beside each other as the two peers
+# of the shell layer: the app becomes the crate frontend_application, the worker keeps its name.
+# The app's documentation hub and its frame's feature docs become the app crate's documentation
+# mirror under `documentation/crates/frontend/shell/frontend_application`; the two planned
+# workspaces' docs join the workspace crate documentation under
+# `documentation/crates/frontend/workspaces/`, whose README takes over their index.
+# The package rename (`frontend` -> `frontend_application`) is in the crate's manifest; `frontend`
+# is a common word, so package and binary names in commands (`-p frontend`) have no `text` row
+# and are edited by hand. Neither crate has a library, so no Rust path changes.
+kind	from	to	scope
+#
+# The two crates of the shell layer
+path	apps/frontend	crates/frontend/shell/frontend_application
+path	apps/offline_service_worker	crates/frontend/shell/offline_service_worker
+#
+# The app's documentation mirror, and the planned workspaces beside the built ones
+path	documentation/apps/frontend	documentation/crates/frontend/shell/frontend_application
+path	documentation/apps/frontend/workspaces/aar	documentation/crates/frontend/workspaces/aar
+path	documentation/apps/frontend/workspaces/planner	documentation/crates/frontend/workspaces/planner

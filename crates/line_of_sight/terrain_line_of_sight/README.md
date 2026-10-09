@@ -56,7 +56,7 @@ cargo test -p terrain_line_of_sight   # profile, viewshed, sliced job, cell cap
   - `map_editing_tools`: its line-of-sight tool and visibility scheduler
     (`crates/mission_editing/map_editing_tools/src/`);
   - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s input handlers,
-    the debug building viewer and the mortar map picker in `apps/frontend/`.
+    the debug building viewer and the mortar map picker in `crates/frontend/shell/frontend_application/`.
 - Rules: a raster over `MAX_VIEWSHED_CELLS` (300 000) cells is refused, `ViewshedJob::new`
   returning the `ViewshedCapRefused` that names the cap and the measured count and
   `compute_viewshed` an empty raster, while the 2000 m / 8 m default (251 001 cells) passes

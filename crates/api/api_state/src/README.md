@@ -34,7 +34,7 @@ never name `AppState`.
   `IpLimiter`, `Registry`, `Hub`), `api_configuration` (`Config`), `api_discord`
   (`DiscordService`, `WebhookService`), `api_equipment_datasets` (`EquipmentDatasets`), axum and
   sqlx.
-- Used by: the API application (`apps/api`): its composition root, which builds the state, the
+- Used by: the API application (`crates/api/api_server`): its composition root, which builds the state, the
   router, every domain handler, the background workers and the integration suites.
 - Rules: the state names no domain and no concrete session authority; the strict limiter's
   numbers equal the durable strict tier's (`tests/application_state.rs`).

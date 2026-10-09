@@ -15,20 +15,26 @@
 //! `DbPoolConfig::from_env`, not by [`Config::load`]: `Config` carries no field nobody
 //! consumes, and the binary hands the connector a URL rather than a `Config`. A malformed value
 //! is a [`ConfigError::MalformedValue`] naming the variable.
+//!
+//! The four directory settings `UPLOAD_DIR`, `EQUIPMENT_DATA_DIR`, `MAP_ASSETS_DIR` and
+//! `GLYPH_ASSETS_DIR` default, in development only, to folders of the checkout, joined onto the
+//! checkout root the `repository_root` walk finds from the working directory; a development boot
+//! outside any checkout with one of them unset is a [`ConfigError::CheckoutRootNotFound`].
 
+mod development_directories;
 pub mod proxy_network;
 
 use api_identifiers::{DiscordClientId, DiscordGuildId};
 use std::env;
 use std::path::Path;
 
+use development_directories::{
+    CheckoutDirectory, EQUIPMENT_DATA, GLYPH_ASSETS, MAP_ASSETS, UPLOAD,
+};
 use proxy_network::parse_trusted_proxies;
 
 /// Default body cap for `POST /missions/:id/versions` (256 MB).
 const DEFAULT_MISSION_VERSION_MAX_BODY_BYTES: i64 = 256 << 20;
-
-/// Development default for `UPLOAD_DIR`, relative to the crate directory the developer runs from.
-const DEVELOPMENT_UPLOAD_DIR: &str = "../../assets/scratch/api/uploads";
 
 /// All runtime settings for the API.
 #[derive(Debug, Clone)]
@@ -60,25 +66,27 @@ pub struct Config {
     /// The Leptos SPA `dist/` to serve statically (with COOP/COEP + SPA fallback). Empty
     /// = don't serve a SPA (dev uses `trunk serve`; the API is API-only).
     pub spa_dist_dir: String,
-    /// The map-assets dir served at `/map-assets` when a SPA is served (the editor's DEM /
-    /// basemap / world chunks). Empty defaults to `../../assets/terrains` relative to the
-    /// CWD, which is correct only when the process runs from `apps/api/`. Production
-    /// sets this to an absolute path — see `deploy/systemd/tbd-website-api.service`.
+    /// `MAP_ASSETS_DIR`: the terrain tree served at `/map-assets` (the editor's DEM, basemap and
+    /// world chunks). In development an unset value is the checkout's `assets/terrains`; outside
+    /// development it is required and must be absolute — see
+    /// `deploy/systemd/tbd-website-api.service`.
     pub map_assets_dir: String,
-    /// The glyph dir served at `/map-assets/glyphs` (the tactical marker atlas, shared by every
-    /// terrain). Empty defaults to `../../assets/glyphs` relative to the CWD.
+    /// `GLYPH_ASSETS_DIR`: the glyph tree served at `/map-assets/glyphs` (the tactical marker
+    /// atlas, shared by every terrain). In development an unset value is the checkout's
+    /// `assets/glyphs`; outside development it is required and must be absolute.
     pub glyph_assets_dir: String,
 
     // Runtime storage — what the API writes. Never inside the source tree in production.
-    /// Directory the CMS thumbnail upload writes into and `/uploads` serves from. In development
-    /// an empty value means `../../assets/scratch/api/uploads` relative to the CWD
-    /// (the repository's gitignored scratch tree when the process runs from
-    /// `apps/api/`); outside development it is required and must be absolute, because
-    /// the process working directory is a deployment detail and the checkout is what the deploy
-    /// rsyncs with `--delete` — see `deploy/systemd/tbd-website-api.service`.
+    /// `UPLOAD_DIR`: the directory the CMS thumbnail upload writes into and `/uploads` serves
+    /// from. In development an unset value is the checkout's gitignored
+    /// `assets/scratch/api/uploads`; outside development it is required and must be absolute,
+    /// because the process working directory is a deployment detail and the checkout is what the
+    /// deploy rsyncs with `--delete` — see `deploy/systemd/tbd-website-api.service`.
     pub upload_dir: String,
 
-    /// Original published exports and rebuildable viewer indexes.
+    /// `EQUIPMENT_DATA_DIR`: the original published exports and the rebuildable viewer indexes.
+    /// In development an unset value is the checkout's gitignored `assets/equipment`; outside
+    /// development an unset value leaves the datasets unconfigured and a set one must be absolute.
     pub equipment_data_dir: String,
     /// Optional Workbench publication root checked by the import worker.
     pub equipment_export_source_dir: Option<String>,
@@ -136,36 +144,49 @@ pub enum ConfigError {
     /// value verbatim, `{:?}`-quoted, for the reason [`Self::MalformedEntry`] does (`"5m"`).
     #[error("{0} value {1:?} is malformed: {2}")]
     MalformedValue(&'static str, String, &'static str),
+    /// A directory setting is unset in development, and its default lies under the checkout root,
+    /// which the walk from the working directory did not find. A development process started
+    /// outside the checkout names its directories itself; the default never falls back to a path
+    /// relative to the working directory.
+    #[error("{0} is unset, and its development default needs the checkout root: {1}")]
+    CheckoutRootNotFound(&'static str, repository_root::Error),
 }
 
 impl Config {
     /// Read configuration from the environment, applying dev defaults. Loads a
     /// `.env` if present. Hard-fails if `DATABASE_URL` or `JWT_SECRET` is empty;
-    /// outside development also hard-fails on blank Discord client id/secret/redirect.
+    /// outside development also hard-fails on blank Discord client id/secret/redirect and on an
+    /// unset or relative upload, map or glyph directory.
+    ///
+    /// # Errors
+    ///
+    /// A [`ConfigError`] naming the first variable that is missing or unusable, or the directory
+    /// setting whose development default finds no checkout root above the working directory.
     pub fn load() -> Result<Self, ConfigError> {
         // best-effort: .env is optional; real config comes from the environment.
         let _ = dotenvy::dotenv();
 
         let frontend_url = get_env("FRONTEND_URL", "http://localhost:5173");
         let app_env = get_env("APP_ENV", "production");
+        let development = app_env == "development";
+        let directory = |setting: CheckoutDirectory| {
+            development_directories::resolve(
+                setting,
+                &env::var(setting.variable).unwrap_or_default(),
+                development,
+                repository_root::find_repository_root,
+            )
+        };
         let cfg = Config {
             port: get_env("PORT", "8080"),
             trusted_proxies: split_csv(&env::var("TRUSTED_PROXIES").unwrap_or_default()),
             allowed_origins: split_csv(&get_env("ALLOWED_ORIGINS", &frontend_url)),
             frontend_url,
             spa_dist_dir: env::var("SPA_DIST_DIR").unwrap_or_default(),
-            map_assets_dir: env::var("MAP_ASSETS_DIR").unwrap_or_default(),
-            glyph_assets_dir: env::var("GLYPH_ASSETS_DIR").unwrap_or_default(),
-            upload_dir: runtime_storage_dir(
-                &env::var("UPLOAD_DIR").unwrap_or_default(),
-                DEVELOPMENT_UPLOAD_DIR,
-                &app_env,
-            ),
-            equipment_data_dir: runtime_storage_dir(
-                &env::var("EQUIPMENT_DATA_DIR").unwrap_or_default(),
-                "../../assets/equipment",
-                &app_env,
-            ),
+            map_assets_dir: directory(MAP_ASSETS)?,
+            glyph_assets_dir: directory(GLYPH_ASSETS)?,
+            upload_dir: directory(UPLOAD)?,
+            equipment_data_dir: directory(EQUIPMENT_DATA)?,
             equipment_export_source_dir: env::var("EQUIPMENT_EXPORT_SOURCE_DIR")
                 .ok()
                 .filter(|s| !s.is_empty()),
@@ -229,45 +250,32 @@ impl Config {
                 "contains whitespace",
             ));
         }
-        // What the API writes must land where the operator said, never in a directory that
-        // happens to be the process's CWD. Empty can only survive `load` outside development (the
-        // development default fills it), and there it is a missing setting, not a default.
-        let upload_dir = &self.upload_dir;
-        if upload_dir.is_empty() {
-            return Err(ConfigError::Missing("UPLOAD_DIR"));
-        }
-        if upload_dir != upload_dir.trim() {
-            return Err(ConfigError::Malformed(
-                "UPLOAD_DIR",
-                "has leading or trailing whitespace",
-            ));
-        }
-        if !self.is_development() && !Path::new(upload_dir).is_absolute() {
-            return Err(ConfigError::Malformed(
-                "UPLOAD_DIR",
-                "must be an absolute path outside development",
-            ));
+        // What the API writes and serves must come from where the operator said, never from a
+        // directory that happens to be the process's CWD. Empty can only survive `load` outside
+        // development (the development defaults fill it), and there it is a missing setting, not
+        // a default.
+        for (name, value) in [
+            (UPLOAD.variable, self.upload_dir.as_str()),
+            (MAP_ASSETS.variable, self.map_assets_dir.as_str()),
+            (GLYPH_ASSETS.variable, self.glyph_assets_dir.as_str()),
+        ] {
+            if value.is_empty() {
+                return Err(ConfigError::Missing(name));
+            }
+            check_directory(name, value, self.is_development())?;
         }
         for (name, value) in [
-            ("EQUIPMENT_DATA_DIR", Some(self.equipment_data_dir.as_str())),
+            (
+                EQUIPMENT_DATA.variable,
+                Some(self.equipment_data_dir.as_str()),
+            ),
             (
                 "EQUIPMENT_EXPORT_SOURCE_DIR",
                 self.equipment_export_source_dir.as_deref(),
             ),
         ] {
             if let Some(value) = value.filter(|v| !v.is_empty()) {
-                if value.trim() != value {
-                    return Err(ConfigError::Malformed(
-                        name,
-                        "has leading or trailing whitespace",
-                    ));
-                }
-                if !self.is_development() && !Path::new(value).is_absolute() {
-                    return Err(ConfigError::Malformed(
-                        name,
-                        "must be an absolute path outside development",
-                    ));
-                }
+                check_directory(name, value, self.is_development())?;
             }
         }
         // `TRUSTED_PROXIES` decides whether a client-supplied header is believed, so a typo in it
@@ -319,10 +327,23 @@ impl Config {
     }
 
     /// Minimal config for tests + harnesses: development env, dev CORS origin, the
-    /// given DB URL + JWT secret, a non-empty service token, blank Discord creds, and runtime
-    /// storage under a per-process temporary directory so no suite writes into the checkout.
+    /// given DB URL + JWT secret, a non-empty service token, blank Discord creds, runtime
+    /// storage under a per-process temporary directory so no suite writes into the checkout, and
+    /// the checkout's read-only terrain and glyph trees, found from this crate's manifest folder
+    /// so a test resolves them from any working directory.
+    ///
+    /// # Panics
+    ///
+    /// When this crate's manifest folder lies outside a checkout, which a test build of the
+    /// checkout never is.
     pub fn for_tests(database_url: impl Into<String>, jwt_secret: impl Into<String>) -> Self {
         let scratch = std::env::temp_dir().join(format!("api-tests-{}", std::process::id()));
+        let checkout_directory = |setting: CheckoutDirectory| {
+            development_directories::resolve(setting, "", true, || {
+                repository_root::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+            })
+            .expect("the test build's manifest folder lies inside the checkout")
+        };
         Self {
             equipment_data_dir: scratch.join("equipment").display().to_string(),
             equipment_export_source_dir: None,
@@ -332,8 +353,8 @@ impl Config {
             frontend_url: "http://localhost:5173".into(),
             allowed_origins: vec!["http://localhost:5173".into()],
             spa_dist_dir: String::new(),
-            map_assets_dir: String::new(),
-            glyph_assets_dir: String::new(),
+            map_assets_dir: checkout_directory(MAP_ASSETS),
+            glyph_assets_dir: checkout_directory(GLYPH_ASSETS),
             upload_dir: scratch.join("uploads").display().to_string(),
             database_url: database_url.into(),
             mission_version_max_body_bytes: DEFAULT_MISSION_VERSION_MAX_BODY_BYTES,
@@ -352,15 +373,22 @@ impl Config {
     }
 }
 
-/// A runtime storage directory as configured, with the development default applied when the
-/// variable is unset. Outside development an unset variable stays empty, so [`Config::validate`]
-/// reports it as missing rather than pointing a deployment at a checkout-relative path.
-fn runtime_storage_dir(configured: &str, development_default: &str, app_env: &str) -> String {
-    if configured.is_empty() && app_env == "development" {
-        development_default.to_string()
-    } else {
-        configured.to_string()
+/// Refuses a set directory value with surrounding whitespace in every environment, and a relative
+/// one outside development, naming the variable.
+fn check_directory(name: &'static str, value: &str, development: bool) -> Result<(), ConfigError> {
+    if value.trim() != value {
+        return Err(ConfigError::Malformed(
+            name,
+            "has leading or trailing whitespace",
+        ));
     }
+    if !development && !Path::new(value).is_absolute() {
+        return Err(ConfigError::Malformed(
+            name,
+            "must be an absolute path outside development",
+        ));
+    }
+    Ok(())
 }
 
 fn get_env(key: &str, fallback: &str) -> String {

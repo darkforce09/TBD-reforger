@@ -29,7 +29,7 @@ T-760’s new pins live in `map-engine-render` (lane-order / `ALL_LANES`), not i
 
 ## FINDINGS (Evidence → Impact → Disposition; NO-DEFERRAL)
 
-### F1 — MAJOR | `apps/frontend/src/mission_history.rs:331` + `:391` — **T-760 claim “after_doc_change + rebind_engine_from_doc feed markers” is unpinned hollow wiring**
+### F1 — MAJOR | `crates/frontend/shell/frontend_application/src/mission_history.rs:331` + `:391` — **T-760 claim “after_doc_change + rebind_engine_from_doc feed markers” is unpinned hollow wiring**
 
 **Evidence.**  
 (a) Repo-wide, the only call sites of `e.markers_bind(...)` are those two lines (rebind + `after_doc_change`). Place/undo paths reach the lane only via `after_local_edit` → `after_doc_change` (no other binder).  
@@ -52,7 +52,7 @@ T-760’s new pins live in `map-engine-render` (lane-order / `ALL_LANES`), not i
 
 ---
 
-### F3 — MINOR | `apps/frontend/src/eden_dock_right.rs:2922` — **stale comment: “a release over chrome drops it”**
+### F3 — MINOR | `crates/frontend/shell/frontend_application/src/eden_dock_right.rs:2922` — **stale comment: “a release over chrome drops it”**
 
 **Evidence.** Markers panel armed-state banner comment still says the one-shot arm is dropped on chrome release. T-723’s contract (and wasm `ArmedUp::KeepArmed` at `mission_editor.rs:4169-4172`) is the opposite: off-canvas LMB must **not** `cancel_pending`. Admitted untested dock `pointerdown` arming still relies on KeepArmed for click-then-click.  
 **Impact.** Doc lie next to live UI; can re-introduce the wave-106 MAJOR-1 “fix” of cancelling on chrome release.  

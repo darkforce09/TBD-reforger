@@ -20,7 +20,7 @@ crates/map_overlay/
   `unit_symbology` on `map_draw_lanes`, `overlay_instances` on `unit_symbology` and
   `map_draw_lanes`.
 - Used by: the streaming, map rendering, world object and mission editing crates, the
-  single-page app (`apps/frontend`) and the developer tools (`tools/developer_tools`), each
+  single-page app (`crates/frontend/shell/frontend_application`) and the developer tools (`tools/developer_tools`), each
   importing the crates directly.
 - Rules: a map overlay crate declares `category = "crates/map_overlay"`, and its dependency edges
   point to lower tiers only (`cargo xtask verify crate-tiers`).

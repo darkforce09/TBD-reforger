@@ -24,14 +24,13 @@ use std::sync::{Arc, Mutex as StdMutex};
 use crate::error::{Result, refusal};
 use serde_json::{Map, Value, json};
 
-use crate::gate_layout::MapAssetMounts;
+use crate::gate_layout::{FRONTEND_APPLICATION_DIST, MapAssetMounts};
 use crate::server::{RunningServer, ServeConfig, start_server};
 use ::repository_root::find_repository_root;
 use chrome_devtools_protocol::{self as cdp, Browser, Page};
 
 mod outliner_drag;
 
-const DIST_DEFAULT: &str = "apps/frontend/dist";
 /// Default editor path for the suite. `sat=preview` keeps smokes off the 152 MB full TBDS GET
 /// (which freezes headless CDP mid-suite once `/map-assets` is live).
 ///

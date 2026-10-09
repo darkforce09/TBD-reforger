@@ -68,13 +68,13 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 owns = [
-    "apps/frontend/src/orbat_manager.rs",
-    "apps/frontend/src/attributes.rs",
-    "apps/frontend/src/eden_top_strip.rs",
-    "apps/frontend/src/missions.rs",
-    "apps/frontend/src/yrs_persist.rs",
-    "apps/frontend/src/mission_editor.rs",
-    "apps/frontend/src/context_menu.rs",
+    "crates/frontend/shell/frontend_application/src/orbat_manager.rs",
+    "crates/frontend/shell/frontend_application/src/attributes.rs",
+    "crates/frontend/shell/frontend_application/src/eden_top_strip.rs",
+    "crates/frontend/shell/frontend_application/src/missions.rs",
+    "crates/frontend/shell/frontend_application/src/yrs_persist.rs",
+    "crates/frontend/shell/frontend_application/src/mission_editor.rs",
+    "crates/frontend/shell/frontend_application/src/context_menu.rs",
 ]
 
 [scope]

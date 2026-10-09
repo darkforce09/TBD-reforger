@@ -43,7 +43,7 @@ $ cd packages/tbd-schema && node scripts/verify-terrain-manifest.mjs
 PASS  Manifest validates against terrain-manifest.schema.json
 PASS  Manifest matches terrains.ts for everon
 
-$ cd apps/frontend && npm run build && npm run lint
+$ cd crates/frontend/shell/frontend_application && npm run build && npm run lint
 build clean (pre-existing chunk-size warning only) · lint clean
 ```
 

@@ -38,8 +38,8 @@ acceptance = [
 ]
 created_at = "2026-09-05T03:30:00Z"
 owns = [
-    "apps/frontend/src/editor/tools/route_planner.rs",
-    "apps/frontend/src/editor/tools/mod.rs",
+    "crates/frontend/shell/frontend_application/src/editor/tools/route_planner.rs",
+    "crates/frontend/shell/frontend_application/src/editor/tools/mod.rs",
     "crates/map-engine-core/src/world/road_graph.rs",
     "crates/map-engine-core/src/world/mod.rs",
 ]

@@ -1,0 +1,22 @@
+# Stage S13 W1, fourth of four: the ticketboard, the egui desktop viewer of the ticket registry,
+# leaves `apps/` and becomes the tool crate ticketboard_desktop in `tools/tickets/`, beside its
+# headless half `ticketboard_model`; its documentation mirror moves with it under
+# `documentation/tools/tickets/ticketboard_desktop`.
+# The package and its binary take the name `ticketboard_desktop`, and so does the eframe app id
+# (the saved preferences reset, accepted). "ticketboard" stays the product's name in prose and in
+# glossary anchors, so the `text` rows rewrite the token only in the files where every whole-word
+# hit names the package, the binary or the app id: the crate's manifest, its entry file (the usage
+# line, the app id and the eframe application name), the no-repository screen's launch hint and
+# the crate README (the package and binary in its commands and its public surface). Every other
+# command line that names the package is in a file another owner edits by hand.
+kind	from	to	scope
+#
+# The ticketboard crate and its documentation mirror
+path	apps/ticketboard	tools/tickets/ticketboard_desktop
+path	documentation/apps/ticketboard	documentation/tools/tickets/ticketboard_desktop
+#
+# The package, binary and app id, where a file names nothing else by the bare word
+text	ticketboard	ticketboard_desktop	apps/ticketboard/Cargo.toml
+text	ticketboard	ticketboard_desktop	apps/ticketboard/src/main.rs
+text	ticketboard	ticketboard_desktop	apps/ticketboard/src/application/shell_screens.rs
+text	ticketboard	ticketboard_desktop	apps/ticketboard/README.md

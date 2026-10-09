@@ -54,10 +54,10 @@ citations = [
 ]
 estimated = ["scope"]
 owns = [
-    "apps/frontend/src/editor/panels/zones_panel.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/zones_panel.rs",
     "crates/map-engine-render/src/scene.rs",
     "crates/map-engine-render/src/engine.rs",
-    "apps/frontend/src/editor/mission_editor.rs",
+    "crates/frontend/shell/frontend_application/src/editor/mission_editor.rs",
 ]
 
 [scope]

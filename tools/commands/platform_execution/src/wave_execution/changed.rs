@@ -19,7 +19,7 @@ use std::path::{Path, PathBuf};
 use super::{Ctx, git_stdout_lossy, host, ledger};
 
 /// The SPA crate, repo-relative — the root of the wasm dependency walk.
-pub(crate) const FRONTEND_DIR: &str = "apps/frontend";
+pub(crate) const FRONTEND_DIR: &str = "crates/frontend/shell/frontend_application";
 use crate::wave_execution::{wprint, wprintln};
 
 /// The default diff base — the slice's own range inside a worktree.

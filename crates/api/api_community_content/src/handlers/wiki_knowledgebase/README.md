@@ -68,14 +68,14 @@ null and left off the wire.
 - Rules: reads take `AuthUser` and the save `AdminUser`; every handler carries its `/// @route` tag
   (`cargo xtask verify route-tags`); the save locks the page row, then inserts the revision, then
   appends the audit row, all in one transaction; every nullable column is read through `COALESCE`
-  or into an `Option` (`apps/api/tests/null_tolerance_select_scan.rs`);
-  `apps/api/tests/community_content_reads.rs` holds the create, save, conflict,
+  or into an `Option` (`crates/api/api_server/tests/null_tolerance_select_scan.rs`);
+  `crates/api/api_server/tests/community_content_reads.rs` holds the create, save, conflict,
   summary and history round trip against the contract.
 
 ## Related documentation
 
 - [Wiki page](/documentation/crates/frontend/pages/doctrine_pages/wiki/wiki_page.md) — the
   page that reads and writes these routes.
-- [Administration and community content](/documentation/apps/api/verification_evidence/administration_and_content.md)
+- [Administration and community content](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md)
   — the wiki markup, revision and save design.
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.

@@ -14,7 +14,7 @@ First actions matched the brief. EnfusionMCP count was already 19. `export CARGO
 The worktree is `slice/T-936.5` at merge-base + T-942 packing. Before any code:
 
 - `crates/map-engine-core/src/mission/audio.rs` — missing
-- `apps/frontend/src/editor/panels/audio_emitters.rs` — missing
+- `crates/frontend/shell/frontend_application/src/editor/panels/audio_emitters.rs` — missing
 - both `TBD_AudioEmitter.c` — missing
 - `mission.schema.json` — no `audio` property
 - `AUTHORED_BLOCKS` keys: `radioPlan`, `winConditions`, `tasks`, `weatherTimeline` only
@@ -29,8 +29,8 @@ The worktree is `slice/T-936.5` at merge-base + T-942 packing. Before any code:
 | `crates/map-engine-core/src/mission/audio.rs` | NEW. Parse/validate, `MUSIC_EVENTS`, `radius_above_zero` (perturbation target), compile/carrier tests. |
 | `crates/map-engine-core/src/mission/mod.rs` | Register `audio`. |
 | `crates/map-engine-core/src/mission/extensions.rs` | AUTHORED_BLOCKS row `audio`; `len()==5`; not in `DOCUMENT_OWNED_BLOCKS`. |
-| `apps/frontend/src/editor/panels/audio_emitters.rs` | NEW. Emitter list + cue table, undoable via `update_environment`, place-on-map via `begin_place_marker`. |
-| `apps/frontend/src/editor/panels/mod.rs` | Register `audio_emitters`. |
+| `crates/frontend/shell/frontend_application/src/editor/panels/audio_emitters.rs` | NEW. Emitter list + cue table, undoable via `update_environment`, place-on-map via `begin_place_marker`. |
+| `crates/frontend/shell/frontend_application/src/editor/panels/mod.rs` | Register `audio_emitters`. |
 | `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_AudioEmitter.c` | NEW. Server arms emitters (triggerId via T-676) and fires cues; clients spawn one `TBD_AudioSourceEntity` per emitter and honour radius/loop. Presence is array `Count()`. |
 | `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_AudioEmitter.c` | ASCII twin. |
 

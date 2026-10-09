@@ -44,7 +44,7 @@ are proved against Postgres by the API's integration suites.
 
 Three variables, read when `spawn_all` runs: `LEADERBOARD_REFRESH_INTERVAL_SECS`,
 `SERVER_STATUS_PUBLISH_INTERVAL_SECS` and `ROLE_RESYNC_INTERVAL_SECS`
-([API environment variables](/documentation/apps/api/environment_variables.md)). No feature.
+([API environment variables](/documentation/crates/api/api_server/environment_variables.md)). No feature.
 
 ## Public surface
 
@@ -60,16 +60,16 @@ Three variables, read when `spawn_all` runs: `LEADERBOARD_REFRESH_INTERVAL_SECS`
   `api_member_activity`, `api_equipment_datasets`, the domain crates `api_administration`,
   `api_identity_and_access`, `api_missions`, `api_operations` and `api_server_infrastructure`,
   sqlx, tokio, tracing, axum and thiserror.
-- Used by: the API application (`apps/api`): its `api` binary calls `spawn_all`, and its
+- Used by: the API application (`crates/api/api_server`): its `api-server` binary calls `spawn_all`, and its
   integration suites run single passes.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md);
-  `apps/api/src/tests/architecture_rules.rs` checks that only the application depends on this
-  crate and that only its `api` binary names it.
+  `crates/api/api_server/src/tests/architecture_rules.rs` checks that only the application depends on this
+  crate and that only its `api-server` binary names it.
 
 ## Related documentation
 
 - [API background workers source](/crates/api/api_background_workers/src/README.md) — the
   workers, their intervals and the services each pass calls.
-- [Fleet command ledger](/documentation/apps/api/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
   — the leases and expiries the fleet command reconciler enforces.
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.

@@ -66,18 +66,18 @@ the unit tests only, from `[dev-dependencies]`; the release build carries no fai
   `api_caller_identity`, `api_member_activity`, `api_audit_log`, `api_http_layer`,
   `api_failpoints`, `api_foundation`, `api_identifiers`, `fleet_wire_contract`, sqlx, axum, serde,
   chrono, csv, tokio, futures, async-stream, tracing and thiserror. It names no other domain.
-- Used by: the API application (`apps/api`): its router merges `routes`, its audit publication
+- Used by: the API application (`crates/api/api_server`): its router merges `routes`, its audit publication
   worker runs `publish_audit_batch`, and its audit integration suites drive the services directly;
   over HTTP, the personnel and audit logs pages of the single-page app.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md);
-  `apps/api/src/tests/architecture_rules.rs` checks its route table, its handlers and its
+  `crates/api/api_server/src/tests/architecture_rules.rs` checks its route table, its handlers and its
   imports against the domain graph.
 
 ## Related documentation
 
 - [API administration source](/crates/api/api_administration/src/README.md) — the files, the
   routes and how the roster, the moderation and the audit stream work.
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
-- [Administration and community content](/documentation/apps/api/verification_evidence/administration_and_content.md)
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
+- [Administration and community content](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md)
   — the roster paging, the audit stream's replay, reset and recovery semantics.
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.

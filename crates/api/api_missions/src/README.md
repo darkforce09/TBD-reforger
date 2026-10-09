@@ -59,7 +59,7 @@ with the artifact's compiled slots, which the event roster in `api_operations` r
 
 ## Public surface
 
-- `routes::routes(version_limit)`: the table the API's router (`api::router`) merges under `/api/v1`, one route
+- `routes::routes(version_limit)`: the table the API's router (`api_server::router`) merges under `/api/v1`, one route
   each; "author or administrator" means `MissionMakerUser` plus ownership of the mission:
   - `GET /api/v1/registry`: `MissionMakerUser`; one modpack's item catalog, paged on request,
     with a weak `ETag`.
@@ -117,7 +117,7 @@ with the artifact's compiled slots, which the event roster in `api_operations` r
 - `services::mission_deployments`: `deployment_reads::deployment_in_effect` and
   `deployment_settlement::lock_and_settle` for the event roster in `api_operations`, and
   `deployment_settlement::reconcile_mission_deployments` for the deployment reconciler worker.
-- `services::registry_import`: `import_items` and `import_compat`, run by the `import-registry`
+- `services::registry_import`: `import_items` and `import_compat`, run by the `import-item-registry`
   binary.
 - `models::mission`: `MissionArmory`, read by the event hub in `api_operations`.
 - `Error` and `Result` (a database failure, a schema that does not compile or a refused registry
@@ -140,10 +140,10 @@ with the artifact's compiled slots, which the event roster in `api_operations` r
     (`mission_model::orbat` also holds the ORBAT template a deployment binds);
   - the schemas in `contracts/definitions/`, embedded at compile time.
 - Used by:
-  - the API's router (`apps/api/src/router.rs`), which merges the route
+  - the API's router (`crates/api/api_server/src/router.rs`), which merges the route
     table;
   - the `mission_deployment_reconciler` worker in `crates/api/api_background_workers/src/`
-    and the `import-registry` binary in `apps/api/src/bin/`;
+    and the `import-item-registry` binary in `crates/api/api_server/src/bin/`;
   - `api_command_center` and `api_operations`, through the surface above;
   - over HTTP, the Mission Creator in `crates/frontend/workspaces/mission_creator_workspace/src/`, the mission hub
     pages in `crates/frontend/pages/mission_hub_pages/src/`, the
@@ -155,7 +155,7 @@ with the artifact's compiled slots, which the event roster in `api_operations` r
     `tools/commands/mod_operations/src/website_api_client/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`domain_handlers_import_no_foreign_handlers` and
-  `every_domain_exports_a_route_table` in `apps/api/src/tests/architecture_rules.rs`);
+  `every_domain_exports_a_route_table` in `crates/api/api_server/src/tests/architecture_rules.rs`);
   every handler carries its `/// @route` tag (`cargo xtask verify route-tags`);
   the domain's generated contract types (`contract_schema_types::missions`) are written by
   `cargo xtask ci schema-codegen` and never edited by hand (`cargo xtask ci verify-codegen-fresh`
@@ -164,11 +164,11 @@ with the artifact's compiled slots, which the event roster in `api_operations` r
 
 ## Related documentation
 
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes and the
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes and the
   layers they share.
-- [API decisions](/documentation/apps/api/decisions.md) — why game servers fetch artifacts over
+- [API decisions](/documentation/crates/api/api_server/decisions.md) — why game servers fetch artifacts over
   HTTPS rather than from staged files.
-- [Mission artifacts, reviews and deployment](/documentation/apps/api/verification_evidence/mission_artifacts.md)
+- [Mission artifacts, reviews and deployment](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
   — the design of artifacts, their reviews and deployments.
 - [Mission library page](/documentation/crates/frontend/pages/mission_hub_pages/library/mission_library_page.md),
   [Mission overview page](/documentation/crates/frontend/pages/mission_hub_pages/overview/mission_overview_page.md)

@@ -52,8 +52,8 @@ tools/tickets/ticketboard_model/src/ticket_browser/models/
   `BrowserView`; `ticket_model` (`StatusName`, `Ticket`).
 - Used by: `crate::application_state::workspace_state`, which builds the board and tree at load
   and flattens the tree on every filter or expansion change; the desktop application, which paints
-  them from `apps/ticketboard/src/ticket_browser/ui/` and lends `BrowserView` from
-  `apps/ticketboard/src/application/feature_views.rs`.
+  them from `tools/tickets/ticketboard_desktop/src/ticket_browser/ui/` and lends `BrowserView` from
+  `tools/tickets/ticketboard_desktop/src/application/feature_views.rs`.
 - Rules:
   - cards sort by order then numeric id, and ids that do not parse sort last
     (`cards_sort_by_order_then_numeric_id`, `unparsable_ids_sort_last` in `tests/status_board.rs`);

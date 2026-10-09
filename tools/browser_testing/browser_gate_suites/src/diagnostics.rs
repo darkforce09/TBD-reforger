@@ -32,13 +32,13 @@ use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use std::time::Duration;
 
+use crate::gate_layout::FRONTEND_APPLICATION_DIST;
 use crate::server::{ServeConfig, start_server};
 use chrome_devtools_protocol::{
     self as cdp, CacheOrigin, gate_font_cache_dir, resolved_font_cache,
 };
 
 const EDIT_PATH: &str = "/missions/smoke/edit?force=webgl&sat=preview";
-const DEFAULT_DIST: &str = "apps/frontend/dist";
 
 /// The stderr line chromium prints when fontconfig hands it an empty font set.
 const NO_FONT_MARKER: &str = "Could not find any font";

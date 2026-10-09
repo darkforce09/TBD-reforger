@@ -33,7 +33,7 @@ compiled into the crate, so `cargo test -p developer_tools` does not read this t
 ## Boundaries
 
 - Depends on: the single-page app's built output, router and API fixtures in
-  `apps/frontend/`.
+  `crates/frontend/shell/frontend_application/`.
 - Used by: `tools/browser_testing/browser_gate_suites/`.
 - Rules: the prose rules of `tools/checks/repository_checks/src/tests/tooling_prose_rules.rs` exempt this tree from
   the ticket-id and Rust-file-name rules, since the goldens are captured pages; the gates address it

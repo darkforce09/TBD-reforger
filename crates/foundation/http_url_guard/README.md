@@ -40,7 +40,7 @@ cargo test -p http_url_guard   # the predicate's unit tests and the whole case t
 ```
 
 To add a case, put the entry in its group of `src/cases.rs` with its verdict, then run the
-command above and the callers' tests, for example `cargo test -p frontend url_guard`.
+command above and the callers' tests, for example `cargo test -p operations_pages http_urls`.
 
 ## Configuration
 
@@ -57,10 +57,10 @@ variable.
 ## Boundaries
 
 - Depends on: `url` (the WHATWG parser).
-- Used by: the API (`apps/api`), whose writers of every URL column call the guard (listed in
-  `crates/api/api_foundation/src/text/README.md`); the single-page app (`apps/frontend`), whose avatar
+- Used by: the API (`crates/api/api_server`), whose writers of every URL column call the guard (listed in
+  `crates/api/api_foundation/src/text/README.md`); the single-page app (`crates/frontend/shell/frontend_application`), whose avatar
   sanitiser, Mission Creator settings, announcement, mission library, service record and
-  leaderboard links call it. With `test_fixtures`: `apps/api/tests/aar_replay_url_backfill.rs`
+  leaderboard links call it. With `test_fixtures`: `crates/api/api_server/tests/aar_replay_url_backfill.rs`
   and the frontend page tests that render a stored link or image.
 - Rules: a `false` entry of the table is a security assertion — when the guard starts answering
   `true` to it, the guard is wrong, never the table

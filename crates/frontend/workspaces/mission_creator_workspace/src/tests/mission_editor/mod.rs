@@ -209,9 +209,9 @@ mod t644_los_button_submode;
 /// T-648 — Transform: Shift-rotate, snap grid, transform widget + the Space collision decision.
 ///
 /// The pure primitives (`transform` module) are proved BEHAVIOURALLY here — it is an ungated module
-/// like `boot_progress`, so a native `cargo test -p frontend` (the command CI/the wave gate
-/// runs) compiles and executes these, unlike a test placed beside `drag_delta` in the wasm-only
-/// `select_tool`. The wasm wiring (the Shift-rotate gesture arm, the widget mount, the keydown
+/// like `boot_progress`, so a native `cargo test -p mission_creator_workspace` (which the
+/// `cargo xtask mk ci-local-leptos` lane runs) compiles and executes these, unlike a test placed
+/// beside `drag_delta` in the wasm-only `select_tool`. The wasm wiring (the Shift-rotate gesture arm, the widget mount, the keydown
 /// bindings, the included comment fix) is proved by SOURCE PINS on `live_code` (comments + dead code
 /// stripped, so a stale note or an `if false` wrapper cannot satisfy them). The keydown CENSUS reads
 /// all fifteen window-level editor keydowns across ten modules, including `input/pointer_gestures`,

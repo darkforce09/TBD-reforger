@@ -23,7 +23,7 @@ tools/foundation/repository_layout/src/
 ├── tool_inputs.rs          the dedicated-server profiles, the recorded MCP transcripts and the staging load data the commands load
 ├── upstream_references.rs  `REFERENCES_DIR`, the Coalition Reforger Framework and vanilla lanes, and the PlayableSelector lane
 ├── vanilla_reference_lanes.rs  the extracted scripts, Script API pages, source pages and reconstructed sources inside the vanilla lane
-├── workspace_folders.rs    the applications, library crate and tool folders, and the API database crate's migration and seed folders
+├── workspace_folders.rs    the applications, library crate and tool folders, the API server crate and its `.env`, and the API database crate's migration and seed folders
 └── tests/                  unit tests for the shared locations
 ```
 
@@ -46,7 +46,7 @@ tools/foundation/repository_layout/src/
 - Depends on: `repository_root`, whose finder names `prelude.rs` re-exports; the tests find this
   checkout with it.
 - Used by: the ticket crates in `tools/tickets/`, `xtask` (the checkout root, through the prelude),
-  the check and command crates and `ticketboard`.
+  the check and command crates and `ticketboard_desktop`.
 - Rules: each location module's test file in `tests/` pins its committed locations against this
   checkout and its derived locations by shape; `tests/shared_locations_tests.rs` holds the tree
   containment of every location (the root marker among the ticket registry's files) and the

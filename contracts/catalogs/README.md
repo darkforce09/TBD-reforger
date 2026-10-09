@@ -22,7 +22,7 @@ contracts/catalogs/
 A Workbench plugin scans every loaded addon's prefabs, classifies each by its components and writes
 both envelopes into the Workbench profile; the two files here are that output, copied in and
 replacing the previous export whole. `cargo xtask db registry-import` runs the
-[API](/documentation/glossary/a_to_f.md#api)'s `import-registry` binary over both files, which loads
+[API](/documentation/glossary/a_to_f.md#api)'s `import-item-registry` binary over both files, which loads
 them into the Postgres registry tables of the modpack their `modpackId` names. The API then serves
 them as `GET /api/v1/registry` and `GET /api/v1/registry/compat`, and the arsenal of the
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) offers only what they contain.
@@ -64,7 +64,7 @@ fill the arsenal with sample data while every test still passes.
   Items") does not register.
 - Consumers:
   - `cargo xtask db registry-import` (`tools/commands/database_operations/src/local_database.rs`), which runs
-    `import-registry` (`apps/api/src/bin/import_registry.rs`) with both paths;
+    `import-item-registry` (`crates/api/api_server/src/bin/import_item_registry.rs`) with both paths;
   - `cargo xtask schema validate`, whose `registry_validation.rs` in
     `tools/commands/schema_tooling/src/schema_checks/` validates both files and checks that every
     item's addon is declared, every `variant_of` names another item, and every edge joins two
@@ -72,7 +72,7 @@ fill the arsenal with sample data while every test still passes.
   - `cargo xtask verify object-registry-aliases`
     (`tools/checks/repository_checks/src/registry/object_registry_aliases.rs`), which requires a
     spawn registry row for every crate and other item the Mission Creator's objects palette offers;
-  - the API's integration test `apps/api/tests/registry_compat.rs`, which imports both
+  - the API's integration test `crates/api/api_server/tests/registry_compat.rs`, which imports both
     as ground truth under a test modpack;
   - `contracts/rules/kit-aliases.json`, whose `vehicles` table is derived from the `vehicle`
     items of the items file, and the development seed

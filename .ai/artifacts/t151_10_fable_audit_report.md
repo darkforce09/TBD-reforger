@@ -131,7 +131,7 @@ covered by a finding/battery row (179 PASS · 12 PARTIAL · 14 OPEN), 45 NOT RE-
 
 - **A-01 PASS — D1 (one wasm module, one memory).** `Makefile:65-67` holds the single wasm-pack
   invocation in the repo (`wasm-pack build crates/map-engine-wasm --release --target bundler
-  --out-dir ../../apps/frontend/src/wasm/pkg`); `crates/map-engine-wasm/Cargo.toml:15,19`
+  --out-dir ../../crates/frontend/shell/frontend_application/src/wasm/pkg`); `crates/map-engine-wasm/Cargo.toml:15,19`
   depends on both `map-engine-core` (features png/mission/doc/world) and `map-engine-render`; no
   `--target web` pkg remains; render crate ships no cdylib. Entry-chunk isolation re-proven on the
   fresh build (`grep -l map_engine_wasm_bg dist/assets/index-*.js` → no match). **Proof:** battery
@@ -148,7 +148,7 @@ covered by a finding/battery row (179 PASS · 12 PARTIAL · 14 OPEN), 45 NOT RE-
 - **A-03 PASS — D3 (dual-mount superseded at the flip).** `MissionCreatorPage.tsx:19` lazy-imports
   `WgpuTacticalMap` under the comment "T-151.9: wgpu is the sole Mission Creator map engine";
   rendered unconditionally at `:234`. `rg "VITE_MC_ENGINE|engine=wgpu|\?engine"` over
-  `apps/frontend/src` returns only two stale comments (A-07). No Deck mount path exists —
+  `crates/frontend/shell/frontend_application/src` returns only two stale comments (A-07). No Deck mount path exists —
   `TacticalMap.tsx` deleted at `c4831451`.
 - **A-04 PASS — D4 (current asset wire only).** Every wgpu-path fetch is an existing format:
   chunks `objects/chunks/{id}.json.gz` (`wgpuWorldLoader.ts:525`), roads/regions `.json.gz`
@@ -475,7 +475,7 @@ Tag map (37 tags) and full reconciliation commands in the verify log §Tag recon
   `cargo fmt/clippy/build/test` with `working-directory: apps/website` — member-scoped, so the
   three map-engine crates are never checked; `make wasm-ci` appears in no workflow. The frontend
   job runs `npm run build`/`npm test` with **no `make wasm` step** while
-  `apps/frontend/src/wasm/pkg/` is gitignored (`.gitignore:28`) — on any push of this
+  `crates/frontend/shell/frontend_application/src/wasm/pkg/` is gitignored (`.gitignore:28`) — on any push of this
   branch the job fails at import resolution. The branch has no remote (`git branch -r` shows only
   `origin/main`), so CI has never exercised any T-151 commit. The spike log's finding 7 named
   exactly this as a "merge-time follow-up"; it remains unimplemented. Remediation (blocking
@@ -829,7 +829,7 @@ set of dead code and prod-hygiene issues. Verdicts below; matrix after.
   WebGL2 keeps the ordered batch (`:2655-2675`). Fix shape: draw the indirect batch when the
   iteration reaches the WorldTrees order slot (or give the compacted buffer its own ordered batch).
 - **P-01:** `engine.rs:192-215` (`Grid => 19` vs `Slots => 16`) vs Deck order
-  `c4831451^:apps/frontend/src/features/tactical-map/TacticalMap.tsx:382-395`
+  `c4831451^:crates/frontend/shell/frontend_application/src/features/tactical-map/TacticalMap.tsx:382-395`
   (`…worldMapLayers → baseMap(grid) → clusterLayers → iconLayer → dragIconLayer → selectionLayer`).
   Deck's marquee was topmost; wgpu keeps marquee topmost (20) correctly — only the grid moved
   above the mission lanes.
@@ -854,7 +854,7 @@ set of dead code and prod-hygiene issues. Verdicts below; matrix after.
   `compute_cull_gpu_count`. Frustum f32 truncation at `:196-204`.
 - **X-04:** `vector_compose.rs:242-275` (`compose_marquee_mesh` + its only caller = own test) vs
   `engine.rs:3508-3564`.
-- **X-05:** callers verified absent by grep over `apps/frontend/src` (non-test):
+- **X-05:** callers verified absent by grep over `crates/frontend/shell/frontend_application/src` (non-test):
   `pan` (`engine.rs:1322`), `unproject_xy` (`:1429`) + `viewportFromEngine` (`mapCamera.ts:52`),
   `mark_dirty` (`:1334`), `clear_world_buildings` (`:2492`), `clear_icon_lanes` (`:2679`),
   `tree_glyph_self_check` (`:4346`).

@@ -117,7 +117,7 @@ red ("CAUTION", "CRITICAL RULE").
   (`has_min_role_authed`, `Role`, the `AuthStore` context), `frontend_ui::safe_url`,
   `frontend_ui` (`AuthGate`, `Dialog`, the `split_pane` primitives, the toasts) and
   `leptos_router` (the route parameters and navigation).
-- Used by: the `/wiki` and `/wiki/:slug` routes in `apps/frontend/src/app_routes.rs` and
+- Used by: the `/wiki` and `/wiki/:slug` routes in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "SOPs & Manuals" link in
   `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; `wiki_source` in
   `crates/frontend/pages/doctrine_pages/src/tests/source_pins.rs`, which joins every production
@@ -142,5 +142,5 @@ red ("CAUTION", "CRITICAL RULE").
   — the page's behaviour and design.
 - [Community content domain](/crates/api/api_community_content/src/README.md) — the wiki
   routes.
-- [Administration and community content](/documentation/apps/api/verification_evidence/administration_and_content.md#wiki-markup-and-revisions)
+- [Administration and community content](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md#wiki-markup-and-revisions)
   — the markup service, the revision storage and the save refusals.

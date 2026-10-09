@@ -43,21 +43,21 @@ recipes dispatch to are tested beside them, in `tools/commands/ci_task_catalog/s
   | `print-cargo-target-dir` | prints the resolved shared target directory |
   | `verify-cargo-target` | checks that the shared target-directory pin is intact, that `rust-build` sets no directory of its own and that `rust-api` builds into this checkout's `target/dev-api` |
   | `reclaim-target-ci` | deletes the primary checkout's `target/ci/` and the retired root-level `target-ci/`, refusing any other path |
-  | `rust-api` | `cargo run --bin api` in `apps/api`; stays in the foreground |
-  | `rust-build` | `cargo build -p api -p <every crates/api package> --all-targets`, the packages derived from the workspace |
-  | `rust-test` | `cargo test -p api -p <every crates/api package> --lib --bins`, no database |
-  | `rust-fmt` | `cargo fmt --check` in `apps/api`, then `cargo fmt --all --check` |
-  | `rust-clippy` | `cargo clippy -p api -p <every crates/api package> --all-targets -- -D warnings` |
+  | `rust-api` | `cargo run --bin api-server` in `crates/api/api_server`; stays in the foreground |
+  | `rust-build` | `cargo build -p api_server -p <every crates/api package> --all-targets`, the packages derived from the workspace |
+  | `rust-test` | `cargo test -p api_server -p <every crates/api package> --lib --bins`, no database |
+  | `rust-fmt` | `cargo fmt --check` in `crates/api/api_server`, then `cargo fmt --all --check` |
+  | `rust-clippy` | `cargo clippy -p api_server -p <every crates/api package> --all-targets -- -D warnings` |
   | `rust-ci` | `rust-fmt`, `rust-clippy`, `rust-build`, `wasm-ci`, then `cargo xtask db test-it` in process: the API's complete integration suite against a fresh database; needs `cargo xtask db up` |
-  | `wasm-ci` | fmt, native clippy with all features and tests of `offline_service_worker`; clippy for `wasm32-unknown-unknown` of every package `wasm32_lint_lane.rs` derives (the frontend family's is `ci-local-leptos`'s) |
-  | `leptos` | `trunk serve --release` in `apps/frontend`; stays in the foreground on :3000 |
+  | `wasm-ci` | clippy for `wasm32-unknown-unknown` of every package `wasm32_lint_lane.rs` derives outside the frontend family (the family's, the offline service worker's among it, is `ci-local-leptos`'s) |
+  | `leptos` | `trunk serve --release` in `crates/frontend/shell/frontend_application`; stays in the foreground on :3000 |
   | `leptos-debug` | `trunk serve`, a debug build; stays in the foreground |
-  | `leptos-build` | `trunk build --release` into `apps/frontend/dist` |
+  | `leptos-build` | `trunk build --release` into `crates/frontend/shell/frontend_application/dist` |
   | `gate-doctor` | `leptos-build`, then `gate doctor` from `developer_tools` |
   | `leptos-gates` | `leptos-build` once, `gate doctor`, `gate editor-suite` and `gate v-suite verify` |
   | `mortar-offline-gate` | `leptos-build`, then `gate mortar-offline`: the mortar calculator's offline pack, a reload with the server gone, and the page's solution against the native one; needs the Everon tile index and the recorded catalog reads |
   | `ballistics-wasm-agreement` | `leptos-build`, then `gate ballistics-agreement`: the seeded agreement cases solved by the browser bench `/debug/ballistics-agreement` against the native solves, one `case ballistics_wasm_agreement_<id>` line each; needs the recorded catalog reads |
-  | `ci-local-leptos` | fmt, clippy of all targets with `-D warnings` for wasm32 and natively, and native tests over the frontend family (`frontend` and every crates/frontend package, derived from the workspace), then `trunk build --release` |
+  | `ci-local-leptos` | fmt, clippy of all targets with `-D warnings` for wasm32 and natively, and native tests over the frontend family (`frontend_application` and every crates/frontend package, the offline service worker among them, derived from the workspace), then `trunk build --release` |
 
 - Exit codes: 0 done, or a dry run printed; 2 no target, or an unknown one (`--list` with no
   target exits 0); the failing step's own code; 1 an ABI refusal or a spawn error; 127 a tool

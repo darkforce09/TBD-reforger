@@ -21,7 +21,7 @@ crates/geometry/
   `camera_math` depends on `map_coordinates` for JavaScript rounding, and `spatial_indexes` on
   `geometry_primitives` for its vector products.
 - Used by: the streaming, map rendering, paper doll, terrain, world object, line of sight,
-  mission and mission editing crates, the single-page app (`apps/frontend`) and the map asset
+  mission and mission editing crates, the single-page app (`crates/frontend/shell/frontend_application`) and the map asset
   tools (`tools/map_assets/`), each importing the crates directly.
 - Rules: a geometry crate declares `category = "crates/geometry"`, and its dependency edges point
   to lower tiers only (`cargo xtask verify crate-tiers`).

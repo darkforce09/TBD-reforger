@@ -25,8 +25,9 @@ state the laws every member is held to.
 ## Code
 
 - [Root workspace manifest](/Cargo.toml) — the workspace members the layout lists.
-- [Applications](/apps/README.md), [tools](/tools/README.md), [contracts](/contracts/README.md)
-  and [assets](/assets/README.md) — the top-level code and data folders.
+- [Crates](/crates/README.md), [tools](/tools/README.md), the [game mod](/apps/README.md),
+  [contracts](/contracts/README.md) and [assets](/assets/README.md) — the top-level code and data
+  folders.
 
 ## Boundaries
 

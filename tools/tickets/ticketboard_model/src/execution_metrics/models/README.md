@@ -14,8 +14,8 @@ tools/tickets/ticketboard_model/src/execution_metrics/models/
 
 - Depends on: `crate::execution_metrics::measured` (`MetricsState`, `SortPair`) and
   `crate::execution_metrics::estimated` (`EstimatesState`, `EstimatedSortPair`).
-- Used by: `metrics_ui` in `apps/ticketboard/src/application/feature_views.rs`, which builds the
-  view from the loaded board; `apps/ticketboard/src/execution_metrics/ui/`, which paints from it.
+- Used by: `metrics_ui` in `tools/tickets/ticketboard_desktop/src/application/feature_views.rs`, which builds the
+  view from the loaded board; `tools/tickets/ticketboard_desktop/src/execution_metrics/ui/`, which paints from it.
 - Rules: the view only borrows, so painting cannot change the loaded data; the measured and
   estimated states stay separate fields with separate sorts; the ticket links read the board's
   id-to-index map instead of the browser's state.

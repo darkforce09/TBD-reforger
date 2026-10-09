@@ -1,6 +1,6 @@
-# The loopback relay between one fleet host agent and the API that, once armed over its control
-# socket, withholds one fleet executor answer past the agent's request timeout and then closes the
-# connection: the lost-acknowledgement fault of the staging fleet receipt, and the
+# The loopback relay between one game server host agent and the API that, once armed over its
+# control socket, withholds one fleet executor answer past the agent's request timeout and then
+# closes the connection: the lost-acknowledgement fault of the staging fleet receipt, and the
 # `acknowledgement-dropping-relay` executable's command line. axum serves the agent, reqwest
 # forwards upstream and tokio runs both. `thiserror` carries its errors.
 [package]

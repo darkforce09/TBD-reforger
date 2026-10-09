@@ -1,7 +1,7 @@
 id = "T-1232"
 kind = "work"
 title = "Return a plain URL from require_test_database_url and drop skip branches"
-summary = "apps/api/tests/common/database.rs:183 returns Option<String> but never None (resolve_and_provision :189 panics without TEST_DATABASE_URL); 47 test files keep dead eprintln skip-and-return branches, and tests/audit_notify.rs:8 still says the suite skips."
+summary = "crates/api/api_server/tests/common/database.rs:183 returns Option<String> but never None (resolve_and_provision :189 panics without TEST_DATABASE_URL); 47 test files keep dead eprintln skip-and-return branches, and tests/audit_notify.rs:8 still says the suite skips."
 class = "chore"
 status = "idea"
 notes = "Return String, delete the 47 unreachable else-branches and fix the audit_notify.rs header; a mechanical refactor across many test files. Source: milestone V finding V-F14 (issue triage F-5). 2026-09-28 (milestone B): tests/null_tolerance_select_scan.rs:33-35 and tests/null_tolerance_reads.rs:34-36, :110-112 carry the same dead skip branch (the readiness judge refuses skip output, so the branch must go)."

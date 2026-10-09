@@ -94,23 +94,24 @@ applies it.
    cargo xtask db test-it
    ```
 
-   Expected: the property-test marker line, then `cargo test --locked --no-fail-fast` in
-   `apps/api` against a new database named `i<first five letters of the label>_<32
-   hex>_it`, the label being `TBD_IT_BASE_DB` (default `rust_it`). Each suite derives its own
+   Expected: the property-test marker line, then `cargo test --locked --no-fail-fast` with one
+   `-p` for `api_server` and each other `crates/api` package (only `-p api_server` under a
+   `--test` selection, whose binaries are its alone) against a new database named
+   `i<first five letters of the label>_<32 hex>_it`, the label being `TBD_IT_BASE_DB` (default `rust_it`). Each suite derives its own
    scratch database from it. Afterwards the command drops every database of the run, whatever the
    tests did, and exits with the test run's code. Two runs never share a database.
    `--test <binary>` (repeatable), `--lib` and a name filter narrow the run, which then prints
    `test-selection: narrowed development run; not a readiness receipt`. The binaries that arm
    the API's `failpoints` feature (`failure_injection_*` and `controlled_races_*`) serialise their
    own cases, so they need no `--test-threads` flag; the
-   [API README](/apps/api/README.md#verification-suites) maps every verification
+   [API README](/crates/api/api_server/README.md#verification-suites) maps every verification
    suite to its binaries.
 
 ### Repair a migration checksum
 
 sqlx records the SHA-384 of each applied migration file, comments included, and the API refuses to
 boot with `migration N was previously applied but has been modified` once the file changes.
-`apps/api/tests/migrations_are_immutable.rs` pins every file's checksum, so the edit
+`crates/api/api_server/tests/migrations_are_immutable.rs` pins every file's checksum, so the edit
 fails the tests first. A statement change is never repaired: it is a new migration. The schema is
 fine after a comments-only edit, so never reset the volume for this error.
 

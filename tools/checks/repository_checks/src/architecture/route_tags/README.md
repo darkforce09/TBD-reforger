@@ -17,13 +17,13 @@ tools/checks/repository_checks/src/architecture/route_tags/
 ## How it works
 
 `verify_route_tags.rs` probes its literal matcher, then pins the shape of
-`apps/api/src/router.rs`: it defines `fn api_v1_routes` and nests it at
+`crates/api/api_server/src/router.rs`: it defines `fn api_v1_routes` and nests it at
 `/api/v1`. `route_and_tag_extraction.rs` finds every `crates/api/<crate>/src/routes.rs`
 holding exactly one column-0 `pub fn routes(`, reads each `.route(` registration into
 `METHOD PATH HANDLER` rows, reads the `.merge(<crate>::routes(` lines of `api_v1_routes` (a
 `.merge(crate::<module>::routes(` counts as a merge of `<module>`, which has no API crate table and
-fails), and sweeps every `.rs` file under `apps/api/src` and `crates/api` for column-0
-`/// @route METHOD PATH` tags on the `pub fn` below them. A line it cannot read becomes an
+fails), and sweeps every `.rs` file under `crates/api` (`TAG_SWEEP_ROOTS`; the server's crate sits
+in it), each file once, for column-0 `/// @route METHOD PATH` tags on the `pub fn` below them. A line it cannot read becomes an
 `UNPARSED` or `ORPHAN` row instead of disappearing.
 
 The runner then fails on any unparsed or orphan row, any route table not merged or merge without a
@@ -43,6 +43,8 @@ on every machine.
   gate's `VERIFY_STEPS` in `tools/commands/platform_execution/src/wave_execution/gate.rs`; the
   parent's tests call `run` and `extract_tags`.
 - Rules:
+  - the sweep reads each API file once: no file sits under two sweep roots, and a root nested in
+    another adds no file (`the_tag_sweep_reads_every_api_file_once_on_this_checkout`);
   - output goes into a line buffer, so the tests compare exact lines
     (`clean_tree_passes_and_counts_exactly` in
     `tools/checks/repository_checks/src/architecture/tests/route_tags/tests.rs`);

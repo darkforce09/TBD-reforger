@@ -149,7 +149,7 @@ browser build only; the views that run them exist in that build only.
   routes of the [operations](/documentation/glossary/n_to_z.md#operations) domain, the mission
   library of the missions domain and the server list of the
   [server infrastructure](/documentation/glossary/n_to_z.md#server-infrastructure) domain.
-- Used by: the `/admin/events` route in `apps/frontend/src/app_routes.rs` and
+- Used by: the `/admin/events` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Event Manager" link in
   `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; `event_manager_source` in
   `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`, which joins the page's sources for its

@@ -31,7 +31,7 @@
 - DEV_RUNBOOK: **0** dead refs (`make web`→`make leptos`, npm→cargo equivalents, psql mock-seed recipe).
 - CODING_STANDARDS: T-164 cutover banner; §2 Go + §3 TS/React marked **RETIRED** with live
   equivalents; §11 replay block = the real `make ci-local` sequence.
-- `docs/website/frontend/**`: **0 files** reference `apps/frontend` (23 page docs +
+- `docs/website/frontend/**`: **0 files** reference `crates/frontend/shell/frontend_application` (23 page docs +
   README/ROADMAP/THEME/template/shell/auth re-pointed at `apps/website-leptos/src/*`; stitch refs
   marked git-history).
 - Leptos README ("only frontend since T-159.29.3") + aegis.css provenance comment.

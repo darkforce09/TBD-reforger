@@ -53,7 +53,7 @@ deployments are proved against Postgres by the API's integration suites.
 
 No feature and no variable of its own. The mission-version body cap is the `version_limit`
 argument of `routes()`, which the API reads from `MISSION_VERSION_MAX_BODY_BYTES`
-([API environment variables](/documentation/apps/api/environment_variables.md)); the write lock and
+([API environment variables](/documentation/crates/api/api_server/environment_variables.md)); the write lock and
 the deployment requests reread the caller's authority against the guild of the API's `Config`. The
 `fail_point!` sites at the deployment request and review decision commits compile to nothing
 outside test builds (`api_failpoints`).
@@ -83,21 +83,21 @@ outside test builds (`api_failpoints`).
   `mission_model`, `mission_validation` and `mission_wire_safety`,
   `contract_schema_types`, `content_digest`, `fleet_wire_contract`, `http_url_guard`,
   jsonschema, sqlx, axum, serde, chrono, thiserror, tracing and uuid. It names no other domain.
-- Used by: the API application (`apps/api`): its router merges `routes`, its background workers
+- Used by: the API application (`crates/api/api_server`): its router merges `routes`, its background workers
   run the deployment reconciliation, the operations and command center domains read the mission
-  lookups, the armory and the deployment in effect, the `import-registry` tool runs the registry
+  lookups, the armory and the deployment in effect, the `import-item-registry` tool runs the registry
   import, and the integration suites reach the services directly. Over HTTP: the Mission
   Creator, the mission hub, approvals and server control pages, the game runtime and the
   `cargo xtask mod` commands.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md);
-  `apps/api/src/tests/architecture_rules.rs` checks its route table, its handlers and its
+  `crates/api/api_server/src/tests/architecture_rules.rs` checks its route table, its handlers and its
   imports against the domain graph.
 
 ## Related documentation
 
 - [API missions source](/crates/api/api_missions/src/README.md) — the files, the routes and the
   path from a saved version to a running server.
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
-- [Mission artifacts, reviews and deployment](/documentation/apps/api/verification_evidence/mission_artifacts.md)
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
+- [Mission artifacts, reviews and deployment](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
   — the design of artifacts, their reviews and deployments.
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.

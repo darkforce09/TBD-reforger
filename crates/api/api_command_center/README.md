@@ -43,7 +43,7 @@ reads and the routes are proved against Postgres by the API's integration suites
 
 No feature and no variable of its own. The cadence of the leaderboard refresh it reads is the
 API's `LEADERBOARD_REFRESH_INTERVAL_SECS`
-([API environment variables](/documentation/apps/api/environment_variables.md)).
+([API environment variables](/documentation/crates/api/api_server/environment_variables.md)).
 
 ## Public surface
 
@@ -61,19 +61,19 @@ API's `LEADERBOARD_REFRESH_INTERVAL_SECS`
   crates `api_community_content`, `api_identity_and_access`, `api_missions`, `api_operations` and
   `api_server_infrastructure`, `fleet_wire_contract`, sqlx, axum, serde, chrono, thiserror and
   uuid.
-- Used by: the API application (`apps/api`): its router merges `routes`, and the integration
+- Used by: the API application (`crates/api/api_server`): its router merges `routes`, and the integration
   suites call the leaderboard handler. Over HTTP: the dashboard in
   `crates/frontend/pages/command_center_pages/src/dashboard/` and the leaderboards in
   `crates/frontend/pages/operations_pages/src/leaderboards/`.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md);
-  `apps/api/src/tests/architecture_rules.rs` checks its route table, its handlers and its
+  `crates/api/api_server/src/tests/architecture_rules.rs` checks its route table, its handlers and its
   imports against the domain graph.
 
 ## Related documentation
 
 - [API command center source](/crates/api/api_command_center/src/README.md) — the files, the
   routes and how the dashboard and the boards are read.
-- [Match telemetry, fleet status and derived statistics](/documentation/apps/api/verification_evidence/telemetry.md)
+- [Match telemetry, fleet status and derived statistics](/documentation/crates/api/api_server/verification_evidence/telemetry.md)
   — the fleet block and when the derived statistics are recomputed.
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.

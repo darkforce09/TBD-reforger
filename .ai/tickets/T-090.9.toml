@@ -34,10 +34,10 @@ acceptance = [
 ]
 estimated = ["scope"]
 owns = [
-    "apps/frontend/src/editor/world_assets/pick.rs",
-    "apps/frontend/src/editor/world_assets/inspect.rs",
-    "apps/frontend/src/editor/world_assets/mod.rs",
-    "apps/frontend/src/editor/mission_editor.rs",
+    "crates/frontend/shell/frontend_application/src/editor/world_assets/pick.rs",
+    "crates/frontend/shell/frontend_application/src/editor/world_assets/inspect.rs",
+    "crates/frontend/shell/frontend_application/src/editor/world_assets/mod.rs",
+    "crates/frontend/shell/frontend_application/src/editor/mission_editor.rs",
 ]
 
 [scope]

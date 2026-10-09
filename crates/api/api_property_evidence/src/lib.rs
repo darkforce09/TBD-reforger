@@ -4,7 +4,7 @@
 //! completed, digests their inputs and prints the run's record ([`run_property`],
 //! [`collect_property`], [`PropertyRun`]).
 //! **Position:** dev-only: only `[dev-dependencies]` name this crate. The API's operations unit
-//! tests and its property suites under `apps/api/tests/` call it.
+//! tests and its property suites under `crates/api/api_server/tests/` call it.
 //! **Signals & state:** none kept between runs.
 //! **Invariants:** a run that executes zero cases, fails a check or completes fewer checks than
 //! requested panics instead of producing a record; the same seed reproduces the same record.

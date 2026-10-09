@@ -70,10 +70,10 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 owns = [
-    "apps/frontend/src/server_control.rs",
-    "apps/frontend/src/event_manager.rs",
-    "apps/frontend/src/mission_overview.rs",
-    "apps/frontend/src/components",
+    "crates/frontend/shell/frontend_application/src/server_control.rs",
+    "crates/frontend/shell/frontend_application/src/event_manager.rs",
+    "crates/frontend/shell/frontend_application/src/mission_overview.rs",
+    "crates/frontend/shell/frontend_application/src/components",
     "apps/website/api/src/handlers/events.rs",
 ]
 

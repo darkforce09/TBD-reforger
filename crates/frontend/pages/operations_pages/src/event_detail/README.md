@@ -117,7 +117,7 @@ subtree, which resets the selector's faction and squad tabs.
   (`AuthStore`, `has_min_role_authed`, `Role`), `frontend_ui` (`AuthGate`, `MaterialIcon`,
   `cn`, `DEFAULT_AVATAR`, the toasts) and `frontend_ui` (countdown and local date
   formatting).
-- Used by: the `/events/:id` route in `apps/frontend/src/app_routes.rs`; the schedule page
+- Used by: the `/events/:id` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`; the schedule page
   in `crates/frontend/pages/operations_pages/src/schedule/` (`event_hub_view`); the standalone
   slotting page in `crates/frontend/pages/operations_pages/src/orbat_selection/`
   (`OrbatSelector`, `MissionStanding`, `standing_notices`); `event_hub_source` in

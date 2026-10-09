@@ -1,0 +1,87 @@
+# The website single-page app: the Leptos client-side-rendered binary Trunk compiles to
+# WebAssembly (dev: `cargo xtask mk leptos`; production: the built bundle served from
+# `SPA_DIST_DIR`). It holds the start function, the render form of the route table and the app
+# frame; every page, workspace, feature and foundation module is another crate under
+# `crates/frontend/`. The mount compiles for wasm32 only, so the native build is the frame's pure
+# half and its tests. Its binary takes the package's name, so Trunk names the bundle
+# `frontend_application-<hash>.js` and `frontend_application-<hash>_bg.wasm`.
+[package]
+name = "frontend_application"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "TBD Reforger platform single-page app: the Leptos start function, route table and app frame over the frontend crates."
+
+[package.metadata.layout]
+category = "crates/frontend/shell"
+tier = 13
+targets = "any"
+
+[lints]
+workspace = true
+
+# The crates the frame's pure half reads on every target: the frame classifier asks the route
+# table for chromeless routes, and the account badge reads the profile DTO and the avatar
+# sanitiser.
+[dependencies]
+# The wire types: the signed-in profile the account badge reads, and the role ladder the sidebar
+# filters its links by.
+frontend_api_dtos = { workspace = true }
+# The route table: the chromeless and full-bleed layout flags, the breadcrumbs and the sidebar's
+# navigation menu.
+frontend_route_table = { workspace = true }
+# The design-system primitives: the icon, the class joiner, the toast queue and its viewport, and
+# the avatar sanitiser with its default avatar.
+frontend_ui = { workspace = true }
+
+# What only the browser mount uses: the start function, the route table's render form and the
+# frame components exist on wasm32 alone.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# The reactive framework in client-side rendering mode, and its router.
+leptos = { workspace = true, features = ["csr"] }
+leptos_router = { workspace = true }
+# The `#[wasm_bindgen(start)]` attribute on `start_app`, the module's one JavaScript export.
+wasm-bindgen = { workspace = true }
+# The panic hook `start_app` installs before anything else runs.
+console_error_panic_hook = { workspace = true }
+# The sign-out's refresh-lock future (`FutureExt`) and the JSON bodies of the sign-out and the
+# membership grace extension posts.
+futures = { workspace = true }
+serde_json = { workspace = true }
+# The session store, the session refresh, the sign-out hooks and the route guard the frame
+# provides and drives.
+frontend_session = { workspace = true }
+# The HTTP client the top bar's sign-out and the membership status strip post and read through.
+frontend_transport = { workspace = true }
+# The offline service worker registration at boot and the offline pack's route watcher.
+frontend_offline = { workspace = true }
+# The page crates whose route components the route table mounts: `/login`, `/auth/callback` and
+# `/settings`; the seven `/admin/*` routes; `/`, `/server-intel` and `/announcements`; `/wiki`,
+# `/vehicles` and `/modpacks`; `/tools/mortar`; `/missions` and `/missions/:id`; `/events`,
+# `/deployments` and `/leaderboards`.
+account_pages = { workspace = true }
+administration_pages = { workspace = true }
+command_center_pages = { workspace = true }
+doctrine_pages = { workspace = true }
+field_tools_pages = { workspace = true }
+mission_hub_pages = { workspace = true }
+operations_pages = { workspace = true }
+# The workspace crates the route table mounts: the URL-only `/debug/*` benches and the Mission
+# Creator's editor and review workspace pages.
+debug_benches = { workspace = true }
+mission_creator_workspace = { workspace = true }
+# The Mission Creator's draft purge `start_app` registers as a sign-out hook, so a sign-out
+# deletes the departing account's local drafts whether or not the editor mounted in the tab.
+mission_creator_session = { workspace = true }
+
+# Member manifests carry no [profile.*]: Cargo reads profiles from the workspace root only. trunk
+# applies wasm-opt via the index.html data-wasm-opt attribute.
+
+[dev-dependencies]
+# The repository-root finder the documentation audit finds the frontend crates' sources with.
+frontend_test_support = { workspace = true }
+# The guard's case table (`http_url_guard::cases`), which the account badge's avatar test runs
+# through the sanitiser.
+http_url_guard = { workspace = true, features = ["test_fixtures"] }

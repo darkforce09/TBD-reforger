@@ -8,7 +8,7 @@ name = "api" # the server
 
 [dependencies]
 axum = { version = "0.8", features = ["macros", "multipart"] }
-# frontend = { path = "../../apps/frontend" } is a comment, not an edge
+# frontend = { path = "../../crates/frontend/shell/frontend_application" } is a comment, not an edge
 renderer = { package = "render_primitives", path = "../../crates/graphics/render_primitives" }
 shared.workspace = true
 "quoted-name" = "1"

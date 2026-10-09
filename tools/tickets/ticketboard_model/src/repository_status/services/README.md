@@ -41,8 +41,8 @@ span, so the command's last writes start no check.
 - Depends on: `repository_layout` (`TICKETS_DIR` and `documentation::ROADMAP`); the
   `notify` crate; `std::sync::mpsc`.
 - Used by: the desktop application: `arm_watch`, `poll_watch` and `set_verb_in_flight` in
-  `apps/ticketboard/src/application/background_events.rs`, and the `Debouncer` held in
-  `apps/ticketboard/src/application/mod.rs`.
+  `tools/tickets/ticketboard_desktop/src/application/background_events.rs`, and the `Debouncer` held in
+  `tools/tickets/ticketboard_desktop/src/application/mod.rs`.
 - Rules:
   - only a failure of the `.ai/tickets/` watch is an error; the other two degrade visibly;
   - a fire during a ticket command reloads without a check, and a real edit mixed into command

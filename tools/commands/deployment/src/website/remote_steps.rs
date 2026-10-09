@@ -2,9 +2,10 @@
 //! host's shell receives.
 //!
 //! **Role:** builds every remote step's command: the staging compose services (Postgres, and
-//! Caddy with its configuration reload), the API build, the build of the staging host tools
-//! ([`STAGING_HOST_TOOLS`]), the app build, the migration checksum repair and the unit restart;
-//! and [`login_shell`], the one quoted word ssh carries each of them in.
+//! Caddy with its configuration reload), the build of the API server ([`API_SERVER`]), the build
+//! of the staging host tools ([`STAGING_HOST_TOOLS`]), the app build, the migration checksum
+//! repair and the unit restart; and [`login_shell`], the one quoted word ssh carries each of them
+//! in.
 //!
 //! **Position:** called by [`crate::website`], which prints each command under
 //! `--dry-run` and sends it through ssh as a [`login_shell`] word otherwise, so the dry run shows
@@ -20,6 +21,7 @@
 //! ([`caddyfile_in_container`]); every cargo build runs in the checkout and ends by proving each
 //! executable it names exists under `target/release/`.
 
+use crate::host_owned_paths::FRONTEND_APPLICATION_FOLDER;
 use crate::remote_rust_toolchain::PUT_RUST_TOOLCHAIN_ON_PATH;
 
 /// The Postgres container `deploy/compose.staging.yml` starts on the server.
@@ -104,18 +106,34 @@ pub(crate) fn web_server_start_and_reload(remote_dir: &str, postgres_port: &str)
     )
 }
 
-/// Build the release API binary in the remote checkout.
-pub(crate) fn api_build(remote_dir: &str) -> String {
+/// One release executable the deploy builds on the host: the cargo package that declares it, and
+/// its `[[bin]]` name, which is also its file name under `target/release/`.
+pub(crate) struct ReleaseExecutable {
+    pub package: &'static str,
+    pub executable: &'static str,
+}
+
+/// The API server the API unit runs (`ExecStart=…/target/release/api-server`).
+pub(crate) const API_SERVER: ReleaseExecutable = ReleaseExecutable {
+    package: "api_server",
+    executable: "api-server",
+};
+
+/// The line the deploy prints for the API build step.
+pub(crate) fn api_build_title() -> String {
     format!(
-        "cd '{remote_dir}' &&     {PUT_RUST_TOOLCHAIN_ON_PATH} &&     cargo build --release -p api --bin api &&     test -x target/release/api"
+        "cargo build --release -p {} --bin {}",
+        API_SERVER.package, API_SERVER.executable
     )
 }
 
-/// One executable a staging verification run calls on the host: the cargo package that declares
-/// it, and its `[[bin]]` name.
-pub(crate) struct StagingHostTool {
-    pub package: &'static str,
-    pub executable: &'static str,
+/// Build the release API server in the remote checkout, then prove the executable exists.
+pub(crate) fn api_build(remote_dir: &str) -> String {
+    format!(
+        "cd '{remote_dir}' &&     {PUT_RUST_TOOLCHAIN_ON_PATH} &&     {build} &&     test -x target/release/{executable}",
+        build = api_build_title(),
+        executable = API_SERVER.executable,
+    )
 }
 
 /// The staging host tools every website deploy builds into the checkout's `target/release/`, so
@@ -123,12 +141,12 @@ pub(crate) struct StagingHostTool {
 /// servers, credentials and load fixtures against the API's database, and
 /// `acknowledgement-dropping-relay`, which `cargo xtask deploy staging` installs in front of the
 /// relay instance's host agent.
-pub(crate) const STAGING_HOST_TOOLS: [StagingHostTool; 2] = [
-    StagingHostTool {
+pub(crate) const STAGING_HOST_TOOLS: [ReleaseExecutable; 2] = [
+    ReleaseExecutable {
         package: "staging_fixtures",
         executable: "staging-fixtures",
     },
-    StagingHostTool {
+    ReleaseExecutable {
         package: "developer_tools",
         executable: "acknowledgement-dropping-relay",
     },
@@ -155,10 +173,11 @@ pub(crate) fn staging_host_tools_build(remote_dir: &str) -> String {
     format!("cd '{remote_dir}' && {PUT_RUST_TOOLCHAIN_ON_PATH} && {builds} && {proofs}")
 }
 
-/// Build the Leptos SPA into `frontend/dist`.
+/// Build the Leptos SPA into the app folder's `dist/`
+/// ([`crate::host_owned_paths::BUILT_APPLICATION_FOLDER`]).
 pub(crate) fn spa_build(remote_dir: &str) -> String {
     format!(
-        "cd '{remote_dir}/apps/frontend' &&     {PUT_RUST_TOOLCHAIN_ON_PATH} &&     trunk build --release"
+        "cd '{remote_dir}/{FRONTEND_APPLICATION_FOLDER}' &&     {PUT_RUST_TOOLCHAIN_ON_PATH} &&     trunk build --release"
     )
 }
 

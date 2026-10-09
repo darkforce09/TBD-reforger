@@ -17,7 +17,8 @@ tools/commands/deployment/src/staging/
 ├── fleet_instances.rs                   the API origin; the instances: port rules, names, visibility, folders, units, the relay settings
 ├── fleet_server_config.rs               one `server.config.json` per instance with password placeholders; `--render-only`
 ├── fleet_units.rs                       the three template units, their install and the game server restart
-├── host_agent.rs                        each instance's `agent.toml` and the host agents' install
+├── host_agent.rs                        the agent's installed names, each instance's `agent.toml` and the host agents' install
+├── host_agent_name_migration.rs         `--migrate-host-agent-name` and the check that refuses without it
 ├── legacy_single_instance_migration.rs  `--migrate-single-instance` and the check that refuses without it
 ├── payloads.rs                          the secret file check, each instance's files and profile writer, its V2–V4 smoke
 ├── pycompat.rs                          the JSON and message behaviours of Python that the render's output reproduces
@@ -40,11 +41,13 @@ staging::run
   ├─ --verify-boot <log>    ─▶ boot::verify_boot_cli
   └─ remote::deploy
        ├─ config::Env::load (retired settings refused) and Env::validate
+       ├─ --migrate-host-agent-name ─▶ the name migration over ssh, alone (--dry-run prints its script)
        ├─ --render-only <directory> ─▶ fleet_server_config::render_only (instance-N/server.config.json)
        ├─ --dry-run ─▶ the plan of every step for every instance, no socket
-       └─ website API check, secret files, single-instance check or --migrate-single-instance,
-          rsync, per instance: files and smoke; units, restart, boot verdict per instance,
-          relay, host agents, log check per instance
+       └─ website API check, secret files, single-instance check (unless
+          --migrate-single-instance), retired host agent name check, API .env probe, rsync,
+          --migrate-single-instance, per instance: files and smoke; units, restart, boot
+          verdict per instance, relay, host agents, log check per instance
 ```
 
 The fleet is `TBD_FLEET_INSTANCES` instances (default 5, at most 5). Instance N listens on game
@@ -54,10 +57,20 @@ loopback RCON port `TBD_FLEET_RCON_PORT_BASE + N` (19998); all must be distinct.
 under `~/tbd/fleet/instance-N/`: `server.config.json`, `profile/`, and `secrets/` holding
 `mod-runtime-credential`, `host-agent-credential` and `rcon-password`, folders mode 700 and files
 mode 600. It runs as `tbd-reforger@N.service` from the experimental server install
-(`TBD_SERVER_DIR`, Steam app 1890870) with the shared `-addonsDir`, and its host agent as
-`fleet_host_agent@N.service` with `~/.config/fleet_host_agent/instance-N/agent.toml`. The agent of
+(`TBD_SERVER_DIR`, Steam app 1890870) with the shared `-addonsDir`, and its game server host agent
+as `game_server_host_agent@N.service` with
+`~/.config/game_server_host_agent/instance-N/agent.toml`. The agent of
 `TBD_FLEET_RELAY_INSTANCE` polls `127.0.0.1:TBD_FLEET_RELAY_PORT`, where
 `acknowledgement-dropping-relay@N.service` forwards to the API.
+
+A host still on the retired agent names (`fleet_host_agent@N.service`,
+`~/.config/fleet_host_agent/`, `~/.local/bin/fleet_host_agent`) is refused by the deploy until
+`--migrate-host-agent-name` has run there. That migration runs alone: it decides per path from
+which of the two names exist (retired only: move; current only: already done; neither: nothing;
+both: refuse with exit 3 before any change), stops and disables the retired units, moves the
+binary and the configuration folder with `mv` (files, modes and owner kept), removes the retired
+template, installs the current one and enables and starts the current unit for every instance whose
+retired unit was enabled or running. A host with no retired name is left untouched.
 
 No secret is a setting: `Env::from_environment` refuses every key of `RETIRED_SETTINGS`, among
 them the three credentials and passwords, and names what the fleet reads instead.
@@ -92,7 +105,7 @@ as a bearer token on curl's stdin, else from the single `TBD_WORKSHOP_MOD_ID`.
   `regex`; the three template units of `deploy/systemd/`, embedded by
   `fleet_units.rs`; on the host, the website API that `cargo xtask deploy website` runs there, the
   credential files `cargo xtask staging provision-fleet` writes, `cargo xtask setup server-profile`,
-  the `fleet_host_agent` crate, the `acknowledgement-dropping-relay` executable of
+  the `game_server_host_agent` crate, the `acknowledgement-dropping-relay` executable of
   `tools/developer_tools` and the dedicated server; and `cargo xtask mod remote-logs --file` for
   the last check.
 - Used by: `tools/commands/deployment/src/deploy_dispatch.rs`; people deploying the staging fleet;
@@ -113,7 +126,9 @@ as a bearer token on curl's stdin, else from the single `TBD_WORKSHOP_MOD_ID`.
   for five instances carries its own ports, visibility and placeholders
   (`render_only_writes_every_instance_of_the_five` in `tests/fleet_server_config/tests.rs`); the
   unit texts are pinned (`tests/fleet_units/tests.rs`); the migration's argv and effect are pinned,
-  its effect under a local bash (`tests/legacy_single_instance_migration/tests.rs`); the secret file
+  its effect under a local bash (`tests/legacy_single_instance_migration/tests.rs`); the host agent
+  name migration's decision table, script and effect under a local bash, its refusals changing
+  nothing and its second run a no-op (`tests/host_agent_name_migration/tests.rs`); the secret file
   check fails closed and prints no secret under a local bash
   (`the_secret_file_check_runs_and_never_prints_a_secret` in `tests/payloads/tests.rs`); an
   instance's `TBD_BackendConfig.json` has one writer, `instance_profile_commands`, which the

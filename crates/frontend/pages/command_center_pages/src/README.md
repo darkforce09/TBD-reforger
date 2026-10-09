@@ -33,7 +33,7 @@ Recent Intelligence rows link into the announcement board, and its banner into t
 ## Public surface
 
 - `AnnouncementsPage`, `DashboardPage` and `ServerIntelPage`: the route components
-  `apps/frontend/src/app_routes.rs` mounts (`wasm32`), re-exported by each page folder and by
+  `crates/frontend/shell/frontend_application/src/app_routes.rs` mounts (`wasm32`), re-exported by each page folder and by
   `prelude.rs`; each page folder's `page` module is public, as leptos's derived props builders
   need; each child's README gives its route, tier and layout.
 
@@ -44,7 +44,7 @@ Recent Intelligence rows link into the announcement board, and its banner into t
   HTTP, the API's `command_center` domain (`/api/v1/dashboard`), its `community_content` domain
   (`/api/v1/announcements`) and its `server_infrastructure` domain (`/api/v1/servers` and the status
   stream).
-- Used by: the route table in `apps/frontend/src/app_routes.rs`, whose tiers and layout
+- Used by: the route table in `crates/frontend/shell/frontend_application/src/app_routes.rs`, whose tiers and layout
   flags `crates/frontend/foundation/frontend_route_table/src/routes.rs` declares; the source pins in
   `crates/frontend/pages/command_center_pages/src/tests/source_pins.rs`.
 - Rules: the pages only read (each calls `api_get` and nothing that writes), and every page sits

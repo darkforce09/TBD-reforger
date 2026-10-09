@@ -1,6 +1,6 @@
 # T-174 — verify log (MC sat fidelity + heatmap removal + dock guide fix)
 
-**Branch:** `main` · **Depends on:** T-173 (`dddf3158`) · **Scope:** `apps/frontend/**` +
+**Branch:** `main` · **Depends on:** T-173 (`dddf3158`) · **Scope:** `crates/frontend/shell/frontend_application/**` +
 `crates/map-engine-*`. **Not** `apps/mod/**`.
 
 **Operator override (plan review):** *"Remove the heatmap, it's not something I want."* → S2 is a
@@ -19,7 +19,7 @@ Inventory: [`t174_inventory.md`](t174_inventory.md).
 
 ## Changes
 
-### S1 — `apps/frontend/src/world_assets/satellite.rs`
+### S1 — `crates/frontend/shell/frontend_application/src/world_assets/satellite.rs`
 - `load_satellite`: gate is now `if sat_preview_only() { return; }` (dropped `|| sat_dev_preview_default()`).
   Localhost now runs `try_preview` → `load_unified_full` (full 14-mip chain), same as prod.
 - Deleted the private `sat_dev_preview_default()` fn (localhost-forces-preview default).
@@ -54,7 +54,7 @@ Inventory: [`t174_inventory.md`](t174_inventory.md).
   `heatmap_trees` telemetry key (reports the LOD rung; no consumer asserts it). Net effect: island
   zoom shows forest-mass fill with **no green glow**, at any zoom, without a perf regression.
 
-### S3 — `apps/frontend/src/eden_chrome.rs`
+### S3 — `crates/frontend/shell/frontend_application/src/eden_chrome.rs`
 - Prepended `relative` to the 4 escaping guide-host `<div>` class strings: `single_row` Unfiled,
   Faction, Squad, and `palette_rows` folder. Each row is now its own positioning parent, so the
   `guide_spans` `absolute inset-y-0 w-px` stem clips to the row height (short hierarchy stem)

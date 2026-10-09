@@ -77,12 +77,12 @@ columns, and reads an event's missions with their guns.
   - the `staging-fixtures` host tool in `tools/staging/staging_fixtures/src/`, through
     `event_authoring`;
   - the [API](/documentation/glossary/a_to_f.md#api) tests
-    `apps/api/tests/attendance_no_show_derivation.rs`,
-    `apps/api/tests/event_access_context.rs`,
-    `apps/api/tests/event_administration_transactions.rs`,
-    `apps/api/tests/event_lifecycle_transactions.rs`,
-    `apps/api/tests/reservation_quota_allocations.rs` and
-    `apps/api/tests/user_stats_service.rs`.
+    `crates/api/api_server/tests/attendance_no_show_derivation.rs`,
+    `crates/api/api_server/tests/event_access_context.rs`,
+    `crates/api/api_server/tests/event_administration_transactions.rs`,
+    `crates/api/api_server/tests/event_lifecycle_transactions.rs`,
+    `crates/api/api_server/tests/reservation_quota_allocations.rs` and
+    `crates/api/api_server/tests/user_stats_service.rs`.
 - Rules: reads and guards use the derived status, never the stored column, and every time
   comparison uses the database's clock; one lock order holds for every writer of reservations and
   live occupancy; producers outside the domain only queue re-evaluation requests and never take
@@ -90,9 +90,9 @@ columns, and reads an event's missions with their guns.
 
 ## Related documentation
 
-- [Event eligibility and allocation](/documentation/apps/api/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
   — access, pools, promotion, re-evaluation and derived attendance.
-- [Live slot occupancy](/documentation/apps/api/verification_evidence/live_occupancy.md)
+- [Live slot occupancy](/documentation/crates/api/api_server/verification_evidence/live_occupancy.md)
   — deployment authorization and ended lives.
-- [Reservation and attendance separation](/documentation/apps/api/verification_evidence/reservation_attendance.md)
+- [Reservation and attendance separation](/documentation/crates/api/api_server/verification_evidence/reservation_attendance.md)
   — how a reservation and its attendance stay apart.

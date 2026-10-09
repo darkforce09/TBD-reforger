@@ -1,5 +1,5 @@
 {
-  "frozenFrom": "react dist (apps/frontend/dist)",
+  "frozenFrom": "react dist (the retired React app's release build)",
   "distSha256": "2aa6a2f251e9d3439f7bd0f5ffb49ffd65bd604282c391997f88ad751fb8472a",
   "viewport": "1440x900",
   "excluded": {

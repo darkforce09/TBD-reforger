@@ -5,8 +5,8 @@
 //! every module's locations).
 //! **Position:** tier 1 of `tools/foundation`, over the checkout-root finder `repository_root`,
 //! whose names the [`prelude`] re-exports so the tool binaries reach the root through this crate.
-//! The ticket crates, the command crates, `xtask` and `ticketboard` spell these shared locations
-//! through it; a location only one tool names stays in that tool's own layout module.
+//! The ticket crates, the command crates, `xtask` and `ticketboard_desktop` spell these shared
+//! locations through it; a location only one tool names stays in that tool's own layout module.
 //! **Signals & state:** none; constants and pure path joins.
 //! **Invariants:** every location is relative and uses `/` separators; the crate itself reads no
 //! file and walks no folder (the root walk is `repository_root`'s alone).

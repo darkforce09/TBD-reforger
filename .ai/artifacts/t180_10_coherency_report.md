@@ -17,7 +17,7 @@
 
 | Path | Evidence | Status |
 |------|----------|--------|
-| Squad links upload | [`mission_history.rs`](../../apps/frontend/src/mission_history.rs) `upload_squad_links` → `e.upload_hairline_segments(ROLE_SQUAD_LINKS=9, …)` on rebind + `after_doc_change` | **OK** |
+| Squad links upload | [`mission_history.rs`](../../crates/frontend/shell/frontend_application/src/mission_history.rs) `upload_squad_links` → `e.upload_hairline_segments(ROLE_SQUAD_LINKS=9, …)` on rebind + `after_doc_change` | **OK** |
 | Vehicles bind | same file: `e.vehicles_bind(&doc.vehicle_xy_flat())` after slots/tints | **OK** |
 | Lane order | `LaneRole::SquadLinks` / `MissionVehicles` in `map-engine-render` draw_order; test `mission_vehicles_sit_between_squad_links_and_slots` PASS | **OK** |
 

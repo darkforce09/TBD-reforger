@@ -3,7 +3,7 @@
 Every [ticket](/documentation/glossary/n_to_z.md#ticket) of the project as one TOML file, the
 schemas and derived files around them, and the templates and instructions agents follow to write a
 ticket's spec, plan, handoff and prompt. The [ticket crates](/tools/tickets/README.md) read and
-write the folder through `cargo xtask ticket`; the [ticketboard](/apps/ticketboard/README.md)
+write the folder through `cargo xtask ticket`; the [ticketboard](/tools/tickets/ticketboard_desktop/README.md)
 shows it.
 
 ## Contents

@@ -88,9 +88,9 @@ No features and no environment variables.
 ## Boundaries
 
 - Depends on: `newtype_ids` (the macros); sqlx (the `Type` derive, `postgres` and `uuid`).
-- Used by: `api_configuration` (the Discord client and guild ids); the API (`apps/api`): every
+- Used by: `api_configuration` (the Discord client and guild ids); the API (`crates/api/api_server`): every
   domain crate, the kernel crates (sessions included), `api_background_workers`, the API's
-  binaries, and the integration tests under `apps/api/tests`.
+  binaries, and the integration tests under `crates/api/api_server/tests`.
 - Rules: every id is serde-transparent and every SQL-bound id sqlx-transparent
   (`src/tests/wire_identity.rs` compares each with its bare value: JSON, text, and for the SQL-bound
   ids the Postgres type and array type); an API crate's public `id` / `*_id`

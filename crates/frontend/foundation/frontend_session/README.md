@@ -69,7 +69,7 @@ None: no feature, no environment variable. The persisted slice lives under the l
   `leptos`, `base64`, `futures`, `serde`, `serde_json`; `leptos_router`, `gloo-net`,
   `gloo-timers`, `web-sys`, `js-sys`, `wasm-bindgen` and `wasm-bindgen-futures` in the wasm32 build
   only.
-- Used by: the single-page app (`apps/frontend`): its entry point, which registers the sign-out
+- Used by: the single-page app (`crates/frontend/shell/frontend_application`): its entry point, which registers the sign-out
   hook; the app shell; the shared features; the pages; the Mission Creator.
 - Rules: the access token is never persisted; the refresh request is reachable only inside the
   cross-tab lock; the crate depends on no frontend crate above the foundation crates it names
@@ -79,7 +79,7 @@ None: no feature, no environment variable. The persisted slice lives under the l
 
 - [Account pages](/documentation/crates/frontend/pages/account_pages/account_pages.md) — sign-in, the auth
   callback and settings.
-- [Identity transactions](/documentation/apps/api/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
   — sessions, refresh rotation and replay revocation in the API.
-- [Frontend documentation](/documentation/apps/frontend/README.md#shared-foundations) — the shared
+- [Frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md#shared-foundations) — the shared
   foundations among the routes, pages and workspaces of the app.

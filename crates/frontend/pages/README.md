@@ -19,7 +19,7 @@ crates/frontend/pages/
 ## How it works
 
 A page crate fetches through the foundation crates, renders the feature crates' shared views, and
-exports its route components; the app's route table (`apps/frontend/src/app_routes.rs`) mounts
+exports its route components; the app's route table (`crates/frontend/shell/frontend_application/src/app_routes.rs`) mounts
 them. The route components fetch in the browser only, so they exist on `wasm32`; the pure readers
 under them compile on every target, so their tests run natively.
 
@@ -41,12 +41,12 @@ under them compile on every target, so their tests run natively.
 
 - Depends on: the foundation crates under `crates/frontend/foundation/` and the feature crates
   under `crates/frontend/features/`.
-- Used by: the app (`apps/frontend`), whose route table mounts the pages.
+- Used by: the app (`crates/frontend/shell/frontend_application`), whose route table mounts the pages.
 - Rules: a page crate never depends on another page crate, a workspace or the app (layer order
   foundation < features < pages, workspaces < shell, `cargo xtask ci verify-workspace-laws`).
 
 ## Related documentation
 
 - [Frontend crates](/crates/frontend/README.md) — the layer order every frontend crate follows.
-- [Frontend source root](/apps/frontend/src/README.md) — the app's entry point, route table and
+- [Frontend source root](/crates/frontend/shell/frontend_application/src/README.md) — the app's entry point, route table and
   frame, and the layer order of the frontend crates.

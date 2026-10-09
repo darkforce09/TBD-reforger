@@ -1,12 +1,13 @@
 //! Reading the two sides this gate compares out of source text.
 //!
 //! One half discovers and parses the domain route tables (`crates/api/<crate>/src/routes.rs`) plus
-//! the `.merge(` lines that serve them; the other sweeps the API application and every API crate
-//! for `@route` doc tags. Both
+//! the `.merge(` lines that serve them; the other sweeps every API crate, the server's included,
+//! for `@route` doc tags, reading each file once. Both
 //! sides emit a marker row — `UNPARSED …` / `ORPHAN …` — for any input they could not read, so a
 //! shape this file does not understand shrinks no count in silence.
 
 use super::*;
+use repository_laws::source_roots::outermost_folders;
 
 /// One discovered domain route table.
 pub(super) struct RouteTable {
@@ -170,13 +171,11 @@ pub(super) fn extract_router(body: &str) -> Vec<String> {
     out
 }
 
-/// Sweep the API application's `src/` and every API crate for `@route` tags. Returns the parsed
-/// rows plus the RAW tag-line count the vacuity guard compares for exact equality. A missing or
-/// unreadable tree is a `NotRun`, which closes the script's `2>/dev/null || true`.
+/// Sweep every API crate for `@route` tags. Returns the parsed rows plus the RAW tag-line count
+/// the vacuity guard compares for exact equality. A missing or unreadable tree is a `NotRun`,
+/// which closes the script's `2>/dev/null || true`.
 pub(super) fn extract_all_tags(repo_root: &Path) -> Result<(Vec<String>, usize), NotRun> {
-    let src_dir = repo_root.join(SRC_DIR_REL);
-    let crates_dir = repo_root.join(API_CRATES_DIR_REL);
-    let files = scan::walk_files(&[&src_dir, &crates_dir], scan::with_extension(&["rs"]))?;
+    let files = tag_sweep_files(repo_root, TAG_SWEEP_ROOTS)?;
     let tag_re = Regex::new(TAG_RE).expect("static regex");
     let (mut rows, mut raw) = (Vec::new(), 0usize);
     for path in files {
@@ -190,6 +189,20 @@ pub(super) fn extract_all_tags(repo_root: &Path) -> Result<(Vec<String>, usize),
         rows.extend(extract_tags(&rel.to_string_lossy(), &text));
     }
     Ok((rows, raw))
+}
+
+/// Every `.rs` file under the outermost of the repository-relative `roots`, sorted, each once: a
+/// root nested in another adds no file a second time.
+pub(super) fn tag_sweep_files(repo_root: &Path, roots: &[&str]) -> Result<Vec<PathBuf>, NotRun> {
+    let absolute: Vec<PathBuf> = outermost_folders(roots)
+        .into_iter()
+        .map(|root| repo_root.join(root))
+        .collect();
+    let refs: Vec<&Path> = absolute.iter().map(PathBuf::as_path).collect();
+    let mut files = scan::walk_files(&refs, scan::with_extension(&["rs"]))?;
+    files.sort();
+    files.dedup();
+    Ok(files)
 }
 
 /// One `METHOD PATH FN FILE:LINE` row per tag, or an `ORPHAN …` marker.

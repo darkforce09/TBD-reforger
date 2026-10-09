@@ -59,7 +59,7 @@ servers, skipping rows another transaction holds. Lock order: server, runtime se
   deployment requests in `crates/api/api_missions/src/services/mission_deployments/`
   (`enqueue_deployment_command`, `cancel_command`); the `fleet_command_reconciler` worker in
   `crates/api/api_background_workers/src/`; the integration test
-  `apps/api/tests/fleet_command_ledger.rs`.
+  `crates/api/api_server/tests/fleet_command_ledger.rs`.
 - Rules: no argument reaches a shell, and the one free-text argument, a console command's line,
   reaches only the server's RCON console; an executor receives only arguments that passed
   `command_arguments.rs`, and the ledger stores only outcomes that passed `command_outcomes.rs`;
@@ -68,5 +68,5 @@ servers, skipping rows another transaction holds. Lock order: server, runtime se
 
 ## Related documentation
 
-- [Fleet command ledger](/documentation/apps/api/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
   — the ledger's states, rules and executors.

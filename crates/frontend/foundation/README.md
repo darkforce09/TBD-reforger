@@ -39,7 +39,7 @@ its `pub mod` line, and the browser crates sit in a wasm32 dependency table.
   (for example `offline_cache_policy` under `frontend_offline`, the rendering and streaming
   crates under `frontend_map_view`).
 - Used by: the feature, page and workspace crates under `crates/frontend/` and the app
-  (`apps/frontend`): its entry point and shell; `frontend_test_support` only through
+  (`crates/frontend/shell/frontend_application`): its entry point and shell; `frontend_test_support` only through
   `[dev-dependencies]`.
 - Rules: a foundation crate depends only on foundation crates before it in the crate order of the
   frontend-layering law (`frontend_ui` < `frontend_api_dtos` < {`frontend_transport`,
@@ -49,6 +49,6 @@ its `pub mod` line, and the browser crates sit in a wasm32 dependency table.
 
 ## Related documentation
 
-- [Frontend documentation](/documentation/apps/frontend/README.md#shared-foundations) — where these
+- [Frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md#shared-foundations) — where these
   foundations sit among the routes, pages and workspaces they serve.
 - [Frontend crates](/crates/frontend/README.md) — the layer order every frontend crate follows.

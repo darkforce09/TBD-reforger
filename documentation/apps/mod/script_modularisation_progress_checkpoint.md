@@ -34,7 +34,7 @@ name in tbd-emcp (the MCP broker calls them by name).
 
 Another session holds uncommitted work in `apps/mod/tbd-export`, `tools/xtask`
 (`commands/mod_ops`, `commands/deploy`, `commands/generate`, `Cargo.toml`), `tools/developer_tools`,
-`apps/api`, `apps/frontend`, `contracts`, the untracked `equipment` folder of `assets`, `CLAUDE.md`, `.gitignore` and `Cargo.lock`.
+`crates/api/api_server`, `crates/frontend/shell/frontend_application`, `contracts`, the untracked `equipment` folder of `assets`, `CLAUDE.md`, `.gitignore` and `Cargo.lock`.
 Commits of this program stage by pathspec only.
 
 ## Roster

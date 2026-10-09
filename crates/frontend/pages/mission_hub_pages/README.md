@@ -48,7 +48,7 @@ None: no feature, no environment variable.
 - Depends on: `frontend_api_dtos`, `frontend_transport`, `frontend_session`, `frontend_ui`,
   `mission_review_record`, `mission_payload`, `http_url_guard`, `leptos`, `leptos_router`,
   `serde_json`; the browser crates on `wasm32`; `frontend_test_support` for its tests only.
-- Used by: the single-page app (`apps/frontend`), whose route table mounts the two pages.
+- Used by: the single-page app (`crates/frontend/shell/frontend_application`), whose route table mounts the two pages.
 - Rules: a page crate never depends on another page crate, a workspace or the app
   (`cargo xtask ci verify-workspace-laws`); the dossier body stays read-only, and every review
   renders through `mission_review_record`.

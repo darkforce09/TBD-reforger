@@ -67,7 +67,7 @@ services:
       # folder is deploy/caddy, which holds only the Caddyfile and its README, never deploy
       # itself, so the host's deploy/deploy.env stays outside the container.
       - ./caddy:/etc/tbd-caddy:ro
-      - ../apps/frontend:/srv/tbd-frontend:ro
+      - ../crates/frontend/shell/frontend_application:/srv/tbd-frontend:ro
       # Caddy's own state: /data is its storage, /config the last configuration it loaded.
       - tbd_staging_caddy_data:/data
       - tbd_staging_caddy_config:/config
@@ -102,9 +102,9 @@ services:
       DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:-}
       DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1/32}
-      # The image contains the binary and nothing else, and the runtime stage sets no WORKDIR, so
-      # the API's CWD-relative asset fallback resolves to a path that does not exist inside the
-      # container. Both directories are therefore bind-mounted below and named absolutely here.
+      # Outside development the API requires both asset folders as absolute paths, and the image
+      # contains the binary and nothing else, so both are bind-mounted below and named absolutely
+      # here.
       MAP_ASSETS_DIR: /srv/assets/terrains
       GLYPH_ASSETS_DIR: /srv/assets/glyphs
       # What the API writes (CMS uploads served at /uploads) goes to a named volume; outside

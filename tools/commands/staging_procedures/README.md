@@ -4,7 +4,7 @@ The `staging_procedures` crate: the `cargo xtask staging` group. It records the 
 receipts of the API acceptance register (`staging_fleet`, `staging_discord`, `staging_load`)
 against the staging host, and runs the read-only and confirmed commands the runbooks run around
 those recordings. The design, the witness rules and the case lists are in the
-[staging design note](/documentation/apps/api/verification_evidence/staging.md); the procedures
+[staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md); the procedures
 to follow are in the
 [staging verification runbooks](/documentation/runbooks/staging_verification/README.md).
 

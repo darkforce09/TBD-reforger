@@ -1,7 +1,7 @@
 # Fleet wire contract
 
 The `fleet_wire_contract` crate: the shapes of `contracts/definitions/fleet-command.schema.json`
-that the platform API and the fleet host agent exchange, each one type serving both serde
+that the platform API and the game server host agent exchange, each one type serving both serde
 directions, plus `ExecutorKind`, the RFC 3339 spelling of their instants, the machine credential
 format and the limits of the files a credential or RCON password is handed over in. The API
 writes what the agent reads through the same type, so the two cannot drift apart.
@@ -61,10 +61,11 @@ None: the crate reads no environment variable and declares no feature.
 ## Boundaries
 
 - Depends on: `chrono`, `serde`, `serde_json`, `thiserror` and `uuid`; no workspace crate.
-- Used by: `apps/api` (the fleet command ledger and handlers, the machine credentials and every
-  handler that requires an executor kind), `tools/staging/staging_fixtures` (its credential files),
-  `apps/fleet_host_agent` (the ledger client and the secret-file reader) and `tools/xtask` (the
-  credential prefix of the mod mission test).
+- Used by: the API crates under `crates/api/` (the fleet command ledger and handlers in
+  `api_server_infrastructure`, the machine credentials, and every handler that requires an
+  executor kind), `tools/staging/staging_fixtures` (its credential files),
+  `crates/fleet/game_server_host_agent` (the ledger client and the secret-file reader) and
+  `tools/commands/mod_operations` (the credential prefix of the mod mission test).
 - Rules:
   - no sqlx, axum or reqwest: the API keeps its database row (`FleetCommandReceiptRow`) and both
     sides keep their own file I/O; contracts tier, so the crate depends on no workspace crate
@@ -81,7 +82,7 @@ None: the crate reads no environment variable and declares no feature.
 
 ## Related documentation
 
-- [Fleet command ledger](/documentation/apps/api/verification_evidence/fleet_command_ledger.md) —
+- [Fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md) —
   the states, the claim and fencing rules, and the reports these shapes carry.
-- [Fleet command execution](/documentation/apps/fleet_host_agent/fleet_command_execution.md) —
+- [Fleet command execution](/documentation/crates/fleet/game_server_host_agent/fleet_command_execution.md) —
   how the host agent claims, performs and reports a command.

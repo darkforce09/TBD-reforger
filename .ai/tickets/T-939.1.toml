@@ -43,9 +43,9 @@ created_at = "2026-09-05T02:33:18Z"
 completed_at = "2026-09-07T21:46:24Z"
 estimated = ["tokens"]
 owns = [
-    "apps/frontend/src/editor/panels/outliner_tree.rs",
-    "apps/frontend/src/editor/panels/outliner_drag.rs",
-    "apps/frontend/src/editor/panels/mod.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/outliner_tree.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/outliner_drag.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/mod.rs",
 ]
 
 [scope]

@@ -47,7 +47,7 @@ and no line or paragraph separator in what was typed, 1 to 256 bytes once trimme
 confirmed the server's newest confirmed deployment, and fills neither on its own.
 
 The console box sits under the process-control buttons, since the
-[fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) carries out a
+[game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) carries out a
 `console_command` over RCON as it does the player list. "Send" and Enter in the field both submit
 it; nothing is sent while another request is in flight, and a sent line leaves the field, because
 the host agent transmits a line once and nothing repeats it. A succeeded console command's reply
@@ -89,5 +89,5 @@ Only a queued command offers "Cancel". Every request runs in the browser build o
 
 - [Server control page](/documentation/crates/frontend/pages/administration_pages/server_control/server_control_page.md)
   — the console's behaviour and what each command route means server-side.
-- [Fleet command ledger evidence](/documentation/apps/api/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger evidence](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
   — the ledger's states, claims and expiry.

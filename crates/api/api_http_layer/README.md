@@ -42,7 +42,7 @@ cargo test -p api_http_layer   # tokens, limiter tiers, client resolution, metri
 cargo xtask db test-it --test durable_rate_limit --test forwarded_for_trust --test observability
 ```
 
-The integration suites in `apps/api/tests/` prove the Postgres tier, the trusted proxies and the
+The integration suites in `crates/api/api_server/tests/` prove the Postgres tier, the trusted proxies and the
 metrics through the assembled router.
 
 ## Configuration
@@ -69,7 +69,7 @@ read: `JWT_SECRET` and `JWT_ACCESS_TTL_MIN` (the token `Manager`), `ALLOWED_ORIG
   the shutdown signal), `api_identifiers` (the Discord user and session ids), `content_digest`,
   `time_source` (the metrics registry's start stamp), and `axum`, `jsonwebtoken`, `governor`, `sqlx`, `reqwest`, `tokio`; the `rate_limit_buckets`
   table of migration `0021`.
-- Used by: the API application (`apps/api`): its router and composition, and through it
+- Used by: the API application (`crates/api/api_server`): its router and composition, and through it
   `api_state`, the kernel and domain crates, `api_background_workers` and the integration suites.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md); nothing here names
   `AppState`, another kernel crate above it or a domain, which the crate boundary itself enforces.
@@ -77,7 +77,7 @@ read: `JWT_SECRET` and `JWT_ACCESS_TTL_MIN` (the token `Manager`), `ALLOWED_ORIG
 ## Related documentation
 
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.
-- [API application source](/apps/api/src/README.md) — the router that mounts these layers.
+- [API application source](/crates/api/api_server/src/README.md) — the router that mounts these layers.
 - [Application state](/crates/api/api_state/README.md) — the state that holds their services.
-- [Identity transactions](/documentation/apps/api/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
   — how access tokens, persisted sessions and refresh rotation fit together.

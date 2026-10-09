@@ -3,7 +3,8 @@
 The source tree of `frontend_test_support`, the helpers the frontend crates' tests share: the
 repository files read from the checkout root `repository_root` finds (the captured
 [API](/documentation/glossary/a_to_f.md#api) responses, the contract schemas, the API route
-tables), the source scrubber, the joining of the shards a source pin reads, and the `view!`
+tables), the `src/` folders of the frontend packages, the source scrubber, the joining of the
+shards a source pin reads, and the `view!`
 attribute guard several page areas run over their own folders. Everything here is test-only.
 
 ## Contents
@@ -12,11 +13,12 @@ attribute guard several page areas run over their own folders. Everything here i
 crates/frontend/foundation/frontend_test_support/src/
 ├── class_r_scrub/            the source scrubber the source pins read production code through
 ├── fixtures.rs               `golden!`, the captured responses, the API route tables, `Cargo.toml`
+├── frontend_source_roots.rs  the `src/` of every frontend package, once each, for whole-frontend scans
 ├── lib.rs                    the module tree
 ├── prelude.rs                the helpers most tests import
 ├── repository_root.rs        the calling crate's checkout root and the cached reads of repository files
 ├── source_shards.rs          joins the shards of one logical source file for a source pin
-├── tests/                    unit tests for the scrubber, the repository file reads and the attribute guard
+├── tests/                    unit tests for the scrubber, the repository file reads, the source roots and the attribute guard
 └── view_attribute_guard.rs   the source guard over `view!` attribute values
 ```
 
@@ -39,6 +41,13 @@ it.
   tables of the API, one named path per domain, for guards that assert a frontend call has a route
   behind it; `crate_cargo_toml(manifest_dir)` returns the calling crate's own manifest, and
   `strip_toml_comments` removes its comments, for guards on a declared dependency or feature.
+- `frontend_source_roots.rs`: `frontend_source_roots(repository)` lists the `src/` of every crate
+  folder the member glob `crates/frontend/*/*` reaches, the shell layer's app and offline service
+  worker included, sorted; it fails closed on a missing member glob, a crate folder without its
+  `Cargo.toml` or `src/`, or an unreadable folder. `assert_each_package_read_once(roots)` keys
+  each root by the `[package]` name of the manifest beside it and panics when one package appears
+  twice, under one spelling or two; the documentation audit of the app and the Mission Creator's
+  whole-frontend pins each run it over their own root list.
 - `source_shards.rs`: `production_source` joins the shards of one logical source file in the order
   given, each through `production_shard`, which first drops its `#[cfg(test)] #[path = …] mod …;`
   lines, because the scrubber cuts from the first `#[cfg(test)]` and would otherwise hide every

@@ -24,8 +24,8 @@ API documentation, which the Related documentation below links.
 
 ## Code
 
-- [API crate](/apps/api/) — the crate the program restructured.
-- [API source](/apps/api/src/) — the `core/`, `background_workers/` and domain folders
+- [API crate](/crates/api/api_server/) — the crate the program restructured.
+- [API source](/crates/api/api_server/src/) — the `core/`, `background_workers/` and domain folders
   the plan describes.
 
 ## Boundaries
@@ -37,6 +37,6 @@ API documentation, which the Related documentation below links.
 
 ## Related documentation
 
-- [API documentation](/documentation/apps/api/README.md) — the live overview, environment
+- [API documentation](/documentation/crates/api/api_server/README.md) — the live overview, environment
   reference, decisions and verification evidence.
-- [API crate README](/apps/api/README.md) — the crate as it is.
+- [API crate README](/crates/api/api_server/README.md) — the crate as it is.

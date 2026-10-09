@@ -58,7 +58,7 @@ citations = [
     "modal solid surface token",
 ]
 estimated = ["scope"]
-owns = ["apps/frontend/src/editor/panels/attributes_modal.rs"]
+owns = ["crates/frontend/shell/frontend_application/src/editor/panels/attributes_modal.rs"]
 
 [scope]
 domain = "website"

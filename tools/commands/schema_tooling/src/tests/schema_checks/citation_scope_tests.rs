@@ -35,14 +35,14 @@ fn rust_under_apps_and_tooling_is_scanned_and_can_fail() {
     workspace(
         &root,
         &[
-            "apps/api",
+            "crates/api/api_server",
             "tools/developer_tools",
             "tools/tickets/ticket_model",
         ],
     );
     write(
         &root,
-        "apps/api/src/handlers/x.rs",
+        "crates/api/api_server/src/handlers/x.rs",
         concat!("//! @contract", " nope.schema.json#/\n"),
     );
     write(
@@ -57,7 +57,7 @@ fn rust_under_apps_and_tooling_is_scanned_and_can_fail() {
     );
     write(
         &root,
-        "apps/frontend/w.ts",
+        "crates/frontend/shell/frontend_application/w.ts",
         concat!(" * @contract", " good.schema.json#/$defs/item\n"),
     );
 
@@ -77,7 +77,8 @@ fn rust_under_apps_and_tooling_is_scanned_and_can_fail() {
     assert!(
         scan.problems
             .iter()
-            .any(|p| p.contains("apps/api/src/handlers/x.rs") && p.contains("not found")),
+            .any(|p| p.contains("crates/api/api_server/src/handlers/x.rs")
+                && p.contains("not found")),
         "missing-schema in apps/**/*.rs must fail: {:?}",
         scan.problems
     );
@@ -96,12 +97,15 @@ fn rust_under_apps_and_tooling_is_scanned_and_can_fail() {
 fn missing_scan_root_is_a_scope_failure_not_a_pass() {
     let root = fixture_dir("missing-root");
     let schemas = schema_dir(&root);
-    workspace(&root, &["apps/api"]);
+    workspace(&root, &["crates/api/api_server"]);
     write(
         &root,
-        "apps/api/src/a.rs",
+        "crates/api/api_server/src/a.rs",
         concat!("//! @contract", " good.schema.json#/\n"),
     );
+    // `apps/` itself exists (it holds the mod in the real tree), so the one missing root is
+    // `apps/mod/`.
+    fs::create_dir_all(root.join("apps")).expect("apps folder");
 
     let scan = scan_citations(&root, &schemas).expect("scan");
     assert!(scan.problems.is_empty(), "the one citation resolves");
@@ -119,11 +123,11 @@ fn missing_scan_root_is_a_scope_failure_not_a_pass() {
 fn empty_corpus_is_a_scope_failure_not_a_pass() {
     let root = fixture_dir("empty-corpus");
     let schemas = schema_dir(&root);
-    workspace(&root, &["apps/api", "tools/xtask"]);
+    workspace(&root, &["crates/api/api_server", "tools/xtask"]);
     for code_root in NON_WORKSPACE_CODE_ROOTS {
         fs::create_dir_all(root.join(code_root)).expect("root");
     }
-    write(&root, "apps/api/src/a.rs", "// no tags here\n");
+    write(&root, "crates/api/api_server/src/a.rs", "// no tags here\n");
 
     let scan = scan_citations(&root, &schemas).expect("scan");
     assert_eq!(scan.citations, 0);
@@ -189,7 +193,7 @@ fn every_workspace_members_top_level_folder_is_scanned_and_can_fail() {
     workspace(
         &root,
         &[
-            "apps/api",
+            "crates/api/api_server",
             "crates/foundation/guard",
             "engines/renderer",
             "tools/xtask",

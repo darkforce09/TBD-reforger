@@ -59,9 +59,9 @@ player deployment is a `DeploymentDecision` with its `DeploymentDenial`, not an 
   `cargo xtask schema citations` resolves them.
 - Used by: the domain's handlers and services; the dashboard in `api_command_center` (`Event`,
   `EventMission`, `OrbatSlot`); the [API](/documentation/glossary/a_to_f.md#api) tests
-  `apps/api/tests/models_serde.rs`, `apps/api/tests/event_access_contract.rs`,
-  `apps/api/tests/game_runtime_contract.rs` and
-  `apps/api/tests/reservation_attendance_transactions.rs`, which decode live answers into
+  `crates/api/api_server/tests/models_serde.rs`, `crates/api/api_server/tests/event_access_contract.rs`,
+  `crates/api/api_server/tests/game_runtime_contract.rs` and
+  `crates/api/api_server/tests/reservation_attendance_transactions.rs`, which decode live answers into
   the generated types. The web app's DTOs in `crates/frontend/foundation/frontend_api_dtos/src/`
   (`events.rs`, `event_access_administration.rs`, `event_viewer_access.rs`) mirror these shapes.
 - Rules: the generated types are written by `cargo xtask ci schema-codegen` and never edited by

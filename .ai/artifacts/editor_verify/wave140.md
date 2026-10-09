@@ -65,7 +65,7 @@ tickets already named. Registry rows for T-740/T-768/T-770 still read `deferred`
 **Evidence.** Production Apply/Remove path is sound:
 
 ```text
-apps/frontend/src/editor_ops.rs:2203
+crates/frontend/shell/frontend_application/src/editor_ops.rs:2203
   commit_writes(writes, |id, json| core.update_slot_loadout(id, json))
 ```
 
@@ -76,7 +76,7 @@ asserts `miss_commits == 2` + WARNING text.
 Outside owns, the single-entity wrapper still discards the ack:
 
 ```text
-apps/frontend/src/editor_ops.rs:2005–2020
+crates/frontend/shell/frontend_application/src/editor_ops.rs:2005–2020
   core.update_slot_loadout(id, loadout_json);  // bool ignored
   true                                         // ctx/doc existence only
   → after_local_edit() whenever ctx+doc exist
@@ -99,7 +99,7 @@ an existing loadout/dirty follow-on if one is already queued; otherwise leave as
 **Evidence.** Slice comment still accurate on HEAD:
 
 ```text
-apps/frontend/src/editor_ops.rs:3435–3437
+crates/frontend/shell/frontend_application/src/editor_ops.rs:3435–3437
   CONN-DEL line-select still needs a connections render lane
   (mission_history rebind + draw_order) — panel Delete remains the disclosed substitute.
 ```

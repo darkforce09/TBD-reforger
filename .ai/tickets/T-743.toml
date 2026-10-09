@@ -66,8 +66,8 @@ estimated = [
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 owns = [
     "crates/map-engine-core/src/doc/store.rs",
-    "apps/frontend/src/mission_editor.rs",
-    "apps/frontend/src/eden_help.rs",
+    "crates/frontend/shell/frontend_application/src/mission_editor.rs",
+    "crates/frontend/shell/frontend_application/src/eden_help.rs",
     "documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_gap_analysis.md",
 ]
 

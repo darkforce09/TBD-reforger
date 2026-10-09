@@ -30,7 +30,7 @@ every browser gate:  server::start_server(dist) ◀── chrome_devtools_protoc
 capture:             the running app on :3000   ◀── chrome_devtools_protocol::launch_with_gpu (Vulkan, 1920×1080)
 ```
 
-The gates render the built app from `apps/frontend/dist` through `server.rs`, which sends
+The gates render the built app from `crates/frontend/shell/frontend_application/dist` through `server.rs`, which sends
 `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: credentialless` and
 `Cache-Control: no-store`, answers an extensionless path with `index.html`, streams `/api/`
 requests to an optional upstream so an [SSE](/documentation/glossary/n_to_z.md#sse) response arrives
@@ -104,7 +104,7 @@ root; the `prelude` module re-exports the server and the map-asset mounts.
   `ballistics_agreement_cases` (the native solves and the seeded cases of the ballistics gates);
   `map_coordinates` (the grid references the offline mortar gate types); `tokio`, `axum`,
   `reqwest`, `rustls` (the ring provider), `url`, `clap`, `image`, `regex`, `serde`, `serde_json`, `base64`, `futures-util`,
-  `libc`, `thiserror`; the built app in `apps/frontend/dist`, the fixtures and the committed
+  `libc`, `thiserror`; the built app in `crates/frontend/shell/frontend_application/dist`, the fixtures and the committed
   catalog in `contracts/`, and the goldens in `fixtures/dom_oracle/`.
 - Used by: the `gate` and `capture` binaries of `tools/developer_tools/src/bin/`, one call each
   into `command_lines`; through them, `cargo xtask mk gate-doctor`, `cargo xtask mk leptos-gates`,

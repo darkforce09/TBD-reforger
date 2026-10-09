@@ -19,14 +19,14 @@ Verifier: Cursor Grok 4.5, 2026-08-11. Verified MERGED MAIN at **f8353eab** (`gi
 ## FINDINGS
 
 ### F1 — `?role_notice=mission_maker` is written but never read
-`MINOR | crates/frontend/foundation/frontend_route_table/src/routes.rs:303-312 + apps/frontend/src/auth.rs:349-352 | denial redirect appends \`role_notice\` and a comment claims it "remains for deep links", but no SPA consumer reads the query; only the navigate-time toast fires | proven by whole-tree \`role_notice\` grep + live CDP`
+`MINOR | crates/frontend/foundation/frontend_route_table/src/routes.rs:303-312 + crates/frontend/shell/frontend_application/src/auth.rs:349-352 | denial redirect appends \`role_notice\` and a comment claims it "remains for deep links", but no SPA consumer reads the query; only the navigate-time toast fires | proven by whole-tree \`role_notice\` grep + live CDP`
 
-- Evidence: `rg role_notice` under `apps/frontend/src` hits **only** `router.rs` / `auth.rs` (writers + unit asserts). No `mission_overview` / `missions` / layout effect parses the param. Live CDP: enlisted/leader/guest deep-link to `/missions/smoke/edit` → pathname `/missions/smoke`, search `?role_notice=mission_maker`, toast text `Mission Maker role required to open the editor.` present in `[role=status]`. A cold open of `/missions/smoke?role_notice=mission_maker` without going through the guard would show **no** toast (param inert).
+- Evidence: `rg role_notice` under `crates/frontend/shell/frontend_application/src` hits **only** `router.rs` / `auth.rs` (writers + unit asserts). No `mission_overview` / `missions` / layout effect parses the param. Live CDP: enlisted/leader/guest deep-link to `/missions/smoke/edit` → pathname `/missions/smoke`, search `?role_notice=mission_maker`, toast text `Mission Maker role required to open the editor.` present in `[role=status]`. A cold open of `/missions/smoke?role_notice=mission_maker` without going through the guard would show **no** toast (param inert).
 - Impact: Primary UX (redirect + toast on denial) works. Deep-link / refresh of the overview URL alone does not re-show the notice. Claim "with `role_notice=`" is half-true.
 - Disposition: **MINOR** — do not block the wave; optional follow-up to either consume the query or drop the dead-param comment. Not filed here (verifier does not file tickets).
 
 ### F2 — T-801 host wiring has no Class-R pin beside the packer tests
-`NIT | apps/frontend/src/mission_editor.rs:7574-7598 (T-573/T-808 push_drag_preview pins) | pins require \`set_drag\` + \`bind_vehicle_preview_lane\` but not \`bind_squad_link_preview\` / \`pack_squad_link_drag_preview\` | source audit`
+`NIT | crates/frontend/shell/frontend_application/src/mission_editor.rs:7574-7598 (T-573/T-808 push_drag_preview pins) | pins require \`set_drag\` + \`bind_vehicle_preview_lane\` but not \`bind_squad_link_preview\` / \`pack_squad_link_drag_preview\` | source audit`
 
 - Evidence: `push_drag_preview` **does** call `bind_squad_link_preview` (`select_tool.rs:299`). The existing Class-R battery that would catch a dead vehicle preview does **not** assert the new tether call, so a future edit that drops only the squad-link line stays green on that pin while breaking T-801.
 - Impact: Regression risk for host wiring only; packer math is Class-R covered in `squad_links.rs` (4 dedicated tests, all green in the 10 `squad_link*` filter).

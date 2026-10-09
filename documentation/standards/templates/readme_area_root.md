@@ -3,7 +3,7 @@
 # README template: area root
 
 **When to use:** the top of a code tree, or a folder that groups several products without being one
-(`apps/`, `apps/mod/`, `tools/`, `contracts/`, `assets/`). The
+(`crates/`, `apps/`, `apps/mod/`, `tools/`, `contracts/`, `assets/`). The
 [README standard](/documentation/standards/readme_standard.md) defines every rule this template
 follows; the area root kind adds Getting started.
 
@@ -52,43 +52,40 @@ for. Link the runbook for the full procedure.>
 
 ## Worked sample
 
-Written from `apps/`. The sample sits in a fenced block, so no gate reads it as a README; the
+Written from `crates/`. The sample sits in a fenced block, so no gate reads it as a README; the
 folder's own README.md is written from the same code and may differ.
 
 ````markdown
-# Applications
+# Crates
 
-Every product the TBD Reforger platform ships: the website's API, single-page app and service
-worker, the [Enfusion](/documentation/glossary/a_to_f.md#enfusion) mod that game servers run, the
-agent that controls those servers, and the desktop viewer for the ticket registry. Developer
-tooling lives in `tools/`, not here.
+The workspace's product crates, one folder per category. The applications are crates here like
+any other: the API server, the single-page app and its offline service worker, and the game
+server host agent; the library crates under them hold the domains, the map engine and the shared
+foundations.
 
 ## Contents
 
 ```text
-apps/
-├── api/                     the website's REST API and realtime hub, crate `api`
-├── fleet_host_agent/        the game-host agent for fleet commands, crate `fleet_host_agent`
-├── frontend/                the website's single-page app and Mission Creator, crate `frontend`
-├── mod/                     the Enfusion mod suite: game mod, Workbench export addon, MCP bridge
-├── offline_service_worker/  the website's service worker for offline packs, crate `offline_service_worker`
-└── ticketboard/             the native desktop viewer of the ticket registry, crate `ticketboard`
+crates/
+├── api/       the API's crates and the server `api_server` that assembles them
+├── fleet/     the game server host agent beside each game server, crate `game_server_host_agent`
+├── frontend/  the single-page app's crates by layer; the app `frontend_application` and the offline service worker in `shell/`
+└── mission/   the mission domain's shared crates, such as the wire-safety scans
 ```
 
 ## How it works
 
 The API is the hub. Members use the single-page app in a browser. On each game host, the dedicated
-server runs the mod, which reads its mission deployment from the API's `/api/v1/game-runtime/`
-routes and reports results to `/api/v1/ingest/`. Beside the server, the
-[fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) polls
-`/api/v1/fleet-executor/` over outbound HTTPS and carries out each fleet command. Ticketboard
-stands apart: it reads `.ai/tickets/` through the `ticket_model` crate in `tools/tickets/`.
+server runs the mod in `apps/mod/`, which reads its mission deployment from the API's
+`/api/v1/game-runtime/` routes and reports results to `/api/v1/ingest/`. Beside the server, the
+[game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) polls
+`/api/v1/fleet-executor/` over outbound HTTPS and carries out each fleet command.
 
 ```text
-browser ── frontend ──▶ api ◀── HTTPS ── fleet_host_agent ─┐ controls
-                        ▲  ▲                               ▼
-                        │  └── game-runtime, ingest ── dedicated server + mod
-                     Postgres
+browser ── frontend_application ──▶ api_server ◀── HTTPS ── game_server_host_agent ─┐ controls
+                                     ▲  ▲                                          ▼
+                                     │  └── game-runtime, ingest ── dedicated server + mod
+                                  Postgres
 ```
 
 ## Getting started
@@ -98,25 +95,23 @@ runbook):
 
 ```bash
 cargo xtask db up        # Postgres on host port 5434
-cargo xtask mk rust-api  # the API on port 8080; stays in the foreground
+cargo xtask mk rust-api  # the API server on port 8080; stays in the foreground
 cargo xtask mk leptos    # the app on 127.0.0.1:3000; stays in the foreground, in a second terminal
-cargo xtask mod compile  # compile-checks the mod's scripts in a headless Enfusion
 ```
 
 ## Boundaries
 
 - Depends on: `contracts/`, the schemas shared across the API, the mod and the host agent;
-  `assets/`, the map data the API serves; the library crates in `crates/`; Postgres, Discord and
-  the Arma Reforger dedicated server.
+  `assets/`, the map data the API serves; Postgres, Discord and the Arma Reforger dedicated server.
 - Used by: the members' browsers and the game servers at run time; the xtask commands that build,
   test, check and deploy the products.
-- Rules: the products share data only over the API and through the schemas in `contracts/`; the
-  crate tiers law and its firewalls hold the edges between the apps and the crates
+- Rules: the products share data only over the API and through the schemas in `contracts/`; no
+  member depends on an application, and the crate tiers law and its firewalls hold every edge
   (`cargo xtask verify crate-tiers`).
 
 ## Related documentation
 
 - [Local development](/documentation/runbooks/local_development.md) — the full local setup.
-- [Mod documentation](/documentation/apps/mod/README.md) — the mod's design, screens and export
-  evidence.
+- [Crate boundary rules](/documentation/standards/crate_boundary_rules.md) — the laws every crate
+  is held to.
 ````

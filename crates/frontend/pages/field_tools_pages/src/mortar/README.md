@@ -140,7 +140,7 @@ one gun from its coordinates or its legacy `x, y` grid text. The selected event 
   `overlay_instances::fire_mission_marks`, `unit_symbology::markers`,
   `terrain_line_of_sight::elevation_profile`, `terrain_elevation::manifest` and
   `map_draw_lanes::lane_roles`.
-- Used by: the `/tools/mortar` route in `apps/frontend/src/app_routes.rs` and
+- Used by: the `/tools/mortar` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Mortar Calculator" link in
   `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; the offline pack trigger in
   `crates/frontend/foundation/frontend_offline/src/offline_pack.rs`; the DOM oracle's `mortar` capture

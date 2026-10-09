@@ -312,17 +312,78 @@ fn runtime_dirs_with_surrounding_whitespace_are_rejected_in_every_env() {
     }
 }
 
-/// Development keeps the checkout-relative default; production gets nothing filled in, so the
+/// Development keeps the checkout's default; production gets nothing filled in, so the
 /// operator's omission is reported as such instead of silently becoming a path inside the tree.
 #[test]
 fn the_development_default_never_applies_outside_development() {
-    let default = "../../assets/scratch/api/uploads";
-    assert_eq!(runtime_storage_dir("", default, "development"), default);
-    assert_eq!(runtime_storage_dir("", default, "production"), "");
+    let checkout =
+        || repository_root::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")));
+    let root = checkout().expect("the crate lies inside the checkout");
     assert_eq!(
-        runtime_storage_dir("/var/lib/uploads", default, "development"),
+        development_directories::resolve(UPLOAD, "", true, checkout).expect("development"),
+        root.join("assets/scratch/api/uploads")
+            .display()
+            .to_string()
+    );
+    assert_eq!(
+        development_directories::resolve(UPLOAD, "", false, checkout).expect("production"),
+        ""
+    );
+    assert_eq!(
+        development_directories::resolve(UPLOAD, "/var/lib/uploads", true, checkout)
+            .expect("set value"),
         "/var/lib/uploads"
     );
+}
+
+/// The terrain and glyph trees are served from where the operator said outside development: an
+/// unset one is missing and a relative one malformed, never a path relative to the working
+/// directory.
+#[test]
+fn production_rejects_a_missing_or_relative_asset_dir() {
+    for name in ["MAP_ASSETS_DIR", "GLYPH_ASSETS_DIR"] {
+        let set = |cfg: &mut Config, value: &str| match name {
+            "MAP_ASSETS_DIR" => cfg.map_assets_dir = value.into(),
+            _ => cfg.glyph_assets_dir = value.into(),
+        };
+        let mut cfg = production_base();
+        set(&mut cfg, "");
+        match cfg.validate() {
+            Err(ConfigError::Missing(missing)) if missing == name => {}
+            other => panic!("expected Missing({name}), got {other:?}"),
+        }
+        let mut cfg = production_base();
+        set(&mut cfg, "assets/terrains");
+        match cfg.validate() {
+            Err(ConfigError::Malformed(malformed, _)) if malformed == name => {}
+            other => panic!("expected Malformed({name}), got {other:?}"),
+        }
+        let mut cfg = production_base();
+        set(&mut cfg, "/srv/assets/terrains ");
+        match cfg.validate() {
+            Err(ConfigError::Malformed(malformed, _)) if malformed == name => {}
+            other => panic!("expected Malformed({name}) for whitespace, got {other:?}"),
+        }
+    }
+}
+
+/// Test configurations serve the checkout's committed terrain and glyph trees, found from the
+/// manifest folder, whatever working directory the test runner uses.
+#[test]
+fn test_configs_serve_the_checkout_asset_trees() {
+    let cfg = Config::for_tests("postgres://x/x", "jwt-secret");
+    for (dir, folder) in [
+        (&cfg.map_assets_dir, "assets/terrains"),
+        (&cfg.glyph_assets_dir, "assets/glyphs"),
+    ] {
+        let dir = Path::new(dir);
+        assert!(
+            dir.is_absolute() && dir.ends_with(folder),
+            "{}",
+            dir.display()
+        );
+        assert!(dir.is_dir(), "{} is not a folder", dir.display());
+    }
 }
 
 #[test]

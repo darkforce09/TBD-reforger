@@ -40,10 +40,10 @@ any other exit is "git unavailable" with the reason.
 - Depends on: `crate::core::process::BoundedLog` and `crate::core::time::utc_hms`, which
   `check_status` re-exports; `repository_layout` (`TICKETS_DIR`, and `documentation`'s
   `ROADMAP` and `GAP_ANALYSIS`).
-- Used by: the desktop application: `apps/ticketboard/src/application/` (`mod.rs` holds the
+- Used by: the desktop application: `tools/tickets/ticketboard_desktop/src/application/` (`mod.rs` holds the
   `CheckModel`, the git `Coalescer` and the `GitChip`; `background_events.rs` spawns the check and
   `git status` with `CHECK_ARGS` and `GIT_ARGS`; `feature_views.rs` builds the `StatusView`) and
-  `apps/ticketboard/src/repository_status/ui/`, which paints it.
+  `tools/tickets/ticketboard_desktop/src/repository_status/ui/`, which paints it.
 - Rules: `CHECK_ARGS` stays the expansion of `CHECK_COMMAND` (`check_command_matches_its_expanded_argv`
   in `tests/check_status.rs`); only an observed exit 0 is green
   (`killed_and_spawn_failed_are_red_and_honest`, `red_without_error_lines_points_at_the_output`);

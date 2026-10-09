@@ -57,7 +57,7 @@ services compare these digests to tell an inert retry from a conflict.
 - Used by: the domain's handlers and services; the member's
   [service record](/documentation/glossary/n_to_z.md#service-record) in
   `crates/api/api_operations/src/handlers/member_service_record.rs` (`Match`,
-  `MatchPlayerStat`); the integration tests in `apps/api/tests/`
+  `MatchPlayerStat`); the integration tests in `crates/api/api_server/tests/`
   (`telemetry_revisions.rs`, `detailed_events.rs` and `telemetry_queue.rs` decode live answers
   into the generated types; the null-tolerance tests read `Match`).
 - Rules: every wire type carries its `@contract` tag into `match-telemetry.schema.json`

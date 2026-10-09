@@ -188,7 +188,7 @@ pub(crate) fn recovery_action_list(settings: &StagingSettings) -> Vec<PlannedAct
         .detail(
             "host_agent: `cargo xtask staging rotate-credential --instance 1 --executor \
                  host_agent --promote`, then on the host `systemctl --user restart \
-                 fleet_host_agent@1.service`",
+                 game_server_host_agent@1.service`",
         )
         .detail(
             "mod_runtime: `cargo xtask staging rotate-credential --instance 2 --executor \

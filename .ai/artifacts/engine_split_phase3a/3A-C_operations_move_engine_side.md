@@ -3,7 +3,7 @@
 **Purely additive. Delete nothing.** C adds; [3A-D](3A-D_operations_delete_adapters.md) removes.
 Splitting it this way keeps each commit bisectable and keeps the frontend compiling throughout.
 
-Source: `apps/frontend/src/editor/state/operations/` — 29 files, 4,320 LOC, untouched so
+Source: `crates/frontend/shell/frontend_application/src/editor/state/operations/` — 29 files, 4,320 LOC, untouched so
 far. The full per-file audit is in [`01_original_full_3a_brief.md`](01_original_full_3a_brief.md)
 section B. Your half is the 10 files below.
 

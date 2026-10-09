@@ -14,7 +14,7 @@ documentation/tools/
 ├── enfusion/                 the Enfusion script oracle behind `enf`
 ├── map_assets/               the map raster pipeline behind `map`
 ├── staging/                  the member load and the acknowledgement-dropping relay, end to end
-├── tickets/                  the token estimate factor behind the ticket registry's estimates
+├── tickets/                  the token estimate factor behind the ticket registry's estimates, the ticketboard's documents
 └── tooling_architecture.md   the crates, their dependency direction, invariants and verification surface
 ```
 
@@ -27,7 +27,7 @@ hold those rules. The subfolders mirror the crate folders that have documents of
 | Tooling unit | Code README | Documents |
 |---|---|---|
 | `xtask`, the `cargo xtask` command router and every repository verification | [`tools/xtask/`](/tools/xtask/README.md), with the [command line](/tools/xtask/src/cli/README.md) and [verify group](/tools/xtask/src/commands/verify/README.md) READMEs | [Tooling architecture](/documentation/tools/tooling_architecture.md) |
-| `ticket_model`, `ticket_metrics`, `ticket_wave_lock` and `ticket_registry`, the ticket crates | [`tools/tickets/`](/tools/tickets/README.md) | [`tickets/`](/documentation/tools/tickets/README.md) |
+| `ticket_model`, `ticket_metrics`, `ticket_wave_lock`, `ticket_registry`, `ticketboard_model` and `ticketboard_desktop`, the ticket crates and the ticketboard | [`tools/tickets/`](/tools/tickets/README.md) | [`tickets/`](/documentation/tools/tickets/README.md) |
 | `verification_core`, `process_runner` and `repository_laws`, the foundation crates: verdicts and the lock, child processes, the repository laws | [`tools/foundation/`](/tools/foundation/README.md) | [Tooling architecture](/documentation/tools/tooling_architecture.md) |
 | `enfusion_pak`, `enfusion_script_index` and `enfusion_mcp_broker`, the Enfusion crates: the pak reader, the script oracle, the MCP broker | [`tools/enfusion/`](/tools/enfusion/README.md) | [`enfusion/`](/documentation/tools/enfusion/README.md) |
 | `staging_load_plan`, `staging_load_generator` and `acknowledgement_dropping_relay`, the staging crates: the member load's plan and its generator, the fault-injecting relay | [`tools/staging/`](/tools/staging/README.md) | [`staging/`](/documentation/tools/staging/README.md) |
@@ -35,8 +35,9 @@ hold those rules. The subfolders mirror the crate folders that have documents of
 | `developer_tools`, the eight tool executables | [`tools/developer_tools/`](/tools/developer_tools/README.md) | [`developer_tools/`](/documentation/tools/developer_tools/README.md) |
 | `enfusion_mcp_node_package`, the pinned MCP server | [`tools/enfusion_mcp_node_package/`](/tools/enfusion_mcp_node_package/README.md) | [Enfusion MCP tooling runbook](/documentation/runbooks/enfusion_mcp_tooling.md) |
 
-The [ticketboard](/documentation/apps/ticketboard/README.md), the desktop viewer that links
-`ticket_model`, has its own top-level folder because its code lives in `apps/ticketboard/`.
+The [ticketboard](/documentation/tools/tickets/ticketboard_desktop/README.md), the desktop viewer that links
+`ticket_model`, has its documents in `tickets/ticketboard_desktop/`, beside its code in
+`tools/tickets/ticketboard_desktop/`.
 Procedures that run the tooling are runbooks, not documents here: the
 [factory waves](/documentation/runbooks/factory_waves/README.md), the
 [editor gates](/documentation/runbooks/editor_gates.md) and

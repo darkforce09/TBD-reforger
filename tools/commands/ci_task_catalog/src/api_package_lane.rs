@@ -1,7 +1,7 @@
 //! The API's test, lint and build command lines, derived from the workspace.
 //!
-//! **Role:** renders the four cargo lines that gate the API, each naming `api` and every API crate
-//! with one `-p` apiece, and runs them as task-table steps.
+//! **Role:** renders the four cargo lines that gate the API, each naming `api_server` and every API
+//! crate with one `-p` apiece, and runs them as task-table steps.
 //! **Position:** the `api-test`, `rust-test`, `rust-clippy` and `rust-build` rows of
 //! [`crate::task_runner::TASKS`] run `run_api_test`, `run_api_unit_tests`, `run_api_clippy` and
 //! `run_api_build`; the `mk` lane's `rust-test`, `rust-clippy` and
@@ -12,7 +12,7 @@
 //! runner, with the environment every task line gets.
 //! **Invariants:** an API crate is tested, linted and built from the moment the workspace names
 //! it, never only once someone extends a list; an unreadable workspace is a red step, never a
-//! line naming `api` alone; the API family runs in one cargo per line, and its only dev-only
+//! line naming `api_server` alone; the API family runs in one cargo per line, and its only dev-only
 //! feature (`api_failpoints/failpoints`) is one `api_failpoints`' own tests already turn on.
 
 use std::path::Path;

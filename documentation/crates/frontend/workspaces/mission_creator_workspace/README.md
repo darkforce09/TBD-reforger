@@ -73,7 +73,7 @@ in `feature_inventory/`, an Eden catalog in `eden_editor_reference/`, a design s
   are written from; the Bohemia wiki's Eden pages, which the Eden catalogs cite.
 - Used by: the glossary's Mission Creator entry; the documentation root README; the frontend,
   full-screen workspaces, mission hub, review workspace and map-engine documentation; the in-code
-  READMEs of `apps/frontend/src/`, `crates/frontend/workspaces/`, the editor
+  READMEs of `crates/frontend/shell/frontend_application/src/`, `crates/frontend/workspaces/`, the editor
   folder, the Arsenal and the review workspace page, which link here under Related documentation;
   the app README template, whose sample links here.
 - Rules: every Mission Creator document lives under this folder; prose says Mission Creator and
@@ -83,8 +83,8 @@ in `feature_inventory/`, an Eden catalog in `eden_editor_reference/`, a design s
 
 ## Related documentation
 
-- [Full-screen workspaces documentation](/documentation/apps/frontend/workspaces/README.md) — the
-  editor beside the debug benches and the planned planner and after-action review.
+- [Workspace crate documentation](/documentation/crates/frontend/workspaces/README.md) — the editor
+  beside the debug benches and the planned planner and after-action review.
 - [Review workspace page](/documentation/crates/frontend/workspaces/mission_creator_workspace/review_workspace/review_workspace_page.md)
   — the read-only review mode that mounts the editor.
 - [Map rendering documentation](/documentation/crates/map_rendering/README.md) — the renderer the

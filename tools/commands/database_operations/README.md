@@ -29,7 +29,7 @@ it and returns the child's exit code unchanged.
 DbCmd ──▶ local_database::run
   ├─ up · down · logs · seed ─▶ <runtime> compose -f compose.dev.yml … in deploy (service `db`)
   ├─ backup · restore · backup-drill · backup-verify ─▶ backup, restore, restore_drill, in process
-  ├─ registry-import ─▶ cargo run --bin import-registry in apps/api
+  ├─ registry-import ─▶ cargo run --bin import-item-registry in crates/api/api_server
   └─ test-it · repair-migration-checksum · selftest ─▶ local_database/
 DeployDbCmd ──▶ container_database::run ─▶ backup | verify-dump | restore | drill | helpers
 ```
@@ -86,8 +86,9 @@ clap usage error exits 2.
 ### db registry-import
 
 - Synopsis: `cargo xtask db registry-import`
-- Does: runs the API's `import-registry` binary in `apps/api` over the two committed
-  `contracts/catalogs/registry-*.workbench.json` envelopes, loading the item
+- Does: runs the API server's `import-item-registry` binary in `crates/api/api_server` over the two
+  committed `contracts/catalogs/registry-*.workbench.json` envelopes (their paths anchored on the
+  repository root), loading the item
   [registry](/documentation/glossary/n_to_z.md#registry) into the database `DATABASE_URL` names.
 - Exit codes: cargo's own code.
 - Example: `cargo xtask db registry-import`
@@ -97,9 +98,9 @@ clap usage error exits 2.
 - Synopsis: `cargo xtask db test-it [--test <binary>]... [--lib] [<filter>]`
 - Does: creates one database for the run, named from the label in `TBD_IT_BASE_DB` (default
   `rust_it`) plus random hex, runs the API's suite against it with
-  `cargo test --locked --no-fail-fast -p api -p <every crates/api package>` (a `--test` selection
-  names `-p api` alone, which holds the integration binaries), and drops the run's databases
-  afterwards whatever the tests did. A selection narrows the run and prints that it is no
+  `cargo test --locked --no-fail-fast -p api_server -p <every other crates/api package>` (a
+  `--test` selection names `-p api_server` alone, which holds the integration binaries), and
+  drops the run's databases afterwards whatever the tests did. A selection narrows the run and prints that it is no
   readiness receipt. Needs `db up`.
 - Exit codes: the test run's code when non-zero, else the cleanup's; 1 a label off the scratch
   allow-list; 2 a malformed `--test` or filter.
@@ -156,7 +157,7 @@ clap usage error exits 2.
 
 - Synopsis: `cargo xtask mod seed-announcement`, defined in the `mod` group.
 - Does: inserts the pinned "Milestone #1" website announcement unless one exists, through `psql`
-  with `DATABASE_URL` from the environment or `apps/api/.env`, else through
+  with `DATABASE_URL` from the environment or `crates/api/api_server/.env`, else through
   `podman exec -i tbdevent-postgres psql` when that container runs.
 - Exit codes: 0 inserted or present; 1 no `psql` and no container, or no `DATABASE_URL`; `psql`'s
   own code; 127 a tool that is not installed.
@@ -167,7 +168,7 @@ clap usage error exits 2.
 - Depends on: `process_runner`, `repository_layout`, `verification_core`, `content_digest`,
   `repository_checks` (the wave gate's seed sources), `api_readiness_checks` (the property-test
   seed), `clap`, `regex`, `thiserror`; `deploy/compose.dev.yml`, the seeds and migrations of
-  `apps/api/`; a container runtime, cargo and git.
+  `crates/api/api_database/`; a container runtime, cargo and git.
 - Used by: the `db`, `verify`, `ci`, `mk` and `mod` groups of `xtask`; the `deployment` crate
   (`deploy db`); the `tbd-website-backup` and `tbd-website-backup-drill` units in
   `deploy/systemd/`; the remote steps of `cargo xtask deploy website`, which run

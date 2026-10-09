@@ -62,7 +62,7 @@ Implement **T-127** — Fable MC UX audit fixes (U1–U4, U5 stretch).
   7. Tag **T-127** · prefix **T-127:**
 
 ═══ VERIFY ═══
-  cd apps/frontend && npm run build && npm run lint
+  cd crates/frontend/shell/frontend_application && npm run build && npm run lint
 
 ═══ RETURN ═══
   - SHA + tag T-127 · verify log · **Ready for Cursor doc sync.**

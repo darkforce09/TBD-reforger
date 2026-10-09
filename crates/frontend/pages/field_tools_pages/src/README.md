@@ -34,7 +34,7 @@ tests run.
 
 ## Public surface
 
-- `mortar::MortarCalculatorPage` (`wasm32`): the route component `apps/frontend/src/app_routes.rs`
+- `mortar::MortarCalculatorPage` (`wasm32`): the route component `crates/frontend/shell/frontend_application/src/app_routes.rs`
   binds to `/tools/mortar`, also reachable at `mortar::page` and in `prelude`.
 - `mortar::saved_fires::connection_gate::MortarSaveSection` and
   `mortar::saved_fires::save_area::MortarSaveArea` (`wasm32`): public only because the props
@@ -55,7 +55,7 @@ tests run.
   `map_editing_tools` (the map picker's marks and line-of-fire profile); on `wasm32`,
   `map_draw_lanes` and `unit_symbology` (the overlay lane and marker atlas); over HTTP, the
   ballistics-catalog reads, the event list and the fire-mission routes of the operations domain.
-- Used by: the route table in `apps/frontend/src/app_routes.rs` and
+- Used by: the route table in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Field Tools" section in
   `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`.
 - Rules: the mortar page solves with the ballistics crates' solver, the same code the API re-solves a

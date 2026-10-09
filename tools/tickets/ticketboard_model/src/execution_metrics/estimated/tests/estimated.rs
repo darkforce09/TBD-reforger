@@ -588,7 +588,7 @@ fn sort_rows_by_each_key_with_direction_toggle_and_stable_tiebreak() {
 }
 
 /// Manual smoke against the LIVE repo estimates
-/// (`cargo test -p ticketboard -- --ignored`): proves the mirror accepts
+/// (`cargo test -p ticketboard_model -- --ignored`): proves the mirror accepts
 /// every real estimate file, so the estimated panel cannot light up with
 /// false error rows on first launch. Ignored by default — the normal test
 /// run stays hermetic (scratch dirs only).

@@ -74,7 +74,7 @@ fn retry_after_is_derived_and_never_zero() {
 
 /// The mount is the path the editor actually asks for.
 ///
-/// `apps/frontend/src/world_assets/mod.rs` builds every map-asset URL as
+/// `crates/frontend/shell/frontend_application/src/world_assets/mod.rs` builds every map-asset URL as
 /// `format!("/map-assets/{terrain}")` and `world_host.rs` hard-codes
 /// `/map-assets/glyphs/atlas/…`. If this constant drifts from that literal the exemption stops
 /// covering the traffic it was written for and a cold editor boot starts paying backoff again —

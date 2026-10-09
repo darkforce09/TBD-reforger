@@ -57,7 +57,7 @@ For **each** number or enum the plan will assert:
 | LOD constants | Read `crates/map_overlay/map_draw_lanes/src/zoom_gates.rs` / residency aliases — quote exact values |
 | Default camera | Read the editor mount (`INITIAL_ZOOM`, target, terrain bounds) |
 | Engine counters | Read the stats format string (`stats()` in `crates/map_rendering/map_renderer/src/engine_statistics.rs`) — **exact snake_case keys** |
-| Routes | `crates/api/api_<domain>/src/routes.rs`, or `crates/frontend/foundation/frontend_route_table/src/routes.rs` and `apps/frontend/src/app_routes.rs` + handler signature + query struct fields |
+| Routes | `crates/api/api_<domain>/src/routes.rs`, or `crates/frontend/foundation/frontend_route_table/src/routes.rs` and `crates/frontend/shell/frontend_application/src/app_routes.rs` + handler signature + query struct fields |
 | Smoke today | Exact assert expressions + line numbers in `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/` |
 | Parity with a git-history tip | `git show <tag>:path` — key **lists and orders** separately |
 
@@ -124,7 +124,7 @@ If unsure which of two tickets owns X: **read the cited spec's out-of-scope and 
 
 ### R7 — Parity with an implementation that is not in the tree
 
-The live SPA is Leptos at `apps/frontend/`. When a ticket demands parity with an
+The live SPA is Leptos at `crates/frontend/shell/frontend_application/`. When a ticket demands parity with an
 implementation that exists only in git history:
 
 1. Cite `git show <tag>:<path>` — the tag the ticket or handoff names, never a remembered shape.

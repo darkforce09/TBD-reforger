@@ -79,7 +79,7 @@ stores outlive it.
 - `persist::register_edit_persist`: the editor page, at mount.
 - `conflict_dialog::{ConflictDialog, ConflictInfo}`: the page mounts the dialog; the hydrate raises
   a `ConflictInfo`.
-- `hydrate::purge_local_documents`: the sign-out hook `apps/frontend/src/main.rs` registers with
+- `hydrate::purge_local_documents`: the sign-out hook `crates/frontend/shell/frontend_application/src/main.rs` registers with
   the auth store, which runs it with the departing account's id.
 - `mission_size::estimate_compiled_bytes`: the page effects and the top strip, which label it with
   `frontend_ui::byte_formatting::format_bytes`.
@@ -107,7 +107,7 @@ stores outlive it.
     canvas mount, the docks, inspectors and dialogs in `ui/`, and the Arsenal tab;
   - the undo driver of `mission_creator_engine_bridge`, only through the draft-persist hook this
     crate registers;
-  - `apps/frontend/src/main.rs`, which registers the sign-out purge as a hook of
+  - `crates/frontend/shell/frontend_application/src/main.rs`, which registers the sign-out purge as a hook of
     `crates/frontend/foundation/frontend_session/src/logout_hooks.rs`;
   - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, through
     `window.__missionPersist` and `window.__editorCommands`.

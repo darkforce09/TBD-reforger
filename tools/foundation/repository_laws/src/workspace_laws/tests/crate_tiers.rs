@@ -1,47 +1,39 @@
-//! Tests for [`super`] — rules 1–7 of the crate-tier law over fixture workspaces.
+//! Tests for [`super`] — rules 1–6 of the crate-tier law over fixture workspaces; rule 7 and the
+//! judged set's edges are in `crate_tiers_application_boundaries.rs`.
 
 use super::*;
 use crate::temporary_checkout::this_repository;
 use crate::workspace_laws::fixture_workspace::{
-    Dependency, FixtureWorkspace, application_manifest, normal,
+    Dependency, FixtureWorkspace, application_manifest, green_workspace, normal,
 };
 
-const SWEEP: &[&str] = &["apps", "crates", "tools"];
+/// The fixture workspaces' configuration: the sweep roots of this repository and no application
+/// package, so a fixture judges rules 1–6 alone; the rule 7 tests list the application of
+/// [`green_workspace`].
+pub(super) const CONFIGURATION: &CrateTierConfiguration<'static> = &CrateTierConfiguration {
+    manifest_sweep_roots: &["apps", "crates", "tools"],
+    application_packages: &[],
+};
 
-/// A green workspace: two foundation crates, a mission crate, a tool and an application.
-fn green_workspace(name: &str) -> FixtureWorkspace {
-    let mut workspace = FixtureWorkspace::new(name);
-    workspace.layout_crate("crates/foundation/newtype_ids", 0, "any", &[]);
-    workspace.layout_crate(
-        "crates/foundation/time_source",
-        1,
-        "any",
-        &[normal("newtype_ids")],
-    );
-    workspace.layout_crate(
-        "crates/mission/mission_model",
-        2,
-        "any",
-        &[normal("time_source")],
-    );
-    workspace.layout_crate("tools/foundation/repository_layout", 0, "any", &[]);
-    workspace.member(
-        "apps/api",
-        &application_manifest(
-            "api",
-            "mission_model = { path = \"../../crates/mission/mission_model\" }\n",
-        ),
-    );
-    workspace
-}
+/// The application packages of this repository, as `cargo xtask verify crate-tiers` passes them.
+const THIS_REPOSITORY: &CrateTierConfiguration<'static> = &CrateTierConfiguration {
+    manifest_sweep_roots: &["apps", "crates", "tools"],
+    application_packages: &[
+        "api_server",
+        "frontend_application",
+        "offline_service_worker",
+        "game_server_host_agent",
+        "ticketboard_desktop",
+    ],
+};
 
-fn findings(workspace: &FixtureWorkspace) -> Vec<String> {
-    crate_tier_outcome(workspace.root(), SWEEP)
+pub(super) fn findings(workspace: &FixtureWorkspace) -> Vec<String> {
+    crate_tier_outcome(workspace.root(), CONFIGURATION)
         .expect("the law runs")
         .findings
 }
 
-fn assert_one_finding(workspace: &FixtureWorkspace, needle: &str) {
+pub(super) fn assert_one_finding(workspace: &FixtureWorkspace, needle: &str) {
     let found = findings(workspace);
     assert!(
         found.iter().any(|finding| finding.contains(needle)),
@@ -50,19 +42,23 @@ fn assert_one_finding(workspace: &FixtureWorkspace, needle: &str) {
 }
 
 #[test]
-fn crate_tiers_a_green_workspace_passes_and_notes_the_apps_outside_the_judged_set() {
+fn crate_tiers_a_green_workspace_passes_with_its_application_judged() {
     let workspace = green_workspace("tiers-green");
-    let report = check_crate_tiers(workspace.root(), SWEEP);
+    let report = check_crate_tiers(workspace.root(), CONFIGURATION);
     assert_eq!(report.exit_code, 0, "{}", report.lines.join("\n"));
     assert_eq!(
         report.lines.last().map(String::as_str),
         Some("CRATE-TIERS: PASS")
     );
     assert!(
-        report.lines.iter().any(|l| l
-            == "note: 1 member(s) outside the judged set, each an app or a tool binary: apps/api")
+        !report
+            .lines
+            .iter()
+            .any(|l| l.contains("outside the judged set")),
+        "{}",
+        report.lines.join("\n")
     );
-    assert!(report.lines[0].contains("5 workspace member(s), 4 judged"));
+    assert!(report.lines[0].contains("5 workspace member(s), 5 judged"));
 }
 
 #[test]
@@ -396,7 +392,7 @@ fn crate_tiers_a_stray_manifest_is_rule_1_and_test_trees_are_not_swept() {
         &application_manifest("orphan", ""),
     );
     workspace.write(
-        "apps/api/tests/fixtures/sample/Cargo.toml",
+        "crates/api/api_server/tests/fixtures/sample/Cargo.toml",
         &application_manifest("sample", ""),
     );
     workspace.write("crates/foundation/newtype_ids/target/debug/Cargo.toml", "");
@@ -409,7 +405,7 @@ fn crate_tiers_a_crate_in_a_category_no_member_glob_lists_is_rule_1() {
     let workspace = green_workspace("tiers-unlisted-category");
     workspace.write(
         "Cargo.toml",
-        "[workspace]\nresolver = \"3\"\nmembers = [\n    \"apps/api\",\n    \
+        "[workspace]\nresolver = \"3\"\nmembers = [\n    \"crates/api/*\",\n    \
          \"crates/foundation/*\",\n    \"crates/mission/*\",\n    \"tools/foundation/*\",\n]\n\n\
          [workspace.package]\nedition = \"2024\"\n",
     );
@@ -455,14 +451,17 @@ fn crate_tiers_a_missing_declaration_wrong_category_or_name_is_rule_2_or_3() {
 }
 
 /// The mission crates' isolation: a `crates/mission` crate reaching a world or graphics crate is a
-/// forbidden category edge, and one reaching an app is an edge onto a crate outside the layout,
-/// so no mission code links the world, streaming or rendering tiers.
+/// forbidden category edge, and one reaching a tool binary is an edge onto a crate outside the
+/// layout, so no mission code links the world, streaming or rendering tiers.
 #[test]
 fn crate_tiers_a_mission_crate_reaching_world_or_graphics_is_rule_5() {
     let mut workspace = green_workspace("tiers-mission-isolation");
     workspace.layout_crate("crates/terrain/terrain_elevation", 0, "any", &[]);
     workspace.layout_crate("crates/graphics/render_primitives", 0, "any", &[]);
-    workspace.member("apps/map_viewer", &application_manifest("map_viewer", ""));
+    workspace.member(
+        "tools/developer_tools",
+        &application_manifest("developer_tools", ""),
+    );
     workspace.layout_crate(
         "crates/mission/mission_compiler",
         3,
@@ -471,7 +470,7 @@ fn crate_tiers_a_mission_crate_reaching_world_or_graphics_is_rule_5() {
             normal("mission_model"),
             normal("terrain_elevation"),
             normal("render_primitives"),
-            normal("map_viewer"),
+            normal("developer_tools"),
         ],
     );
     assert_one_finding(
@@ -486,54 +485,33 @@ fn crate_tiers_a_mission_crate_reaching_world_or_graphics_is_rule_5() {
     assert!(
         found.iter().any(
             |f| f.starts_with("rule 5: crates/mission/mission_compiler/Cargo.toml")
-                && f.ends_with("may not depend on apps/map_viewer (outside the layout)")
+                && f.ends_with("may not depend on tools/developer_tools (outside the layout)")
         ),
         "{found:#?}"
     );
 }
 
+/// The judged set is closed: a member outside it that is not one of the two tool binaries is a
+/// rule 2 finding — a crate under `apps/` included — while the tool binaries are a note.
 #[test]
-fn crate_tiers_a_dev_edge_onto_an_app_is_rule_7() {
-    let mut workspace = green_workspace("tiers-dev-edge-onto-app");
-    workspace.layout_crate(
-        "crates/foundation/deterministic_random",
-        0,
-        "any",
-        &[Dependency {
-            package: "api",
-            table: "dev-dependencies",
-        }],
-    );
-    let found = findings(&workspace);
-    assert_eq!(found.len(), 1, "{found:#?}");
-    assert!(
-        found[0].starts_with("rule 7: crates/foundation/deterministic_random/Cargo.toml")
-            && found[0]
-                .ends_with("dev-dependency on apps/api — dev-dependencies never point at apps/"),
-        "{found:#?}"
-    );
-}
-
-/// The judged set is closed: a member outside it that is neither an app under `apps/` nor one of
-/// the tool binaries is a rule 2 finding, while the apps and the two tool binaries are a note.
-#[test]
-fn crate_tiers_a_member_outside_the_judged_set_is_rule_2_unless_an_app_or_a_tool_binary() {
+fn crate_tiers_a_member_outside_the_judged_set_is_rule_2_unless_a_tool_binary() {
     let mut workspace = green_workspace("tiers-unjudged-member");
     workspace.member("tools/xtask", &application_manifest("xtask", ""));
     workspace.member(
         "tools/developer_tools",
         &application_manifest("developer_tools", ""),
     );
-    let report = check_crate_tiers(workspace.root(), SWEEP);
+    let report = check_crate_tiers(workspace.root(), CONFIGURATION);
     assert_eq!(report.exit_code, 0, "{}", report.lines.join("\n"));
     assert!(
         report.lines.iter().any(|l| l
-            == "note: 3 member(s) outside the judged set, each an app or a tool binary: apps/api, \
+            == "note: 2 member(s) outside the judged set, each a tool binary: \
                 tools/developer_tools, tools/xtask"),
         "{}",
         report.lines.join("\n")
     );
     for (path, name) in [
+        ("apps/server", "server"),
         ("tools/report_writer", "report_writer"),
         ("parked/map_viewer", "map_viewer"),
         ("crates/map_viewer", "map_viewer_root"),
@@ -555,7 +533,7 @@ fn crate_tiers_a_member_outside_the_judged_set_is_rule_2_unless_an_app_or_a_tool
 fn crate_tiers_a_missing_member_folder_did_not_run() {
     let workspace = green_workspace("tiers-missing");
     std::fs::remove_dir_all(workspace.root().join("crates/mission/mission_model")).unwrap();
-    let report = check_crate_tiers(workspace.root(), SWEEP);
+    let report = check_crate_tiers(workspace.root(), CONFIGURATION);
     assert_eq!(report.exit_code, 2);
     assert_eq!(
         report.lines.last().map(String::as_str),
@@ -565,7 +543,7 @@ fn crate_tiers_a_missing_member_folder_did_not_run() {
 
 #[test]
 fn crate_tiers_this_checkout_passes() {
-    let report = check_crate_tiers(&this_repository(), SWEEP);
+    let report = check_crate_tiers(&this_repository(), THIS_REPOSITORY);
     assert_eq!(report.exit_code, 0, "{}", report.lines.join("\n"));
 }
 

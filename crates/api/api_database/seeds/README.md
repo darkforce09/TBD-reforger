@@ -74,7 +74,7 @@ the secondary server, a deployment in flight with its queued command and a live 
 revoke. The fixtures' writes follow the reads and run in index order; its event access writes each
 name the access revision the write before them left. Where a write answers an id, a secret or a
 time the server generates per request, its fixture holds the placeholder the normalisation table
-of `apps/api/tests/contract_parity_support/normalised_fields.rs` names, never a live
+of `crates/api/api_server/tests/contract_parity_support/normalised_fields.rs` names, never a live
 value.
 `mock_data.sql` is applied by hand with `psql`; nothing runs it.
 
@@ -82,7 +82,7 @@ value.
 
 - Encoding: UTF-8 Postgres SQL, one topic per file, named in snake_case after what it fills;
   `faction_library.blufor.json` is UTF-8 JSON. The `--` comments of the SQL files follow the
-  crate's prose rules, which `apps/api/src/tests/prose_rules.rs` checks.
+  crate's prose rules, which `crates/api/api_server/src/tests/prose_rules.rs` checks.
 - Schema: the tables the migrations in `crates/api/api_database/migrations/` create. The OPFOR
   document of `faction_library.sql` is the faction library sample,
   `contracts/fixtures/registry/faction-library.sample.json`, and the BLUFOR one holds the same
@@ -102,7 +102,7 @@ value.
   - `cargo xtask verify wiki-seeds` and `cargo xtask verify faction-library-seeds`
     (`tools/commands/database_operations/src/database_checks/`), which check that `SEEDS` lists the wiki and
     faction seeds and that the files hold the `field-manual` page and the `US Army 1980s` faction;
-  - `apps/api/tests/leaderboards_paging.rs`, which embeds `content_golden.sql`,
+  - `crates/api/api_server/tests/leaderboards_paging.rs`, which embeds `content_golden.sql`,
     applies it to its own scratch database and adds thirty tied players on top;
   - `crates/api/api_community_content/src/services/wiki_markup/tests/wiki_markup.rs`, which
     reads the `wiki-formatting-guide` body out of `wiki_pages.sql` and checks it saves with no

@@ -48,7 +48,7 @@ plan file is missing, and defaults an unset `plan` to the id-derived path.
   `tools/tickets/ticket_model/src/repository.rs`; the existence and plan ready-gate checks in
   `tools/tickets/ticket_registry/src/validation/`; `mark_ready` in
   `tools/tickets/ticket_registry/src/ops/readiness.rs`.
-- [Ticketboard](/apps/ticketboard/) — shows each ticket's `spec` and `plan` in its detail panel
+- [Ticketboard](/tools/tickets/ticketboard_desktop/) — shows each ticket's `spec` and `plan` in its detail panel
   and opens a Markdown one in the in-app document viewer.
 - [Ticket commands](/tools/xtask/src/commands/ticket/) — `ticket mark-ready`, `ticket check`,
   `ticket brief` (prints the spec and plan to read) and `ticket prompt` (reads a spec's
@@ -77,5 +77,5 @@ plan file is missing, and defaults an unset `plan` to the id-derived path.
 - [Documentation standards](/documentation/standards/documentation_standards.md) — the
   document lifecycle and status lines.
 - [Ticket registry](/.ai/tickets/README.md) — the ticket files that cite these documents.
-- [Ticketboard viewer](/documentation/apps/ticketboard/ticketboard_viewer.md) — the board's
+- [Ticketboard viewer](/documentation/tools/tickets/ticketboard_desktop/ticketboard_viewer.md) — the board's
   behaviour, including the Mark ready form that sets a ticket's spec.

@@ -10,8 +10,8 @@
 //! **Role:** the subcommand table and the guards every subcommand passes before it runs.
 //!
 //! **Position:** run on the staging host from the checkout root; reads the API env file
-//! (`apps/api/.env` unless `--api-env-file` names another), connects to the database its
-//! `DATABASE_URL` names, and hands a [`GuardedContext`] to the parsed subcommand.
+//! (`crates/api/api_server/.env` unless `--api-env-file` names another), connects to the database
+//! its `DATABASE_URL` names, and hands a [`GuardedContext`] to the parsed subcommand.
 //!
 //! **Signals & state:** none of its own; the context owns the pool for the run.
 //!
@@ -44,7 +44,8 @@ use crate::reserved_accounts::count_reserved_accounts;
 use crate::tool_failure::ToolFailure;
 
 /// The API env file of a checkout, relative to its root: the file the API unit loads.
-const DEFAULT_API_ENV_FILE: &str = "apps/api/.env";
+const DEFAULT_API_ENV_FILE: &str =
+    repository_layout::workspace_folders::API_SERVER_ENVIRONMENT_FILE;
 
 /// One row of the subcommand table.
 struct SubcommandEntry {
@@ -257,12 +258,12 @@ async fn guarded_context(common: CommonOptions) -> Result<GuardedContext, ToolFa
 }
 
 fn usage() -> String {
-    let mut text = String::from(
+    let mut text = format!(
         "usage: staging-fixtures <subcommand> [flags] --confirm-database <name> [--apply] \
          [--api-env-file <path>]\n\n\
          Every subcommand is a dry run unless --apply is given. --confirm-database must equal the \
          current_database() of the DATABASE_URL in the API env file (default \
-         apps/api/.env). Exit codes: 0 done, 1 failed with its writes undone, 2 \
+         {DEFAULT_API_ENV_FILE}). Exit codes: 0 done, 1 failed with its writes undone, 2 \
          refused with nothing written.\n\nsubcommands:\n",
     );
     for entry in SUBCOMMANDS {

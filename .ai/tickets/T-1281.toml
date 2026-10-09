@@ -1,0 +1,13 @@
+id = "T-1281"
+kind = "work"
+title = "Move the Rust apps into the crate layout"
+summary = "The five Rust apps become tiered crates under descriptive names: api_server, frontend_application, offline_service_worker, game_server_host_agent, ticketboard_desktop; apps/ keeps only the Enfusion mod."
+class = "chore"
+status = "idea"
+plan = "documentation/tickets/plans/t-1281_plan.md"
+notes = "Restructure stage S13, run from the detached worktree tbd-restructure-s13. The plan holds the names, decisions, waves, findings F-S13-NN, the deny-list retirement table and the numbered operator steps (host-agent rename migration, server .env move, first deploy)."
+created_at = "2026-10-09T11:42:02Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

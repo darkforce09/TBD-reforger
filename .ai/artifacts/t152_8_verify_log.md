@@ -27,8 +27,8 @@ cargo test -p map-engine-core importance_declutter --all-features  → 4/4 PASS
 cargo test -p map-engine-core world::locations --all-features      → 1/1 PASS
 cargo test -p map-engine-render                                    → 31/31 PASS
 make wasm                                                          → map_engine_wasm_bg.wasm 4,271,763 B
-cd apps/frontend && npm test                               → 355/355 PASS
-cd apps/frontend && npm run build && npm run lint          → OK
+cd crates/frontend/shell/frontend_application && npm test                               → 355/355 PASS
+cd crates/frontend/shell/frontend_application && npm run build && npm run lint          → OK
 node scripts/map-assets/verify-town-labels.mjs --terrain everon --zoom -2 → OK
 ```
 

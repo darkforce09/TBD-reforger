@@ -60,13 +60,13 @@ crates/api/api_community_content/src/handlers/vehicle_database/
 - Rules: reads take `AuthUser` and writes `AdminUser`; every handler carries its `/// @route` tag
   (`cargo xtask verify route-tags`); every statement on `vehicle_databases` lives in
   `vehicle_rows.rs`, and every select list `COALESCE`s the optional columns
-  (`apps/api/tests/null_tolerance_select_scan.rs`); the wire shapes are
+  (`crates/api/api_server/tests/null_tolerance_select_scan.rs`); the wire shapes are
   `contracts/definitions/vehicle-database.schema.json`.
 
 ## Related documentation
 
-- [Administration and community content design](/documentation/apps/api/verification_evidence/administration_and_content.md)
+- [Administration and community content design](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md)
   — the vehicle semantics these handlers implement.
 - [Vehicle database page](/documentation/crates/frontend/pages/doctrine_pages/vehicles/vehicle_database_page.md)
   — the page that reads and writes these routes.
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.

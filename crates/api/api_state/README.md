@@ -16,7 +16,7 @@ crates/api/api_state/
 
 ## How it works
 
-The API's composition root (`api::composition::application_state`) builds the concrete services
+The API's composition root (`api_server::composition::application_state`) builds the concrete services
 and passes them to `AppState::new`: the database session authority of `api_caller_identity` as an
 `Arc<dyn SessionAuthority>`, the Discord OAuth2 client and announcement webhook of `api_discord`,
 and the `EquipmentDatasets` of `api_equipment_datasets`. The state builds the token manager, the
@@ -50,7 +50,7 @@ No feature and no variable of its own; the state carries the `Config` the API lo
 
 - Depends on: `api_http_layer`, `api_configuration`, `api_discord`, `api_equipment_datasets`,
   axum and sqlx.
-- Used by: the API application (`apps/api`): its composition root, router, domains, background
+- Used by: the API application (`crates/api/api_server`): its composition root, router, domains, background
   workers and integration suites.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md); the state names no domain
   and holds the session authority only as the `api_http_layer` trait object.

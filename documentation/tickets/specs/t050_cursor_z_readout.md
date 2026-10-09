@@ -122,7 +122,7 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](/documentation/standards/commit_checklist
 | [`feature_inventory.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md) | `MAP-CURSOR-001` — X/Y/Z, Outputs fix, acceptance |
 | [`agent_execution.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md) | Decisions log — CUR readout X/Y/Z |
 | [`ROADMAP.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md) | DONE T-050; T-050 shipped note; shipped-list cursor X/Y/Z |
-| [`docs/website/frontend/ROADMAP.md`](/documentation/apps/frontend/README.md) | Recently shipped T-050 |
+| [`docs/website/frontend/ROADMAP.md`](/documentation/crates/frontend/shell/frontend_application/README.md) | Recently shipped T-050 |
 | [`eden/ui_anatomy.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/ui_anatomy.md) | Status Bar X/Y/Z mapping row |
 | [`t049_terrain_title_position.md`](t049_terrain_title_position.md) | Amendment: renumber Future T-050 title PATCH → **T-051**; mark "cursor Z stays `—`" superseded |
 

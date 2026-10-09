@@ -23,7 +23,7 @@ exits 2. The three targets that compute rather than build (`print-cargo-target-d
 `tools/commands/ci_task_catalog/src/cargo_target_pin.rs` and `tools/commands/ci_task_catalog/src/cargo_target_verification.rs`; `rust-ci` runs its composite; every other
 target gets its step list from a function in `shell_word.rs`. `rust-build`, `rust-test` and
 `rust-clippy` derive theirs from the workspace through
-`tools/commands/ci_task_catalog/src/api_package_lane.rs`: one cargo line naming `api` and every
+`tools/commands/ci_task_catalog/src/api_package_lane.rs`: one cargo line naming `api_server` and every
 `crates/api` package with `-p`, run from the repository root. `recipe_lines` returns the lines a
 recipe target runs, as `--dry-run` prints them, which the recipe tests scan.
 

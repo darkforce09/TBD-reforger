@@ -23,8 +23,8 @@ crates/api/api_database/src/
 `TBD_DB_POOL_IDLE_TIMEOUT_SECS` (300), `TBD_DB_POOL_MAX_LIFETIME_SECS` (1800) and
 `TBD_DB_POOL_ACQUIRE_TIMEOUT_SECS` (30), where unset or blank means the default and any other
 value must be a whole number. A value that is not one fails before any connection is tried, as a
-`sqlx::Error::Configuration` wrapping the `ConfigError` that names the variable, so the `api` and
-`import-registry` binaries and the integration suites all stop on it. `connect` then tries the
+`sqlx::Error::Configuration` wrapping the `ConfigError` that names the variable, so the `api-server` and
+`import-item-registry` binaries and the integration suites all stop on it. `connect` then tries the
 database up to 10 times, waiting 250 ms longer after each failure, because Postgres can refuse
 connections just after it reports ready.
 
@@ -44,12 +44,12 @@ any other `sqlx::Error` becomes the 500 of `api_foundation::error_handling`.
   `api_configuration::configuration::ConfigError`; the migration files in
   `crates/api/api_database/migrations/`, embedded at compile time.
 - Used by:
-  - `apps/api/src/bin/api.rs` and `apps/api/src/bin/import_registry.rs`,
+  - `crates/api/api_server/src/bin/api_server.rs` and `crates/api/api_server/src/bin/import_item_registry.rs`,
     which `connect` and then `migrate`;
   - `postgres_errors`, in the match ingest parsing of `api_match_telemetry`, the version save of
     `api_missions` and the attachment of a [mission](/documentation/glossary/g_to_m.md#mission) to an
     [event](/documentation/glossary/a_to_f.md#event) in `api_operations`;
-  - the integration suites under `apps/api/tests/`, which `connect`, `migrate` and
+  - the integration suites under `crates/api/api_server/tests/`, which `connect`, `migrate` and
     `connect_lazy`.
 - Rules: the pool settings are read here alone and never through `Config`; a malformed pool
   setting stops startup instead of falling back (`connect_refuses_a_non_numeric_pool_var_naming_it`

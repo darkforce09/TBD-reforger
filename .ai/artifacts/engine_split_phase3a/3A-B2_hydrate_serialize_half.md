@@ -1,6 +1,6 @@
 # 3A-B2 — `state/hydrate.rs`: the decidable half crosses into `editing/persist/`
 
-Agent 3 of 8. Your scope is `apps/frontend/src/editor/state/hydrate.rs` (1,159 LOC) and
+Agent 3 of 8. Your scope is `crates/frontend/shell/frontend_application/src/editor/state/hydrate.rs` (1,159 LOC) and
 nothing else. `state/persist.rs` was split by `3A-B1` — **do not revisit it.**
 
 ## You are inheriting a settled module

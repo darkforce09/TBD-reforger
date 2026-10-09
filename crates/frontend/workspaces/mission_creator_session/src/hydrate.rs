@@ -122,7 +122,6 @@ fn register_mission_backup(mission_id: mission_model::ids::MissionId, doc: &DocH
     undo_restore_fn.forget();
 }
 
-//  /  /  Class-R live in `mission_title_prefer` so they run on native
-// `cargo test -p frontend` (this file is `#![cfg(target_arch = "wasm32")]`).
-//  pins both briefing Option wires into apply_row_meta (: None at both sites
-// stayed green on frontend until this ratchet).
+// The pins on this module's row-metadata wire, both briefing `Option` wires into
+// `apply_row_meta` among them, live in `title_prefer`'s tests so they run on native
+// `cargo test -p mission_creator_session` (this file is `#![cfg(target_arch = "wasm32")]`).

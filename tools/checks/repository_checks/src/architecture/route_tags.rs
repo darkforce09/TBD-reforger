@@ -36,9 +36,9 @@
 //!
 //! The registrations are not in one function. Each domain crate owns a route table at
 //! `crates/api/<crate>/src/routes.rs`, holding exactly one column-0 `pub fn routes`, and
-//! `apps/api/src/router.rs`'s `MERGE_FN` merges all of them under `API_PREFIX`. So the router side
+//! `crates/api/api_server/src/router.rs`'s `MERGE_FN` merges all of them under `API_PREFIX`. So the router side
 //! of this check is the UNION of every discovered table, and `router.rs` is read only for its
-//! shape. The `@route` tags are swept from the API application and every API crate.
+//! shape. The `@route` tags are swept from every API crate, the server's included, each file once.
 //!
 //! ── VACUITY GUARDS (a gate reporting nothing == a gate checking nothing) ────────────────────
 //!
@@ -99,12 +99,15 @@ use verification_core::{Kind, NotRun, Pattern, Verdict, gate, scan};
 
 /// The router assembly. Relative, because the script `cd`s to `$ROOT` and printed relative paths.
 /// Read for its SHAPE only — the registrations live in the domain tables it merges.
-const ROUTER_RS_REL: &str = "apps/api/src/router.rs";
-/// The API application's source tree, swept for `@route` tags.
-const SRC_DIR_REL: &str = "apps/api/src";
-/// The folder of the API crates: every `.rs` file under it is swept for `@route` tags, and the
-/// domain route tables are discovered in it.
+const ROUTER_RS_REL: &str = "crates/api/api_server/src/router.rs";
+/// The folder of the API crates, the server among them: every `.rs` file under it is swept for
+/// `@route` tags, and the domain route tables are discovered in it.
 const API_CRATES_DIR_REL: &str = "crates/api";
+/// The roots the `@route` sweep walks, each file read once: the server's crate sits in
+/// [`API_CRATES_DIR_REL`], so it needs no root of its own, and a root nested in another would read
+/// its files twice and double every tag count (the sweep walks only the outermost roots, and a
+/// test pins that the configured roots never overlap).
+const TAG_SWEEP_ROOTS: &[&str] = &[API_CRATES_DIR_REL];
 /// The nest prefix every `@route` tag is written against. Asserted, never assumed: if `router.rs`
 /// stops nesting the merged tables here, every extracted path is silently wrong.
 const API_PREFIX: &str = "/api/v1";
@@ -189,6 +192,6 @@ mod collate_cmp;
 use collate_cmp::collate_cmp;
 
 #[cfg(test)]
-use route_and_tag_extraction::extract_tags;
+use route_and_tag_extraction::{extract_tags, tag_sweep_files};
 #[cfg(test)]
 use verify_route_tags::run;

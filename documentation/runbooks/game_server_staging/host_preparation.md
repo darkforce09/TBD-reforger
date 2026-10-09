@@ -166,8 +166,10 @@ that network's address with its last byte 0; `ip -4 route` on the host prints bo
     ```
 
     Expected: the deploy plan, with no command sent to the host. The host's
-    `apps/api/.env`, which both deploys' rsync excludes, needs `JWT_SECRET` and
-    `OBSERVABILITY_TOKEN`; the mod authenticates every call with its machine credential.
+    `crates/api/api_server/.env`, which both deploys' rsync excludes, needs `JWT_SECRET` and
+    `OBSERVABILITY_TOKEN`; the mod authenticates every call with its machine credential. Both
+    deploys refuse before their rsync while that file is missing, so a host whose `.env` sits at
+    an older folder of the API moves it there first.
 
 13. On the host, let the deploy account's user services run while nobody is logged in; the game
     servers, the host agents and the relay are user units.
@@ -271,8 +273,14 @@ password, and `cargo xtask deploy staging` writes the rest. Folders are mode 700
         └── rcon-password          generated once on the host by the deploy
 ```
 
-Beside it, the deploy writes each host agent's `~/.config/fleet_host_agent/instance-N/agent.toml`,
-and `--migrate-single-instance` moves the single server's files, its kebab-case
+Beside it, the deploy writes each host agent's
+`~/.config/game_server_host_agent/instance-N/agent.toml` and installs the binary
+`~/.local/bin/game_server_host_agent`. A host whose agents still carry the former name
+`fleet_host_agent` (`~/.config/fleet_host_agent/`, `~/.local/bin/fleet_host_agent`,
+`fleet_host_agent@N.service`) is refused by every deploy until
+`cargo xtask deploy staging --migrate-host-agent-name` has moved them
+([staging deploy](/documentation/runbooks/game_server_staging/staging_deploy.md) step 3);
+`--migrate-single-instance` moves the single server's files, its kebab-case
 `~/.config/fleet-host-agent/` folder and `~/.local/bin/fleet-host-agent` binary included, into
 `~/tbd/retired/single-instance-<UTC time>/`.
 

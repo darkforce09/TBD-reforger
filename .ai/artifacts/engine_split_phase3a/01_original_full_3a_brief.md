@@ -114,7 +114,7 @@ PointerEvent, a leptos signal, or an element ref.
   - any `pub mod editing;` in map-engine/src/lib.rs (add it `#[cfg(feature = "editing")]`,
     matching the style of the other nine gated modules at lib.rs:14-62)
   - the frontend requesting it. Add `editing` to the SHARED dependency block,
-    `apps/frontend/Cargo.toml:32` (currently `features = ["world", "io", "store"]`).
+    `crates/frontend/shell/frontend_application/Cargo.toml:32` (currently `features = ["world", "io", "store"]`).
     Do not move it to the wasm32 block -- `store` is deliberately in the shared block so
     native `cargo test -p frontend` keeps compiling these paths.
 
@@ -130,7 +130,7 @@ counting, and `against_pin` if a pin list is needed).
           57 files (streaming/host, diagnostics/readback, doll/renderer, frame/*, ...) and a
           crate-wide rule 5 can never be green. The program's own acceptance line says
           `rg ... legacy/map_engine/src/editing` -> empty. Hard zero, no allowlist.
-  Rule 6: `apps/frontend/**` may not import `graphics_engine`. Its subject is
+  Rule 6: `crates/frontend/shell/frontend_application/**` may not import `graphics_engine`. Its subject is
           already zero (4 hits exist, all prose in comments/READMEs, zero code imports) -- so
           match on import syntax, not the bare word, or those comments will trip it.
 

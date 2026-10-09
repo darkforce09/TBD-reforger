@@ -37,8 +37,8 @@ acceptance = [
 ]
 created_at = "2026-09-05T03:30:00Z"
 owns = [
-    "apps/frontend/src/editor/panels/top_strip.rs",
-    "apps/frontend/src/editor/panels/attributes_modal.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/top_strip.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/attributes_modal.rs",
 ]
 
 [scope]

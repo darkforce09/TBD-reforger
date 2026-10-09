@@ -154,7 +154,7 @@ impl RecordedSingleServer {
                 &agent(Some(s11 - 20 * SECOND), Some(s11 + 30 * SECOND)),
             )
             .answer(
-                "--unit=fleet_host_agent@1.service",
+                "--unit=game_server_host_agent@1.service",
                 s11,
                 0,
                 &journal(&[(s11 - 10 * SECOND, revoked_line)]),
@@ -280,7 +280,7 @@ impl RecordedSingleServer {
             &starts(s14 - 45 * SECOND),
         )
         .answer(
-            "--unit=fleet_host_agent@5.service",
+            "--unit=game_server_host_agent@5.service",
             s14,
             0,
             &journal(&agent_lines),

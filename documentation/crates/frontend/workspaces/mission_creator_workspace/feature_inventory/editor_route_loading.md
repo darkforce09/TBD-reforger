@@ -9,7 +9,7 @@ bundle, and the progress overlay that covers the map until the
 
 ## Where it lives
 
-- Code: the route in `apps/frontend/src/app_routes.rs` and its flags in
+- Code: the route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and its flags in
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the boot phases in
   `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/boot.rs`
   ([bridge README](/crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/README.md)); the overlay in
@@ -53,7 +53,7 @@ FILE-BOOT-001 is a row added for shipped code.
 
 - `crates/frontend/foundation/frontend_route_table/src/routes.rs` says in its header that the route table drives the
   router's `<Routes>` — the routes are a separate hand-kept list in
-  `apps/frontend/src/app_routes.rs`, and the table feeds the route guard.
+  `crates/frontend/shell/frontend_application/src/app_routes.rs`, and the table feeds the route guard.
 
 ## Data
 

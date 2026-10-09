@@ -19,8 +19,8 @@ tickets = ["T-146", "T-090.4"]
 future_wave_key = 7
 
 [owns]
-"T-915.2" = ["apps/ticketboard"]
-T-146 = ["apps/frontend/src/asset_browser.rs"]
+"T-915.2" = ["tools/tickets/ticketboard_desktop"]
+T-146 = ["crates/frontend/shell/frontend_application/src/asset_browser.rs"]
 
 [depends_on]
 "T-915.2" = ["T-915.1"]
@@ -38,7 +38,10 @@ fn parse_fixture_including_wave_base_and_pack_last() {
     assert_eq!(lock.waves[0].tickets, vec!["T-001", "T-002"]);
     assert_eq!(lock.waves[1].n, 133);
     assert_eq!(lock.waves[1].tickets, vec!["T-146", "T-090.4"]);
-    assert_eq!(lock.owns["T-915.2"], vec!["apps/ticketboard".to_string()]);
+    assert_eq!(
+        lock.owns["T-915.2"],
+        vec!["tools/tickets/ticketboard_desktop".to_string()]
+    );
     assert_eq!(lock.depends_on["T-915.2"], vec!["T-915.1".to_string()]);
 }
 
@@ -95,15 +98,18 @@ fn missing_required_field_refuses() {
 fn collides_mirror_cases() {
     let one = |s: &str| vec![s.to_string()];
     // Equal paths collide.
-    assert!(collides(&one("apps/ticketboard"), &one("apps/ticketboard")));
+    assert!(collides(
+        &one("tools/tickets/ticketboard_desktop"),
+        &one("tools/tickets/ticketboard_desktop")
+    ));
     // Directory prefix with a '/' boundary collides, both directions.
     assert!(collides(
-        &one("apps/ticketboard"),
-        &one("apps/ticketboard/src")
+        &one("tools/tickets/ticketboard_desktop"),
+        &one("tools/tickets/ticketboard_desktop/src")
     ));
     assert!(collides(
-        &one("apps/ticketboard/src"),
-        &one("apps/ticketboard")
+        &one("tools/tickets/ticketboard_desktop/src"),
+        &one("tools/tickets/ticketboard_desktop")
     ));
     // Non-boundary prefix does NOT collide: "a/bc" vs "a/b".
     assert!(!collides(&one("a/bc"), &one("a/b")));
@@ -133,7 +139,7 @@ fn colliding_pairs_lists_every_pair() {
     assert!(colliding_pairs(&a, &[]).is_empty());
 }
 
-/// Manual smoke against the LIVE repo lock (`cargo test -p ticketboard -- --ignored`):
+/// Manual smoke against the LIVE repo lock (`cargo test -p ticketboard_model -- --ignored`):
 /// proves the mirror struct reads the committed wave.lock verbatim, so the Waves
 /// tab's first render cannot hit a surprise refusal. Ignored by default — the
 /// normal test run stays hermetic (scratch dirs only).

@@ -1,7 +1,7 @@
 # Accepted equipment data viewer pages
 
 One page per equipment data viewer schema, exactly as the development-only debug routes answer it
-for the export committed under `apps/api/tests/fixtures/equipment_data_viewer/`.
+for the export committed under `crates/api/api_server/tests/fixtures/equipment_data_viewer/`.
 
 ## Contents
 
@@ -21,7 +21,7 @@ contracts/fixtures/equipment-data-viewer/positive/
 | `resources.json` | `resources` | `dataset=diagnostic` |
 | `source-inspection.json` | `properties` | `dataset=diagnostic`, one resource and component node |
 
-`apps/api/tests/contract_parity_equipment_viewer.rs` holds the exact queries and
+`crates/api/api_server/tests/contract_parity_equipment_viewer.rs` holds the exact queries and
 requires each live answer to equal its page as a JSON value, with nothing normalised.
 
 ## Format

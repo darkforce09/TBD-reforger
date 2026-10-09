@@ -46,7 +46,7 @@ in `map-engine-core` (`--features doc,mission`) — not in the frontend suite co
 
 ## FINDINGS (Evidence → Impact → Disposition; NO-DEFERRAL)
 
-### F1 — MAJOR | `apps/frontend/src/eden_settings.rs` (`set_presentation` Ok/Briefing arm) — **T-766 blank clear is unreachable under a non-blank call-site gate (hollow wire)**
+### F1 — MAJOR | `crates/frontend/shell/frontend_application/src/eden_settings.rs` (`set_presentation` Ok/Briefing arm) — **T-766 blank clear is unreachable under a non-blank call-site gate (hollow wire)**
 
 **Evidence.**  
 (a) Live code calls `mirror_briefing_into_document(&next)` unconditionally on PATCH-Ok Briefing

@@ -35,7 +35,7 @@ nothing lies about what the code does; this is a scope-accounting defect, not a 
 disclosed and I judge it acceptable (the mechanisms delivered are the ones a future map glyph would
 call — `move_comment` is the same mutator).
 
-### MINOR | apps/frontend/src/eden_top_strip.rs:1166, :2374, :2389-2390 | T-633's settle-only rationale is false and a test comment overclaims
+### MINOR | crates/frontend/shell/frontend_application/src/eden_top_strip.rs:1166, :2374, :2389-2390 | T-633's settle-only rationale is false and a test comment overclaims
 
 **Evidence.** The commit and in-code comments justify `on:change`-only by saying the HH:MM readout
 gives live feedback during the drag. It does not: the readout reads the `env` memo, which recomputes
@@ -47,7 +47,7 @@ absence (pre-existing unrelated `on:input` handlers live at :1355/:1367).
 the written justification and one test comment misstate the mechanism, which will mislead the next
 editor of this file. **Disposition.** Documented, not fixed.
 
-### MINOR | apps/frontend/src/mission_editor.rs:1791-1794 + eden_dock_right.rs:873-881 | Favourites tab dead-ends in "Resolving…" forever on registry fetch failure
+### MINOR | crates/frontend/shell/frontend_application/src/mission_editor.rs:1791-1794 + eden_dock_right.rs:873-881 | Favourites tab dead-ends in "Resolving…" forever on registry fetch failure
 
 **Evidence.** On registry fetch failure only `catalog`/`vehicle_catalog` are set to `Failed`;
 `registry_items` stays `None`, and the favourites panel's `None` arm renders "Resolving {n}
@@ -56,12 +56,12 @@ marked stale on a failure — the important half of claim 12 holds) but the pane
 loading state on a failed fetch. The failure-path omission on `registry_items` predates T-695; the
 perpetual spinner surface is new. **Disposition.** Documented, not fixed.
 
-### NIT | apps/frontend/src/ui.rs Select | Disabled select's chevron does not dim
+### NIT | crates/frontend/shell/frontend_application/src/ui.rs Select | Disabled select's chevron does not dim
 
 Sibling span, `disabled:` variants fire on the element only, no `peer-disabled` — a disabled Select
 dims to 30% while its chevron stays full-opacity. No current caller passes `disabled`. Cosmetic.
 
-### NIT | apps/frontend/src/eden_dock_right.rs:745-751 | T-215 pin distinctness is prose-enforced
+### NIT | crates/frontend/shell/frontend_application/src/eden_dock_right.rs:745-751 | T-215 pin distinctness is prose-enforced
 
 `arm_favourite_place` avoids the pin's needle only because it MOVES the payload
 (`begin_place_vehicle(payload)`, no `.clone()`). Nothing asserts it stays clone-free; a future

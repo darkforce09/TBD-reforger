@@ -127,7 +127,7 @@ lists each call with the fields it reads or sends. Server-side, the handlers are
   request.
 
 The save rules, the revision storage and the markup service are set out in
-[Administration and community content](/documentation/apps/api/verification_evidence/administration_and_content.md#wiki-markup-and-revisions).
+[Administration and community content](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md#wiki-markup-and-revisions).
 
 ## Design
 

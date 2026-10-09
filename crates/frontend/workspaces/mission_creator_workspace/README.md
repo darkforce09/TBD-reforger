@@ -53,7 +53,7 @@ None.
 - Depends on: `mission_creator_state`, `mission_creator_engine_bridge`, `mission_creator_session`,
   `mission_creator_arsenal`, `mission_review_record`, the foundation crates, the mission and
   editing crates, and the map crates in the browser build.
-- Used by: the app (`apps/frontend/src/app_routes.rs`).
+- Used by: the app (`crates/frontend/shell/frontend_application/src/app_routes.rs`).
 - Rules: the top of the Mission Creator crate order; no lower crate depends on it
   (`cargo xtask ci verify-workspace-laws`).
 

@@ -302,10 +302,10 @@ fn cmd_lines_are_shell_free() {
     }
     // …and the `cd <dir> && <cmd>` split is the only shell idiom that IS honoured.
     assert_eq!(
-        split_cmd("cd apps/api && cargo build --release --bin api"),
+        split_cmd("cd crates/api/api_server && cargo build --release --bin api-server"),
         (
-            Some("apps/api"),
-            vec!["cargo", "build", "--release", "--bin", "api"]
+            Some("crates/api/api_server"),
+            vec!["cargo", "build", "--release", "--bin", "api-server"]
         )
     );
     assert_eq!(

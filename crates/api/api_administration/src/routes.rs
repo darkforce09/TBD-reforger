@@ -1,6 +1,6 @@
 //! The `/api/v1` route table for administration.
 //!
-//! Paths are written relative to the `/api/v1` nest applied by the API's router (`api::router`). Every
+//! Paths are written relative to the `/api/v1` nest applied by the API's router (`api_server::router`). Every
 //! route here is `AdminUser`, enforced per-handler by the extractor each takes, so the tier travels
 //! with the handler rather than with the registration. These paths sit under `/admin/*` because
 //! they name resources only an admin may READ at all.

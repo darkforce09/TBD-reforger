@@ -10,7 +10,7 @@ scratch crate (outside the repo) against the checker code extracted verbatim fro
 
 ## Findings
 
-### MAJOR | apps/frontend/src/arsenal_rules.rs:1299-1310, 1257, 1222-1226, 2259-2262 | T-686's "fail closed" claim is false in three forms, and the keyword-pin's schema walk is blind to two of them
+### MAJOR | crates/frontend/shell/frontend_application/src/arsenal_rules.rs:1299-1310, 1257, 1222-1226, 2259-2262 | T-686's "fail closed" claim is false in three forms, and the keyword-pin's schema walk is blind to two of them
 
 **Evidence.** I extracted the checker (lines 999-1505, unmodified except the schema became a
 parameter) into a scratch crate and ran four tests; all passed:
@@ -51,7 +51,7 @@ instead of discarding them; (b) treat non-boolean `additionalProperties` and non
 as refusals; (c) the pin walk's `is_schema` heuristic should treat any object reachable in a
 schema position as a schema node, not keyword-sniff.
 
-### MINOR | apps/frontend/src/arsenal.rs:4732 | the strengthened one-commit pin still only catches the literal loop spellings
+### MINOR | crates/frontend/shell/frontend_application/src/arsenal.rs:4732 | the strengthened one-commit pin still only catches the literal loop spellings
 
 **Evidence.** `the_import_applies_in_one_commit` asserts `persist(` count == 1 plus a blacklist
 `["for ", "while ", "for_each", ".iter()"]`. A multi-commit apply written as
@@ -65,7 +65,7 @@ defeats the shape it was strengthened against, not the class.
 **Disposition.** Documented. (Same class as the next finding — the factory's loop-blindness in
 count-based pins is now a pattern across two slices.)
 
-### MINOR | apps/frontend/src/mission_editor.rs:8007-8011 | T-649's one-tail pin cannot tell "one tail after the loop" from "one tail inside it"
+### MINOR | crates/frontend/shell/frontend_application/src/mission_editor.rs:8007-8011 | T-649's one-tail pin cannot tell "one tail after the loop" from "one tail inside it"
 
 **Evidence.** `multi_edit_commits_fan_out_to_every_selected_id` asserts
 `src.matches("after_local_edit()").count() == 1` over each `_multi` fn. An implementation that
@@ -76,7 +76,7 @@ passes, while firing N persist/rebind tails.
 one-tail behaviour is true; its pin does not actually enforce it.
 **Disposition.** Documented.
 
-### MINOR | apps/frontend/src/arsenal.rs:1031 | import refusals drop the row key — two identical compat messages are indistinguishable
+### MINOR | crates/frontend/shell/frontend_application/src/arsenal.rs:1031 | import refusals drop the row key — two identical compat messages are indistinguishable
 
 **Evidence.** The refusal render maps `refusals.into_iter().map(|e| e.message)` — `RowError.key`
 is discarded. `validate_loadout`'s messages (arsenal_rules.rs:386, :394) name the *dependency*
@@ -90,7 +90,7 @@ not *which slot to fix*. Weakens, does not void, the "refusal tells the author w
 claim. The doc-level (schema) faults are fine — they carry the JSON path in the message.
 **Disposition.** Documented.
 
-### MINOR | apps/frontend/src/eden_help.rs:303-342 | the coverage census only sees the two `match ev.code().as_str()` blocks — and the editor already binds Escape in three places outside them
+### MINOR | crates/frontend/shell/frontend_application/src/eden_help.rs:303-342 | the coverage census only sees the two `match ev.code().as_str()` blocks — and the editor already binds Escape in three places outside them
 
 **Evidence.** `all_bound()` reads exactly `mission_editor.rs` + `mission_history.rs` and, in
 each, only the first `match ev.code().as_str()` arm list. But the editor has at least three
@@ -112,7 +112,7 @@ the Attributes modal, and the asset picker. The one key bound outside the census
 whose help entry is incomplete today.
 **Disposition.** Documented.
 
-### MINOR | apps/frontend/src/eden_help.rs:5 | the shortcut count is 17 on merged main, and T-692's own prose still says sixteen
+### MINOR | crates/frontend/shell/frontend_application/src/eden_help.rs:5 | the shortcut count is 17 on merged main, and T-692's own prose still says sixteen
 
 **Evidence.** Hand-derived from the arm lists: mission_editor.rs:2042-2185 binds 15 codes
 (Escape, KeyC, KeyV, KeyA, KeyD, Space, Delete, Backspace, KeyE, KeyR, KeyG, BracketLeft,
@@ -140,12 +140,12 @@ is stale twice over.
 Yes: other briefs are citing drifted lines; anything derived from gap_analysis ATTR-OPEN-001 is
 now describing inverted behaviour.
 
-### NIT | apps/frontend/src/eden_help.rs:166 | redo chord under-documents Cmd+Y
+### NIT | crates/frontend/shell/frontend_application/src/eden_help.rs:166 | redo chord under-documents Cmd+Y
 
 mission_history's guard is `(ctrl || meta) && !alt` (:490), so **Cmd+Y** redoes on Mac; the row
 says "Ctrl + Y or Ctrl/Cmd + Shift + Z".
 
-### NIT | apps/frontend/src/editor_ops.rs:1826-1842 | mixed slot+vehicle selections make the multi-edit wording slightly overclaim
+### NIT | crates/frontend/shell/frontend_application/src/editor_ops.rs:1826-1842 | mixed slot+vehicle selections make the multi-edit wording slightly overclaim
 
 `attrs_multi_ids` filters the selection to slot ids (`soa.ids`), so with 2 slots + 3 vehicles
 selected the header says "2 entities selected" (5 are) and the banner's "overwrite that field

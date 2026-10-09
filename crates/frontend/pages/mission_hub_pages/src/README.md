@@ -43,7 +43,7 @@ compiled for `wasm32` and for the native test build, where their tests run.
 ## Public surface
 
 - `library::MissionLibraryPage` and `overview::MissionOverviewPage`: the route components
-  `apps/frontend/src/app_routes.rs` mounts, also in `prelude`; each child's README gives its
+  `crates/frontend/shell/frontend_application/src/app_routes.rs` mounts, also in `prelude`; each child's README gives its
   route, tier and layout.
 - `create_dialog::CreateMissionDialog` and `library::dossier_sheet::MissionDossierSheet`: public
   only because the props builder `#[component]` derives has `pub` methods; the library is their
@@ -57,7 +57,7 @@ compiled for `wasm32` and for the native test build, where their tests run.
   (`MissionReviewRecord`, `SubmitForReview`); `mission_payload` for the upload body; it imports
   no workspace and links to the review workspace only by its route; over HTTP, the API's
   `missions` domain (`/api/v1/missions` and its children).
-- Used by: the route table in `apps/frontend/src/app_routes.rs`, whose tiers and layout
+- Used by: the route table in `crates/frontend/shell/frontend_application/src/app_routes.rs`, whose tiers and layout
   flags `crates/frontend/foundation/frontend_route_table/src/routes.rs` declares; the source pins in
   `tests/source_pins.rs`.
 - Rules: the shared dossier body stays read-only and the review record stays outside it

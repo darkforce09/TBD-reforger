@@ -63,7 +63,7 @@ None: no feature, no environment variable. Every target builds the whole crate.
   crate; `renderer_core`; the map rendering crates (`crates/map_rendering/`), whose uploads,
   typed layers and readback checks import it directly; the streaming, overlay, terrain and world
   object crates, whose draw buffers, label packers and mesh composers pack its layouts; and the
-  single-page app's building viewer (`apps/frontend`), which triangulates with it.
+  single-page app's building viewer (`crates/frontend/shell/frontend_application`), which triangulates with it.
 - Rules: graphics tier 0 with no workspace dependency (`cargo xtask verify crate-tiers`); no GPU
   handle and no browser API, so every test runs natively; no name or document names a thing in
   the world being drawn; every byte layout matches `shaders/shader.wgsl`, pinned by tests.

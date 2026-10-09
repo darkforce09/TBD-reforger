@@ -57,7 +57,7 @@ citations = [
     "eden_toolbelt.rs label memo",
 ]
 estimated = ["scope"]
-owns = ["apps/frontend/src/editor/panels/toolbelt.rs"]
+owns = ["crates/frontend/shell/frontend_application/src/editor/panels/toolbelt.rs"]
 
 [scope]
 domain = "website"

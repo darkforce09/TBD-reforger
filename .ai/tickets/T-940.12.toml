@@ -44,7 +44,7 @@ created_at = "2026-09-05T02:33:18Z"
 owns = [
     "apps/website/api/src/handlers/events/events.rs",
     "crates/api/api_operations/src/models/event.rs",
-    "apps/frontend/src/core/dto.rs",
+    "crates/frontend/shell/frontend_application/src/core/dto.rs",
     "apps/website/api/migrations/0027_reservation_tiers.sql",
     "crates/frontend/pages/operations_pages/src/event_hub.rs",
 ]

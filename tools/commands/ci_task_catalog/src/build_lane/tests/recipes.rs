@@ -22,25 +22,25 @@ fn echo_matches_make() {
         |steps: Result<Vec<Step>>| steps.expect("the API recipe derives its packages")[0].echo();
     let build = api(rust_build(&checkout()));
     assert!(
-        build.starts_with("cargo build -p api -p api_") && build.ends_with(" --all-targets"),
+        build.starts_with("cargo build -p api_server -p api_") && build.ends_with(" --all-targets"),
         "{build}"
     );
     assert_eq!(rust_fmt()[1].echo(), "cargo fmt --all --check");
     let clippy = api(rust_clippy(&checkout()));
     assert!(
-        clippy.starts_with("cargo clippy -p api -p api_")
+        clippy.starts_with("cargo clippy -p api_server -p api_")
             && clippy.ends_with(" --all-targets -- -D warnings"),
         "{clippy}"
     );
     let unit_tests = api(rust_test(&checkout()));
     assert!(
-        unit_tests.starts_with("cargo test -p api -p api_")
+        unit_tests.starts_with("cargo test -p api_server -p api_")
             && unit_tests.ends_with(" --lib --bins"),
         "{unit_tests}"
     );
     assert_eq!(
         leptos()[0].echo(),
-        "cd apps/frontend && trunk serve --release"
+        "cd crates/frontend/shell/frontend_application && trunk serve --release"
     );
     let leptos_lines: Vec<String> = ci_local_leptos(&checkout())
         .expect("the frontend lane derives its packages")
@@ -48,27 +48,30 @@ fn echo_matches_make() {
         .map(Step::echo)
         .collect();
     assert!(
-        leptos_lines[0].starts_with("cargo fmt -p frontend")
+        leptos_lines[0].starts_with("cargo fmt -p frontend_application ")
             && leptos_lines[0].ends_with(" --check"),
         "{leptos_lines:?}"
     );
     assert!(
-        leptos_lines[1].starts_with("cargo clippy -p frontend")
+        leptos_lines[1].starts_with("cargo clippy -p frontend_application ")
             && leptos_lines[1]
                 .ends_with(" --target wasm32-unknown-unknown --all-targets -- -D warnings"),
         "{leptos_lines:?}"
     );
     assert!(
-        leptos_lines[2].starts_with("cargo clippy -p frontend")
+        leptos_lines[2].starts_with("cargo clippy -p frontend_application ")
             && leptos_lines[2].ends_with(" --all-targets --locked -- -D warnings"),
         "{leptos_lines:?}"
     );
     assert!(
-        leptos_lines[3].starts_with("cargo test -p frontend"),
+        leptos_lines[3].starts_with("cargo test -p frontend_application "),
         "{leptos_lines:?}"
     );
-    assert_eq!(leptos_lines[4], "cd apps/frontend && trunk build --release");
-    let wasm32_lint = wasm_ci_steps()[2].echo();
+    assert_eq!(
+        leptos_lines[4],
+        "cd crates/frontend/shell/frontend_application && trunk build --release"
+    );
+    let wasm32_lint = wasm_ci_steps()[0].echo();
     assert!(
         wasm32_lint.starts_with("cargo clippy -p ")
             && wasm32_lint.ends_with(" --target wasm32-unknown-unknown -- -D warnings"),
@@ -89,44 +92,58 @@ fn echo_matches_make() {
     assert_eq!(
         rust_api()[0].echo(),
         format!(
-            "cd apps/api && CARGO_TARGET_DIR={}/target/dev-api cargo run --bin api",
+            "cd crates/api/api_server && CARGO_TARGET_DIR={}/target/dev-api cargo run --bin api-server",
             cwd_root().display()
         )
     );
 }
 
-/// The offline service worker crate is formatted, linted (host and wasm32) and tested by
-/// `wasm-ci`: a browser crate the lane does not name is never gated.
+/// The offline service worker is gated in exactly one lane: every cargo line of
+/// `ci-local-leptos` (format, wasm32 and native clippy, tests) names it, and no `wasm-ci` line, no
+/// other task-table command line and no dedicated or workspace-member test step does.
 #[test]
-fn wasm_ci_gates_the_offline_service_worker_in_every_step() {
-    let lines: Vec<String> = wasm_ci_steps().iter().map(|s| s.echo()).collect();
-    for prefix in [
-        "cargo fmt --check",
-        "cargo clippy",
-        "cargo test -p offline_service_worker",
-    ] {
-        assert!(
-            lines
-                .iter()
-                .any(|l| l.starts_with(prefix) && l.contains("-p offline_service_worker")),
-            "no `{prefix}` step names offline_service_worker: {lines:?}"
-        );
-    }
-    let clippy: Vec<&String> = lines
+fn the_offline_service_worker_is_gated_by_the_frontend_lane_alone() {
+    use crate::task_runner::{Step as CiStep, TASKS};
+    use crate::workspace_member_tests::{DEDICATED_TEST_TASKS, workspace_member_lane_packages};
+    const WORKER: &str = "offline_service_worker";
+    let names_worker = |line: &str| format!("{line} ").contains(&format!("-p {WORKER} "));
+    let leptos_lines: Vec<String> = ci_local_leptos(&checkout())
+        .expect("the frontend lane derives its packages")
         .iter()
-        .filter(|l| l.starts_with("cargo clippy"))
+        .map(Step::echo)
         .collect();
-    assert_eq!(clippy.len(), 2, "{lines:?}");
+    let cargo_lines: Vec<&String> = leptos_lines
+        .iter()
+        .filter(|line| line.starts_with("cargo "))
+        .collect();
+    assert_eq!(cargo_lines.len(), 4, "{leptos_lines:?}");
+    for line in &cargo_lines {
+        assert!(names_worker(line), "`{line}` does not gate {WORKER}");
+    }
+    for line in wasm_ci_steps().iter().map(Step::echo) {
+        assert!(!names_worker(&line), "wasm-ci gates {WORKER} too: {line}");
+    }
+    for task in TASKS {
+        for step in task.steps {
+            if let CiStep::Cmd { line, .. } = step {
+                assert!(
+                    !line.contains(WORKER),
+                    "the `{}` row names {WORKER}: {line}",
+                    task.name
+                );
+            }
+        }
+    }
     assert!(
-        clippy
+        DEDICATED_TEST_TASKS
             .iter()
-            .all(|l| l.contains("-p offline_service_worker")),
-        "{clippy:?}"
+            .all(|(package, _)| *package != WORKER),
+        "{DEDICATED_TEST_TASKS:?}"
     );
+    let member_lane = workspace_member_lane_packages(&checkout()).expect("the member lane derives");
     assert!(
-        clippy
-            .iter()
-            .any(|l| l.contains("--target wasm32-unknown-unknown"))
+        !member_lane.iter().any(|package| package == WORKER),
+        "{member_lane:?}"
     );
 }
 
@@ -135,7 +152,7 @@ fn wasm_ci_gates_the_offline_service_worker_in_every_step() {
 #[test]
 fn wasm_ci_lints_every_derived_wasm32_package() {
     let packages = wasm_ci_lint_packages(&checkout()).expect("the lint packages derive");
-    let wasm32_lint = wasm_ci_steps()[2].echo();
+    let wasm32_lint = wasm_ci_steps()[0].echo();
     let named: Vec<&str> = wasm32_lint
         .split(' ')
         .collect::<Vec<_>>()
@@ -266,7 +283,7 @@ fn mortar_offline_gate_builds_then_runs_the_offline_gate() {
     assert_eq!(
         lines,
         vec![
-            "cd apps/frontend && trunk build --release".to_string(),
+            "cd crates/frontend/shell/frontend_application && trunk build --release".to_string(),
             "cargo run -q -p developer_tools --bin gate -- mortar-offline".to_string(),
         ]
     );
@@ -283,7 +300,7 @@ fn ballistics_wasm_agreement_builds_then_runs_the_agreement_gate() {
     assert_eq!(
         lines,
         vec![
-            "cd apps/frontend && trunk build --release".to_string(),
+            "cd crates/frontend/shell/frontend_application && trunk build --release".to_string(),
             "cargo run -q -p developer_tools --bin gate -- ballistics-agreement".to_string(),
         ]
     );

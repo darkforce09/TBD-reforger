@@ -3,8 +3,8 @@
 Both files are still wholly in the frontend:
 
 ```
-apps/frontend/src/editor/state/persist.rs    1719
-apps/frontend/src/editor/state/hydrate.rs    1159
+crates/frontend/shell/frontend_application/src/editor/state/persist.rs    1719
+crates/frontend/shell/frontend_application/src/editor/state/hydrate.rs    1159
 ```
 
 ## The cut

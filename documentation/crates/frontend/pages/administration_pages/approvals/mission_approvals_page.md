@@ -28,7 +28,7 @@ into the live library, approve it with conditions, or reject it with a reason.
   workspace ([README](/crates/frontend/workspaces/mission_creator_workspace/src/review_workspace/README.md));
   the [API](/documentation/glossary/a_to_f.md#api)'s
   [missions domain](/crates/api/api_missions/src/README.md); the
-  [mission artifacts evidence](/documentation/apps/api/verification_evidence/mission_artifacts.md).
+  [mission artifacts evidence](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md).
 
 ## Behaviour
 

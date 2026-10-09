@@ -23,7 +23,7 @@ use super::recipe_execution::seed_psql_arguments;
 use super::test_it::reap_select;
 use super::{IT_BASE_DB, IT_MAINT_DB, SEEDS, WEB, seed_file};
 
-/// Every line the lane echoes, rendered with `podman` as the runtime and `apps/api` as the API
+/// Every line the lane echoes, rendered with `podman` as the runtime and `crates/api/api_server` as the API
 /// folder ([`WEB`]). The compose lines come from the [`ComposeLine`] the runner echoes with: they
 /// enter the development compose file's folder and name the file with `-f`.
 ///

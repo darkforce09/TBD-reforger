@@ -23,7 +23,7 @@ use std::process::ExitCode;
 use crate::diagnostics as doctor;
 use crate::dom_oracle as vsuite;
 use crate::editor_smoke_tests;
-use crate::gate_layout::MapAssetMounts;
+use crate::gate_layout::{FRONTEND_APPLICATION_DIST, MapAssetMounts};
 use crate::route_drift as sroutes;
 use crate::server as serve;
 use clap::{Parser, Subcommand};
@@ -54,7 +54,7 @@ enum Cmd {
     VSuite {
         /// verify | accept  (there is no freeze mode: the reference oracle is non-regenerable)
         mode: String,
-        #[arg(long, default_value = "apps/frontend/dist")]
+        #[arg(long, default_value = FRONTEND_APPLICATION_DIST)]
         leptos_dir: PathBuf,
         #[arg(long, default_value = "")]
         only: String,
@@ -139,7 +139,7 @@ enum Cmd {
     /// The mortar calculator offline: pack download, service-worker reload, native solution
     #[command(name = "mortar-offline")]
     MortarOffline {
-        #[arg(long, default_value = "apps/frontend/dist")]
+        #[arg(long, default_value = FRONTEND_APPLICATION_DIST)]
         dist: PathBuf,
         #[arg(long, default_value_t = 5402)]
         port: u16,
@@ -152,7 +152,7 @@ enum Cmd {
     /// The fire-mission solver's wasm build against its native build, case by case
     #[command(name = "ballistics-agreement")]
     BallisticsAgreement {
-        #[arg(long, default_value = "apps/frontend/dist")]
+        #[arg(long, default_value = FRONTEND_APPLICATION_DIST)]
         dist: PathBuf,
         #[arg(long, default_value_t = 1)]
         seed: u64,

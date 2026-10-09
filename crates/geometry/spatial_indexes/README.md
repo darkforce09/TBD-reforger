@@ -60,7 +60,7 @@ scenes `Scene`, `cube` and `concat`) for the tests of other crates and is enable
   `map_editing_tools` and `mission_editing_session` (picking and the line-of-sight tool),
   `symbology_layers_gpu` (the slot cluster lane), `map_asset_loading` (the occluder loader) and
   `chunk_scheduler` (the world object index); the single-page app's
-  Mission Creator input and debug building benches in `apps/frontend/`; and the developer tools,
+  Mission Creator input and debug building benches in `crates/frontend/shell/frontend_application/`; and the developer tools,
   whose BVH emitters in `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/` write the sidecars.
 - Rules: geometry category, tier 1 (`cargo xtask verify crate-tiers`); no map, GPU or browser
   concept; the sidecar format and the triangle tree's build are deterministic, so the committed

@@ -65,12 +65,12 @@ event batch    lock_registered_match ─► conflict probe ─► insert ON CONF
 - Rules: the lock order above is fixed and shared with identity linking, which locks identities
   then accounts and never a match row, so no cycle exists; only a strictly higher revision changes
   facts; an applied revision and its derived statistics commit in one transaction; a retried or
-  overlapping event batch never counts an event twice (`apps/api/tests/`
+  overlapping event batch never counts an event twice (`crates/api/api_server/tests/`
   `telemetry_revisions.rs`, `telemetry_atomicity.rs`, `detailed_events.rs`).
 
 ## Related documentation
 
-- [Match telemetry, fleet status and derived statistics](/documentation/apps/api/verification_evidence/telemetry.md)
+- [Match telemetry, fleet status and derived statistics](/documentation/crates/api/api_server/verification_evidence/telemetry.md)
   — the revision table, the event rules and the lock order these services implement.
-- [Identity transactions](/documentation/apps/api/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
   — the identity and account lock order the results transaction shares.

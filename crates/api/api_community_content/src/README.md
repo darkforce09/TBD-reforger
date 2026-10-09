@@ -29,7 +29,7 @@ to Discord through the `api_discord` crate's `WebhookService` (`api_discord::dis
 maps the announcement into the webhook's own `WebhookAnnouncement`, its tag into the footer
 category and the sidebar colour), and archiving
 it keeps the row. An uploaded image lands in the directory `UPLOAD_DIR` names
-(`Config::upload_dir`), which the API's router (`apps/api/src/router.rs`) serves at
+(`Config::upload_dir`), which the API's router (`crates/api/api_server/src/router.rs`) serves at
 `/uploads`. A modpack is always written
 with its whole mod list, and at most one pack at a time is marked current. The vehicle database
 writes and the wiki save append their audit line in the write's own transaction through
@@ -87,13 +87,13 @@ nesting deeper than 16, and records each accepted save as a numbered revision.
   `api_identifiers`, `contract_schema_types`, `fleet_wire_contract` (the timestamp spellings) and
   `http_url_guard`; it names no other domain.
 - Used by:
-  - the API's router (`apps/api/src/router.rs`), which merges the route table;
+  - the API's router (`crates/api/api_server/src/router.rs`), which merges the route table;
   - `api_command_center`, `api_server_infrastructure` and `api_missions`, through the services and models
     above;
   - over HTTP, the command center, doctrine and content manager pages in the page
     crates under `crates/frontend/pages/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
-  router merges (`apps/api/src/tests/architecture_rules.rs` checks both); a handler
+  router merges (`crates/api/api_server/src/tests/architecture_rules.rs` checks both); a handler
   folder with its own `routes()` holds every registration of its routes, and `routes.rs` only
   merges it; every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); the
   pack-plus-mods query lives only in `services/modpack_lookup.rs`, and `handlers/media_upload/`
@@ -101,8 +101,8 @@ nesting deeper than 16, and records each accepted save as a numbered revision.
 
 ## Related documentation
 
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
-- [API environment variables](/documentation/apps/api/environment_variables.md)
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
+- [API environment variables](/documentation/crates/api/api_server/environment_variables.md)
   — `DISCORD_WEBHOOK_URL` and
   `UPLOAD_DIR`, which the announcement push and the uploads read.
 - [Content manager page](/documentation/crates/frontend/pages/administration_pages/content_manager/content_manager_page.md)

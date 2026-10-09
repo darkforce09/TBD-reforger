@@ -80,7 +80,7 @@ from `PATH`.
   (`tools/commands/platform_execution/src/wave_execution/land/merge_execution.rs`). The xtask test
   `tools/commands/platform_execution/src/tests/slice_execution/tests.rs` replays the fixtures in
   `tests/fixtures/execution_receipts/`. The ticketboard reads both trees with its own copies of
-  the record checks (`apps/ticketboard/src/execution_metrics/`).
+  the record checks (`tools/tickets/ticketboard_desktop/src/execution_metrics/`).
 - Rules: tier 3 of `tools/tickets`, depending on no ticket crate but `ticket_model`
   (`cargo xtask verify crate-tiers`); a receipt total is the four-way sum and a usage block in
   neither recorded dialect fails rather than reading as zero; a ticket never carries both a

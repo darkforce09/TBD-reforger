@@ -10,7 +10,7 @@ read-only review workspace that mounts the same page, and the notices the page s
 ## Where it lives
 
 - Code: the route flags in `crates/frontend/foundation/frontend_route_table/src/routes.rs` and the frame choice in
-  `apps/frontend/src/shell/layout.rs`; the page and its chrome in
+  `crates/frontend/shell/frontend_application/src/shell/layout.rs`; the page and its chrome in
   `crates/frontend/workspaces/mission_creator_workspace/src/mission_editor.rs` (the
   [app README](/crates/frontend/workspaces/mission_creator_workspace/src/README.md)); the chrome dimensions in
   `crates/frontend/workspaces/mission_creator_state/src/layout.rs` and the review mode in
@@ -45,7 +45,7 @@ SHELL-LAYOUT-001, SHELL-MAPDOWN-001 and SHELL-REVIEW-001 are rows added for ship
    `auth: "mission_maker"` (`crates/frontend/foundation/frontend_route_table/src/routes.rs:120-124`).
 2. `classify_frame` gives every chromeless route the chromeless frame, a
    `h-screen w-screen overflow-hidden` container with no platform sidebar or top bar
-   (`apps/frontend/src/shell/layout.rs:62-70`, `:100-104`). Moving between
+   (`crates/frontend/shell/frontend_application/src/shell/layout.rs:62-70`, `:100-104`). Moving between
    the editor and a chromed page swaps the frame; moving between two chromed pages does not.
 3. The page reads `:id` from the route; with no parameter it falls back to `draft`
    (`mission_editor.rs:177-185`).

@@ -91,7 +91,7 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 | F2C-02 | 2 | HIGH | Game-server chain: no canonical `mission.json` producer; staging docs assert live routes | T-092 · T-128 | DEFERRED · **RESOLVED** (docs now mark gates BLOCKED on T-092; producer itself stays T-092) |
 | F2C-03 | 2 | MED | InjectMission path vs mod `$profile:` id/filename mismatch | T-092 | DEFERRED |
 | F2C-04 | 2 | MED | `ticket brief` prints branch vs main-only policy | **T-130.7** | **RESOLVED** @ `90c9f261` |
-| F2C-05 | 2 | LOW | Stale `apps/frontend/docs/` duplicate tree | T-128 P3 | **RESOLVED** (tree deleted) |
+| F2C-05 | 2 | LOW | Stale `crates/frontend/shell/frontend_application/docs/` duplicate tree | T-128 P3 | **RESOLVED** (tree deleted) |
 | F3-01 | 3 | MED | No Discord 429 / Retry-After handling | **T-130.2** | **RESOLVED** @ `9db1b9e1` |
 | F3-02 | 3 | MED | Webhook embed title not truncated (256 cap) | **T-130.2** | **RESOLVED** @ `9db1b9e1` |
 | F3-03 | 3 | LOW | OAuth redirect when client_id blank | **T-130.2** | **RESOLVED** @ `9db1b9e1` |
@@ -186,7 +186,7 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 - **DEFERRED (T-092) · RESOLVED (T-128 P1, docs half)** — **HIGH (chain break)** — the **game-server consumption chain has no producer**: `mission.schema.json` (canonical, `x/z/headingDeg`, `meta.id: msn_*`) is what `TBD_MissionDocumentStruct` parses, but nothing in the backend emits it. `ExportMission`/`InjectMission` emit the *editor superset wrapped in the camelCase envelope* (`missionJSON`), which the mod cannot parse (no top-level `meta`/`factions`/`zones`). This is known deferred work (T-092), but three artifacts treat it as live: `docs/mod/STAGING-SERVER.md:180-181` (gates V2/V3 expect 200 from `/api/missions/:id/compiled` + `/api/game/...roster`), `scripts/mod/deploy-staging.sh:189-197` (curls the same phantom route), and `docs/mod/tbd-reforger-platform-build-plan.md:290`. Those verification gates cannot pass against the current backend. T-128 marks gates **BLOCKED on T-092**.
 - **DEFERRED (T-092)** — **MED (chain break)** — id + filename namespace mismatch: `InjectMission` stages `missions/<uuid>.mission.json` relative to the **API process cwd** (`field_tools.go:19,140`), while the mod fallback reads `$profile:missions/<missionId>.json` with `missionId` like `msn_8f3a2c`. Different directory root, different filename pattern, different id namespace; no bridge script maps one to the other.
 - **RESOLVED (T-130.7 @ `5e0c7754`)** — **MED** — `./scripts/ticket brief` documents hybrid main/worktree execution policy (F2C-04).
-- **RESOLVED (T-128 P3)** — **LOW** — `apps/frontend/docs/pages/` is a stale duplicate of the moved `docs/website/frontend/pages/` tree (CLAUDE.md: surface specs are "not under `apps/`") — 2 orphaned files carrying 28 broken links.
+- **RESOLVED (T-128 P3)** — **LOW** — `crates/frontend/shell/frontend_application/docs/pages/` is a stale duplicate of the moved `docs/website/frontend/pages/` tree (CLAUDE.md: surface specs are "not under `apps/`") — 2 orphaned files carrying 28 broken links.
 
 ---
 
@@ -225,13 +225,13 @@ The Mission Creator shell (`MissionCreatorPage.tsx`) is genuinely strong UX engi
 - **RESOLVED (T-128 P4)** — `CLAUDE.md` §Status "### ACTIVE SLICE — T-090" block: says "active slice **T-090.3.0** (Workbench export spike); **T-090.1** … **queued**" and "**.3.0** Workbench spike **active** · **.1** basemap tiles (queued)" — **contradicts its own header** ("ACTIVE NOW: T-090.1.2.4") and the registry (`activeSlice: T-090.1.2.4`; brief lists T-090.3.0, T-090.1, T-090.1.2.x as shipped/DO-NOT-REOPEN). Stale block, two places.
 - **RESOLVED (T-128 P4)** — `CLAUDE.md` T-049 bullet: "the camera + base grid resize to Everon 12800 vs **Arland 10240**" — Arland is **4096** everywhere authoritative (`coords/terrains.ts:59`, `terrain-registry.json:18`, `arland/manifest.json:4`).
 - **RESOLVED (T-128 P4)** — `MissionCreatorPage.tsx:44` code comment repeats it: "Everon 12.8km vs **Arland 10.24km**" — same wrong number in live code.
-- **RESOLVED (T-128 P2)** — `apps/website/CLAUDE.md` redirect: linked `../CLAUDE.md` (one level short) = `apps/CLAUDE.md` — **did not exist** (root is two levels up); the canonical-context pointer was broken, same bug in `apps/frontend/README.md → ../../CLAUDE.md`. Both fixed to the correct depth.
+- **RESOLVED (T-128 P2)** — `apps/website/CLAUDE.md` redirect: linked `../CLAUDE.md` (one level short) = `apps/CLAUDE.md` — **did not exist** (root is two levels up); the canonical-context pointer was broken, same bug in `crates/frontend/shell/frontend_application/README.md → ../../CLAUDE.md`. Both fixed to the correct depth.
 - **RESOLVED (T-130.7 @ `5e0c7754`)** — `./scripts/ticket brief` hybrid execution policy documented (F2C-04).
 - **RESOLVED (T-130.7 @ `5e0c7754`)** — `everon/manifest.json` `metersPerPixel: 2` (F1-09).
 - **RESOLVED (T-130.7 @ `5e0c7754`)** — `tileUrl.ts` internal rename `tmsY` → `xyzRow` (F5-08).
 - **RESOLVED (T-128 P1)** — `docs/mod/STAGING-SERVER.md` V2/V3 gate rows + `docs/mod/MILESTONES.md:21` + `docs/mod/tbd-reforger-platform-build-plan.md:44,168,290` describe `GET /api/missions/{id}/compiled` and `GET /api/game/events/{id}/roster` as live, expected-200 endpoints — no longer true of the current backend (also §2 chain break).
 - **RESOLVED (T-128 P2)** — `apps/mod/README.md` is the **pre-monorepo README** (dated 2026-06-14, "Repo: github.com/darkforce09/tbd-reforger-platform", pre-move paths) — 25 broken links; the monorepo migration's doc-link repair missed it. Same class: `apps/website/README.md` (8 broken links, pre-move relative paths).
-- **RESOLVED (T-128 P3)** — `apps/frontend/docs/pages/` — stale duplicate doc tree left under `apps/` (CLAUDE.md: surface specs live at `docs/website/frontend/pages/`, "not under apps/"); its `mission-editor.md` alone carries 28 dead links.
+- **RESOLVED (T-128 P3)** — `crates/frontend/shell/frontend_application/docs/pages/` — stale duplicate doc tree left under `apps/` (CLAUDE.md: surface specs live at `docs/website/frontend/pages/`, "not under apps/"); its `mission-editor.md` alone carries 28 dead links.
 
 ### Broken relative markdown links — 155 total, by source file (target that does not resolve)
 
@@ -248,21 +248,21 @@ The Mission Creator shell (`MissionCreatorPage.tsx`) is genuinely strong UX engi
 - `apps/mod/tbd-framework/README.md` (3): `../Tbd_framework/REFERENCE-ONLY.md`, `../docs/STAGING-SERVER.md`, `../../shared/tbd-schema/spikes/registry-poc-0.4.md`.
 - `apps/website/README.md` (8): `DEV_RUNBOOK.md`, `docs/README.md`, `docs/TICKET_LEAD.md`, `docs/TICKET_REGISTRY.md`, `docs/website/frontend/ROADMAP.md`, `docs/backend/ROADMAP.md`, `docs/specs/Mission_Creator_Architecture/ROADMAP.md`, `docs/archive/README.md`.
 - `apps/website/CLAUDE.md` (1): `../CLAUDE.md` (see above).
-- `apps/frontend/README.md` (1): `../../CLAUDE.md`.
-- `apps/frontend/docs/pages/mission-editor.md` (28): every `../../../specs/...` and `../../../TICKET_*` link — stale duplicate tree (full list in the link-audit; all 404 from that location).
-- `apps/frontend/public/map-assets/README.md` (1): `../../docs/specs/.../t090_091_map_terrain_program.md` — two levels short (needs `../../../../docs/...`).
-- `apps/frontend/src/stitch-exports/README.md` (1): `../../../docs/archive/README.md` — `docs/archive/` doesn't exist (archive is `docs/website/archive/`).
+- `crates/frontend/shell/frontend_application/README.md` (1): `../../CLAUDE.md`.
+- `crates/frontend/shell/frontend_application/docs/pages/mission-editor.md` (28): every `../../../specs/...` and `../../../TICKET_*` link — stale duplicate tree (full list in the link-audit; all 404 from that location).
+- `crates/frontend/shell/frontend_application/public/map-assets/README.md` (1): `../../docs/specs/.../t090_091_map_terrain_program.md` — two levels short (needs `../../../../docs/...`).
+- `crates/frontend/shell/frontend_application/src/stitch-exports/README.md` (1): `../../../docs/archive/README.md` — `docs/archive/` doesn't exist (archive is `docs/website/archive/`).
 - `apps/mod/crf_framework/!Docs/.../VEHICLE_DEPOT_USER_GUIDE.md` (1): `images/vehicle_depot_example.png` (vendored reference content — archive-tier).
 - `docs/mod/CLAUDE-CODE-START.md` (1): `../../.cursor/mcp.json` — `.cursor/` is gitignored/absent.
 - `docs/specs/Mission_Creator_Architecture/ROADMAP.md` (3): `../../../website/frontend/pages/{mission-library,mission-editor,mission-creator}.md` — one level too many (resolves above repo root; the intended folder is `docs/website/frontend/pages/`); `mission-creator.md` doesn't exist under the correct path either.
-- `docs/specs/Mission_Creator_Architecture/t048_library_create_dialog.md` (6): `apps/frontend/src/pages/not-found.tsx` (file is `utility.tsx`), `../../../website/frontend/pages/mission-library.md` (×2), `../../../website/frontend/shell/sidebar.md`, `../../../website/frontend/TRACKING.md`, `../../.cursor/rules/tbd-documentation.mdc`.
+- `docs/specs/Mission_Creator_Architecture/t048_library_create_dialog.md` (6): `crates/frontend/shell/frontend_application/src/pages/not-found.tsx` (file is `utility.tsx`), `../../../website/frontend/pages/mission-library.md` (×2), `../../../website/frontend/shell/sidebar.md`, `../../../website/frontend/TRACKING.md`, `../../.cursor/rules/tbd-documentation.mdc`.
 - `docs/specs/Mission_Creator_Architecture/t049…t060_1` specs (7 files, 1 each): `../../../website/frontend/pages/mission-editor.md` — same off-by-one depth (`t049_terrain_title_position.md`, `t050_cursor_z_readout.md`, `t052_undo_shortcuts.md`, `t056_copy_paste.md`, `t057_map_performance_hotfix.md`, `t058_entity_count_readout.md`, `t059_bulk_paste_operations.md`, `t060_1_scale_load_save_completion.md`).
 - `docs/specs/Mission_Creator_Architecture/t068_3_palette_wire.md` (1): link to deleted `assetCatalogMock.ts` (deletion is the ticket's own point — link should be plain text).
 - `docs/specs/Mission_Creator_Architecture/t090_0_map_program_hub.md` (2): `../../../scripts/website/verify-terrain-{manifest,alignment}.ts` — scripts live under `packages/tbd-schema/scripts/` as `.mjs`.
 - `docs/website/AGENT_COMMIT_CHECKLIST.md` (6): links to `docs/website/frontend/INDEX.md` (×2), `docs/website/frontend/pages`, `docs/website/frontend/shell/sidebar.md` and `docs/website/frontend/pages/mission-editor.md` (×2) climb one level too many (the suggested fix names `docs/frontend/`). This is the doc the commit process itself points agents at.
 - `docs/website/CURSOR_SETUP.md` (1): `../../mod/CLAUDE-CODE-START.md` — needs `../mod/`.
 - `docs/website/DEV_RUNBOOK.md` (1): `../tbd-schema/schema/terrain-manifest.schema.json` — needs `../../packages/tbd-schema/...`.
-- `docs/website/frontend/_template.md` (2): `apps/frontend/src/stitch-exports/README.md` (linked one level too deep), `../../../website/platform/context_handoff.md` (path never existed post-reorg).
+- `docs/website/frontend/_template.md` (2): `crates/frontend/shell/frontend_application/src/stitch-exports/README.md` (linked one level too deep), `../../../website/platform/context_handoff.md` (path never existed post-reorg).
 - `docs/website/platform/macos_ux_architecture.md` (3): `../../../website/frontend/pages/{event-schedule,event-manager,mission-library}.md` — same class.
 - `packages/tbd-schema/spikes/rest-spike-0.1.md` (7): `../../website`, `../../website/internal/middleware/servertoken.go`, `../../website/internal/handlers/gameserver.go`, `../../website/internal/server/server.go`, `../../website/cmd/restspike`, `../../website/scripts/rest-spike.sh`, `../../website/internal/handlers/gameserver_test.go` — archive-tier spike; the referenced code was removed (see §1/§2).
 
@@ -284,7 +284,7 @@ Living docs (fix-worthy):
 ### Formatting / standards drift
 - **RESOLVED (T-128 P4)** — `CLAUDE.md` "### ACTIVE SLICE — T-090" stale block (above) sits inside the `<!-- ticket-sync:status -->`-adjacent §Status that the docs say must be regenerated, not hand-drifted — the contradiction indicates a missed `./scripts/ticket sync` after the registry advanced to T-090.1.2.4.
 - **RESOLVED (T-130.7 @ `5e0c7754`)** — mermaid node labels use `<br/>` in `t092_spawn_transform_program.md` (F5-09).
-- **RESOLVED (T-128 P3)** — `apps/frontend/docs/` + `apps/website/internal/handlers/missions/` (empty dir) — two orphans that violate the reorg's own layout contract.
+- **RESOLVED (T-128 P3)** — `crates/frontend/shell/frontend_application/docs/` + `apps/website/internal/handlers/missions/` (empty dir) — two orphans that violate the reorg's own layout contract.
 - **OPEN (F5-10 — deferred trivial)** — Domain dialect inconsistency (minor, pervasive): "artefact/artifact", "honour/honor", "modelled/modeled", "visualised/visualized" both appear across living docs; standards don't pick a side.
 
 ---

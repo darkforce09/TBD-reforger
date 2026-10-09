@@ -20,8 +20,8 @@ repeat it.
   | Job | Runs | Rules |
   |---|---|---|
   | `api` | `cargo xtask mk rust-fmt`, `mk rust-clippy`, `mk rust-build`, then `ci api-test` (the API's `cargo test`) against a Postgres 18 service | FMT-1, GO-2, GO-8, GO-9, TEST-1 |
-  | `wasm-ci` | `cargo xtask mk wasm-ci`: format, clippy with `-D warnings` on the host, clippy with `-D warnings` for `wasm32` over every crate the workspace marks `targets = "wasm32"` plus the offline worker, tests | FMT-1 |
-  | `frontend` | `cargo xtask mk ci-local-leptos`: format, clippy with `-D warnings` for `wasm32` and natively, tests, release Trunk build | TEST-2, TS-6 |
+  | `wasm-ci` | `cargo xtask mk wasm-ci`: clippy with `-D warnings` for `wasm32` over every crate the workspace marks `targets = "wasm32"` outside the frontend family | FMT-1 |
+  | `frontend` | `cargo xtask mk ci-local-leptos`: format, clippy with `-D warnings` for `wasm32` and natively, tests, release Trunk build, over the frontend family (every `crates/frontend` crate, the single-page app and the offline service worker among them) | TEST-2, TS-6 |
   | `schema` | `cargo xtask ci ci-local-schema`: generated types current, schema validation, `@contract` citations | TEST-3, ENF-3, ENF-4 |
   | `editorconfig` | `cargo xtask ci verify-editorconfig` | FMT-2 |
   | `language-gates` | `verify no-python`, `no-node`, `file-length`, `enfusion-comments`, `no-shell`, `ci-shell`, `crate-tiers`, `crate-anatomy`, `test-file-reachability`, `frontend-layering`, `tailwind-sources`, `ticket check --strict`, then `verify readme-coverage`, `link-check`, `markdown-placement` | LANG-1, LANG-2, LANG-3, SIZE-3, WS-1 to WS-5 |
@@ -110,7 +110,7 @@ never compiles, so its tests never run while the tree looks covered.
 
 - **Crate-edge mode** (`FRONTEND_CRATE_EDGES`): every normal, dev and build dependency edge
   between frontend crates. A crate's layer is its folder `crates/frontend/<layer>/` (foundation <
-  features < pages, workspaces) and the app `apps/frontend` is the shell. An edge fails when a
+  features < pages, workspaces) and the app `crates/frontend/shell/frontend_application` is the shell. An edge fails when a
   lower layer depends on a higher one, when pages and workspaces depend on each other, or when one
   page crate depends on another. The crate orders hold inside a layer folder:
   `FOUNDATION_CRATE_ORDER` (`frontend_ui` < `frontend_api_dtos` < {`frontend_transport`,
@@ -130,12 +130,12 @@ The law is hard at zero: every edge, production or test, normal or dev, fails it
 
 ### WS-5 Tailwind sources
 
-`cargo xtask verify tailwind-sources` holds the `@source` lines of `apps/frontend/style/aegis.css`
+`cargo xtask verify tailwind-sources` holds the `@source` lines of `crates/frontend/shell/frontend_application/style/aegis.css`
 exact: every workspace member that depends on `leptos` (outside dev-dependencies), the app
 included, is named by exactly one line `@source "<path>/src/**/*.rs";` whose path, resolved from
 the stylesheet's folder, is that member's folder. A member no line names, a member several lines
 name, and a stale line that names no leptos member (an ancestor or wildcard glob included) are
-findings. Trunk's `[watch]` list in `apps/frontend/Trunk.toml` covers `crates/frontend`, so a
+findings. Trunk's `[watch]` list in `crates/frontend/shell/frontend_application/Trunk.toml` covers `crates/frontend`, so a
 change in any frontend crate rebuilds the bundle.
 
 ## verify-documentation

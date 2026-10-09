@@ -35,12 +35,12 @@ effective policy, the grants that hold and the provenance of each membership fac
   `crates/api/api_operations/src/handlers/`.
 - Rules: every stored change first advances the access revision; a group referenced by a policy
   answers 409 when deleted (`event_groups_referenced_group_deletion_conflicts` in
-  `apps/api/tests/event_eligibility_policies.rs`); a policy that names another event's
+  `crates/api/api_server/tests/event_eligibility_policies.rs`); a policy that names another event's
   group or an unknown guild is refused
   (`event_access_policy_references_require_live_groups_and_guilds_from_the_same_event` in
-  `apps/api/tests/event_access_context.rs`).
+  `crates/api/api_server/tests/event_access_context.rs`).
 
 ## Related documentation
 
-- [Event eligibility and allocation](/documentation/apps/api/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
   — policies, groups, quotas and how changes re-evaluate reservations.

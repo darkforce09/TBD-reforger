@@ -20,10 +20,10 @@ fn document_targets_keep_shell_files_and_the_icon_font_and_drop_everything_else(
     let urls = strings(&[
         "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0",
         "/aegis-3e2e77f21a4f8f62.css",
-        "/frontend-423f29d64f4d9707.js",
-        "/frontend-423f29d64f4d9707_bg.wasm",
+        "/frontend_application-423f29d64f4d9707.js",
+        "/frontend_application-423f29d64f4d9707_bg.wasm",
         "/manifest.webmanifest",
-        "/frontend-423f29d64f4d9707.js#again",
+        "/frontend_application-423f29d64f4d9707.js#again",
         "/service_worker.js",
         "/offline_service_worker.js",
         "/api/v1/me",
@@ -36,8 +36,8 @@ fn document_targets_keep_shell_files_and_the_icon_font_and_drop_everything_else(
         [
             "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0",
             "https://tbd.example/aegis-3e2e77f21a4f8f62.css",
-            "https://tbd.example/frontend-423f29d64f4d9707.js",
-            "https://tbd.example/frontend-423f29d64f4d9707_bg.wasm",
+            "https://tbd.example/frontend_application-423f29d64f4d9707.js",
+            "https://tbd.example/frontend_application-423f29d64f4d9707_bg.wasm",
             "https://tbd.example/manifest.webmanifest",
         ]
     );

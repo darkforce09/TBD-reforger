@@ -51,7 +51,7 @@ returns. The draw buffers read the residency only through its public accessors.
 - Used by: `map_asset_loading`'s world and occluder loaders, which hold a `WorldResidency` and
   import both residency crates directly; `map_streaming_host`, which drives the loaders;
   `map_renderer`, whose render engine implements `map_streaming_model`'s asset sink; the
-  single-page app (`apps/frontend`), whose map view and Mission Creator drive the host and the
+  single-page app (`crates/frontend/shell/frontend_application`), whose map view and Mission Creator drive the host and the
   loaders and whose debug world line-of-sight bench holds the draw buffers.
 - Rules: a streaming crate declares `category = "crates/streaming"`, targets `any` (or `wasm32`
   when it names a browser crate, as the loaders and the host do) and depends only on foundation,

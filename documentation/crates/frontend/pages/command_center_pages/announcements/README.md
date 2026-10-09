@@ -36,7 +36,7 @@ and its states.
   registry in `.ai/tickets/`, which the feature doc is written from.
 - Used by: the page's in-code README and the command center pages README, which link the feature
   doc; the content manager's feature doc, README and announcements manager blueprint; the web app
-  README's page table in `documentation/apps/frontend/`.
+  README's page table in `documentation/crates/frontend/shell/frontend_application/`.
 - Rules: the feature doc keeps its name, which those links use; a design set for this page, when
   one exists, goes into a `visual_references/` folder here.
 

@@ -55,7 +55,7 @@ paged roster, bans, warnings, the role resync, the audit trail and its live stre
 
 - `AuditLogsPage`, `BallisticsCatalogsPage`, `ContentManagerPage`, `EventManagerPage`,
   `MissionApprovalsPage`, `PersonnelRosterPage` and `ServerControlPage`: the route components
-  `apps/frontend/src/app_routes.rs` mounts, each re-exported by its own module from that
+  `crates/frontend/shell/frontend_application/src/app_routes.rs` mounts, each re-exported by its own module from that
   module's public `page` module; `prelude.rs` re-exports all seven. Each child's README gives its
   route, tier and layout.
 
@@ -65,7 +65,7 @@ paged roster, bans, warnings, the role resync, the audit trail and its live stre
   session, `AdminGate` and the other UI primitives, the date helpers); the review views of
   `crates/frontend/features/mission_review_record/src/`, which the approval queue and
   the deployments panel reuse; over HTTP, the five API domains above.
-- Used by: the route table in `apps/frontend/src/app_routes.rs`, whose tiers, layout flags
+- Used by: the route table in `crates/frontend/shell/frontend_application/src/app_routes.rs`, whose tiers, layout flags
   and breadcrumbs `crates/frontend/foundation/frontend_route_table/src/routes.rs` declares; the Administration section of
   `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; the source pins in
   `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`; the DOM oracle captures in

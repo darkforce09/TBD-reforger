@@ -16,7 +16,7 @@ crates/contracts/
 
 - Depends on: foundation crates and external crates only.
 - Used by: the offline service worker and the single-page app (`offline_cache_policy`); the API,
-  the fleet host agent and `xtask` (`fleet_wire_contract`); the API and its contract tests
+  the game server host agent, `staging_fixtures` and `mod_operations` (`fleet_wire_contract`); the API and its contract tests
   (`contract_schema_types`).
 - Rules: a contracts crate declares `category = "crates/contracts"` and depends on foundation
   crates only (`cargo xtask verify crate-tiers`); `contract_schema_types/src/generated/` is

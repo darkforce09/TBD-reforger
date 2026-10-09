@@ -82,7 +82,7 @@ feed. The map backdrop and the theatre tile are images on `lh3.googleusercontent
   `frontend_ui` (`AuthGate`, `MaterialIcon`, `cn`, the toasts), `frontend_ui`
   (uptime formatting and `clipboard::write_clipboard`), the `AuthStore` context, and the images on
   `lh3.googleusercontent.com`.
-- Used by: the `/server-intel` route in `apps/frontend/src/app_routes.rs`;
+- Used by: the `/server-intel` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`;
   `server_intel_source` in `crates/frontend/pages/command_center_pages/src/tests/source_pins.rs`, which the
   page's guard tests read.
 - Rules: at most one stream subscription per mount; the panel reads the `terrain` key the list

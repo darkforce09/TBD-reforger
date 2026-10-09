@@ -10,7 +10,7 @@ KNOWN AND ALREADY FILED — do not re-report: neither gate compiles Enfusion, so
 
 THE SPAN. Base marker `52a038a77` (wave 240 CLOSED). Landed:
 - `c32fdd0cd` T-675.1 — `crates/map-engine-core/src/mission/flatten.rs`: the authored vehicle roster onto top-level `vehicles[]` at schema 1.3, reusing T-674.1's version latch.
-- `6447f4fb9` T-935.11 — `crates/map-engine-core/src/world/{prefab.rs,regions.rs,mod.rs}`, `tools/tbd-tools/src/world/{catalog_emit.rs,mod.rs,build.rs}`, `apps/frontend/src/editor/world_assets/world_host.rs`: prefab catalogue, forest regions and type inventory to rkyv, with archive fetch branches for roads and regions.
+- `6447f4fb9` T-935.11 — `crates/map-engine-core/src/world/{prefab.rs,regions.rs,mod.rs}`, `tools/tbd-tools/src/world/{catalog_emit.rs,mod.rs,build.rs}`, `crates/frontend/shell/frontend_application/src/editor/world_assets/world_host.rs`: prefab catalogue, forest regions and type inventory to rkyv, with archive fetch branches for roads and regions.
 - `4c0542b87` T-676 — `apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_TriggerRuntime.c` (new, 2107 lines): the Enfusion trigger activation and effects runtime.
 
 COMMAND-CENTRE work in the span, and attack it as hard as the slices:

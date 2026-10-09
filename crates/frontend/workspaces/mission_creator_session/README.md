@@ -62,7 +62,7 @@ cargo test -p mission_creator_session   # the save policy, writer election, size
   `map_streaming_model`, `time_source`, `leptos`, `serde`, `serde_json`, `thiserror`; on `wasm32` `idb`, `futures`, `gloo-net`,
   `web-sys`, `js-sys`, `wasm-bindgen`, `wasm-bindgen-futures`; `frontend_test_support` and the
   engine bridge's `test_fixtures` for its tests.
-- Used by: the single-page app (`apps/frontend`): the Mission Creator's page, canvas mount, docks,
+- Used by: the single-page app (`crates/frontend/shell/frontend_application`): the Mission Creator's page, canvas mount, docks,
   dialogs and Arsenal tab, and `main.rs`, which registers `hydrate::purge_local_documents` as a
   sign-out hook of `frontend_session`.
 - Rules: depends on no Mission Creator crate above `mission_creator_engine_bridge`

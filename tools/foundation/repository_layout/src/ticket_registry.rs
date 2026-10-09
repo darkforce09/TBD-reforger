@@ -2,8 +2,8 @@
 //!
 //! **Role:** the repository-relative paths of the registry folder and the schemas, vocabulary,
 //! wave lock, queue, receipts and estimates beside the ticket files.
-//! **Position:** the ticket crates read and write them; `xtask` and `ticketboard` read the same
-//! files, so all three resolve them here.
+//! **Position:** the ticket crates read and write them; `xtask` and `ticketboard_desktop` read the
+//! same files, so all three resolve them here.
 //! **Signals & state:** none; constants.
 //! **Invariants:** every path lies under [`TICKETS_DIR`].
 

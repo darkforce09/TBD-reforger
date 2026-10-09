@@ -35,7 +35,7 @@ Untouched: `crates/**`, Rust/wasm, `worldLayerPrefs.ts`/`DEFAULT_TOGGLES`, `docs
 
 ## Verify (all exit 0)
 ```
-cd apps/frontend
+cd crates/frontend/shell/frontend_application
 npm test    # 49 files, 365 tests PASS (no regression; class_visible parity scans unaffected)
 npm run build   # tsc + vite OK
 npm run lint    # eslint . — exit 0

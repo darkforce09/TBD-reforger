@@ -37,7 +37,7 @@ the page's files, calls and states.
   ticket registry in `.ai/tickets/`, which the feature doc is written from.
 - Used by: the page's in-code README, the command center pages README and the frontend API client
   README in `crates/frontend/foundation/frontend_transport/src/`, which link the feature doc; the server
-  control feature doc; the web app README's page table in `documentation/apps/frontend/`.
+  control feature doc; the web app README's page table in `documentation/crates/frontend/shell/frontend_application/`.
 - Rules: the feature doc keeps its name, which those links use; the blueprint set stays as it was
   captured and is never edited to match the built page.
 

@@ -67,6 +67,6 @@ Outside the walk, and so unenforced by this gate:
 
 The app's `src/` tree has a second 500-line check in its own tests,
 `frontend_production_files_meet_the_documentation_standard` in
-`apps/frontend/src/tests/doc_audit/mod.rs`. That audit has no allowlist and no
+`crates/frontend/shell/frontend_application/src/tests/doc_audit/mod.rs`. That audit has no allowlist and no
 exemption path: it judges every production file, and a file that breaks a rule is fixed, never
 listed.

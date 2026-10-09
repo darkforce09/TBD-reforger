@@ -4,7 +4,7 @@
 //! The whole pipeline is a pure function of the envelope: kinds and edge types are
 //! carried as plain text end-to-end, so a new edge family or item kind ships via a
 //! schema-enum bump + `cargo xtask ci schema-codegen` alone — no importer, DDL, or API change.
-//! Used by the `import-registry` binary and the integration tests.
+//! Used by the `import-item-registry` binary and the integration tests.
 //!
 //! @contract registry-items.schema.json#/
 //! @contract registry-compat.schema.json#/

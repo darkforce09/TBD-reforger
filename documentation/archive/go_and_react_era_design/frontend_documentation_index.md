@@ -1,16 +1,16 @@
-**Status:** archived — see [frontend documentation](/documentation/apps/frontend/README.md)
+**Status:** archived — see [frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md)
 
 # Frontend Documentation Index
 
 Master index for all TBD Reforger frontend surfaces.
 
-**Doc hub:** [docs/website/frontend/ROADMAP.md](/documentation/apps/frontend/README.md) · **Mission Creator:** [ROADMAP.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md) · **Tickets:** [TICKET_LEAD.md](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md)
+**Doc hub:** [docs/website/frontend/ROADMAP.md](/documentation/crates/frontend/shell/frontend_application/README.md) · **Mission Creator:** [ROADMAP.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md) · **Tickets:** [TICKET_LEAD.md](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md)
 
 | Doc | Route | Status | Handoff § | Ticket |
 |-----|-------|--------|-----------|--------|
-| [shell/sidebar.md](/documentation/apps/frontend/shell/app_layout_and_navigation.md) | (shell) | doc-complete | — | — |
-| [shell/topnav.md](/documentation/apps/frontend/shell/app_layout_and_navigation.md) | (shell) | doc-complete | — | — |
-| [shell/app-layout.md](/documentation/apps/frontend/shell/app_layout_and_navigation.md) | (shell) | doc-complete | — | — |
+| [shell/sidebar.md](/documentation/crates/frontend/shell/frontend_application/shell/app_layout_and_navigation.md) | (shell) | doc-complete | — | — |
+| [shell/topnav.md](/documentation/crates/frontend/shell/frontend_application/shell/app_layout_and_navigation.md) | (shell) | doc-complete | — | — |
+| [shell/app-layout.md](/documentation/crates/frontend/shell/frontend_application/shell/app_layout_and_navigation.md) | (shell) | doc-complete | — | — |
 | [auth/login.md](/documentation/crates/frontend/pages/account_pages/account_pages.md) | `/login` | doc-complete | §2.A | — |
 | [auth/auth-callback.md](/documentation/crates/frontend/pages/account_pages/account_pages.md) | `/auth/callback` | doc-complete | — | T-002 (shipped) |
 | [pages/dashboard.md](/documentation/crates/frontend/pages/command_center_pages/dashboard/dashboard_page.md) | `/` | doc-complete | — | — |
@@ -36,8 +36,8 @@ Master index for all TBD Reforger frontend surfaces.
 | [pages/audit-logs.md](/documentation/crates/frontend/pages/administration_pages/audit_logs/audit_logs_page.md) | `/admin/audit` | doc-complete | §4.12 | shipped |
 | [pages/settings.md](/documentation/crates/frontend/pages/account_pages/account_pages.md) | `/settings` | doc-complete | — | — |
 | [pages/debug-building-viewer.md](/documentation/crates/frontend/workspaces/debug_benches/building_viewer_page.md) | `/debug/building-viewer` (URL-only) | in-progress | — | blueprint program Phase A |
-| [pages/not-found.md](/documentation/apps/frontend/shell/app_layout_and_navigation.md) | `*` | doc-complete | — | — |
+| [pages/not-found.md](/documentation/crates/frontend/shell/frontend_application/shell/app_layout_and_navigation.md) | `*` | doc-complete | — | — |
 
-**Foundation:** [THEME.md](/documentation/design_system/design_tokens.md) | [TRACKING.md](/documentation/apps/frontend/README.md) | [_template.md](/documentation/archive/go_and_react_era_design/frontend_page_spec_template.md)
+**Foundation:** [THEME.md](/documentation/design_system/design_tokens.md) | [TRACKING.md](/documentation/crates/frontend/shell/frontend_application/README.md) | [_template.md](/documentation/archive/go_and_react_era_design/frontend_page_spec_template.md)
 
 **Documentation Gate:** Passed — 29 surface docs + 3 foundation files = 32; all `doc-complete` except [mission-editor.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/ux_spec.md) and [debug-building-viewer.md](/documentation/crates/frontend/workspaces/debug_benches/building_viewer_page.md) (`in-progress`).

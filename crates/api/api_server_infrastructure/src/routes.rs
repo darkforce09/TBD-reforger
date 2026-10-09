@@ -1,6 +1,6 @@
 //! The `/api/v1` route table for server infrastructure.
 //!
-//! Paths are written relative to the `/api/v1` nest the API's router (`api::router`) applies. Auth
+//! Paths are written relative to the `/api/v1` nest the API's router (`api_server::router`) applies. Auth
 //! tiers are enforced per-handler by the extractor each takes (`AuthUser`, `AdminUser`, and the
 //! machine-credential `MachineCaller` on `/game-runtime/sessions` and `/fleet-executor/commands`),
 //! so they travel with the handler rather than with the registration.

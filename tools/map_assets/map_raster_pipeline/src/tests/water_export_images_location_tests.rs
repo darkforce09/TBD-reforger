@@ -123,7 +123,7 @@ fn inland_metadata_gives_the_inland_prefix() {
 
 #[test]
 fn legacy_inland_metadata_is_the_last_choice() {
-    let tree = TemporaryTree::new("legacy-inland");
+    let tree = TemporaryTree::new("prefixed-inland");
     tree.touch("TBD_InlandWaterExport_meta.json");
     let files = locate_water_export(&tree.0, "everon").expect("locate");
     assert_eq!(

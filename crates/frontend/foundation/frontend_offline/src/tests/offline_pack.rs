@@ -52,7 +52,7 @@ fn icon_font_file() -> OfflineTarget {
 
 fn essential_files() -> Vec<OfflineTarget> {
     vec![
-        target("/frontend-0123abcd.js"),
+        target("/frontend_application-0123abcd.js"),
         target("/api/v1/ballistics-catalogs"),
         target("/api/v1/ballistics-catalogs/m252/versions/1"),
         target("/map-assets/everon/manifest.json"),

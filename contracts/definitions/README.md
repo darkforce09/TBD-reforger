@@ -45,7 +45,7 @@ A schema reaches code in one of three ways:
   `$id`, and holds the committed ballistics catalog and its calibration bundle to one game build,
   export generation and catalog SHA-256; the developer tools' map verifications read the terrain, label and geometry schemas; and
   the API's contract suites validate live responses, request bodies and the frontend's captured
-  API goldens (`apps/api/tests/contract_support/mod.rs`).
+  API goldens (`crates/api/api_server/tests/contract_support/mod.rs`).
 
 `cargo xtask schema citations` (the `verify-citations` CI task) resolves every
 `@contract <schema>#<pointer>` tag in `.c`, `.rs` and the other code files under `apps/` and
@@ -55,7 +55,7 @@ A schema reaches code in one of three ways:
 |---|---|---|
 | Web API responses | `current-profile`, `reservation-response`, `event-hub`, `event-orbat`, `event-viewer-access`, `event-access-administration`, `waitlist-promotion-response` | generated API models; API contract tests |
 | Web API responses without generated types | `service-health`, `session-token`, `profile-update`, `arma-link`, `personnel-actions`, `command-center`, `service-record`, `leave-request`, `event-schedule`, `reservation-actions`, `member-directory`, `fire-mission`, `announcement`, `modpack`, `mission-library`, `mission-default-overrides`, `arsenal-envelopes`, `server-intel`, `runtime-heartbeat-receipt` | the `@contract` tags of the hand-written API models and handlers; the API's route-acceptance and golden parity tests |
-| Fleet and machine credentials | `machine-credential`, `fleet-command` | generated API models; the fleet host agent's ledger client; API contract tests |
+| Fleet and machine credentials | `machine-credential`, `fleet-command` | generated API models; the game server host agent's ledger client; API contract tests |
 | Game runtime | `game-runtime-session`, `game-runtime-roster`, `game-runtime-deployment` | generated API models; API contract tests; the [mod](/documentation/glossary/g_to_m.md#mod)'s API bridge, which calls these routes |
 | Administration | `personnel-roster`, `audit-log` | generated types in `crates/contracts/contract_schema_types/src/generated/administration/`; API contract tests; the web app's DTOs |
 | Community content | `vehicle-database`, `wiki-page`, `content-upload` | generated types in `crates/contracts/contract_schema_types/src/generated/community_content/`; API contract tests; the web app's DTOs |
@@ -124,7 +124,7 @@ other map-object schemas, the prefab classification rules and the glyph keys all
   - the API's embedded validators in
     `crates/api/api_missions/src/contract/schema_validators.rs` and
     `crates/api/api_missions/src/handlers/mission_default_overrides.rs`, and its contract tests
-    under `apps/api/tests/`;
+    under `crates/api/api_server/tests/`;
   - the Mission Creator's embeds in
     `crates/frontend/workspaces/mission_creator_state/src/zones/zone_schema_vocabulary.rs`
     and `crates/frontend/workspaces/mission_creator_state/src/arsenal_rules/export_schema_contract.rs`;
@@ -137,14 +137,14 @@ other map-object schemas, the prefab classification rules and the glyph keys all
   - the map engine's native tests, which embed `mission.schema.json` and
     `mission-editor-payload.schema.json`;
   - the mod's scripts, whose `@contract` tags cite `mission.schema.json`,
-    `loadout-export.schema.json` and the two registry schemas, and the fleet host agent in
-    `apps/fleet_host_agent/`, whose ledger client follows `fleet-command.schema.json`;
+    `loadout-export.schema.json` and the two registry schemas, and the game server host agent in
+    `crates/fleet/game_server_host_agent/`, whose ledger client follows `fleet-command.schema.json`;
   - the API's release image, which copies the whole folder (`deploy/Dockerfile`).
 
 ## Boundaries
 
 - Depends on: nothing; the schemas are the source the code follows.
-- Used by: the API, the Mission Creator, the map engine's tests, the mod, the fleet host agent,
+- Used by: the API, the Mission Creator, the map engine's tests, the mod, the game server host agent,
   the developer tools and the xtask gates, as listed above; the `schema.yml` and `contracts.yml`
   workflows run on every change under `contracts/`.
 - Rules: generated types match their schemas byte for byte (`cargo xtask ci verify-codegen-fresh`);

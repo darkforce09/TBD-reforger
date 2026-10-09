@@ -39,7 +39,7 @@ which the command prints.
   `tools/tickets/ticket_registry/src/validation/references.rs` reports a `spec` that names no
   file; `mark_ready` in `tools/tickets/ticket_registry/src/ops/readiness.rs` refuses a missing
   spec; the prompt extractor is `tools/tickets/ticket_registry/src/verbs/prompt.rs`.
-- [Ticketboard](/apps/ticketboard/) — shows a ticket's `spec` and opens it in the in-app
+- [Ticketboard](/tools/tickets/ticketboard_desktop/) — shows a ticket's `spec` and opens it in the in-app
   document viewer.
 
 ## Boundaries

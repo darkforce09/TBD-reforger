@@ -39,7 +39,7 @@ views.
 - Depends on: foundation, contracts, mission, ballistics, engine (`crates/geometry`,
   `crates/map_overlay`, `crates/streaming`, …) and graphics crates, and other rendering crates;
   `wgpu` in the WebAssembly build.
-- Used by: the single-page app (`apps/frontend`, WebAssembly build only), which mounts
+- Used by: the single-page app (`crates/frontend/shell/frontend_application`, WebAssembly build only), which mounts
   `map_renderer`'s `RenderEngine` and registers `map_render_diagnostics`' checks; the typed layers
   are used by `map_renderer`, whose render engine holds them.
 - Rules: a map rendering crate declares `category = "crates/map_rendering"` and depends only along

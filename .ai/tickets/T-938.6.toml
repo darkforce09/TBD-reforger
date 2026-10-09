@@ -43,10 +43,10 @@ created_at = "2026-09-05T02:09:02Z"
 completed_at = "2026-09-07T16:43:40Z"
 estimated = ["tokens"]
 owns = [
-    "apps/frontend/src/editor/world_assets/memory_budget.rs",
-    "apps/frontend/src/editor/world_assets/mod.rs",
-    "apps/frontend/src/editor/world_assets/satellite.rs",
-    "apps/frontend/src/editor/canvas/viewport.rs",
+    "crates/frontend/shell/frontend_application/src/editor/world_assets/memory_budget.rs",
+    "crates/frontend/shell/frontend_application/src/editor/world_assets/mod.rs",
+    "crates/frontend/shell/frontend_application/src/editor/world_assets/satellite.rs",
+    "crates/frontend/shell/frontend_application/src/editor/canvas/viewport.rs",
 ]
 
 [scope]

@@ -40,7 +40,7 @@ No file holds versions 0022, 0023 and 0024, and none may.
   (`0058_vehicle_database_lifecycle.sql` adds its lifecycle columns without defaults, so older
   entries keep them null, and only then sets the defaults new rows take).
 - Adding a file: give it the next version above the highest on disk, add its
-  `(version, sha384)` row to `PINNED` in `apps/api/tests/migrations_are_immutable.rs`
+  `(version, sha384)` row to `PINNED` in `crates/api/api_server/tests/migrations_are_immutable.rs`
   (`sha384sum` prints the digest), and run `cargo xtask db test-it`. A comments-only edit to an
   applied file updates its pin and needs `cargo xtask db repair-migration-checksum` on every
   database that applied it; any other change to an applied file is a new migration instead.
@@ -50,9 +50,9 @@ No file holds versions 0022, 0023 and 0024, and none may.
 - Producers: developers, by hand; no tool writes these files.
 - Consumers:
   - `api_database::migrate` in `crates/api/api_database/src/connection.rs`, called by
-    the `api` binary at boot (unless `SKIP_MIGRATE` is set) and by `import-registry` before it
+    the `api-server` binary at boot (unless `SKIP_MIGRATE` is set) and by `import-item-registry` before it
     imports;
-  - the integration suites under `apps/api/tests/`: the shared harness migrates each
+  - the integration suites under `crates/api/api_server/tests/`: the shared harness migrates each
     suite's scratch database, `migrations_are_immutable.rs` pins every file's checksum and the
     version sequence, `db_migrate.rs` pins the resulting schema, `durable_rate_limit.rs` pins
     `0021_rate_limit_buckets.sql` against `RATE_LIMIT_BUCKETS_DDL`, and the `*_migration.rs`
@@ -64,7 +64,7 @@ No file holds versions 0022, 0023 and 0024, and none may.
     (`tools/commands/platform_execution/src/wave_execution/migrate.rs`), which audits the recorded
     checksums and applies pending migrations to a database it never drops;
   - `GET /healthz`, which turns red when `_sqlx_migrations` records a failed migration;
-  - the prose rules in `apps/api/src/tests/prose_rules.rs`, which read the comment
+  - the prose rules in `crates/api/api_server/src/tests/prose_rules.rs`, which read the comment
     lines.
 
 ## Boundaries
@@ -76,7 +76,7 @@ No file holds versions 0022, 0023 and 0024, and none may.
   or deleted (`every_pin_still_has_its_migration_on_disk`); versions strictly increase, new ones
   append after the highest, and 0022 to 0024 stay empty
   (`migration_versions_preserve_the_historical_gap_and_append_after_the_head`), all in
-  `apps/api/tests/migrations_are_immutable.rs`.
+  `crates/api/api_server/tests/migrations_are_immutable.rs`.
 
 ## Related documentation
 

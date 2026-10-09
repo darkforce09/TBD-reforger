@@ -63,7 +63,7 @@ ci-local` nor the CI workflow runs them.
 | `ENFUSION_MCP_BIN`, `MCP_SOCK`, `MCP_DAEMON_IDLE`, `MCP_DAEMON_MAX_LIFE`, `MCP_CALL_TIMEOUT`, `MCP_DEBUG`, `MCP_STUB`, `STUB_MODE`, `STUB_DAEMON`, `STUB_LINGER` | see the broker's README | `mcpd`, through the [Enfusion MCP broker](/tools/enfusion/enfusion_mcp_broker/README.md): the server to start, the socket, limits, logging and the offline stub |
 | `CHROME_HEADLESS_SHELL` | the Chromium the harness finds | `tools/browser_testing/chrome_devtools_protocol/src/chromium_discovery.rs`: the browser executable |
 | `PLAYWRIGHT_BROWSERS_PATH` | `~/.cache/ms-playwright` | `tools/browser_testing/chrome_devtools_protocol/src/chromium_discovery.rs`: the Playwright browser folder searched before the default cache |
-| `LEPTOS_DIST` | `apps/frontend/dist` | `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/mutations.rs`: the built app `gate r-auth` serves without `--dist` |
+| `LEPTOS_DIST` | `crates/frontend/shell/frontend_application/dist` | `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/mutations.rs`: the built app `gate r-auth` serves without `--dist` |
 | `TOKEN`, `REFRESH` | none; the smoke exits 2 without them | `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/mutations.rs`: dev-login tokens for `gate smoke mutations` |
 | `PROFILE`, `ENFUSION_PROFILE_PATH` | none | `tools/map_assets/world_export_pipeline/src/export_preparation/export_profile.rs`: the [Workbench](/documentation/glossary/n_to_z.md#workbench) profile `world copy-export-profile` reads |
 

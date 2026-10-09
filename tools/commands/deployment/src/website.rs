@@ -3,8 +3,9 @@
 //! Caddy web server, and restart the API's user-systemd unit.
 //!
 //! **Role:** reads the deploy settings, refuses what the `--delete` rsync must never touch, and
-//! runs the steps in order: the map-asset probe, the rsync, the remote steps of
-//! [`remote_steps`], and the restart.
+//! runs the steps in order: the map-asset probe, the probe of the API's `.env` on the host
+//! ([`crate::api_environment_file_preflight`]), the rsync, the remote steps of [`remote_steps`],
+//! and the restart.
 //!
 //! **Position:** called by `cargo xtask deploy website` from the development machine; the
 //! settings come from `deploy.env` through [`deploy_settings`], and every remote
@@ -17,8 +18,9 @@
 //! with defaults, and the file is parsed, never executed; a missing tool or a killed child is
 //! reported as itself and never folds into "deploy succeeded"; `TBD_REMOTE_DIR` sits under the
 //! deploy user's `/home/<user>/tbd` (from `TBD_SSH_HOST`), and a host named without a user is
-//! refused; a failing remote step stops the deploy before the restart, so the running API keeps
-//! serving the previous build.
+//! refused; the rsync runs only once the host's API `.env` is proven present; a failing remote
+//! step stops the deploy before the restart, so the running API keeps serving the previous
+//! build.
 //!
 //! Two behaviours are deliberate and easy to misread as bugs. Trailing slashes on
 //! `TBD_REMOTE_DIR` are stripped only for that prefix check — echoed remote paths and `cd '…'`
@@ -29,7 +31,9 @@
 use std::io::{self, Write};
 use std::path::PathBuf;
 
+use crate::api_environment_file_preflight;
 use crate::error::Result;
+use crate::host_owned_paths::BUILT_APPLICATION_FOLDER;
 use process_runner::Run;
 use verification_core::verdict::NotRun;
 
@@ -141,6 +145,10 @@ pub(crate) fn run(args: &[String]) -> Result<u8> {
     cfg.execute()
 }
 
+/// The line the deploy prints before the rsync.
+const RSYNC_HEADLINE: &str = "==> rsync (excludes secrets, build artifacts, worktrees and local \
+     tool state, the terrain + scratch asset trees, the packages/ tree, oracle lanes)";
+
 struct DeployCfg {
     root: PathBuf,
     host: String,
@@ -164,15 +172,8 @@ impl DeployCfg {
             return Ok(code);
         }
 
-        println!(
-            "==> rsync (excludes secrets, build artifacts, worktrees and local tool state, the \
-             terrain + scratch asset trees, the packages/ tree, oracle lanes)"
-        );
-        if self.dry_run {
-            for line in rsync_argv::dry_run_lines(&self.host, &self.remote_dir) {
-                println!("{line}");
-            }
-        } else if let Err(code) = self.rsync_to_remote() {
+        println!("==> preflight: the API's .env on the host");
+        if let Err(code) = self.rsync_once_the_api_environment_file_is_present() {
             return Ok(code);
         }
 
@@ -244,7 +245,7 @@ impl DeployCfg {
         }
         if !self.skip_api {
             plan.push(RemoteStep::new(
-                "cargo build --release -p api --bin api",
+                &remote_steps::api_build_title(),
                 remote_steps::api_build(&self.remote_dir),
             ));
             plan.push(RemoteStep::new(
@@ -255,7 +256,7 @@ impl DeployCfg {
         }
         if !self.skip_spa {
             plan.push(RemoteStep::new(
-                "trunk build --release (Leptos SPA → frontend/dist)",
+                &format!("trunk build --release (Leptos SPA → {BUILT_APPLICATION_FOLDER})"),
                 remote_steps::spa_build(&self.remote_dir),
             ));
         }
@@ -319,13 +320,20 @@ impl DeployCfg {
         if code == 0 { Ok(()) } else { Err(code as u8) }
     }
 
-    /// Runs `command` on the host in a login shell and returns its exit status. The command goes
+    /// The program and arguments that run `command` on the host in a login shell. The command goes
     /// to ssh as the one quoted word [`remote_steps::login_shell`] builds, because ssh joins its
     /// remote arguments into a single line for the host's shell.
-    fn ssh_login_shell_status(&self, command: &str) -> Result<i32, u8> {
+    fn ssh_login_shell_argv(&self, command: &str) -> (String, Vec<String>) {
         let (program, mut args) = self.ssh_base_program_args();
         args.push(self.host.clone());
         args.push(remote_steps::login_shell(command));
+        (program, args)
+    }
+
+    /// Runs `command` on the host in a login shell ([`Self::ssh_login_shell_argv`]) and returns
+    /// its exit status.
+    fn ssh_login_shell_status(&self, command: &str) -> Result<i32, u8> {
+        let (program, args) = self.ssh_login_shell_argv(command);
         // Closed fail-open: absent ssh/sshpass is NotRun, not a silent success.
         if let Err(e) = process_runner::which(&program) {
             return Err(not_run_exit(&e));
@@ -355,6 +363,29 @@ impl DeployCfg {
         }
         let code = self.ssh_login_shell_status(&script)?;
         asset_preflight::report(asset_preflight::classify(code), &self.remote_dir)
+    }
+
+    /// Asks the host whether its checkout holds the API's `.env`, then runs the `--delete` rsync
+    /// only when it does ([`api_environment_file_preflight::rsync_only_when_present`]). The dry run
+    /// prints the probe and the rsync's exclusions instead.
+    fn rsync_once_the_api_environment_file_is_present(&self) -> Result<(), u8> {
+        let probe = api_environment_file_preflight::probe_script(&self.remote_dir);
+        if self.dry_run {
+            println!("[dry-run] ssh … {probe}");
+            println!("{RSYNC_HEADLINE}");
+            for line in rsync_argv::dry_run_lines(&self.host, &self.remote_dir) {
+                println!("{line}");
+            }
+            return Ok(());
+        }
+        api_environment_file_preflight::rsync_only_when_present(
+            self.ssh_login_shell_status(&probe),
+            &self.remote_dir,
+            || {
+                println!("{RSYNC_HEADLINE}");
+                self.rsync_to_remote()
+            },
+        )
     }
 
     fn rsync_to_remote(&self) -> Result<(), u8> {

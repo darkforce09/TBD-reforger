@@ -27,7 +27,7 @@ estimated = [
     "scope",
     "tokens",
 ]
-owns = ["apps/frontend/src/pages/"]
+owns = ["crates/frontend/shell/frontend_application/src/pages/"]
 
 [scope]
 domain = "website"

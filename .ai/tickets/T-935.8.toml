@@ -53,7 +53,7 @@ owns = [
     "xtask/src/map_blueprint/archive_emit.rs",
     "xtask/src/map_blueprint/library_cli.rs",
     "xtask/src/map_blueprint/mod.rs",
-    "apps/frontend/src/editor/world_assets/occluder_host.rs",
+    "crates/frontend/shell/frontend_application/src/editor/world_assets/occluder_host.rs",
     "crates/map-engine-core/src/world/occluder/descriptor.rs",
     "crates/map-engine-core/src/building_blueprint.rs",
 ]

@@ -1,7 +1,7 @@
 //! The `/api/v1` route table for the command center.
 //!
 //! **Role:** registers the dashboard, leaderboard and statistics card routes.
-//! **Position:** the API's router (`apps/api/src/router.rs`) merges [`routes()`] under
+//! **Position:** the API's router (`crates/api/api_server/src/router.rs`) merges [`routes()`] under
 //! its `/api/v1` nest, so the paths here are relative to that nest.
 //! **Signals & state:** none; the table is built once at boot.
 //! **Invariants:** every route here is `AuthUser`, enforced per handler by the extractor each

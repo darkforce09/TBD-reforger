@@ -45,21 +45,22 @@ fn every_declared_wasm32_member_is_linted() {
     }
 }
 
-/// The browser applications and every crate under `crates/frontend` are linted too, and nothing
-/// else is.
+/// Every crate of the frontend family under `crates/frontend` is linted too, the single-page app
+/// and the offline service worker among them, and nothing else is.
 #[test]
-fn the_lint_covers_exactly_the_wasm32_members_the_applications_and_the_frontend_crates() {
+fn the_lint_covers_exactly_the_wasm32_members_and_the_frontend_crates() {
     let members = read_workspace_members(&root()).expect("the workspace members read");
     let mut expected = declared_wasm32_packages();
-    for package in &BROWSER_APPLICATIONS {
-        if members.iter().any(|member| member.package_name == *package) {
-            expected.push((*package).to_string());
-        }
-    }
     for member in &members {
         if member.path.starts_with("crates/frontend/") && !expected.contains(&member.package_name) {
             expected.push(member.package_name.clone());
         }
+    }
+    for application in ["frontend_application", "offline_service_worker"] {
+        assert!(
+            expected.iter().any(|package| package == application),
+            "{application} is no crate under crates/frontend: {expected:?}"
+        );
     }
     let mut linted = wasm32_lint_packages(&root()).expect("the lint packages derive");
     expected.sort();
@@ -107,7 +108,8 @@ fn wasm_ci_and_the_frontend_lane_partition_the_lint() {
 }
 
 /// A `targets = "any"` crate under `crates/frontend` is linted for wasm32, by the frontend lane
-/// and not by `wasm-ci`; a `targets = "any"` crate elsewhere is not linted for wasm32.
+/// and not by `wasm-ci`, the two shell crates beside it; a `targets = "any"` crate elsewhere is
+/// not linted for wasm32, and a declared wasm32 crate elsewhere is linted by `wasm-ci`.
 #[test]
 fn an_any_target_frontend_crate_is_linted_for_wasm32_by_the_frontend_lane() {
     let folder = std::env::temp_dir().join(format!(
@@ -121,17 +123,22 @@ fn an_any_target_frontend_crate_is_linted_for_wasm32_by_the_frontend_lane() {
         std::fs::write(path, body).unwrap();
     };
     let any = "\n[package.metadata.layout]\ntargets = \"any\"\n";
+    let wasm32 = "\n[package.metadata.layout]\ntargets = \"wasm32\"\n";
     write(
         "Cargo.toml",
-        "[workspace]\nmembers = [\"apps/*\", \"crates/foundation/*\", \"crates/frontend/*/*\"]\n",
+        "[workspace]\nmembers = [\"crates/foundation/*\", \"crates/frontend/*/*\"]\n",
     );
     write(
-        "apps/frontend/Cargo.toml",
-        "[package]\nname = \"frontend\"\n",
+        "crates/frontend/shell/frontend_application/Cargo.toml",
+        "[package]\nname = \"frontend_application\"\n",
     );
     write(
-        "apps/offline_service_worker/Cargo.toml",
-        "[package]\nname = \"offline_service_worker\"\n",
+        "crates/frontend/shell/offline_service_worker/Cargo.toml",
+        &format!("[package]\nname = \"offline_service_worker\"\n{any}"),
+    );
+    write(
+        "crates/foundation/browser_platform/Cargo.toml",
+        &format!("[package]\nname = \"browser_platform\"\n{wasm32}"),
     );
     write(
         "crates/foundation/time_source/Cargo.toml",
@@ -141,11 +148,20 @@ fn an_any_target_frontend_crate_is_linted_for_wasm32_by_the_frontend_lane() {
         "crates/frontend/foundation/frontend_ui/Cargo.toml",
         &format!("[package]\nname = \"frontend_ui\"\n{any}"),
     );
-    let all = wasm32_lint_packages(&folder).expect("the fixture reads");
+    let mut all = wasm32_lint_packages(&folder).expect("the fixture reads");
     let wasm_ci = wasm_ci_lint_packages(&folder).expect("the fixture reads");
     std::fs::remove_dir_all(&folder).unwrap();
-    assert_eq!(all, ["frontend", "offline_service_worker", "frontend_ui"]);
-    assert_eq!(wasm_ci, ["offline_service_worker"]);
+    all.sort();
+    assert_eq!(
+        all,
+        [
+            "browser_platform",
+            "frontend_application",
+            "frontend_ui",
+            "offline_service_worker"
+        ]
+    );
+    assert_eq!(wasm_ci, ["browser_platform"]);
 }
 
 /// The command line names each package once, then the wasm32 target and `-D warnings`.
@@ -158,29 +174,34 @@ fn the_clippy_argv_names_each_package_and_the_target() {
     );
 }
 
-/// A workspace without one of the browser applications is refused, never a smaller lint.
+/// A workspace without the single-page app is refused, never a smaller lint: the offline service
+/// worker beside it does not stand in for it.
 #[test]
-fn a_missing_browser_application_is_refused() {
+fn a_workspace_without_the_frontend_application_is_refused() {
     let folder = std::env::temp_dir().join(format!(
         "wasm32-lint-lane-missing-application-{}",
         std::process::id()
     ));
     let _ = std::fs::remove_dir_all(&folder);
-    std::fs::create_dir_all(folder.join("apps/frontend")).unwrap();
+    std::fs::create_dir_all(folder.join("crates/frontend/shell/offline_service_worker")).unwrap();
     std::fs::write(
         folder.join("Cargo.toml"),
-        "[workspace]\nmembers = [\"apps/frontend\"]\n",
+        "[workspace]\nmembers = [\"crates/frontend/shell/offline_service_worker\"]\n",
     )
     .unwrap();
     std::fs::write(
-        folder.join("apps/frontend/Cargo.toml"),
-        "[package]\nname = \"frontend\"\n",
+        folder.join("crates/frontend/shell/offline_service_worker/Cargo.toml"),
+        "[package]\nname = \"offline_service_worker\"\n",
     )
     .unwrap();
     let refused = wasm32_lint_packages(&folder).expect_err("a missing application is refused");
+    let refused_wasm_ci =
+        wasm_ci_lint_packages(&folder).expect_err("a missing application is refused");
     std::fs::remove_dir_all(&folder).unwrap();
-    assert!(
-        refused.to_string().contains("`offline_service_worker`"),
-        "{refused}"
-    );
+    for error in [refused, refused_wasm_ci] {
+        assert!(
+            error.to_string().contains("`frontend_application`"),
+            "{error}"
+        );
+    }
 }

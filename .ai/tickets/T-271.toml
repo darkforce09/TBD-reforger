@@ -50,7 +50,7 @@ owns = [
     "apps/website/api/src/models/content.rs",
     "apps/website/api/src/app.rs",
     "apps/website/api/tests/modpacks_crud.rs",
-    "apps/frontend/src/modpacks.rs",
+    "crates/frontend/shell/frontend_application/src/modpacks.rs",
 ]
 
 [scope]

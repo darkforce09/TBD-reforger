@@ -15,9 +15,9 @@
 use offline_cache_policy::cache_names::BuildId;
 use url::Url;
 
-/// The file-name prefix Trunk gives the app bundle: `frontend-<hash>.js` and
-/// `frontend-<hash>_bg.wasm`.
-pub const APP_BUNDLE_PREFIX: &str = "frontend-";
+/// The file-name prefix Trunk gives the app bundle: `frontend_application-<hash>.js` and
+/// `frontend_application-<hash>_bg.wasm`.
+pub const APP_BUNDLE_PREFIX: &str = "frontend_application-";
 
 /// The build identifier in the first app bundle URL among `asset_urls`, or
 /// [`BuildId::UNVERSIONED`] when none carries one.

@@ -59,11 +59,11 @@ cd /run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
 test "$(git rev-parse --show-toplevel)" = "$(pwd)"
 git status --porcelain
 git lfs pull && make map-assets-link
-cd apps/frontend && npm ci && cd ../../..
+cd crates/frontend/shell/frontend_application && npm ci && cd ../../..
 make wasm
 ```
 
-Confirm atlas files exist under `apps/frontend/public/map-assets/glyphs/atlas/`.
+Confirm atlas files exist under `crates/frontend/shell/frontend_application/public/map-assets/glyphs/atlas/`.
 
 ## Key files
 

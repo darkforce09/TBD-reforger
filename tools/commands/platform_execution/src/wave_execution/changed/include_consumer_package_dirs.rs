@@ -12,7 +12,7 @@
 //!
 //! **Invariants:** the member list is derived from `Cargo.toml`, never hand-written, and a manifest
 //! that cannot be read is an error, never an empty workspace; consumers are searched in every
-//! member's folder, so a crate under `apps/`, `crates/` or `tools/` is never missed; a path built
+//! member's folder, so a crate under `crates/` or `tools/` is never missed; a path built
 //! from `CARGO_MANIFEST_DIR` resolves from the including crate's folder.
 
 use super::*;
@@ -21,8 +21,8 @@ use verification_core::NotRun;
 
 /// `Cargo.toml` dirs of every workspace crate that `include!`s an orphan `.rs` fragment.
 ///
-/// The consumers are searched for in every workspace member's folder, so a crate under `apps/`,
-/// `crates/` or `tools/` is found alike. A workspace whose members cannot be read
+/// The consumers are searched for in every workspace member's folder, so a crate under `crates/`
+/// or `tools/` is found alike. A workspace whose members cannot be read
 /// yields no consumer, which every caller treats as "nothing resolved" and refuses on.
 pub(crate) fn include_consumer_package_dirs(orphan: &str) -> Vec<String> {
     include_consumers_under(orphan, &workspace_members().unwrap_or_default())
@@ -106,7 +106,7 @@ pub(crate) fn compiled_include_input_paths() -> Result<Vec<PathBuf>, NotRun> {
 ///
 /// Follow-up (wave-255 verify). Split out so the slice gate's frontend test step can ask
 /// the same question about the WASM-SCOPE crates ONLY. Taking the whole-workspace answer would put
-/// `apps/api/**`'s include inputs into the frontend's scope, which
+/// `crates/api/api_server/**`'s include inputs into the frontend's scope, which
 /// `the_frontends_include_str_inputs_are_in_scope_and_the_apis_are_not` deliberately forbids.
 /// Behaviour for the original caller is unchanged: it passes `workspace_members()` and gets the
 /// identical list.

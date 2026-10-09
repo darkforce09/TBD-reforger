@@ -3,7 +3,8 @@
 //! **Role:** installs the pinned `enfusion-mcp` package, warms the MCP daemon, sets up the MCP game
 //! root, launches Workbench with `-gproj apps/mod/tbd-export/addon.gproj` (which skips the project
 //! picker and loads tbd-framework and tbd-emcp through the dependency); `--api` also starts the
-//! database container and the API dev server, `--server` sets up the dedicated-server profile.
+//! compose database (`cargo xtask db up`) and the API dev server (`cargo xtask mk rust-api`),
+//! `--server` sets up the dedicated-server profile.
 //! **Position:** called by [`crate::mod_dispatch`]; drives npm, the MCP daemon, Steam and the
 //! database tooling through [`process_runner`]; `TBD_DEV_BOOTSTRAP_ROOT` points it at a throwaway
 //! tree for tests.
@@ -34,7 +35,6 @@ struct Paths {
     mono_root: PathBuf,
     mod_root: PathBuf,
     enfusion_mcp_node_package: PathBuf,
-    web: PathBuf,
 }
 
 impl Paths {
@@ -43,7 +43,6 @@ impl Paths {
             mono_root: root.to_path_buf(),
             mod_root: root.join("apps/mod"),
             enfusion_mcp_node_package: repository_layout::enfusion_mcp_node_package_dir(root),
-            web: root.join("apps/api"),
         }
     }
 }
@@ -215,13 +214,30 @@ pub(crate) fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
     for arg in args {
         match arg.as_str() {
             "--api" => {
-                let _ = Run::new("podman")
-                    .arg("start")
-                    .arg("tbdevent-postgres")
+                // The compose database first: the API applies its migrations on boot.
+                let database = Run::new("cargo")
+                    .args(["run", "-q", "-p", "xtask", "--", "db", "up"])
+                    .cwd(&p.mono_root)
                     .merged_output();
+                match database {
+                    Ok(out) if out.code == 0 => out_line("Local database container up")?,
+                    Ok(out) => {
+                        print!("{}", out.text);
+                        out_line(&format!(
+                            "warn: `cargo xtask db up` exited {}; the API dev server needs the \
+                             database",
+                            out.code
+                        ))?;
+                    }
+                    Err(e) => out_line(&format!("warn: `cargo xtask db up` did not run: {e}"))?,
+                }
                 // Detached: the dev server runs until the operator stops it.
-                start_detached_silently(Run::new("npm").arg("run").arg("dev").cwd(&p.web));
-                out_line("API dev server starting on :8080")?;
+                start_detached_silently(
+                    Run::new("cargo")
+                        .args(["run", "-q", "-p", "xtask", "--", "mk", "rust-api"])
+                        .cwd(&p.mono_root),
+                );
+                out_line("API dev server (`cargo xtask mk rust-api`) starting on :8080")?;
             }
             "--server" => {
                 // Optional: a host without a server directory is a valid workstation.

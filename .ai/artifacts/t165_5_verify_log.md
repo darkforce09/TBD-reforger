@@ -37,7 +37,7 @@ T-165.6 after the smokes port); this slice proves the Rust harness on the V lane
 - The frozen goldens under `.ai/artifacts/t159_gates/v/oracle-freeze/` are untouched — the
   Rust `verify` reproduces the Node verdicts against the exact committed bytes.
 - `freeze` mode is ported for provenance but its default `--oracle-dir`
-  (`apps/frontend/dist`) no longer exists post T-159.29.3.
+  (`crates/frontend/shell/frontend_application/dist`) no longer exists post T-159.29.3.
 - `gate serve` replaces the `node serve.mjs --dir … --port …` CLI (Ctrl-C to stop).
 - Makefile `leptos-gates` still drives the Node runner — the flip + driver deletion is
   T-165.6 acceptance (both harnesses green on the same dist, then `git rm driver/`).

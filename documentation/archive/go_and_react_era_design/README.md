@@ -38,7 +38,7 @@ live document took over a file's subject, the file's status line links it:
 
 | Archived files | Live replacement |
 |---|---|
-| the frontend documentation index, readme, roadmap and work tracking | [frontend documentation](/documentation/apps/frontend/README.md) |
+| the frontend documentation index, readme, roadmap and work tracking | [frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md) |
 | the frontend page spec template | [feature doc template](/documentation/standards/templates/feature_doc.md) |
 | the macOS UX methodology | [design system](/documentation/design_system/README.md) |
 | the Mission Creator roadmap | [Mission Creator roadmap](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md) |
@@ -47,13 +47,13 @@ live document took over a file's subject, the file's status line links it:
 
 The [event](/documentation/glossary/a_to_f.md#event) registration redesign, the Go backend plan, the
 Mission Creator design, engineering plan and problem statement, and the platform context handoff
-have no single replacement: the [API documentation](/documentation/apps/api/README.md) and
+have no single replacement: the [API documentation](/documentation/crates/api/api_server/README.md) and
 the [Mission Creator documentation](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md)
 describe what was built.
 
 ## Code
 
-- [Frontend](/apps/frontend/) and [API](/apps/api/) — the Rust code that
+- [Frontend](/crates/frontend/shell/frontend_application/) and [API](/crates/api/api_server/) — the Rust code that
   implements the platform these documents planned.
 - [Mission Creator](/crates/frontend/workspaces/mission_creator_workspace/src/) — the editor the Mission Creator
   documents planned.
@@ -72,8 +72,8 @@ describe what was built.
 
 ## Related documentation
 
-- [Frontend documentation](/documentation/apps/frontend/README.md) — every route and its
+- [Frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md) — every route and its
   feature doc.
 - [Mission Creator documentation](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md) — the
   live editor documents.
-- [API documentation](/documentation/apps/api/README.md) — the backend as built.
+- [API documentation](/documentation/crates/api/api_server/README.md) — the backend as built.

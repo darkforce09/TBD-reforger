@@ -189,7 +189,7 @@ RCON route. Every request runs in the browser build only; the views that run the
   deployment routes and mission library of the [missions](/documentation/glossary/g_to_m.md#missions)
   domain, the event reads of the [operations](/documentation/glossary/n_to_z.md#operations) domain,
   and the modpack list of the community content domain.
-- Used by: the `/admin/server` route in `apps/frontend/src/app_routes.rs` and
+- Used by: the `/admin/server` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Server Control" link in
   `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; `server_control_source` in
   `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`, which joins the page's sources for its

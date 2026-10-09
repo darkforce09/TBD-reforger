@@ -18,14 +18,16 @@ where code, contracts, assets, documents and agent configuration live.
 
 ```text
 TBD-reforger/
-├── apps/            the products: API, single-page app, service worker, Enfusion mod suite,
-│                    fleet host agent, ticketboard
-├── crates/          the tiered library crates, grouped by category (foundation/, contracts/, geometry/, world_formats/, streaming/, map_rendering/, graphics/, api/, …)
+├── apps/            the Enfusion mod suite (mod/); no Rust crate
+├── crates/          the tiered product crates, grouped by category (foundation/, contracts/, geometry/, world_formats/, streaming/, map_rendering/, graphics/, api/, fleet/, frontend/, …):
+│                    the API server, the single-page app, the service worker and the game server
+│                    host agent among them
 ├── deploy/          the release Dockerfile, compose files, Caddy site (caddy/), deploy settings,
 │                    systemd units
 ├── tools/           the developer tools: xtask, developer_tools, the crates by category
 │                    (foundation/, tickets/, commands/, checks/, enfusion/, browser_testing/,
-│                    staging/, map_assets/), and the pinned Enfusion MCP npm package
+│                    staging/, map_assets/; the ticketboard desktop viewer in tickets/), and the
+│                    pinned Enfusion MCP npm package
 ├── contracts/       JSON Schemas, rules, catalogs and fixtures of every shape that crosses a boundary
 ├── assets/          terrain datasets (Git LFS), the world-object glyph set, the storage specification
 ├── documentation/   every document: feature docs, runbooks, standards, glossary, tickets, archive
@@ -45,19 +47,21 @@ folder are ignored.
 
 ## Workspace members
 
-One Cargo workspace (resolver 3) holds every Rust crate: 161 members, which are 5 apps under
-`apps/`, 113 library crates under `crates/`, 41 tool crates under `tools/<category>/` and the two
-tool binaries `tools/xtask` and `tools/developer_tools`. The crate-tier law judges the 154 crates
-and leaves out only the apps and the two binaries. Members inherit edition 2024 and rust-version
-1.95 from `[workspace.package]`.
+One Cargo workspace (resolver 3) holds every Rust crate: 161 members, which are 117 crates under
+`crates/` (113 library crates and four applications: the API server, the single-page app, the
+offline service worker and the game server host agent), 42 tool crates under `tools/<category>/`
+(the ticketboard desktop viewer among them) and the two tool binaries `tools/xtask` and
+`tools/developer_tools`. The crate-tier law judges the 159 crates and leaves out only the two
+binaries; no member depends on one of the five applications. Members inherit edition 2024 and
+rust-version 1.95 from `[workspace.package]`. The applications come first in the table.
 
 | Folder | Package | What it is |
 |---|---|---|
-| [`apps/api/`](/apps/api/README.md) | `api` | the Axum and sqlx REST API and SSE hub: the thin application (router, composition root, the `api` server and the `import-registry` tool) the 23 crates under `crates/api/` are assembled into, and its 150 integration binaries |
-| [`apps/frontend/`](/apps/frontend/README.md) | `frontend` | the Leptos single-page app, compiled to WebAssembly and served by Trunk: the thin app (entry point, route rendering, the platform frame in `shell/`, the stylesheet) the 22 crates under `crates/frontend/` are assembled into |
-| [`apps/offline_service_worker/`](/apps/offline_service_worker/README.md) | `offline_service_worker` | the WebAssembly service worker behind offline packs |
-| [`apps/fleet_host_agent/`](/apps/fleet_host_agent/README.md) | `fleet_host_agent` | the agent beside each game-server instance that carries out fleet commands |
-| [`apps/ticketboard/`](/apps/ticketboard/README.md) | `ticketboard` | the egui desktop viewer of the ticket registry; its headless models are `ticketboard_model` in `tools/tickets/` |
+| [`crates/api/api_server/`](/crates/api/api_server/README.md) | `api_server` | the Axum and sqlx REST API and SSE hub: the top API crate (router, composition root, the `api-server` server and the `import-item-registry` tool) the 23 other crates under `crates/api/` are assembled into, and its 150 integration binaries |
+| [`crates/frontend/shell/frontend_application/`](/crates/frontend/shell/frontend_application/README.md) | `frontend_application` | the Leptos single-page app, compiled to WebAssembly and served by Trunk: the shell crate (entry point, route rendering, the platform frame in `shell/`, the stylesheet) the 22 crates of the lower frontend layers are assembled into |
+| [`crates/frontend/shell/offline_service_worker/`](/crates/frontend/shell/offline_service_worker/README.md) | `offline_service_worker` | the WebAssembly service worker behind offline packs, the app's peer in the shell layer |
+| [`crates/fleet/game_server_host_agent/`](/crates/fleet/game_server_host_agent/README.md) | `game_server_host_agent` | the game server host agent beside each game-server instance that carries out fleet commands |
+| [`tools/tickets/ticketboard_desktop/`](/tools/tickets/ticketboard_desktop/README.md) | `ticketboard_desktop` | the egui desktop viewer of the ticket registry; its headless models are `ticketboard_model` in `tools/tickets/` |
 | [`crates/foundation/http_url_guard/`](/crates/foundation/http_url_guard/README.md) | `http_url_guard` | the HTTP(S) URL check the API and the single-page app share |
 | [`crates/contracts/offline_cache_policy/`](/crates/contracts/offline_cache_policy/README.md) | `offline_cache_policy` | the offline cache names, request classes and fallback rules the service worker applies |
 | [`crates/foundation/newtype_ids/`](/crates/foundation/newtype_ids/README.md) | `newtype_ids` | macros declaring serde-transparent typed ids |
@@ -106,7 +110,7 @@ and leaves out only the apps and the two binaries. Members inherit edition 2024 
 | [`crates/map_rendering/map_render_diagnostics/`](/crates/map_rendering/map_render_diagnostics/README.md) | `map_render_diagnostics` | the renderer's readback self-checks, scene readback, frame benchmark and stress pool (wasm32) |
 | [`crates/paper_doll/paper_doll_scene/`](/crates/paper_doll/paper_doll_scene/README.md) | `paper_doll_scene` | the Arsenal paper doll's parts, equipment regions, state colours, meshes, picks and callout anchors |
 | [`crates/paper_doll/paper_doll_renderer/`](/crates/paper_doll/paper_doll_renderer/README.md) | `paper_doll_renderer` | the wgpu renderer of the paper doll on its own canvas, with its readback self-check (wasm32) |
-| [`crates/contracts/fleet_wire_contract/`](/crates/contracts/fleet_wire_contract/README.md) | `fleet_wire_contract` | the fleet-command wire shapes the API and the fleet host agent share |
+| [`crates/contracts/fleet_wire_contract/`](/crates/contracts/fleet_wire_contract/README.md) | `fleet_wire_contract` | the fleet-command wire shapes the API and the game server host agent share |
 | [`crates/contracts/contract_schema_types/`](/crates/contracts/contract_schema_types/README.md) | `contract_schema_types` | the Rust types generated from the JSON Schemas |
 | [`crates/mission/mission_wire_safety/`](/crates/mission/mission_wire_safety/README.md) | `mission_wire_safety` | the control-character scan of authored names and the cargo capacity scan of slot loadouts |
 | [`crates/mission/mission_model/`](/crates/mission/mission_model/README.md) | `mission_model` | the compiled rows, ORBAT projection, authored extension blocks, slot line and typed ids of a mission |
@@ -174,7 +178,7 @@ and leaves out only the apps and the two binaries. Members inherit edition 2024 
 | [`tools/xtask/`](/tools/xtask/README.md) | `xtask` | the `cargo xtask` command line and dispatch onto the tool crates, plus the `ai`, `fetch`, `map`, `refactor`, `schema`, `ticket`, `verify` and `wave` command groups |
 | [`tools/foundation/verification_core/`](/tools/foundation/verification_core/README.md) | `verification_core` | fail-closed verdicts, pattern scans, gates and the verification lock |
 | [`tools/foundation/process_runner/`](/tools/foundation/process_runner/README.md) | `process_runner` | process isolation, deadlines, host-bridge execution and the secure shell transport |
-| [`tools/foundation/repository_laws/`](/tools/foundation/repository_laws/README.md) | `repository_laws` | every repository law: the workspace laws (crate tiers, anatomy, test-file reachability, frontend layering, Tailwind sources), file length, test placement, the apps' dependency directions |
+| [`tools/foundation/repository_laws/`](/tools/foundation/repository_laws/README.md) | `repository_laws` | every repository law: the workspace laws (crate tiers, anatomy, test-file reachability, frontend layering, Tailwind sources), file length, test placement, test-only features |
 | [`tools/foundation/repository_layout/`](/tools/foundation/repository_layout/README.md) | `repository_layout` | the paths every tool shares, relative to the checkout root; its prelude re-exports `repository_root`'s finder |
 | [`tools/foundation/deploy_settings/`](/tools/foundation/deploy_settings/README.md) | `deploy_settings` | the one reader of `deploy/deploy.env` and its precedence rule over exported variables |
 | [`tools/foundation/tool_test_support/`](/tools/foundation/tool_test_support/README.md) | `tool_test_support` | the test locks (process variables, working directory) and the checkout root the tool crates' tests share (dev-only) |
@@ -215,12 +219,12 @@ and leaves out only the apps and the two binaries. Members inherit edition 2024 
 | [`tools/staging/staging_fixtures/`](/tools/staging/staging_fixtures/README.md) | `staging_fixtures` | the `staging-fixtures` host tool that stages a staging run's fixtures through the API crates' services, with its 4 database suites |
 | [`tools/developer_tools/`](/tools/developer_tools/README.md) | `developer_tools` | the eight tool binaries, each a one-line `main` over one tool crate (script index, browser gates, MCP broker, world export, map assets, capture, the staging load and relay); no library |
 
-The API is 24 packages: the `api` application and the 23 crates under `crates/api/`, grouped as
+The API is the 24 crates under `crates/api/`: the server `api_server` on top and 23 crates below it, grouped as
 infrastructure (`api_identifiers`, `api_foundation`, `api_failpoints`, `api_configuration`,
 `api_database`, `api_http_layer`, the dev-only `api_property_evidence`), kernel
 (`api_mission_vocabulary`, `api_audit_log`, `api_equipment_datasets`, `api_member_activity`,
 `api_discord`, `api_caller_identity`, `api_state`), the eight domain crates and
-`api_background_workers`. Its 154 integration binaries are 150 in `apps/api/tests/` and the 4
+`api_background_workers`. Its 154 integration binaries are 150 in `crates/api/api_server/tests/` and the 4
 suites of `staging_fixtures`.
 
 Every package is named after its folder, in snake_case. A crate under `crates/` sits in the
@@ -237,9 +241,9 @@ Cargo code: its three Enfusion addons are built by Workbench and checked by `car
 ## Where things live
 
 ```text
-code ─────────── apps/<product>/            products, one folder each
-                 crates/<category>/<crate>/ library crates, by category
+code ─────────── crates/<category>/<crate>/ product crates by category, the applications among them
                  tools/<category>/<crate>/  repository tooling (xtask and developer_tools directly under tools/)
+                 apps/mod/                  the Enfusion mod suite
 deploy ───────── deploy/                    release image, compose files, Caddy, systemd units
 shapes ───────── contracts/definitions/     JSON Schemas, the source of generated contract types
                  contracts/fixtures/        golden test data, positive and negative
@@ -250,7 +254,8 @@ documents ────── documentation/<code path>/ feature docs mirroring t
 work tracking ── .ai/tickets/               one TOML per ticket, the queue and the templates
 ```
 
-- **Code.** A product's code and its README sit in its folder under `apps/`; every folder carries
+- **Code.** A product's code and its README sit in its crate folder under `crates/` (the mod in
+  `apps/mod/`, the ticketboard desktop viewer in `tools/tickets/`); every folder carries
   a README.md built to the [README standard](/documentation/standards/readme_standard.md), and
   the code trees hold no other Markdown. Engine and layer boundaries are in the
   [crate boundary rules](/documentation/standards/crate_boundary_rules.md).
@@ -260,7 +265,7 @@ work tracking ── .ai/tickets/               one TOML per ticket, the queue a
 - **Assets.** Terrain datasets are Git LFS objects matched by `.gitattributes`; export scratch,
   equipment exports and terrain tiles are ignored and rebuilt by the export tools.
 - **Documentation.** Every document lives under `documentation/`. A feature doc sits at the
-  documentation root plus its code path without `src/`: `documentation/apps/api/` for `apps/api/`,
+  documentation root plus its code path without `src/`: `documentation/crates/api/api_server/` for `crates/api/api_server/`,
   `documentation/crates/streaming/` for `crates/streaming/`,
   `documentation/crates/frontend/workspaces/mission_creator_workspace/` for
   `crates/frontend/workspaces/mission_creator_workspace/src/`. The mod's documents sit in

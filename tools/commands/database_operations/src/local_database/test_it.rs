@@ -1,8 +1,8 @@
 //! Isolated integration-test invocation and ownership-checked database cleanup.
 //!
-//! **Role:** `cargo xtask db test-it`: the API test suite (the `api` package, every API crate and
-//! every member using one that [`super::api_test_packages`] derives) against a freshly claimed
-//! scratch database, then the ownership-checked cleanup of the run's databases.
+//! **Role:** `cargo xtask db test-it`: the API test suite (the `api_server` package, every other
+//! API crate and every member using one that [`super::api_test_packages`] derives) against a
+//! freshly claimed scratch database, then the ownership-checked cleanup of the run's databases.
 //! **Position:** a child of [`crate::local_database`], whose `run` dispatch calls `run`; the ci
 //! `rust-test-it` task calls [`run_complete_suite`]; `super::selftest` uses the cleanup.
 //! **Signals & state:** the run's scratch database namespace, claimed with `CREATE DATABASE` and
@@ -163,7 +163,7 @@ fn is_selector_text(value: &str) -> bool {
 /// Cargo arguments for the selection; libtest always retains successful property records.
 ///
 /// Every package of `api_packages` is tested, except under a `--test` selection: the integration
-/// binaries belong to the `api` package alone, so that form names `api` only.
+/// binaries belong to the `api_server` package alone, so that form names `api_server` only.
 pub(crate) fn cargo_test_arguments(
     selection: &TestSelection,
     api_packages: &[String],

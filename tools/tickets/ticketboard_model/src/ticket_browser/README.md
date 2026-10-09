@@ -3,7 +3,7 @@
 The models behind the [ticketboard](/documentation/glossary/n_to_z.md#ticketboard) feature that
 presents the loaded [ticket](/documentation/glossary/n_to_z.md#ticket) registry: the status board,
 the program tree, the filters and scope facets, and the order of a ticket's detail sections. The
-desktop application paints them from `apps/ticketboard/src/ticket_browser/ui/`. The feature reads
+desktop application paints them from `tools/tickets/ticketboard_desktop/src/ticket_browser/ui/`. The feature reads
 the registry and never changes it.
 
 ## Contents
@@ -53,8 +53,8 @@ strip emit `crate::ticket_actions::events::TicketActionEvent`, which comes back 
   `crate::execution_metrics::estimated::EstimatesState`, which `BrowserView` lends; `ticket_model`
   (`StatusName`, `Ticket`, `TicketId`, `ScopeVocab`).
 - Used by: `crate::application_state` (`events.rs`, `workspace_state.rs`, `workspace_reload.rs`,
-  `background_loading.rs`); the desktop application's `apps/ticketboard/src/ticket_browser/ui/`
-  and `apps/ticketboard/src/application/` (`mod.rs`, `feature_views.rs`, `action_dispatch.rs`).
+  `background_loading.rs`); the desktop application's `tools/tickets/ticketboard_desktop/src/ticket_browser/ui/`
+  and `tools/tickets/ticketboard_desktop/src/application/` (`mod.rs`, `feature_views.rs`, `action_dispatch.rs`).
 - Rules:
   - the browser may use other features' models, services and events, never application state,
     and nothing here names egui (the test

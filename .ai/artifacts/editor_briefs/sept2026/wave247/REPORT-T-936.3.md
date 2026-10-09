@@ -44,8 +44,8 @@ The worktree is `slice/T-936.3` at merge-base + T-942 packing, i.e. the code `ma
 | `crates/map-engine-core/src/mission/flatten.rs` | 1400–1404, 1414–1425 | `EditorPayload.tasks` + `radioPlan`; `authored_blocks_root` inserts both. |
 | `crates/map-engine-core/src/mission/flatten.rs` | 2632–2658, call site | `resolve_radio_plan`: authored → `mod_plan_from_authored` (id/label/freq/faction/range unchanged); else `derive_radio_plan`. |
 | `crates/map-engine-core/src/mission/flatten.rs` | tests after `radio_plan_label_is_capped_at_the_mod_limit` | Authored radio pass-through; T-946.35 tasks survive flatten. |
-| `apps/frontend/src/editor/panels/radio_panel.rs` | NEW | Net list, faction assignment, range, undoable ops, Reset-to-derived (`radioPlan: null`). Duplicate/out-of-range refused with a message. |
-| `apps/frontend/src/editor/panels/mod.rs` | 37 | Register `radio_panel`. |
+| `crates/frontend/shell/frontend_application/src/editor/panels/radio_panel.rs` | NEW | Net list, faction assignment, range, undoable ops, Reset-to-derived (`radioPlan: null`). Duplicate/out-of-range refused with a message. |
+| `crates/frontend/shell/frontend_application/src/editor/panels/mod.rs` | 37 | Register `radio_panel`. |
 
 `compile.rs` was not edited (generic `copy_authored_blocks`). No schema change. No `.c`.
 
@@ -96,7 +96,7 @@ no .c touched
 
 | path:line | repro |
 |---|---|
-| `apps/frontend/src/editor/panels/settings_modal.rs` | Radio panel is registered and tested but not mounted. T-946.33 owns that one line (`{radio_panel(ctrl)}`), same as T-936.1/.2. Not in this slice's owns. |
+| `crates/frontend/shell/frontend_application/src/editor/panels/settings_modal.rs` | Radio panel is registered and tested but not mounted. T-946.33 owns that one line (`{radio_panel(ctrl)}`), same as T-936.1/.2. Not in this slice's owns. |
 | flatten `missionParams` / group AI / vehicle lock-fuel-ammo | Did not fall out of the radio/tasks insert. T-946.36. Compiling a 1.3 payload that authors those keys still omits them from `/compiled`. |
 | `crates/map-engine-core/src/mission/tasks.rs` comment (~522) | Still says flatten must not grow a `tasks` field (T-936.2 did not own flatten.rs). Stale; T-133 owns the file. Behaviour is fixed here. |
 | `dem::peaks::tests::everon_peaks_max_above_350` | `Decode("Invalid PNG signature.")` in the slice worktree — LFS pointer / missing `packages/map-assets` payload. Brief: environmental; not chased. `--list` 986; run 983 passed + 1 this fail + 2 ignored. |

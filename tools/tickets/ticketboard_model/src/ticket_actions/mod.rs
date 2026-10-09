@@ -4,8 +4,8 @@
 //! inputs, the compare-and-set guard over the ticket file, the single-flight queue and the
 //! execution and notification state.
 //! **Position:** over [`crate::ticket_registry`] and [`crate::core::process`]; the application runs
-//! the commands, and `apps/ticketboard`'s `ticket_actions::ui` paints the dialogs and feedback
-//! and emits [`events::TicketActionEvent`]s.
+//! the commands, and `tools/tickets/ticketboard_desktop`'s `ticket_actions::ui` paints the dialogs
+//! and feedback and emits [`events::TicketActionEvent`]s.
 //! **Signals & state:** plain data; the running command's subprocess handle lives in
 //! [`models::CommandExecutionState`].
 //! **Invariants:** tickets change only through `cargo xtask ticket` subprocesses, one at a time;

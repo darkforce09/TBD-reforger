@@ -3,7 +3,7 @@
 The monorepo of the TBD Arma Reforger milsim community: the website with its
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator), the
 [Enfusion](/documentation/glossary/a_to_f.md#enfusion) [mod](/documentation/glossary/g_to_m.md#mod)
-that game servers run, the [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent)
+that game servers run, the [game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent)
 that controls those servers, the contracts and map data they share, and the developer tools behind
 `cargo xtask`. Start here, then read [CLAUDE.md](/CLAUDE.md) for the project laws and the
 [documentation entry](/documentation/README.md) for everything deeper.
@@ -24,18 +24,18 @@ that controls those servers, the contracts and map data they share, and the deve
 ├── .gitignore                   keeps the deploy settings, build output, export scratch and local reference copies out of git
 ├── .world-boot-warning-baseline the per-mission warning budget of `cargo xtask mod world-boot`
 ├── AGENTS.md                    a symlink to CLAUDE.md for agents that read AGENTS.md
-├── apps/                        the products: API, single-page app, service worker, mod suite, fleet host agent, ticketboard
+├── apps/                        the Enfusion mod suite the game servers run; no Rust crate
 ├── assets/                      terrain datasets and the world-object glyph set, served at `/map-assets`
 ├── Cargo.lock                   the workspace lockfile
-├── Cargo.toml                   the Cargo workspace: the app, library, engine and tooling crates
+├── Cargo.toml                   the Cargo workspace: the product crates, the applications among them, and the tool crates
 ├── CLAUDE.md                    the agent entry file: project laws, directory atlas, canonical commands
 ├── clippy.toml                  the clippy settings every workspace crate reads: tests may call `unwrap()`
 ├── contracts/                   JSON Schemas, rules, catalogs and fixtures of every cross-boundary shape
-├── crates/                      the tiered library crates, grouped by category
+├── crates/                      the tiered product crates by category: API server, single-page app, service worker, game server host agent and their libraries
 ├── deploy/                      the release Dockerfile, compose files, Caddy site, deploy settings template, systemd units
 ├── documentation/               all documentation: feature docs, runbooks, standards, glossary, archive
 ├── rust-toolchain.toml          the pinned Rust toolchain with rustfmt, clippy and the wasm32 target
-└── tools/                       the developer tools: `xtask`, the ticket crates, `developer_tools`, the tool foundations
+└── tools/                       the developer tools: `xtask`, the ticket crates and the ticketboard desktop viewer, `developer_tools`, the tool foundations
 ```
 
 ## How it works
@@ -44,21 +44,21 @@ Mission makers build a [mission](/documentation/glossary/g_to_m.md#mission) in t
 a page of the website's single-page app. The [API](/documentation/glossary/a_to_f.md#api) stores
 it, compiles it into an immutable [artifact](/documentation/glossary/a_to_f.md#artifact) and
 deploys it to a game server. The mod on that server fetches the deployed mission and runs the
-session; the fleet host agent beside it carries out the server commands the API queues. The
+session; the game server host agent beside it carries out the server commands the API queues. The
 [event](/documentation/glossary/a_to_f.md#event) schedule, [ORBAT](/documentation/glossary/n_to_z.md#orbat) slotting, leaderboards and doctrine
 pages sit on the same API. `contracts/` defines every shape these programs exchange, and
 `tools/` builds, checks and deploys all of it.
 
 ```text
-browser ── apps/frontend (Mission Creator)
+browser ── crates/frontend/shell/frontend_application (Mission Creator)
                        │
                        │ /api/v1, SSE, /map-assets
                        ▼
-           apps/api ──▶ Postgres; serves assets/terrains at /map-assets
+           crates/api/api_server ──▶ Postgres; serves assets/terrains at /map-assets
                        ▲
                        │ HTTPS, outbound from the game side
            ┌───────────┴───────────┐
-  apps/mod/tbd-framework   apps/fleet_host_agent
+  apps/mod/tbd-framework   crates/fleet/game_server_host_agent
   (dedicated server:       (game host: claims
    fetches the mission)     fleet commands)
 
@@ -79,7 +79,7 @@ section 3 of [CLAUDE.md](/CLAUDE.md). `cargo xtask help` lists the build, CI and
   container for local development; Git LFS for terrain data; Discord OAuth for sign-in; Arma
   Reforger [Workbench](/documentation/glossary/n_to_z.md#workbench) and the Enfusion MCP server for mod work.
 - Used by: community members through the website; the dedicated game servers that load the mod;
-  the game hosts that run the fleet host agent; operators who deploy with `cargo xtask deploy`.
+  the game hosts that run the game server host agent; operators who deploy with `cargo xtask deploy`.
 - Rules: the project laws in [CLAUDE.md](/CLAUDE.md), held by review and by the gates
   `cargo xtask ci ci-local` runs; every folder below the root but the test, generated-output and
   hidden ones carries a README.md that lists its children
@@ -91,4 +91,5 @@ section 3 of [CLAUDE.md](/CLAUDE.md). `cargo xtask help` lists the build, CI and
 - [Documentation](/documentation/README.md) — the map of every document and the authority ladder.
 - [CLAUDE.md](/CLAUDE.md) — project laws, directory atlas and canonical commands.
 - [Glossary](/documentation/glossary/README.md) — the project's terms.
-- [Applications](/apps/README.md) — the products in `apps/`.
+- [Crates](/crates/README.md) — the product crates by category, the applications among them.
+- [Game mod](/apps/README.md) — the Enfusion mod suite in `apps/`.

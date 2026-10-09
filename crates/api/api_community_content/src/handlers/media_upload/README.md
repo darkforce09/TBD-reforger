@@ -48,9 +48,9 @@ contract type `UploadResponseUrl` before it is sent.
 
 ## Related documentation
 
-- [Administration and community content design](/documentation/apps/api/verification_evidence/administration_and_content.md)
+- [Administration and community content design](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md)
   — the upload semantics this handler implements.
-- [API environment variables](/documentation/apps/api/environment_variables.md) —
+- [API environment variables](/documentation/crates/api/api_server/environment_variables.md) —
   `UPLOAD_DIR`.
 - [Content manager page](/documentation/crates/frontend/pages/administration_pages/content_manager/content_manager_page.md)
   — the page that uploads through this route.

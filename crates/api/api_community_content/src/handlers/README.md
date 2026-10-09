@@ -72,6 +72,6 @@ crates/api/api_community_content/src/handlers/
   `crates/frontend/pages/doctrine_pages/src/`, and the content manager under
   `crates/frontend/pages/administration_pages/src/content_manager/`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
-  imports another domain's handlers (`apps/api/src/tests/architecture_rules.rs`); the
+  imports another domain's handlers (`crates/api/api_server/src/tests/architecture_rules.rs`); the
   Discord embed is sanitised at the webhook sink, never at the CMS write, so the site shows the
   title as authored.

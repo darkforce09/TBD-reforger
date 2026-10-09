@@ -1,6 +1,6 @@
 # Application state
 
-The state of the ticketboard application: what `TicketboardApp` in `apps/ticketboard` owns and
+The state of the ticketboard application: what `TicketboardApp` in `tools/tickets/ticketboard_desktop` owns and
 changes, without painting it.
 
 ## Contents
@@ -20,7 +20,7 @@ tools/tickets/ticketboard_model/src/application_state/
 ## Boundaries
 
 - Depends on: every feature module of the crate.
-- Used by: `apps/ticketboard/src/application/`.
+- Used by: `tools/tickets/ticketboard_desktop/src/application/`.
 - Rules: no feature imports this module
   (`model_dependency_boundaries_and_external_test_placement_are_enforced` in
   `tools/tickets/ticketboard_model/src/tests/architecture_rules.rs`).

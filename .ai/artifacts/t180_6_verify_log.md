@@ -54,7 +54,7 @@ test squad_links::tests::squad_link_segment_count ... ok
 ### F5 — no FE membership rewrite
 
 ```text
-$ rg -n 'slotIds' apps/frontend/src/editor_ops.rs
+$ rg -n 'slotIds' crates/frontend/shell/frontend_application/src/editor_ops.rs
 708:                slot_ids: str_array(o.get("slotIds")),
 941:/// (F-L2 — no FE `slotIds` splice), then the shared dirty tail (orbat_nodes + squad links).
 ```

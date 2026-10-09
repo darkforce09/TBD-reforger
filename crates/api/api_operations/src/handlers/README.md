@@ -90,7 +90,7 @@ server.
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/` and deployment queues in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
-  imports another domain's handlers (`apps/api/src/tests/architecture_rules.rs`); the
+  imports another domain's handlers (`crates/api/api_server/src/tests/architecture_rules.rs`); the
   roster never compiles or pairs at read time
   (`roster_reads_the_deployed_artifact_bindings_and_never_compiles` in
   `tests/game_runtime_roster.rs`).
@@ -103,7 +103,7 @@ server.
 
 ## Related documentation
 
-- [Event eligibility and allocation](/documentation/apps/api/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
   — access, visibility, pools, promotion and re-evaluation.
 - [Event hub page](/documentation/crates/frontend/pages/operations_pages/event_detail/event_hub_page.md)
   and [Event manager page](/documentation/crates/frontend/pages/administration_pages/event_manager/event_manager_page.md)

@@ -46,8 +46,8 @@ completed_at = "2026-09-07T00:25:54Z"
 estimated = ["tokens"]
 owns = [
     "packages/tbd-schema/schema/mission.schema.json",
-    "apps/frontend/src/editor/panels/audio_emitters.rs",
-    "apps/frontend/src/editor/panels/mod.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/audio_emitters.rs",
+    "crates/frontend/shell/frontend_application/src/editor/panels/mod.rs",
     "crates/map-engine-core/src/mission/audio.rs",
     "crates/map-engine-core/src/mission/mod.rs",
     "crates/map-engine-core/src/mission/extensions.rs",

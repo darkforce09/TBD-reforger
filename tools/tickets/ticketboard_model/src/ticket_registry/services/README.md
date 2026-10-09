@@ -34,8 +34,8 @@ banner reports those.
 - Depends on: `crate::ticket_registry::models::corpus`; `ticket_model` (`parse_ticket_toml`);
   `repository_layout` (`TICKETS_DIR`); `repository_root` (`find_repository_root_from` for the walk
   up from the cwd); `std::fs`.
-- Used by: `apps/ticketboard/src/main.rs` (`positional_arg`);
-  `apps/ticketboard/src/application/lifecycle.rs` and `background_events.rs` (`resolve_repo_root`,
+- Used by: `tools/tickets/ticketboard_desktop/src/main.rs` (`positional_arg`);
+  `tools/tickets/ticketboard_desktop/src/application/lifecycle.rs` and `background_events.rs` (`resolve_repo_root`,
   `has_tickets_dir`); `tools/tickets/ticketboard_model/src/application_state/background_loading.rs` (`load_corpus`);
   `tools/tickets/ticketboard_model/src/tests/support/mod.rs` and the ticket browser's
   tests (the corpus types and `is_child_id`).

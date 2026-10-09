@@ -115,7 +115,7 @@ cloned.
   `mission_payload::version_body_to_writer`, and
   `frontend_ui::byte_formatting::format_bytes` for the upload size; it imports no
   workspace.
-- Used by: the `/missions` route in `apps/frontend/src/app_routes.rs`;
+- Used by: the `/missions` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`;
   `mission_library_source` in `crates/frontend/pages/mission_hub_pages/src/tests/source_pins.rs`, which the
   overview page's tests also read.
 - Rules: the create affordances read the authenticated reactive role

@@ -114,7 +114,7 @@ Implement <slice id> — <one-line title>.
 ## The layer gate
 
 Agents edit the file they already have open. On an engine ticket that is the Leptos component, so
-streaming, LOD and camera policy grows a second home in `apps/frontend/src/` and the two
+streaming, LOD and camera policy grows a second home in `crates/frontend/shell/frontend_application/src/` and the two
 copies disagree. The boundary is `CLAUDE.md` law 6, detailed in the
 [crate boundary rules](/documentation/standards/crate_boundary_rules.md) and enforced by
 `cargo xtask verify crate-tiers`.
@@ -124,7 +124,7 @@ Whoever writes the prompt:
 1. puts `═══ LAYER GATE ═══` in **every** engine or editor prompt;
 2. lists **explicit frontend line budgets** in VERIFY (`wc -l … ≤ N`);
 3. writes DO steps that name **the engine crate first**, then the thin view adapter;
-4. bans, in DO NOT, growing streaming, LOD or camera policy under `apps/frontend/src/`;
+4. bans, in DO NOT, growing streaming, LOD or camera policy under `crates/frontend/shell/frontend_application/src/`;
 5. fixes a hotfix **in the engine crate**, never with a second policy layer.
 
 **The executing agent stops and asks** when the only way it sees to ship is 100 or more lines of

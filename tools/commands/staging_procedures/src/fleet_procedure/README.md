@@ -3,7 +3,7 @@
 The `staging_fleet` procedure: waves of fleet commands issued in Server Control on the five
 staging instances, the effects each wave must show within its deadline, and the observations the
 receipt carries. The wave table and the case list are in the
-[staging design note](/documentation/apps/api/verification_evidence/staging.md#fleet-procedure-staging_fleet);
+[staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md#fleet-procedure-staging_fleet);
 the walkthrough is the
 [fleet procedure runbook](/documentation/runbooks/staging_verification/fleet_procedure.md).
 

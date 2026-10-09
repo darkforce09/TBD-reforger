@@ -62,7 +62,7 @@ finding.
 **Evidence.** Live host path still loops per-id mutators:
 
 ```text
-apps/frontend/src/editor_ops.rs:1454–1493
+crates/frontend/shell/frontend_application/src/editor_ops.rs:1454–1493
   rustdoc: "exposes no atomic multi-slot position API, so an N-slot commit is N undo steps"
   body: for id in ids { core.update_slot_position(id, …); }
 ```

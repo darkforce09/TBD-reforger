@@ -58,7 +58,7 @@ No feature and no environment variable.
 - Used by: the streaming crates `map_asset_loading` and `map_streaming_host`: the satellite
   quadtree, the streaming host and the occluder loader log through the console macros, and the
   host, the loaders and the elevation loader fetch through `fetch`; the single-page app's map view
-  mount and world line-of-sight bench (`apps/frontend`) fetch through `fetch` too.
+  mount and world line-of-sight bench (`crates/frontend/shell/frontend_application`) fetch through `fetch` too.
 - Rules: foundation tier, so the crate depends on no workspace crate
   (`cargo xtask verify crate-tiers`); `targets = "wasm32"`, so `lib.rs` gates every item on
   `target_arch = "wasm32"` and a native crate reaches it only from its wasm32 dependency table.

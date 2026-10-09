@@ -4,7 +4,7 @@ The [ticketboard](/documentation/glossary/n_to_z.md#ticketboard) feature that te
 the [ticket](/documentation/glossary/n_to_z.md#ticket) registry on disk can be trusted: the verdict of
 `cargo xtask ticket check --strict`, a `git status` chip over the files the ticket commands write,
 and the file watch that reloads the board when those files change. The desktop application paints
-the banner from `apps/ticketboard/src/repository_status/ui/`.
+the banner from `tools/tickets/ticketboard_desktop/src/repository_status/ui/`.
 
 ## Contents
 
@@ -57,7 +57,7 @@ analysis, which the `git status` chip does.
   (`TICKETS_DIR`, `documentation::ROADMAP` and `documentation::GAP_ANALYSIS`); the `notify` crate;
   at run time, `cargo xtask ticket check --strict` and `git`, which the application spawns.
 - Used by: `crate::application_state::events`; the desktop application:
-  `apps/ticketboard/src/repository_status/ui/` and `apps/ticketboard/src/application/` (`mod.rs`,
+  `tools/tickets/ticketboard_desktop/src/repository_status/ui/` and `tools/tickets/ticketboard_desktop/src/application/` (`mod.rs`,
   `background_events.rs`, `feature_views.rs`).
 - Rules:
   - the viewer never reimplements the check: it runs the command and reports its exit, and only

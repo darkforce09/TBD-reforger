@@ -95,7 +95,7 @@ the views that run them exist in that build only.
   toast queue), `frontend_ui` (date and UTC formatting), and the review views in
   `crates/frontend/features/mission_review_record/src/`; over HTTP, the approval,
   mission and review routes of the [missions](/documentation/glossary/g_to_m.md#missions) domain.
-- Used by: the `/admin/approvals` route in `apps/frontend/src/app_routes.rs` and
+- Used by: the `/admin/approvals` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Mission Approvals" link in
   `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; the DOM oracle's `approvals`
   capture in `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.

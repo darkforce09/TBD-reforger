@@ -177,7 +177,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "editor-api-boot",
-        help: "Build and spawn api, then wait on /healthz (editor-gates.yml)",
+        help: "Build and spawn api-server, then wait on /healthz (editor-gates.yml)",
         group: "CI",
         lane: Lane::Ci,
         steps: &[Step::Native {
@@ -186,7 +186,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "api-test",
-        help: "cargo test over api and every crates/api package (honours TEST_DATABASE_URL)",
+        help: "cargo test over api_server and every crates/api package (honours TEST_DATABASE_URL)",
         group: "build",
         lane: Lane::Ci,
         steps: &[Step::Native {
@@ -259,7 +259,7 @@ pub static TASKS: &[Task] = &[
         group: "build",
         lane: Lane::Ci,
         steps: &[
-            sh!("cd apps/api && cargo build --release --bin api"),
+            sh!("cd crates/api/api_server && cargo build --release --bin api-server"),
             Step::Task("leptos-build"),
         ],
     },
@@ -383,13 +383,13 @@ pub static TASKS: &[Task] = &[
         group: "build",
         lane: Lane::Borrowed,
         steps: &[
-            sh!("cd apps/api && cargo fmt --check"),
+            sh!("cd crates/api/api_server && cargo fmt --check"),
             sh!("cargo fmt --all --check"),
         ],
     },
     Task {
         name: "rust-clippy",
-        help: "Lint api and every crates/api package with clippy (deny warnings; GO-2..8 analog)",
+        help: "Lint api_server and every crates/api package with clippy (deny warnings; GO-2..8 analog)",
         group: "build",
         lane: Lane::Borrowed,
         steps: &[Step::Native {
@@ -398,7 +398,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "rust-build",
-        help: "Build api and every crates/api package (all targets)",
+        help: "Build api_server and every crates/api package (all targets)",
         group: "build",
         lane: Lane::Borrowed,
         steps: &[Step::Native {
@@ -407,7 +407,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "rust-test",
-        help: "Run the unit tests of api and every crates/api package (no DB)",
+        help: "Run the unit tests of api_server and every crates/api package (no DB)",
         group: "build",
         lane: Lane::Borrowed,
         steps: &[Step::Native {
@@ -416,24 +416,17 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "wasm-ci",
-        help: "Fmt + clippy + test the offline service worker crate; clippy every wasm32 crate for wasm32",
+        help: "Clippy every wasm32 crate outside the frontend family for wasm32 (ci-local-leptos lints the family)",
         group: "build",
         lane: Lane::Borrowed,
-        // A crate these steps do not name goes ungated: built only as a dependency, never
-        // formatted, linted or tested. The offline service worker is named in every step
-        // because the browser half is where it ships; the wasm32 lint
-        // derives its packages from the workspace (`crate::wasm32_lint_lane`), so every crate
-        // declaring `targets = "wasm32"` is linted for the browser too.
-        steps: &[
-            sh!("cargo fmt --check -p offline_service_worker"),
-            sh!(
-                "cargo clippy -p offline_service_worker --all-targets --all-features -- -D warnings"
-            ),
-            Step::Native {
-                run: crate::wasm32_lint_lane::run_wasm_ci_lint,
-            },
-            sh!("cargo test -p offline_service_worker --all-features"),
-        ],
+        // A wasm32 crate this step does not name goes unlinted for the browser. The lint derives
+        // its packages from the workspace (`crate::wasm32_lint_lane`), so every crate declaring
+        // `targets = "wasm32"` outside the frontend family is linted; the family itself, the
+        // single-page app and the offline service worker among it, is formatted, linted for both
+        // targets and tested once, by `ci-local-leptos`.
+        steps: &[Step::Native {
+            run: crate::wasm32_lint_lane::run_wasm_ci_lint,
+        }],
     },
     Task {
         name: "ci-local-leptos",
@@ -455,15 +448,17 @@ pub static TASKS: &[Task] = &[
             Step::Native {
                 run: crate::frontend_package_lane::run_frontend_tests,
             },
-            sh!("cd apps/frontend && trunk build --release"),
+            sh!("cd crates/frontend/shell/frontend_application && trunk build --release"),
         ],
     },
     Task {
         name: "leptos-build",
-        help: "Release-build the Leptos SPA into apps/frontend/dist",
+        help: "Release-build the Leptos SPA into crates/frontend/shell/frontend_application/dist",
         group: "build",
         lane: Lane::Borrowed,
-        steps: &[sh!("cd apps/frontend && trunk build --release")],
+        steps: &[sh!(
+            "cd crates/frontend/shell/frontend_application && trunk build --release"
+        )],
     },
     Task {
         name: "rust-test-it",

@@ -48,7 +48,7 @@ into one file per page, each with a line in Contents, once it passes 500 lines.
   the [documentation folder README template](/documentation/standards/templates/readme_documentation_folder.md);
   the [glossary](/documentation/glossary/README.md); the page code, the identity and access handlers
   and the ticket registry in `.ai/tickets/`, which the feature doc is written from.
-- Used by: the [frontend documentation](/documentation/apps/frontend/README.md) route table
+- Used by: the [frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md) route table
   and the [page crate documentation](/documentation/crates/frontend/pages/README.md) index; the in-code
   READMEs of the account pages and of the session code, which link the feature doc.
 - Rules: `account_pages.md` keeps its name, which those links use; it stays within 500 lines; no
@@ -56,7 +56,7 @@ into one file per page, each with a line in Contents, once it passes 500 lines.
 
 ## Related documentation
 
-- [App layout and navigation](/documentation/apps/frontend/shell/app_layout_and_navigation.md)
+- [App layout and navigation](/documentation/crates/frontend/shell/frontend_application/shell/app_layout_and_navigation.md)
   — the frame that renders sign-in bare and the top bar that links the account pages.
 - [Local development](/documentation/runbooks/local_development.md) — the dev login and the
   Discord round trip on a workstation.

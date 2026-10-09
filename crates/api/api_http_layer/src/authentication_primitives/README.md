@@ -53,7 +53,7 @@ link.
   - `api_identity_and_access`: the OAuth state and its host guard, session issue, storage and
     rotation, session authorization and link codes;
   - `api_server_infrastructure`: issuing and checking machine credential secrets;
-  - the integration fixtures under `apps/api/tests/`, which sign tokens and hash
+  - the integration fixtures under `crates/api/api_server/tests/`, which sign tokens and hash
     secrets the same way.
 - Rules: a stored credential is always its `hash_token` digest, never the raw token; secrets
   compare with `constant_time_equal`; the token validation above is pinned by
@@ -61,5 +61,5 @@ link.
 
 ## Related documentation
 
-- [Identity transactions](/documentation/apps/api/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
   — how access tokens, persisted sessions and refresh rotation fit together.

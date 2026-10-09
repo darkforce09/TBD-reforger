@@ -44,7 +44,7 @@ found`) then shows in the status banner.
 
 - Depends on: `process_runner` (`Run`, `StreamingChild`) for every child, `verification_core`
   (`NotRun`) for a signalled exit, and `std` threads and channels.
-- Used by: the desktop application's `apps/ticketboard/src/application/`, which runs the strict
+- Used by: the desktop application's `tools/tickets/ticketboard_desktop/src/application/`, which runs the strict
   check, `git status` and every ticket command through `spawn_streaming` and opens paths with
   `open_path`; `crate::ticket_actions::models`, which holds the `ProcessHandle` of a running
   command; and `crate::repository_status::models`, which keep a `BoundedLog`.

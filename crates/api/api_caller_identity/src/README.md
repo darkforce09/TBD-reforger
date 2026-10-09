@@ -48,12 +48,12 @@ crates/api/api_caller_identity/src/
   compare, the `AuthUser` extractor and the session authority trait), `api_configuration`
   (`Config`), `api_foundation` (`ApiError`) and `api_identifiers`; `fleet_wire_contract` for
   `ExecutorKind` and the credential format; sqlx, axum, serde, chrono, uuid.
-- Used by: the API application (`apps/api`): its composition root (`DatabaseSessionAuthority`);
+- Used by: the API application (`crates/api/api_server`): its composition root (`DatabaseSessionAuthority`);
   the `api_identity_and_access`, `api_administration`, `api_missions`, `api_operations`, `api_server_infrastructure`
   and `api_match_telemetry` domains (`authorize_on_connection`, `lock_accounts`, `lock_identities`,
   `holds_administrator_authority`, `evaluate_cached_membership_permissions`, `UserRole`,
   `MachineCaller`); the `staging-fixtures` host tool (`lock_account`,
-  `holds_administrator_authority`); the integration tests in `apps/api/tests/`.
+  `holds_administrator_authority`); the integration tests in `crates/api/api_server/tests/`.
 - Rules: permissions come only from the configured guild's verified snapshot; every writer that
   touches identities or accounts takes the `identity_ownership.rs` lock order; a credential id
   accepts upper- and lower-case hex digits and its random part lower-case only; a machine caller

@@ -60,7 +60,7 @@ None: the crate reads no environment variable and declares no feature.
 ## Boundaries
 
 - Depends on: `chrono`, `regress`, `serde`, `serde_json` and `uuid`; no workspace crate.
-- Used by: `apps/api` (the registry import decodes registry envelopes into `missions`, the
+- Used by: `crates/api/api_server` (the registry import decodes registry envelopes into `missions`, the
   equipment data viewer and media upload handlers re-read their answers as their contract types)
   and the API's contract tests, which decode live answers into these types.
 - Rules:

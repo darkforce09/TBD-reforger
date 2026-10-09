@@ -16,7 +16,7 @@ crates/frontend/pages/command_center_pages/
 
 ## How it works
 
-The app's route table (`apps/frontend/src/app_routes.rs`) mounts the three route components:
+The app's route table (`crates/frontend/shell/frontend_application/src/app_routes.rs`) mounts the three route components:
 `DashboardPage` at `/`, `ServerIntelPage` at `/server-intel` and `AnnouncementsPage` at
 `/announcements` and `/announcements/:id`. Each renders inside the session's sign-in gate, owns one
 fetch and renders that one payload; none of them writes platform data. The server intel page alone
@@ -54,7 +54,7 @@ None: no feature, no environment variable.
   wire types), `frontend_ui` (the interface primitives and the date, clipboard and byte formatting
   helpers), `http_url_guard` (the scheme guard on announcement thumbnails), `leptos`,
   `serde_json`; on `wasm32`, `leptos_router`; `frontend_test_support` for its tests only.
-- Used by: the single-page app (`apps/frontend`), whose route table mounts the three pages.
+- Used by: the single-page app (`crates/frontend/shell/frontend_application`), whose route table mounts the three pages.
 - Rules: a page crate depends on foundation and feature crates only, never on another page crate,
   a workspace or the app (`cargo xtask ci verify-workspace-laws`); the pages only read (each calls
   `api_get` and nothing that writes), and every route of the crate declares the `none` tier in

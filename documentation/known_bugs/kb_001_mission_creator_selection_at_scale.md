@@ -40,7 +40,7 @@ outliner, while the marquee release in `useSelectTool` put every id `slotSpatial
 returned into `selection.ids`. A six-figure selection then stressed `setSelectionFlags` (a pass over
 every icon), the virtual outliner and the colour attribute of the map layer. It stayed a hypothesis.
 
-The code the entry describes no longer exists: `git ls-files apps/frontend/src/features`
+The code the entry describes no longer exists: `git ls-files crates/frontend/shell/frontend_application/src/features`
 lists nothing. In the Rust Mission Creator, the marquee release and a paste still select every id
 they reach with no cap (`crates/frontend/workspaces/mission_creator_engine_bridge/src/input/pointer_gestures/pointer_up.rs`,
 `paste_at_cursor` in `crates/mission_editing/mission_editing_commands/src/hosted_commands/entity_clipboard.rs`), and

@@ -75,7 +75,7 @@ commands read these files or print how to install them.
 deploy/
 ├── Caddyfile   the Caddy site on :3080: the built app, with API paths proxied to :8080
 ├── deploy.env.example  the settings template, copied to the gitignored deploy.env beside it
-└── systemd/            user units for the API, game server, fleet host agent and database backups
+└── systemd/            user units for the API, game server, game server host agent and database backups
 ```
 
 ## How it works
@@ -109,7 +109,7 @@ copy. The commands parse it as `KEY=VALUE` lines and never execute it. The deplo
   `TBD_MODPACK_URL`; the `addons` mode needs none. Among the settings that default are
   `TBD_BACKEND_URL` (`http://127.0.0.1:8080`) and `TBD_SCENARIO` (the mission header the server
   boots, `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf`).
-- Fleet host agent, read only when `TBD_INSTALL_HOST_AGENT=1`: `TBD_HOST_AGENT_CREDENTIAL` and
+- Game server host agent, read only when `TBD_INSTALL_HOST_AGENT=1`: `TBD_HOST_AGENT_CREDENTIAL` and
   `TBD_RCON_PASSWORD` are required; `TBD_RCON_PORT` defaults to 19999 and
   `TBD_HOST_AGENT_API_URL` to `TBD_BACKEND_URL`.
 
@@ -129,7 +129,7 @@ and the app's folder read-only, so the site root holds wherever the checkout sit
   `cargo xtask setup client-addons`.
 - `Caddyfile`: served by the `caddy` service of `deploy/compose.staging.yml`,
   which `cargo xtask deploy website` starts and then reloads, so an edit applies with the next
-  deploy. `apps/api/tests/forwarded_for_trust.rs` pins its `reverse_proxy
+  deploy. `crates/api/api_server/tests/forwarded_for_trust.rs` pins its `reverse_proxy
   127.0.0.1:8080` upstream.
 - `systemd/`: each unit's install command is in its header and in that folder's README.
 

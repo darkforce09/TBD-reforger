@@ -2,79 +2,61 @@
 
 # Application documentation
 
-The documentation of the products in `apps/`: the REST
-[API](/documentation/glossary/a_to_f.md#api) and its [SSE](/documentation/glossary/n_to_z.md#sse)
-streams, the single-page app with every page and the
-[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator), the
-[fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent),
-[ticketboard](/documentation/glossary/n_to_z.md#ticketboard) and the Arma Reforger
-[mod](/documentation/glossary/g_to_m.md#mod). Developers and AI agents read it below the code
-READMEs, for behaviour, design, open work and decisions. The library crates' documents are in
-[crates/](/documentation/crates/README.md).
+The documentation of the one product left in `apps/`: the Arma Reforger
+[mod](/documentation/glossary/g_to_m.md#mod), its three Enfusion addons, the game framework, the
+Workbench export and the MCP bridge. Developers and AI agents read it below the mod's code
+READMEs, for behaviour, design, open work and decisions. The documents of the library crates, the
+API server, the single-page app and the
+[game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) among them, are
+in [crates/](/documentation/crates/README.md), and those of the tool crates, the
+[ticketboard](/documentation/glossary/n_to_z.md#ticketboard) among them, in
+[tools/](/documentation/tools/README.md).
 
 ## Contents
 
 ```text
 documentation/apps/
-├── api/               the API: overview, environment variables, decisions and verification evidence
-├── fleet_host_agent/  the host agent: how it carries out fleet commands
-├── frontend/          the single-page app: page and app feature docs, design references, the editor corpus
-├── mod/               the Enfusion mod suite: framework design and screen specs, export evidence, the MCP bridge
-└── ticketboard/       the ticket registry viewer: its design
+└── mod/               the Enfusion mod suite: framework design and screen specs, export evidence, the MCP bridge
 ```
 
 ## How it works
 
-Each folder sits at its product's path with the leading `apps/` replaced by `documentation/apps/`
-and `src/` left out; the mod, whose scripts have no `src/`, leaves out `Scripts/Game/TBD/` instead.
-Each folder opens with a
-README index; the documents inside follow the templates in `documentation/standards/templates/`:
-feature docs for a page, an app or a cross-cutting subject, and `decisions.md` logs for the
-decisions behind them.
+The folder sits at the mod's path with the leading `apps/` replaced by `documentation/apps/`; the
+mod's scripts have no `src/`, so the mirror leaves out `Scripts/Game/TBD/` instead. Each folder
+opens with a README index; the documents inside follow the templates in
+`documentation/standards/templates/`: feature docs for a screen, a system or a cross-cutting
+subject, and `decisions.md` logs for the decisions behind them.
 
 | Product | Code | Documentation |
 |---|---|---|
-| `api` | [`apps/api/`](/apps/api/README.md): Axum and sqlx on Postgres, serving `/api/v1` on port 8080 | [API documentation](/documentation/apps/api/README.md) |
-| `frontend` | [`apps/frontend/`](/apps/frontend/README.md): Leptos 0.8 compiled to WebAssembly, served by Trunk on port 3000 in development | [frontend documentation](/documentation/apps/frontend/README.md) |
-| `fleet_host_agent` | [`apps/fleet_host_agent/`](/apps/fleet_host_agent/README.md): the agent beside each game-server instance | [host agent documentation](/documentation/apps/fleet_host_agent/README.md) |
-| `ticketboard` | [`apps/ticketboard/`](/apps/ticketboard/README.md): the native egui viewer of `.ai/tickets/` | [ticketboard documentation](/documentation/apps/ticketboard/README.md) |
 | mod | [`apps/mod/`](/apps/mod/README.md): the three Enfusion addons, the game framework, the Workbench export and the MCP bridge | [mod documentation](/documentation/apps/mod/README.md) |
 
-The browser runs the app, which calls the API over `/api/v1` and SSE and streams terrain from
-`/map-assets`; the app links the map rendering, streaming and mission crates in `crates/`, the
-API the mission crates. The service worker in
-`apps/offline_service_worker/` is documented with the app's offline support in
-[frontend/](/documentation/apps/frontend/README.md). The
-[applications README](/apps/README.md) draws the whole picture and gives the commands that run
-each product.
+The mod calls the API's `/api/v1/game-runtime/` routes from inside a dedicated server; the
+[API documentation](/documentation/crates/api/api_server/README.md) describes the server side, and
+the [applications README](/apps/README.md) gives the commands that build and check the mod.
 
 ## Code
 
-- [Applications](/apps/README.md) — every product and how they talk to each other.
-- [API](/apps/api/README.md) — described under `api/`.
-- [Single-page app](/apps/frontend/README.md) — described under `frontend/`.
-- [Fleet host agent](/apps/fleet_host_agent/README.md) — described under `fleet_host_agent/`.
-- [Ticketboard](/apps/ticketboard/README.md) — described under `ticketboard/`.
+- [Applications](/apps/README.md) — the folder of the mod.
 - [Mod suite](/apps/mod/README.md) — described under `mod/`.
 
 ## Boundaries
 
-- Depends on: the code under `apps/`, which every document is checked against; the
+- Depends on: the code under `apps/mod/`, which every document is checked against; the
   [README standard](/documentation/standards/readme_standard.md) and the templates in
   `documentation/standards/templates/`; the glossary for its terms.
-- Used by: the [applications README](/apps/README.md) and the READMEs of its crates, which link
-  these documents under Related documentation; the runbooks, which link the API, host agent and
-  page docs.
-- Rules: a folder here mirrors a code folder and keeps its spelling; a document describes the
-  committed code, and a disagreement between a document and the code is recorded with both
-  places and resolved in the code's favour.
+- Used by: the [applications README](/apps/README.md) and the mod's READMEs, which link these
+  documents under Related documentation; the runbooks, which link the mod's documents.
+- Rules: a folder here mirrors a code folder under `apps/mod/` and keeps its spelling; a document
+  describes the committed code, and a disagreement between a document and the code is recorded
+  with both places and resolved in the code's favour.
 
 ## Related documentation
 
-- [Local development](/documentation/runbooks/local_development.md) — running the API, the
-  database and the app locally.
-- [Website deployment](/documentation/runbooks/website_deployment.md) — deploying the API and
-  the app to the deploy host.
-- [Game server staging](/documentation/runbooks/game_server_staging/README.md) — deploying the
-  game servers and their host agents.
+- [Library crate documentation](/documentation/crates/README.md) — the API server, the single-page
+  app, the game server host agent and the other library crates.
+- [Tool documentation](/documentation/tools/README.md) — the developer tools, the ticketboard
+  among them.
+- [Game server staging](/documentation/runbooks/game_server_staging/README.md) — running the mod
+  on the staging fleet.
 - [Glossary](/documentation/glossary/README.md) — the platform's terms.

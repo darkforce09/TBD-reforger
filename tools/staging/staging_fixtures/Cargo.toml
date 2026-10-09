@@ -49,6 +49,8 @@ dotenvy = { workspace = true }
 fleet_wire_contract = { workspace = true }
 # The ORBAT template the load fixture events attach.
 mission_model = { workspace = true }
+# The API server's env file path, the default of `--api-env-file`.
+repository_layout = { workspace = true }
 reqwest = { workspace = true, features = ["json", "charset", "http2", "form", "rustls-no-provider"] }
 rustls = { workspace = true, features = ["ring", "std", "tls12", "logging"] }
 serde = { workspace = true, features = ["derive"] }

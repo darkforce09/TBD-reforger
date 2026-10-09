@@ -17,7 +17,7 @@ crates/frontend/pages/doctrine_pages/
 
 ## How it works
 
-The app's route table (`apps/frontend/src/app_routes.rs`) mounts the three route components:
+The app's route table (`crates/frontend/shell/frontend_application/src/app_routes.rs`) mounts the three route components:
 `WikiPage` at `/wiki` and `/wiki/:slug`, `VehicleDatabasePage` at `/vehicles` and `ModpacksPage`
 at `/modpacks`. Each renders inside the session's sign-in gate, fetches its whole list once
 through the transport crate and lays it out in the `GlassSplit` master-detail view, both panes
@@ -57,7 +57,7 @@ None: no feature, no environment variable.
   wiki, vehicle and modpack wire types and the data envelope), `frontend_ui` (the split view,
   dialog and toast primitives, the safe URL and formatting helpers), `leptos`, `serde_json`; on
   `wasm32`, `leptos_router` and `serde`; `frontend_test_support` for its tests only.
-- Used by: the single-page app (`apps/frontend`), whose route table mounts the three pages.
+- Used by: the single-page app (`crates/frontend/shell/frontend_application`), whose route table mounts the three pages.
 - Rules: a page crate depends on foundation and feature crates only, never on another page crate,
   a workspace or the app (`cargo xtask ci verify-workspace-laws`).
 

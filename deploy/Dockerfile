@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-# Release image of the API server binary `api` (package `api`, apps/api).
+# Release image of the API server binary `api-server` (package `api_server`, crates/api/api_server).
 #
 # Build from the repository root, which is the build context:
 #
@@ -18,7 +18,7 @@
 # toolchain rust-toolchain.toml pins.
 #
 # The runtime listens on 0.0.0.0:$PORT (default 8080). Supply at least DATABASE_URL and
-# JWT_SECRET (see apps/api/.env.example). This image does not serve the single-page app:
+# JWT_SECRET (see crates/api/api_server/.env.example). This image does not serve the single-page app:
 # deploy/caddy/Caddyfile does, with COOP/COEP and the /api reverse proxy.
 
 FROM docker.io/library/rust:1.95.0-bookworm AS builder
@@ -27,15 +27,15 @@ WORKDIR /src
 COPY . .
 
 ENV CARGO_TERM_COLOR=never
-RUN cargo build --release --locked -p api --bin api \
- && test -x /src/target/release/api
+RUN cargo build --release --locked -p api_server --bin api-server \
+ && test -x /src/target/release/api-server
 
 FROM docker.io/library/debian:bookworm-slim AS runtime
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /src/target/release/api /usr/local/bin/api
+COPY --from=builder /src/target/release/api-server /usr/local/bin/api-server
 
 # The runtime storage root the compose file mounts a named volume on (UPLOAD_DIR points under
 # it). Created here, owned by the API's uid, so the volume inherits a writable tree on first use
@@ -46,4 +46,4 @@ RUN mkdir -p /srv/state/uploads && chown -R 65534:65534 /srv/state
 USER 65534:65534
 ENV PORT=8080
 EXPOSE 8080
-ENTRYPOINT ["/usr/local/bin/api"]
+ENTRYPOINT ["/usr/local/bin/api-server"]

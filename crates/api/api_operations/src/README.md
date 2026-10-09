@@ -53,7 +53,7 @@ pins, refuses a client solution that disagrees, and stores the server's solution
 
 ## Public surface
 
-- `routes::routes()`: the table the API's router (`api::router`) merges under `/api/v1`, one route
+- `routes::routes()`: the table the API's router (`api_server::router`) merges under `/api/v1`, one route
   each:
   - `GET /api/v1/me/deployments`: `AuthUser`; the caller's service record.
   - `GET` and `POST /api/v1/me/leave-requests`: `AuthUser`; the caller's leave requests, file one.
@@ -132,7 +132,7 @@ pins, refuses a client solution that disagrees, and stores the server's solution
   - the ballistics crates `ballistics_model`, `ballistics_solver`, `fire_mission_planning` and
     `ballistics_calibration` for the ballistics.
 - Used by:
-  - the API's router (`apps/api/src/router.rs`), which merges the route table;
+  - the API's router (`crates/api/api_server/src/router.rs`), which merges the route table;
   - the `event_lifecycle_sweeper` and `event_reservation_reevaluator` workers in
     `crates/api/api_background_workers/src/`;
   - `api_command_center`, the staging fixtures tool and the API's integration suites,
@@ -144,7 +144,7 @@ pins, refuses a client solution that disagrees, and stores the server's solution
     and deployment queues in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`domain_handlers_import_no_foreign_handlers` and
-  `every_domain_exports_a_route_table` in `apps/api/src/tests/architecture_rules.rs`);
+  `every_domain_exports_a_route_table` in `crates/api/api_server/src/tests/architecture_rules.rs`);
   every handler carries its `/// @route` tag (`cargo xtask verify route-tags`);
   the domain's generated contract types (`contract_schema_types::operations`) are written by
   `cargo xtask ci schema-codegen` and never edited by hand (`cargo xtask ci verify-codegen-fresh`
@@ -153,13 +153,13 @@ pins, refuses a client solution that disagrees, and stores the server's solution
 
 ## Related documentation
 
-- [API overview](/documentation/apps/api/api_overview.md) — every domain's routes and the
+- [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes and the
   layers they share.
-- [Event eligibility and allocation](/documentation/apps/api/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
   — access, visibility, pools, promotion, re-evaluation and derived attendance.
-- [Event administration transactions](/documentation/apps/api/verification_evidence/event_administration.md)
+- [Event administration transactions](/documentation/crates/api/api_server/verification_evidence/event_administration.md)
   — the locks every event change takes.
-- [Live slot occupancy](/documentation/apps/api/verification_evidence/live_occupancy.md)
+- [Live slot occupancy](/documentation/crates/api/api_server/verification_evidence/live_occupancy.md)
   — player deployment authorization.
 - [Event schedule page](/documentation/crates/frontend/pages/operations_pages/schedule/event_schedule_page.md),
   [Event hub page](/documentation/crates/frontend/pages/operations_pages/event_detail/event_hub_page.md)

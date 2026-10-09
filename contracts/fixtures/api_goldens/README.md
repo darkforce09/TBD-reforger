@@ -29,10 +29,10 @@ contracts/fixtures/api_goldens/
 
 - Producers: the capture recipe at the end of `crates/api/api_database/seeds/content_golden.sql`, run against a
   fresh database seeded with `registry_dev.sql` and then `content_golden.sql`.
-- Consumers: the API's `contract_parity_goldens` test binary (`apps/api/tests/`), which replays
+- Consumers: the API's `contract_parity_goldens` test binary (`crates/api/api_server/tests/`), which replays
   every row against the live router and checks each body against its route's schema in
   `contracts/definitions/`, and its other contract tests that embed single files; the frontend's
-  DTO golden tests and page tests under `apps/frontend/src/`; the headless browser gates of
+  DTO golden tests and page tests under `crates/frontend/shell/frontend_application/src/`; the headless browser gates of
   `tools/developer_tools/`, which answer the app's requests from these files.
 
 ## Boundaries

@@ -119,15 +119,15 @@ pub(crate) fn rust_api() -> Vec<Step> {
     // must not wait in the shared build-lock queue. The build targets below exit, so they do not.
     let private = dev_api_target_dir().display().to_string();
     vec![
-        Step::new(&["cargo", "run", "--bin", "api"])
-            .cd(WEB)
+        Step::new(&["cargo", "run", "--bin", "api-server"])
+            .cd(API_SERVER_FOLDER)
             .env("CARGO_TARGET_DIR", &private),
     ]
 }
 
-/// One step running `line` over `api` and every API crate of the workspace under `repo_root`,
-/// from the repository root. The `api-test`, `rust-test`, `rust-clippy` and `rust-build` rows of
-/// the CI task table run the same argv through [`crate::api_package_lane`].
+/// One step running `line` over `api_server` and every API crate of the workspace under
+/// `repo_root`, from the repository root. The `api-test`, `rust-test`, `rust-clippy` and
+/// `rust-build` rows of the CI task table run the same argv through [`crate::api_package_lane`].
 ///
 /// # Errors
 /// The API packages cannot be derived from the workspace.
@@ -137,7 +137,7 @@ fn api_package_step(repo_root: &Path, line: ApiLine) -> Result<Vec<Step>> {
     Ok(vec![Step::new(&words)])
 }
 
-/// `cargo build --all-targets` over `api` and every API crate.
+/// `cargo build --all-targets` over `api_server` and every API crate.
 ///
 /// # Errors
 /// As [`api_package_step`].
@@ -145,7 +145,7 @@ pub(crate) fn rust_build(repo_root: &Path) -> Result<Vec<Step>> {
     api_package_step(repo_root, ApiLine::Build)
 }
 
-/// `cargo test --lib --bins` over `api` and every API crate.
+/// `cargo test --lib --bins` over `api_server` and every API crate.
 ///
 /// # Errors
 /// As [`api_package_step`].
@@ -155,13 +155,13 @@ pub(crate) fn rust_test(repo_root: &Path) -> Result<Vec<Step>> {
 
 pub(crate) fn rust_fmt() -> Vec<Step> {
     vec![
-        Step::new(&["cargo", "fmt", "--check"]).cd(WEB),
+        Step::new(&["cargo", "fmt", "--check"]).cd(API_SERVER_FOLDER),
         // `--all` covers the tooling crates, which the api-crate run does not.
         Step::new(&["cargo", "fmt", "--all", "--check"]),
     ]
 }
 
-/// `cargo clippy --all-targets -- -D warnings` over `api` and every API crate.
+/// `cargo clippy --all-targets -- -D warnings` over `api_server` and every API crate.
 ///
 /// # Errors
 /// As [`api_package_step`].
@@ -169,15 +169,14 @@ pub(crate) fn rust_clippy(repo_root: &Path) -> Result<Vec<Step>> {
     api_package_step(repo_root, ApiLine::Clippy)
 }
 
-/// Fmt / clippy / test for the offline service worker, and the wasm32 lint.
+/// The wasm32 lint of every wasm32 crate outside the frontend family.
 ///
-/// The offline service worker is named in every step: a crate the lane does not name reaches CI
-/// only as a dependency of the frontend, so nothing fmt-checks it, nothing clippies it and its
-/// tests never run with every feature on. The wasm32 lint lints every package
-/// [`crate::wasm32_lint_lane::wasm_ci_lint_packages`] derives from the workspace under
-/// `repo_root`, so a crate declaring `targets = "wasm32"` is linted from its first commit. Kept in
-/// lockstep with the `wasm-ci` row in `crate::task_definitions` — the two are the same lane
-/// spelled twice, and `wasm_ci_recipe_and_ci_task_row_run_the_same_lines` pins them.
+/// The lint names every package [`crate::wasm32_lint_lane::wasm_ci_lint_packages`] derives from
+/// the workspace under `repo_root`, so a crate declaring `targets = "wasm32"` is linted from its
+/// first commit; the frontend family, the offline service worker among it, is gated once, by
+/// `ci-local-leptos`. Kept in lockstep with the `wasm-ci` row in `crate::task_definitions` — the
+/// two are the same lane spelled twice, and `wasm_ci_recipe_and_ci_task_row_run_the_same_lines`
+/// pins them.
 ///
 /// # Errors
 /// The wasm32 lint's packages cannot be derived from the workspace.
@@ -185,40 +184,19 @@ pub(crate) fn wasm_ci(repo_root: &Path) -> Result<Vec<Step>> {
     let wasm32_packages = crate::wasm32_lint_lane::wasm_ci_lint_packages(repo_root)?;
     let wasm32_argv = crate::wasm32_lint_lane::wasm32_clippy_argv(&wasm32_packages);
     let wasm32_words: Vec<&str> = wasm32_argv.iter().map(String::as_str).collect();
-    Ok(vec![
-        Step::new(&["cargo", "fmt", "--check", "-p", "offline_service_worker"]),
-        Step::new(&[
-            "cargo",
-            "clippy",
-            "-p",
-            "offline_service_worker",
-            "--all-targets",
-            "--all-features",
-            "--",
-            "-D",
-            "warnings",
-        ]),
-        Step::new(&wasm32_words),
-        Step::new(&[
-            "cargo",
-            "test",
-            "-p",
-            "offline_service_worker",
-            "--all-features",
-        ]),
-    ])
+    Ok(vec![Step::new(&wasm32_words)])
 }
 
 pub(crate) fn leptos() -> Vec<Step> {
-    vec![Step::new(&["trunk", "serve", "--release"]).cd(FE)]
+    vec![Step::new(&["trunk", "serve", "--release"]).cd(FRONTEND_APPLICATION_FOLDER)]
 }
 
 pub(crate) fn leptos_debug() -> Vec<Step> {
-    vec![Step::new(&["trunk", "serve"]).cd(FE)]
+    vec![Step::new(&["trunk", "serve"]).cd(FRONTEND_APPLICATION_FOLDER)]
 }
 
 pub(crate) fn leptos_build() -> Vec<Step> {
-    vec![Step::new(&["trunk", "build", "--release"]).cd(FE)]
+    vec![Step::new(&["trunk", "build", "--release"]).cd(FRONTEND_APPLICATION_FOLDER)]
 }
 
 pub(crate) fn gate_doctor() -> Vec<Step> {
@@ -329,7 +307,7 @@ pub(crate) fn ci_local_leptos(repo_root: &Path) -> Result<Vec<Step>> {
         let words: Vec<&str> = argv.iter().map(String::as_str).collect();
         steps.push(Step::new(&words));
     }
-    steps.push(Step::new(&["trunk", "build", "--release"]).cd(FE));
+    steps.push(Step::new(&["trunk", "build", "--release"]).cd(FRONTEND_APPLICATION_FOLDER));
     Ok(steps)
 }
 

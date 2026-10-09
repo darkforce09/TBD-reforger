@@ -1,10 +1,10 @@
 //! The packages the wasm32 lint covers, derived from the workspace.
 //!
 //! **Role:** names every workspace package that `cargo clippy --target wasm32-unknown-unknown`
-//! lints: each member whose `[package.metadata.layout]` declares `targets = "wasm32"`, the two
-//! browser applications that carry no layout table, and every crate of the frontend family
-//! (`targets = "any"` ones included, since the browser build compiles their wasm32 half); and
-//! splits that set between the two lanes that run it.
+//! lints: each member whose `[package.metadata.layout]` declares `targets = "wasm32"` and every
+//! crate of the frontend family (`targets = "any"` ones included, since the browser build compiles
+//! their wasm32 half; the single-page app and the offline service worker among them); and splits
+//! that set between the two lanes that run it.
 //! **Position:** the `wasm-ci` recipe of [`crate::build_lane`] and the `wasm-ci` row of
 //! [`crate::task_runner::TASKS`] lint [`wasm_ci_lint_packages`]; the frontend family's own lint
 //! runs in `ci-local-leptos` with every target ([`crate::frontend_package_lane`]). Reads
@@ -13,8 +13,8 @@
 //! clippy` through the task runner, with the environment every task line gets.
 //! **Invariants:** a wasm32 crate or a frontend crate the workspace gains is linted from the moment
 //! its manifest declares the target or the workspace names it, never only once someone extends a
-//! list; an unreadable workspace, or a named browser application that is no workspace member, is
-//! an error, never a smaller lint; the two lanes partition the set, each package linted once.
+//! list; an unreadable workspace, or a workspace without the single-page app, is an error, never a
+//! smaller lint; the two lanes partition the set, each package linted once.
 
 use std::path::Path;
 
@@ -27,19 +27,15 @@ use crate::frontend_package_lane::{frontend_packages_among, is_frontend_member};
 /// The `targets` value of `[package.metadata.layout]` that marks a wasm-only crate.
 pub const WASM32_LAYOUT_TARGETS: &str = "wasm32";
 
-/// The browser applications that ship to wasm32 without a layout table: the single-page app and
-/// the offline service worker. Each must be a workspace member.
-pub const BROWSER_APPLICATIONS: [&str; 2] = ["frontend", "offline_service_worker"];
-
 /// The cargo target the lint builds for.
 pub const WASM32_TARGET: &str = "wasm32-unknown-unknown";
 
 /// Every package the wasm32 lint covers under `repo_root`, in member-path order: the declared
-/// wasm32 members, the browser applications and the frontend family.
+/// wasm32 members and the frontend family.
 ///
 /// # Errors
-/// The workspace members cannot be read, or one of [`BROWSER_APPLICATIONS`] is no workspace
-/// member (a renamed application would otherwise leave the lint).
+/// The workspace members cannot be read, or the frontend family cannot be derived (a workspace
+/// without the single-page app would otherwise leave the browser build unlinted).
 pub fn wasm32_lint_packages(repo_root: &Path) -> Result<Vec<String>> {
     let members = read_workspace_members(repo_root).map_err(|why| {
         Error::msg(format!(
@@ -47,14 +43,8 @@ pub fn wasm32_lint_packages(repo_root: &Path) -> Result<Vec<String>> {
             repo_root.join("Cargo.toml").display()
         ))
     })?;
-    if let Some(missing) = BROWSER_APPLICATIONS
-        .iter()
-        .find(|package| !members.iter().any(|m| m.package_name == **package))
-    {
-        return Err(Error::msg(format!(
-            "`{missing}` is linted for wasm32 but is no workspace member"
-        )));
-    }
+    // The family's derivation refuses a workspace without the single-page app.
+    frontend_packages_among(&members)?;
     Ok(members
         .iter()
         .filter(|member| is_linted_for_wasm32(member))
@@ -115,18 +105,15 @@ pub(crate) fn run_wasm_ci_lint() -> i32 {
     crate::task_runner::run_derived_line(&words)
 }
 
-/// True when `member` builds for wasm32: its layout declares the target, it is one of the
-/// browser applications, which carry no layout table, or it belongs to the frontend family.
+/// True when `member` builds for wasm32: its layout declares the target, or it belongs to the
+/// frontend family.
 fn is_linted_for_wasm32(member: &WorkspaceMember) -> bool {
     let declared = member
         .manifest
         .layout
         .as_ref()
         .and_then(|layout| layout.targets.as_deref());
-    let package = member.package_name.as_str();
-    declared == Some(WASM32_LAYOUT_TARGETS)
-        || BROWSER_APPLICATIONS.contains(&package)
-        || is_frontend_member(member)
+    declared == Some(WASM32_LAYOUT_TARGETS) || is_frontend_member(member)
 }
 
 #[cfg(test)]

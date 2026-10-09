@@ -1,8 +1,8 @@
 # Systemd user unit templates
 
 The systemd user units of the home server and its game server fleet: the website API, the dedicated
-game server of each fleet instance, the [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent)
-of each instance, the acknowledgement-dropping relay in front of one agent, and the nightly
+game server of each fleet instance, the
+[game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) of each instance, the acknowledgement-dropping relay in front of one agent, and the nightly
 database backup with its weekly restore drill. Every unit runs as the deploy user from
 `~/.config/systemd/user/`, never as root; a template unit (`name@.service`) runs once per instance
 number, `name@N.service`.
@@ -12,7 +12,7 @@ number, `name@N.service`.
 ```text
 deploy/systemd/
 ├── acknowledgement-dropping-relay@.service  the loopback relay between one instance's host agent and the API
-├── fleet_host_agent@.service          the host agent of fleet instance N, with that instance's agent.toml
+├── game_server_host_agent@.service    the game server host agent of fleet instance N, with that instance's agent.toml
 ├── tbd-reforger@.service              the dedicated game server of fleet instance N, from its own config and profile
 ├── tbd-website-api.service            the website API release binary, with its asset and runtime storage paths pinned
 ├── tbd-website-backup-drill.service   one restore drill of the newest backup into a scratch database
@@ -31,33 +31,34 @@ repository root as `/TBD_REPO_DIR_PLACEHOLDER`, an absolute path, so the committ
 the host. A unit copied without that step fails at once and names the placeholder in the journal.
 
 ```text
-tbd-reforger@.service, fleet_host_agent@.service, acknowledgement-dropping-relay@.service
-                          ── include_str! in deploy/staging/fleet_units.rs ──▶ written by deploy staging
+tbd-reforger@.service, game_server_host_agent@.service, acknowledgement-dropping-relay@.service
+                          ── include_str! in deployment/src/staging/fleet_units.rs ──▶ written by deploy staging
 tbd-website-api.service   ── sed by hand (deploy website prints the line) ──▶ restarted by deploy website
 tbd-website-backup*.{service,timer} ── sed and cp by hand ──▶ timers run `deploy db backup|drill`
 ```
 
 ## Configuration
 
-- `tbd-website-api.service`: `WorkingDirectory` is `apps/api` of the checkout;
-  `EnvironmentFile` is that folder's `.env`, the server's own secrets; `MAP_ASSETS_DIR` and
-  `GLYPH_ASSETS_DIR` are pinned to the checkout's `assets/terrains` and `assets/glyphs`,
-  because the API's fallback resolves them against its working directory and a wrong root answers
-  404 without an error; `StateDirectory=tbd-website-api`, `UPLOAD_DIR=%S/tbd-website-api/uploads`
+- `tbd-website-api.service`: `WorkingDirectory` is `crates/api/api_server` of the checkout;
+  `EnvironmentFile` is that folder's `.env`, the server's own secrets, which both deploys exclude
+  from their rsync and refuse to rsync without; `MAP_ASSETS_DIR` and `GLYPH_ASSETS_DIR` are pinned
+  to the checkout's `assets/terrains` and `assets/glyphs`, because outside development the API
+  requires both as absolute paths (only a development boot defaults them, to the checkout's
+  folders) and a wrong root answers 404 without an error; `StateDirectory=tbd-website-api`, `UPLOAD_DIR=%S/tbd-website-api/uploads`
   and `EQUIPMENT_DATA_DIR=%S/tbd-website-api/equipment` keep uploads and the imported equipment
   data out of the rsynced checkout, the API creating `uploads/` at boot and `equipment/` on its
   first import, so neither needs a `mkdir`; the `.env` leaves all four directories out, because
   systemd lets an `EnvironmentFile` value override an `Environment=` line for the same variable
   and, outside development, a relative `UPLOAD_DIR` or `EQUIPMENT_DATA_DIR` stops the boot;
-  `ExecStart` is `target/release/api`; it restarts on failure after 5 s.
+  `ExecStart` is `target/release/api-server`; it restarts on failure after 5 s.
 - `tbd-reforger@.service`: placeholders `/TBD_SERVER_DIR_PLACEHOLDER` (the experimental server
   install, Steam app 1890870) and `/TBD_ADDONS_STAGING_PLACEHOLDER`, replaced by `TBD_SERVER_DIR`
   and `TBD_ADDONS_STAGING` without their leading slash; it starts `ArmaReforgerServer` with
   `-addonsDir`, `-config %h/tbd/fleet/instance-%i/server.config.json` and
   `-profile %h/tbd/fleet/instance-%i/profile`, never `-addons`; it restarts on failure after 10 s.
-- `fleet_host_agent@.service`: runs `%h/.local/bin/fleet_host_agent` with
-  `%h/.config/fleet_host_agent/instance-%i/agent.toml`; restarts on failure after 5 s except on
-  exit 78, an invalid configuration; gives the agent 200 s to stop.
+- `game_server_host_agent@.service`: runs `%h/.local/bin/game_server_host_agent` with
+  `%h/.config/game_server_host_agent/instance-%i/agent.toml`; restarts on failure after 5 s except
+  on exit 78, an invalid configuration; gives the agent 200 s to stop.
 - `acknowledgement-dropping-relay@.service`: reads `RELAY_LISTEN` and `RELAY_UPSTREAM` from
   `%h/tbd/fleet/instance-%i/relay.env` and runs `%h/.local/bin/acknowledgement-dropping-relay serve`
   with its control socket in the mode-700 runtime folder
@@ -76,16 +77,20 @@ tbd-website-backup*.{service,timer} ── sed and cp by hand ──▶ timers r
 
 ## Installed by
 
-- `tbd-reforger@.service`, `fleet_host_agent@.service` and `acknowledgement-dropping-relay@.service`:
-  `cargo xtask deploy staging` embeds the three files at build time
-  (`tools/commands/deployment/src/staging/fleet_units.rs`), writes them to
+- `tbd-reforger@.service`, `game_server_host_agent@.service` and
+  `acknowledgement-dropping-relay@.service`: `cargo xtask deploy staging` embeds the three files at
+  build time (`tools/commands/deployment/src/staging/fleet_units.rs`), writes them to
   `~/.config/systemd/user/` on the game host, enables and restarts `tbd-reforger@N` for every
-  instance, the relay unit for the relay instance and `fleet_host_agent@N` for every instance, each
-  agent with its `~/.config/fleet_host_agent/instance-N/agent.toml`, and disables and stops the
-  instances above the fleet size. The fleet runs only these templates, and this folder holds no
-  single-instance unit: a host that still has `tbd-reforger.service` or `fleet-host-agent.service`
-  installed is refused until `cargo xtask deploy staging --migrate-single-instance` stops,
-  disables and archives them under `~/tbd/retired/`.
+  instance, the relay unit for the relay instance and `game_server_host_agent@N` for every
+  instance, each agent with its `~/.config/game_server_host_agent/instance-N/agent.toml`, and
+  disables and stops the instances above the fleet size. The fleet runs only these templates, and
+  this folder holds no single-instance unit: a host that still has `tbd-reforger.service` or
+  `fleet-host-agent.service` installed is refused until
+  `cargo xtask deploy staging --migrate-single-instance` stops, disables and archives them under
+  `~/tbd/retired/`. A host that still carries the retired `fleet_host_agent` template,
+  configuration folder or binary is refused until
+  `cargo xtask deploy staging --migrate-host-agent-name` moves them to the current names
+  (`tools/commands/deployment/src/staging/host_agent_name_migration.rs`).
 - `tbd-website-api.service`: installed by hand once, by replacing `TBD_REPO_DIR_PLACEHOLDER` with
   `TBD_REMOTE_DIR` minus its leading slash and writing the result to
   `~/.config/systemd/user/`; when the restart fails, `cargo xtask deploy website` prints that exact
@@ -98,19 +103,20 @@ tbd-website-backup*.{service,timer} ── sed and cp by hand ──▶ timers r
 
 ## Boundaries
 
-- Depends on: systemd user instances with lingering on the host; the release `api` binary that
-  `cargo xtask deploy website` builds; the `fleet_host_agent` binary and the
-  `acknowledgement-dropping-relay` executable that `deploy staging` builds from
-  `apps/fleet_host_agent/` and `tools/developer_tools/`; the `deploy db backup` and `deploy db drill` commands; the
+- Depends on: systemd user instances with lingering on the host; the release `api-server` binary
+  that `cargo xtask deploy website` builds from `crates/api/api_server/`; the
+  `game_server_host_agent` binary and the `acknowledgement-dropping-relay` executable that
+  `deploy staging` builds from `crates/fleet/game_server_host_agent/` and
+  `tools/developer_tools/`; the `deploy db backup` and `deploy db drill` commands; the
   `tbd_reforger_db` Postgres container.
 - Used by: `cargo xtask deploy website` and `cargo xtask deploy staging` (through
   `SYSTEMD_UNITS_DIR` and `WEBSITE_API_UNIT` in `tools/foundation/repository_layout/src/deployment.rs`, and
-  the `include_str!` of the three fleet templates); each fleet host agent, which restarts its
+  the `include_str!` of the three fleet templates); each game server host agent, which restarts its
   instance's `tbd-reforger@N.service` by name.
 - Rules: the repository placeholder keeps its leading slash, so the templates verify as they stand;
   the API unit's file name is the default unit `deploy website` restarts (`default_unit_name`);
   the API unit's `.env` stays on the host and is never rsynced; the template it is copied from,
-  `apps/api/.env.example`, sets none of the variables the API unit pins
+  `crates/api/api_server/.env.example`, sets none of the variables the API unit pins
   (`the_env_template_sets_none_of_the_variables_the_unit_pins` in
   `tools/commands/deployment/src/tests/website/tests.rs`).
 

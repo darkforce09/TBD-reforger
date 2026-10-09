@@ -60,7 +60,7 @@ No feature and no variable; the caller passes the pool or the connection.
 
 - Depends on: `api_audit_log`, `api_foundation`, `api_identifiers`, sqlx, chrono, thiserror and
   uuid; the tables and the view of `crates/api/api_database/migrations/`.
-- Used by: the API application (`apps/api`): the identity and access, match telemetry,
+- Used by: the API application (`crates/api/api_server`): the identity and access, match telemetry,
   operations and administration domains, the background workers and the integration suites.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md); nothing here names a domain
   or `api_caller_identity`.

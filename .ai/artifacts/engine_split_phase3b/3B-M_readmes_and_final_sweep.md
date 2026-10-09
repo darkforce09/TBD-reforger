@@ -32,7 +32,7 @@ landed shape already matches its atlas. Do not edit it.
 - `rg -n 'src/editor|pages/debug|pages/operations/(orbat|faction)_manager' xtask tools` → empty.
   A stale row in `xtask/src/gate_t180.rs` panics every test in that gate, because its tests
   `fs::copy(...).unwrap()` every path they name.
-- `rg -n 'crate::editor|crate::pages::debug' apps/frontend/src` → empty.
+- `rg -n 'crate::editor|crate::pages::debug' crates/frontend/shell/frontend_application/src` → empty.
 - **`.coding-standards-allowlist.yaml` carries rows naming paths Phase 3B moved** — at least
   `frontend/src/pages/debug/building_viewer.rs`, `frontend/src/pages/operations/orbat_manager.rs`
   and `frontend/src/editor/state/operations/entity.rs` (the last stale since 3A). A row whose path

@@ -19,10 +19,11 @@ Usage: cargo xtask deploy website [--dry-run] [--help]
   build the release API binary, the staging host tools (staging-fixtures,
   acknowledgement-dropping-relay) and the Leptos SPA on the server, start the
   staging Caddy (compose) and reload its Caddyfile, and restart the user-systemd
-  API unit.
+  API unit. The rsync runs only once the host holds a readable
+  crates/api/api_server/.env in TBD_REMOTE_DIR.
 
-  --dry-run   Print the plan (rsync/ssh/compose/builds/web server/checksum-repair/
-              state-dir/restart) without executing.
+  --dry-run   Print the plan (probes/rsync/ssh/compose/builds/web server/
+              checksum-repair/restart) without executing.
   -h, --help  Show this help.
 
 Settings ({deploy_env}, or the file DEPLOY_ENV names):

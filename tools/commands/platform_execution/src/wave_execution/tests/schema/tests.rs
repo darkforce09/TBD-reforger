@@ -138,8 +138,8 @@ fn the_stamp_roots_are_the_whole_build_closure_of_xtask_and_nothing_else() {
         "the stamp roots differ from xtask's build closure"
     );
     for unwanted in [
-        "apps/api",
-        "apps/frontend",
+        "crates/api/api_server",
+        "crates/frontend/shell/frontend_application",
         "crates/map_rendering/map_renderer",
         "tools/foundation/tool_test_support",
     ] {

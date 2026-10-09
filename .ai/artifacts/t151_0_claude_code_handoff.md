@@ -29,7 +29,7 @@ Three things, behavior-preserving everywhere else:
 
 1. **One wasm module (program D1).** Today there are two wasm packages with two separate
    linear memories: the bundler pkg (`make wasm` →
-   `apps/frontend/src/wasm/pkg/map_engine_wasm*`, carrying `MissionDoc`,
+   `crates/frontend/shell/frontend_application/src/wasm/pkg/map_engine_wasm*`, carrying `MissionDoc`,
    `OrthoCameraJs`, DEM/geometry, `SlotIndex`, `ClusterIndex`) and the spike's web-target pkg
    (`make wasm-render` → `src/wasm/render/map_engine_render*`, carrying `RenderEngine`).
    Zero-copy doc→GPU requires ONE memory: make `map-engine-render` a dependency of
@@ -42,7 +42,7 @@ Three things, behavior-preserving everywhere else:
    render pass iterates. Same draw order, same clear, same `stats()` JSON fields, `self_check`
    untouched — the spike gates are the regression harness proving "no behavior change".
 3. **Editor dual mount (program D3).** New
-   `apps/frontend/src/features/tactical-map/WgpuTacticalMap.tsx` accepting the
+   `crates/frontend/shell/frontend_application/src/features/tactical-map/WgpuTacticalMap.tsx` accepting the
    existing `TacticalMapProps` (most ignored this slice), mounted by `MissionCreatorPage`
    when `VITE_MC_ENGINE === 'wgpu'` or `?engine=wgpu`. It renders the calibration scene
    full-bleed with a HUD showing backend, fps, and the **shared-memory numeric proof**
@@ -86,7 +86,7 @@ test "$(git rev-parse --show-toplevel)" = "$(pwd)"
 git status --porcelain             # empty @ baseline SHA
 # Do NOT checkout or create branches; do NOT run ./scripts/ticket run
 git lfs pull && make map-assets-link
-cd apps/frontend && npm ci && cd ../../..
+cd crates/frontend/shell/frontend_application && npm ci && cd ../../..
 make wasm                          # baseline builds BEFORE changes
 ```
 
@@ -104,14 +104,14 @@ to run outside any sandbox (cargo registry + wasm-pack tool cache write to `~/.c
 | Engine draws to refactor | `crates/map-engine-render/src/engine.rs` (`render()`, `seed_stress`, `clear_stress`) |
 | Probe (do not change expectations) | `crates/map-engine-render/src/probe.rs` |
 | Makefile targets `wasm` / `wasm-render` / `wasm-ci` | `Makefile` |
-| Web-pkg ignore entries to remove | `.gitignore` (`src/wasm/render/`), `apps/frontend/eslint.config.js` `globalIgnores` |
-| TS glue to move (keep mutex + deviceSize; drop init memoization) | `apps/frontend/src/features/_spike/wgpu/wasmRender.ts` → `features/tactical-map/wgpu/wasmRender.ts` |
+| Web-pkg ignore entries to remove | `.gitignore` (`src/wasm/render/`), `crates/frontend/shell/frontend_application/eslint.config.js` `globalIgnores` |
+| TS glue to move (keep mutex + deviceSize; drop init memoization) | `crates/frontend/shell/frontend_application/src/features/_spike/wgpu/wasmRender.ts` → `features/tactical-map/wgpu/wasmRender.ts` |
 | Glue test moves with it | `features/_spike/wgpu/deviceSize.test.ts` → `features/tactical-map/wgpu/deviceSize.test.ts` |
 | Spike page (repoint imports; regression harness) | `features/_spike/wgpu/WgpuCanvas.tsx` |
 | Lifecycle invariants I2–I7 to reuse verbatim | comments + structure in `WgpuCanvas.tsx` |
 | Zero-copy view pattern to copy | `features/_spike/DocCoreSpikePage.tsx` lines 11–14, 42–47 (`import * as wasmBg from '@/wasm/pkg/map_engine_wasm_bg.wasm'`) |
-| Editor page that gains the flag switch | `apps/frontend/src/features/mission-creator/MissionCreatorPage.tsx` (its `<TacticalMap …>` usage defines the props to accept) |
-| Props contract type | `apps/frontend/src/features/tactical-map/TacticalMap.tsx` (`TacticalMapProps`) |
+| Editor page that gains the flag switch | `crates/frontend/shell/frontend_application/src/features/mission-creator/MissionCreatorPage.tsx` (its `<TacticalMap …>` usage defines the props to accept) |
+| Props contract type | `crates/frontend/shell/frontend_application/src/features/tactical-map/TacticalMap.tsx` (`TacticalMapProps`) |
 
 ## Gotchas (learned the hard way — carry these)
 

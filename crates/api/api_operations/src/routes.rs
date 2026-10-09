@@ -1,6 +1,6 @@
 //! The `/api/v1` route table for operations.
 //!
-//! Paths are written relative to the `/api/v1` nest applied by the API's router (`api::router`).
+//! Paths are written relative to the `/api/v1` nest applied by the API's router (`api_server::router`).
 //! Auth tiers are enforced per-handler by the extractor each takes (`AuthUser`, `LeaderUser`,
 //! `AdminUser`, the machine-credential `MachineCaller`), so they travel with the handler rather
 //! than with the registration.

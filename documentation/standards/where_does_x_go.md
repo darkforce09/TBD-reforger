@@ -10,16 +10,16 @@ is drawn in the directory atlas of `CLAUDE.md`, and every code folder's README s
 
 | X | Home |
 |---|---|
-| a page of the app | `crates/frontend/pages/<crate>/src/<page>/`, in the page crate of its navigation area; its route in `apps/frontend/src/app_routes.rs` (the component) and `crates/frontend/foundation/frontend_route_table/src/routes.rs` (layout flags and access tier) |
+| a page of the app | `crates/frontend/pages/<crate>/src/<page>/`, in the page crate of its navigation area; its route in `crates/frontend/shell/frontend_application/src/app_routes.rs` (the component) and `crates/frontend/foundation/frontend_route_table/src/routes.rs` (layout flags and access tier) |
 | a standalone workspace, such as the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) | its own crate under `crates/frontend/workspaces/<crate>/` (the Mission Creator is five crates in a fixed order) |
 | what every page shares: the API client, auth, design-system primitives, utilities | a foundation crate under `crates/frontend/foundation/` (`frontend_transport`, `frontend_session`, `frontend_ui`, …); a capability several pages show, a feature crate under `crates/frontend/features/` |
 | an app-side mirror of an API model | `crates/frontend/foundation/frontend_api_dtos/src/`, with its R-api golden test in that folder's `tests/` |
-| an [API](/documentation/glossary/a_to_f.md#api) endpoint | `apps/api/src/<domain>/handlers/<surface>.rs`, registered in that domain's `routes.rs`, with its `/// @route` tag |
-| API logic that two surfaces share | that domain's `services/` |
-| an API wire or database model | that domain's `models/`, the snake_case contract |
+| an [API](/documentation/glossary/a_to_f.md#api) endpoint | `crates/api/api_<domain>/src/handlers/<surface>.rs` in the crate of its domain, registered in that crate's `src/routes.rs`, with its `/// @route` tag |
+| API logic that two surfaces share | that domain crate's `src/services/` |
+| an API wire or database model | that domain crate's `src/models/`, the snake_case contract |
 | API code that names no domain concept: pagination, SQLSTATE predicates, wire formats, text guards, token primitives | the API infrastructure crates under `crates/api/` (`api_foundation`, `api_http_layer`, `api_configuration`, `api_database`) |
-| an API background ticker | `crates/api/api_background_workers/src/`; the work itself stays in the owning domain's `services/` |
-| an API binary | `apps/api/src/bin/` |
+| an API background ticker | `crates/api/api_background_workers/src/`; the work itself stays in the owning domain crate's `src/services/` |
+| an API binary | `crates/api/api_server/src/bin/` (the `api-server` server and the `import-item-registry` tool), declared as a `[[bin]]` of `api_server` |
 | a database migration | `crates/api/api_database/migrations/NNNN_<subject>.sql` (sqlx, embedded, applied at boot) |
 | a development seed | `crates/api/api_database/seeds/`; `cargo xtask db seed` applies the files its `SEEDS` list names, and `mock_data.sql` is applied by hand |
 | the [mission](/documentation/glossary/g_to_m.md#mission) document model, compiler and validation | `crates/mission/` |
@@ -28,14 +28,16 @@ is drawn in the directory atlas of `CLAUDE.md`, and every code folder's README s
 | map rendering: the render engine, its typed GPU layers and readback self-checks | `crates/map_rendering/` |
 | GPU rendering primitives with no map concept | `crates/graphics/` |
 
-The API has eight domains: `administration`, `command_center`, `community_content`,
-`identity_and_access`, `match_telemetry`, `missions`, `operations` and `server_infrastructure`.
-`api_v1_routes` in `apps/api/src/router.rs` merges their route tables and
-nests them under `/api/v1`, so a public URL is the literal in the domain's `routes.rs` with
-`/api/v1` in front. `core` imports no domain except its composition root, a domain's handlers
-never import another domain's handlers, and `background_workers` is imported only by
-`apps/api/src/bin/api.rs`; the tests in
-`apps/api/src/tests/architecture_rules.rs` enforce all three. The walls between the map
+The API has eight domain crates under `crates/api/`: `api_administration`, `api_command_center`,
+`api_community_content`, `api_identity_and_access`, `api_match_telemetry`, `api_missions`,
+`api_operations` and `api_server_infrastructure`. `api_v1_routes` in
+`crates/api/api_server/src/router.rs` merges the route table each of them exports from its
+`src/routes.rs` and nests them under `/api/v1`, so a public URL is the literal in the domain
+crate's `routes.rs` with `/api/v1` in front. A kernel crate depends on no domain crate, a domain
+crate depends on another only along the one-way domain graph and never imports its handlers, and
+`api_background_workers` is named only by the server binary
+`crates/api/api_server/src/bin/api_server.rs`; the tests in
+`crates/api/api_server/src/tests/architecture_rules.rs` enforce all four. The walls between the map
 crates and the app are in the [crate boundary rules](/documentation/standards/crate_boundary_rules.md).
 
 ## Contracts, data and assets
@@ -75,7 +77,7 @@ crates and the app are in the [crate boundary rules](/documentation/standards/cr
 | X | Home |
 |---|---|
 | what a code folder holds | its own `README.md`, per the [README standard](/documentation/standards/readme_standard.md) |
-| any other Markdown about code: feature docs, specs, decisions, research | `documentation/`, in the folder that mirrors the code folder; never a `docs` folder under `apps/`, `contracts/` or `assets/` |
+| any other Markdown about code: feature docs, specs, decisions, research | `documentation/`, in the folder that mirrors the code folder; never a `docs` folder under `apps/`, `crates/`, `tools/`, `contracts/` or `assets/` |
 | a procedure | `documentation/runbooks/` |
 | a design reference image or export | the `visual_references/` folder of the feature it depicts |
 | a recorded defect | `documentation/known_bugs/` |

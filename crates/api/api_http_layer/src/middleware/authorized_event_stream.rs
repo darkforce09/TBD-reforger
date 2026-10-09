@@ -8,7 +8,7 @@
 //! **Position:** `api_http_layer::middleware`. The audit log feed of `api_administration` and the
 //! server status stream of `api_server_infrastructure` pass their streams through [`authorize_event_stream`]; the
 //! shutdown it waits on is [`api_configuration::process_lifecycle::process_shutdown`], which
-//! `apps/api/src/bin/api.rs` begins on SIGINT or SIGTERM.
+//! `crates/api/api_server/src/bin/api_server.rs` begins on SIGINT or SIGTERM.
 //! It reads only the session authority, taken from the caller's state through `FromRef`, so it
 //! names no application state type.
 //! **Signals & state:** one async stream per connection owning the inner stream, the caller's

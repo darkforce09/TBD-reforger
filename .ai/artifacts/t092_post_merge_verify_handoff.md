@@ -22,7 +22,7 @@ cd packages/tbd-schema && npm run validate
 
 make test-it
 
-cd apps/frontend && npm run build && npm run lint && npm test
+cd crates/frontend/shell/frontend_application && npm run build && npm run lint && npm test
 ```
 
 **API smoke** (`make api` in another terminal, or use running API):
@@ -79,7 +79,7 @@ Return: SHAs, tags, updated verify logs — **"Ready for Cursor doc sync T-092"*
 | Schema 1.2 + `y` | `packages/tbd-schema/schema/mission.schema.json` |
 | Mod spawn | `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` |
 | Mod loader | `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` |
-| Flatten TS | `apps/frontend/.../compiler/flattenModDocument.ts` |
+| Flatten TS | `crates/frontend/shell/frontend_application/.../compiler/flattenModDocument.ts` |
 | Flatten Go | `apps/website/internal/services/mission_compile.go` |
 | Route | `apps/website/internal/handlers/missions_compiled.go` |
 | Kit aliases | `packages/tbd-schema/registry/kit-aliases.json` |

@@ -25,4 +25,4 @@ tools/tickets/ticketboard_model/src/
 ## Boundaries
 
 - Depends on: the crates named in the crate README.
-- Used by: `apps/ticketboard`.
+- Used by: `tools/tickets/ticketboard_desktop`.

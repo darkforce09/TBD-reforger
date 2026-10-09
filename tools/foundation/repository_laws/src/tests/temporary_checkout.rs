@@ -16,13 +16,13 @@ use super::source_roots::PINNED_SCRIPT_ROOTS;
 /// The member folders of the workspace a [`TemporaryCheckout::with_law_roots`] checkout declares:
 /// the folders the repository's own members sit in.
 pub(super) const FIXTURE_WORKSPACE_MEMBERS: &[&str] = &[
-    "apps/fleet_host_agent",
-    "apps/ticketboard",
-    "apps/api",
-    "apps/frontend",
+    "crates/fleet/game_server_host_agent",
+    "tools/tickets/ticketboard_desktop",
+    "apps/server",
+    "crates/frontend/shell/frontend_application",
     "crates/geometry/camera_math",
     "crates/graphics/render_primitives",
-    "apps/offline_service_worker",
+    "crates/frontend/shell/offline_service_worker",
     "tools/foundation/verification_core",
     "tools/foundation/process_runner",
     "tools/foundation/repository_laws",

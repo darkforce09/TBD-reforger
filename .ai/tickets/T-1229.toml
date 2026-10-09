@@ -4,7 +4,7 @@ title = "Serialise membership grace and override timestamps as RFC 3339 UTC"
 summary = "api_v2 crates/api/api_administration/src/handlers/membership_grace_overrides.rs:41-43 answers expires_at and crates/api/api_missions/src/handlers/mission_default_overrides.rs:202 answers generated_at through json! in chrono's default format, while models use core::wire_format::rfc3339_utc (crates/api/api_administration/src/models/warning.rs:18)."
 class = "bug"
 status = "idea"
-notes = "Paths under apps/api/src. Both responses serialise a chrono DateTime through serde_json::json!, so their fraction digits differ from the rfc3339_utc form every model field uses; move both into typed responses with #[serde(with = rfc3339_utc)]. Source: milestone V finding V-F10 (response-contract pass)."
+notes = "Paths under crates/api/api_server/src. Both responses serialise a chrono DateTime through serde_json::json!, so their fraction digits differ from the rfc3339_utc form every model field uses; move both into typed responses with #[serde(with = rfc3339_utc)]. Source: milestone V finding V-F10 (response-contract pass)."
 created_at = "2026-09-28T01:12:52Z"
 
 [scope]

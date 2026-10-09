@@ -56,7 +56,7 @@ None: no feature, no environment variable.
 
 - Depends on: `frontend_session`, `frontend_transport`, `frontend_api_dtos`, `frontend_ui`,
   `leptos`, `serde_json`, `thiserror`; `frontend_test_support` for its tests only.
-- Used by: the single-page app (`apps/frontend`): the mission hub's overview and library dossier,
+- Used by: the single-page app (`crates/frontend/shell/frontend_application`): the mission hub's overview and library dossier,
   the approvals drawer, decision form and submission queue, the server control page's mission
   deployment wording, and the Mission Creator's read-only review workspace banner.
 - Rules: a feature crate depends on foundation crates only, never on a page or a workspace

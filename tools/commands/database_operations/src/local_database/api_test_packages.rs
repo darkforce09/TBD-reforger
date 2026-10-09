@@ -1,6 +1,7 @@
 //! The packages the API's test, lint and build lanes cover, derived from the workspace.
 //!
-//! **Role:** names the API application package (`api`), every workspace member under
+//! **Role:** names the API server package (`api_server`, the package that assembles the API
+//! crates into the binary and holds the integration test binaries), every workspace member under
 //! `crates/api`, and every other member whose build or tests use an API crate (the staging
 //! fixtures tool, which writes through the API's services and whose suites need the API's
 //! database), and spells them as cargo `-p` arguments.
@@ -10,9 +11,10 @@
 //! **Signals & state:** none; reads the root manifest and every member manifest.
 //! **Invariants:** an API crate, and a member that uses one, is covered from the moment the
 //! workspace names it, never only once someone extends a list; an unreadable workspace, or one
-//! without the `api` package, is an error, never a smaller lane; `api` comes first, then the API
-//! crates, then the members that use them, each group in member-path order; a build-script edge
-//! alone does not make a member a user of the API crates.
+//! without the `api_server` package, is an error, never a smaller lane; `api_server` comes first,
+//! then the other API crates, then the members that use them, each group in member-path order;
+//! every package appears once, although `api_server` itself sits under `crates/api`; a
+//! build-script edge alone does not make a member a user of the API crates.
 
 use std::path::Path;
 
@@ -21,15 +23,16 @@ use repository_laws::workspace_members::{WorkspaceMember, read_workspace_members
 
 use crate::error::{Error, Result};
 
-/// The API application package: the thin app that holds the integration test binaries.
-pub const API_APPLICATION_PACKAGE: &str = "api";
+/// The API server package: the crate that assembles the API crates into the `api-server` binary
+/// and holds the integration test binaries.
+pub const API_APPLICATION_PACKAGE: &str = "api_server";
 
 /// The folder whose workspace members are the API crates.
 pub const API_CRATES_FOLDER: &str = "crates/api";
 
-/// [`API_APPLICATION_PACKAGE`], then the package of every workspace member directly under
+/// [`API_APPLICATION_PACKAGE`], then the package of every other workspace member directly under
 /// [`API_CRATES_FOLDER`], then the package of every other member with a normal or development
-/// dependency on one of those API crates, each group in member-path order.
+/// dependency on one of those API crates, each group in member-path order and every package once.
 ///
 /// # Errors
 /// The workspace members cannot be read, or [`API_APPLICATION_PACKAGE`] is no workspace member.
@@ -58,14 +61,14 @@ pub fn api_test_packages(repo_root: &Path) -> Result<Vec<String>> {
         .collect();
     let api_crate_users = other_members
         .into_iter()
-        .filter(|member| {
-            member.package_name != API_APPLICATION_PACKAGE
-                && uses_an_api_crate(member, &api_crate_names)
-        })
+        .filter(|member| uses_an_api_crate(member, &api_crate_names))
         .map(|member| member.package_name);
     let mut packages = vec![API_APPLICATION_PACKAGE.to_string()];
-    packages.extend(api_crate_names.iter().cloned());
-    packages.extend(api_crate_users);
+    for package in api_crate_names.iter().cloned().chain(api_crate_users) {
+        if !packages.contains(&package) {
+            packages.push(package);
+        }
+    }
     Ok(packages)
 }
 

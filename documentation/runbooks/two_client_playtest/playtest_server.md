@@ -183,6 +183,6 @@ deployment's own artifact from the profile cache); and
 - [Boot and log verification](/documentation/runbooks/game_server_staging/boot_and_log_verification.md)
   — the same boot verdict and log lines on the staging server.
 - [Staging deploy: host agent](/documentation/runbooks/game_server_staging/staging_deploy.md#host-agent)
-  — the optional fleet host agent behind the Server Control start, stop and restart commands; a
+  — the optional game server host agent behind the Server Control start, stop and restart commands; a
   playtest server is not a systemd unit, so the session does not need it.
 - [Two-client playtest](/documentation/runbooks/two_client_playtest/README.md) — the index.

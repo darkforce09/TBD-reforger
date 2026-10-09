@@ -28,8 +28,8 @@ check that did not run, never as a pass.
 
 | Verb | Reads | Fails when | Exit codes |
 |---|---|---|---|
-| `route-tags` | `crates/api/<crate>/src/routes.rs` tables, `apps/api/src/router.rs`, every `@route` tag under `apps/api/src` and `crates/api` | a tag names no registered route, a route has no tag, or the parse, mount or sentinel guards fail | 0 pass, 1 mismatch, 2 source unreadable |
-| `crate-tiers`, `crate-anatomy`, `test-file-reachability`, `frontend-layering`, `tailwind-sources` | the root `Cargo.toml` and every member manifest; the judged crates' sources; every member's module tree and test folders; the app's sources and the frontend crates' manifests; `apps/frontend/style/aegis.css` | a law below is broken | 0 pass, 1 finding, 2 an input missing or unreadable |
+| `route-tags` | `crates/api/<crate>/src/routes.rs` tables, `crates/api/api_server/src/router.rs`, every `@route` tag under `crates/api`, each file read once | a tag names no registered route, a route has no tag, or the parse, mount or sentinel guards fail | 0 pass, 1 mismatch, 2 source unreadable |
+| `crate-tiers`, `crate-anatomy`, `test-file-reachability`, `frontend-layering`, `tailwind-sources` | the root `Cargo.toml` and every member manifest; the judged crates' sources; every member's module tree and test folders; the app's sources and the frontend crates' manifests; `crates/frontend/shell/frontend_application/style/aegis.css` | a law below is broken | 0 pass, 1 finding, 2 an input missing or unreadable |
 | `editor-orbat-coherency` | named editor, store and symbology files; `cargo test` runs | a ban matches, a pin is absent, or a test pin fails or runs no test | 0 pass, 1 every failure |
 
 ### Workspace laws
@@ -38,15 +38,18 @@ Each of the five verbs prints the report of its law in
 [`tools/foundation/repository_laws/src/workspace_laws/`](/tools/foundation/repository_laws/src/workspace_laws/README.md)
 line for line and exits with its code. The paths and names that move with the tree are the
 constants of `tools/checks/repository_checks/src/architecture/workspace_law_locations.rs`:
-the manifest sweep roots, the stylesheet, and the frontend-layering configuration
-`FRONTEND_LAYERS`. That configuration has two halves:
+the manifest sweep roots and the application packages (`CRATE_TIERS`: `APPLICATION_PACKAGES` lists
+the five applications no member may depend on, each a member), the stylesheet, and the
+frontend-layering configuration `FRONTEND_LAYERS`. That configuration has two halves:
 
-- the in-crate half, `APP_LAYERS`: the layer table of `apps/frontend`, which holds no module
+- the in-crate half, `APP_LAYERS`: the layer table of `crates/frontend/shell/frontend_application`, which holds no module
   order any more (the foundation, the features, the pages and the workspaces are crates); the
   agent that births a crate out of a folder drops that folder's row or order in the same change;
-- the crate-edge half, `FRONTEND_CRATE_EDGES`: the layer folders `crates/frontend/<layer>/`, the
-  app as the shell, and the crate orders `FOUNDATION_CRATE_ORDER`,
-  `MISSION_CREATOR_CRATE_ORDER` and `DEBUG_BENCHES_CRATE_ORDER`.
+- the crate-edge half, `FRONTEND_CRATE_EDGES`: the layer folders `crates/frontend/<layer>/`
+  (`crates/frontend/shell` the shell layer), the app as the shell crate, and the crate orders
+  `FOUNDATION_CRATE_ORDER`, `MISSION_CREATOR_CRATE_ORDER`, `DEBUG_BENCHES_CRATE_ORDER` and
+  `SHELL_CRATE_ORDER` (the app and the offline service worker, peers that never name each
+  other).
 
 A crate an order names that no member carries is a finding. The `verify-workspace-laws` task row
 runs the five laws in order as a step of `ci-local`.
@@ -56,7 +59,7 @@ runs the five laws in order as a step of `ci-local`.
 Direction A requires every `/// @route METHOD PATH` tag to name a route that a domain table
 registers on that method for that handler; direction B requires every registered route to carry
 that tag. The route side is the union of the `crates/api/<crate>/src/routes.rs` tables
-that `api_v1_routes` in `apps/api/src/router.rs` merges under `/api/v1`; the `route_tags/` README describes the guards.
+that `api_v1_routes` in `crates/api/api_server/src/router.rs` merges under `/api/v1`; the `route_tags/` README describes the guards.
 
 ### ORBAT coherency
 

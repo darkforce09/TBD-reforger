@@ -36,11 +36,19 @@ fn the_install_writes_every_configuration_and_reads_every_unit_back() {
         p.starts_with("set -euo pipefail\nexport PATH=\"$HOME/.cargo/bin:$PATH\"\numask 077\n")
     );
     assert!(p.contains(
-        "(cd '/home/deploy/tbd/repo' && cargo build --release -q -p fleet_host_agent)\n"
+        "(cd '/home/deploy/tbd/repo' && cargo build --release -q -p game_server_host_agent)\n"
+    ));
+    assert!(p.contains(
+        "install -m 755 '/home/deploy/tbd/repo/target/release/game_server_host_agent' \
+         \"$HOME/.local/bin/game_server_host_agent\"\n"
+    ));
+    assert!(p.contains(
+        "mkdir -p \"$HOME/.local/bin\" \"$HOME/.config/game_server_host_agent\"\n\
+         chmod 700 \"$HOME/.config/game_server_host_agent\"\n"
     ));
     for n in 1..=5 {
         assert!(p.contains(&format!(
-            "AGENT_DIR=\"$HOME/.config/fleet_host_agent/instance-{n}\"\nmkdir -p \"$AGENT_DIR\"\nchmod 700 \"$AGENT_DIR\"\n"
+            "AGENT_DIR=\"$HOME/.config/game_server_host_agent/instance-{n}\"\nmkdir -p \"$AGENT_DIR\"\nchmod 700 \"$AGENT_DIR\"\n"
         )));
     }
     assert_eq!(p.matches("<<AGENTTOML\n").count(), 5);
@@ -48,8 +56,9 @@ fn the_install_writes_every_configuration_and_reads_every_unit_back() {
         p.matches("chmod 600 \"$AGENT_DIR/agent.toml\"\n").count(),
         5
     );
-    let units = "fleet_host_agent@1.service fleet_host_agent@2.service fleet_host_agent@3.service \
-                 fleet_host_agent@4.service fleet_host_agent@5.service";
+    let units = "game_server_host_agent@1.service game_server_host_agent@2.service \
+                 game_server_host_agent@3.service game_server_host_agent@4.service \
+                 game_server_host_agent@5.service";
     assert!(p.contains(&format!("systemctl --user restart {units}\n")));
     assert!(p.contains(&format!("for unit in {units}; do\n")));
     assert!(p.contains("show -p ActiveState --value \"$unit\""));

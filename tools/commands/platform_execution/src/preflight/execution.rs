@@ -15,18 +15,20 @@
 
 use super::*;
 
-/// The source folders of the running API: the thin app and every API crate. The newest commit
-/// touching any of them is the code the API process must be at least as new as.
-const API_SOURCE_FOLDERS: &[&str] = &["apps/api", "crates/api"];
+/// The source folder of the running API: the API server crate and every API crate it assembles
+/// sit under it. The newest commit touching it is the code the API process must be at least as
+/// new as.
+const API_SOURCE_FOLDER: &str = "crates/api";
 
-/// The commit time (`%ct`) of the newest commit under [`API_SOURCE_FOLDERS`] in `root`; 0 when
+/// The commit time (`%ct`) of the newest commit under [`API_SOURCE_FOLDER`] in `root`; 0 when
 /// git answers nothing.
 fn newest_api_commit_epoch(root: &Path) -> i64 {
-    let mut args = vec!["log", "-1", "--format=%ct", "--"];
-    args.extend_from_slice(API_SOURCE_FOLDERS);
-    git_out(root, &args)
-        .and_then(|s| s.trim().parse().ok())
-        .unwrap_or(0)
+    git_out(
+        root,
+        &["log", "-1", "--format=%ct", "--", API_SOURCE_FOLDER],
+    )
+    .and_then(|s| s.trim().parse().ok())
+    .unwrap_or(0)
 }
 
 /// Entry for `xtask platform preflight [--warn]`.

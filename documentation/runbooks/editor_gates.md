@@ -69,7 +69,7 @@ container's does not run inside that container.
    ```
 
    Expected: the four commands in order, as `--dry-run` prints them:
-   `cd apps/frontend && trunk build --release`, then
+   `cd crates/frontend/shell/frontend_application && trunk build --release`, then
    `cargo run -q -p developer_tools --bin gate -- doctor`, `… -- editor-suite` and
    `… -- v-suite verify`; the doctor ends `== gate doctor: OK — 0 warning(s)`, each smoke prints
    its JSON verdict, and the run exits 0. It stops at the first step that fails, with that step's
@@ -208,9 +208,9 @@ Expected: `26/26 routes match the frozen oracle` and exit 0.
   the `uppercase` class). `render-check --expect` matches against `document.body.innerText`; use
   `textContent` in `--assert-js` for source-exact text, or compare case-insensitively.
 - **`aside` is ambiguous.** The desktop sidebar
-  (`apps/frontend/src/shell/sidebar.rs:47`), the mobile drawer
-  (`apps/frontend/src/shell/layout.rs:135`) and the membership notice
-  (`apps/frontend/src/shell/membership_status.rs:96`) are all `<aside>`, and
+  (`crates/frontend/shell/frontend_application/src/shell/sidebar.rs:51`), the mobile drawer
+  (`crates/frontend/shell/frontend_application/src/shell/layout.rs:148`) and the membership notice
+  (`crates/frontend/shell/frontend_application/src/shell/membership_status.rs:101`) are all `<aside>`, and
   `document.querySelector('aside')` returns the first in DOM order whether or not it is shown.
   Select on a discriminating class or scope to a landmark.
 - **`render-check` proxies `/api` to a live API.** `--api-proxy` defaults to
@@ -239,7 +239,7 @@ check first.
   `Received signal`:
 
   ```bash
-  cargo run -q -p developer_tools --bin gate -- serve --dir apps/frontend/dist --port 5199 --api-proxy http://127.0.0.1:8080 --map-assets assets/terrains
+  cargo run -q -p developer_tools --bin gate -- serve --dir crates/frontend/shell/frontend_application/dist --port 5199 --api-proxy http://127.0.0.1:8080 --map-assets assets/terrains
   ```
 
 - **P3: renderer thread state.** While it hangs, field 3 (state) of

@@ -68,7 +68,7 @@ repository.rs ──► repository_layout
 - Used by: `ticket_registry` (the store, the encoding, the predicates, the miner, the paths),
   `ticket_wave_lock` (the store, `ticket_id_order_key`, `ARCHIVED_WAVE_PLANS`), `ticket_metrics`
   (the store, the miner, `is_sha_shaped`, the estimate paths), `xtask` and
-  `apps/ticketboard/`, all through the crate root and the public modules.
+  `tools/tickets/ticketboard_desktop/`, all through the crate root and the public modules.
 - Rules: `lib.rs` holds only the header, `mod` lines and re-exports; the encoding refuses what
   the model cannot hold, and `write_back` never writes a ticket whose render does not re-parse to
   the same ticket (`tests/store/corpus_storage_tests.rs`, `tests/proptest_roundtrip_tests.rs`);

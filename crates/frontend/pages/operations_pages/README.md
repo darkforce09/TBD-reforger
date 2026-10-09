@@ -18,7 +18,7 @@ crates/frontend/pages/operations_pages/
 
 ## How it works
 
-The app's route table (`apps/frontend/src/app_routes.rs`) mounts the five route components:
+The app's route table (`crates/frontend/shell/frontend_application/src/app_routes.rs`) mounts the five route components:
 `EventSchedulePage` at `/events`, `EventHubPage` at `/events/:id`, `OrbatSelectionPage` at
 `/events/:id/missions/:emid/orbat`, `DeploymentsPage` at `/deployments` and `LeaderboardsPage` at
 `/leaderboards`. Each renders inside the session's sign-in gate and fetches through the transport
@@ -66,7 +66,7 @@ None: no feature, no environment variable.
   helpers), `http_url_guard` (the scheme guard on rendered links and images), `leptos`,
   `serde_json`; on `wasm32`, `leptos_router` and `js-sys`; `frontend_test_support` for its tests
   only.
-- Used by: the single-page app (`apps/frontend`), whose route table mounts the five pages.
+- Used by: the single-page app (`crates/frontend/shell/frontend_application`), whose route table mounts the five pages.
 - Rules: a page crate depends on foundation and feature crates only, never on another page crate,
   a workspace or the app (`cargo xtask ci verify-workspace-laws`).
 

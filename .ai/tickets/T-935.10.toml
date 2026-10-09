@@ -43,7 +43,7 @@ completed_at = "2026-09-06T06:54:21Z"
 estimated = ["tokens"]
 owns = [
     "tools/tbd-tools/src/map/unified.rs",
-    "apps/frontend/src/editor/world_assets/tbd_sat.rs",
+    "crates/frontend/shell/frontend_application/src/editor/world_assets/tbd_sat.rs",
 ]
 
 [scope]

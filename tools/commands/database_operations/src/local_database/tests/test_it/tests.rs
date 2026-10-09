@@ -137,9 +137,9 @@ fn a_failing_suite_still_reports_its_own_rc() {
     assert_eq!(join_rc(0, 0), 0);
 }
 
-/// The API packages a fixture workspace derives: the app first, then two API crates.
+/// The API packages a fixture workspace derives: the API server first, then two API crates.
 fn api_packages() -> Vec<String> {
-    ["api", "api_database", "api_state"]
+    ["api_server", "api_database", "api_state"]
         .map(String::from)
         .to_vec()
 }
@@ -154,7 +154,7 @@ fn the_complete_suite_tests_the_api_app_and_every_api_crate() {
             "--locked",
             "--no-fail-fast",
             "-p",
-            "api",
+            "api_server",
             "-p",
             "api_database",
             "-p",
@@ -181,7 +181,7 @@ fn a_narrowed_selection_forwards_binaries_library_and_filter() {
             "--locked",
             "--no-fail-fast",
             "-p",
-            "api",
+            "api_server",
             "--lib",
             "--test",
             "waitlist_promotion_transactions",
@@ -191,7 +191,7 @@ fn a_narrowed_selection_forwards_binaries_library_and_filter() {
             "--show-output",
             "operations::services::event_reservations",
         ],
-        "the integration binaries belong to the `api` package alone"
+        "the integration binaries belong to the `api_server` package alone"
     );
 }
 
@@ -209,7 +209,7 @@ fn a_library_or_filter_selection_covers_every_api_package() {
             "--locked",
             "--no-fail-fast",
             "-p",
-            "api",
+            "api_server",
             "-p",
             "api_database",
             "-p",

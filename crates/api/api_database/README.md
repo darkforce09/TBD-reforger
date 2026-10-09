@@ -55,11 +55,11 @@ opens it; unset or blank means the default. No feature.
 
 - Depends on: `api_configuration` (`ConfigError`, which names a malformed pool setting), `sqlx`
   and `tokio`; Postgres 18.
-- Used by: the API's `api` and `import-registry` binaries, its services that map constraint
+- Used by: the API's `api-server` and `import-item-registry` binaries, its services that map constraint
   violations, and its integration suites; `cargo xtask db seed`,
   `cargo xtask db repair-migration-checksum` and the wave migration gate read the SQL folders.
-- Rules: an applied migration never changes (`apps/api/tests/migrations_are_immutable.rs`); the
-  seed and migration comments follow the API's prose rules (`apps/api/src/tests/prose_rules.rs`).
+- Rules: an applied migration never changes (`crates/api/api_server/tests/migrations_are_immutable.rs`); the
+  seed and migration comments follow the API's prose rules (`crates/api/api_server/src/tests/prose_rules.rs`).
 
 ## Related documentation
 

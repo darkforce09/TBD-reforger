@@ -36,7 +36,7 @@ Tag **T-130** @ `90c9f261` (merged to main 2026-07-03).
 
 ```
 ./scripts/ticket sync && ./scripts/ticket check     PASS
-cd apps/frontend && npm test                tileUrl tests PASS
+cd crates/frontend/shell/frontend_application && npm test                tileUrl tests PASS
 make schema-validate                                PASS (11/11 gates)
 ```
 
@@ -57,7 +57,7 @@ make test-it (Postgres 18 @ :5434)                          ok ./internal/handle
        TestMissionArchiveBlockedByUpcomingEvent (409 archive w/ upcoming,
        409 delete w/ any attachment, detach→archive 200),
        TestMissionSoftDelete (403 non-author, 204, 404 after, soft row kept)
-cd apps/frontend: npm run build                     PASS (tsc + vite)
+cd crates/frontend/shell/frontend_application: npm run build                     PASS (tsc + vite)
 npm run lint                                                clean (complexity cap kept via
   MissionLifecycleActions extraction)
 npm test                                                    43/43 (38 pre-existing +
@@ -145,7 +145,7 @@ make test-it (Postgres 18 @ :5434)                          ok ./internal/handle
              TestOAuthLoginUnconfiguredRedirectsWithError
 make ci-local-backend                                       PASS end-to-end — proves the new
   unit-test step (services/middleware/realtime) runs green in the mirrored order
-cd apps/frontend && npm run build && npm run lint   PASS (tsc + vite, eslint clean;
+cd crates/frontend/shell/frontend_application && npm run build && npm run lint   PASS (tsc + vite, eslint clean;
   pre-existing chunk-size warning only)
 editorconfig-checker .github/workflows/ci.yml Makefile      clean
 ```

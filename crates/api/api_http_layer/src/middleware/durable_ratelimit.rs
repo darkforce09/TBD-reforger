@@ -24,7 +24,7 @@
 //!   verbatim (pinned by `tests/durable_rate_limit.rs::migration_0021_is_the_ddl_constant_verbatim`,
 //!   so the bytes the tests prove and the bytes the migration lands cannot drift);
 //! * the wiring — [`crate::middleware::RateLimitState`], mounted by the API router
-//!   (`api::router::router`). The L1 `IpLimiter`s stay in front, narrowed to the
+//!   (`api_server::router::router`). The L1 `IpLimiter`s stay in front, narrowed to the
 //!   strict prefixes; `rate_limiting.rs`'s header is the policy and its justification;
 //! * the `prune` tick —
 //!   `api_background_workers::ratelimit_cleanup_worker::start_rate_limit_prune`, armed by

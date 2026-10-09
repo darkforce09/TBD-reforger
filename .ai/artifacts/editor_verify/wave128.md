@@ -276,7 +276,7 @@ byte-identical at exit). All 7 green. What was attacked:
 
 **One finding, out of the two commits but inside the attack surface I was told to sweep:**
 
-MINOR | apps/frontend/src/arsenal_rules.rs:1371-1373 (`schema_deref`) | RFC 6901 escaped
+MINOR | crates/frontend/shell/frontend_application/src/arsenal_rules.rs:1371-1373 (`schema_deref`) | RFC 6901 escaped
 tokens are neither unescaped nor refused, and when a LITERAL key containing `~1`/`~0` exists the
 pointer resolves to the wrong node — accepting a document the schema, read per spec, rejects. |
 Proved executable: shipped schema + `$defs` keys `"a/b"` = `{"minLength": 9999}` (the spec target

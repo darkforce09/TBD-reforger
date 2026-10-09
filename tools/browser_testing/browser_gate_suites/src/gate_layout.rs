@@ -1,13 +1,19 @@
 //! The repository locations only the browser gates name.
 //!
 //! **Role:** the pair of map-asset folders the gates' static server mounts under `/map-assets`,
-//! and the editor gate runbook the font-cache diagnostic names.
+//! the single-page app's release build folder every gate serves by default, and the editor gate
+//! runbook the font-cache diagnostic names.
 //! **Position:** the static server, the `gate` command line, the smokes and the doctor read these;
 //! the folders themselves are spelled once, in the `repository_layout` crate.
-//! **Signals & state:** none; a value type and a constant.
+//! **Signals & state:** none; a value type and constants.
 //! **Invariants:** terrains and glyphs travel together, so no server mounts one without the other.
 
 use std::path::{Path, PathBuf};
+
+/// The single-page app's `trunk build --release` output folder, relative to the checkout root:
+/// the `dist` folder its `Trunk.toml` names beside the app crate. Every gate that serves a build
+/// defaults to it.
+pub const FRONTEND_APPLICATION_DIST: &str = "crates/frontend/shell/frontend_application/dist";
 
 /// The known wedge modes of the headless editor gate and the recipe for each, named by the
 /// font-cache diagnostic when it cannot explain what it found.

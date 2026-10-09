@@ -52,7 +52,7 @@ at the crate's measured 1.03 µs/ray). Over-cap is refused on every surface: `wa
 wash and **casts no ray** (asserted with a counting blocker), `level_wash*` inherit it,
 `WashJob::new` returns the message-bearing `Err`.
 
-**`apps/frontend/src/editor/tools/viewshed_scheduler.rs`** (new, 448 lines) —
+**`crates/frontend/shell/frontend_application/src/editor/tools/viewshed_scheduler.rs`** (new, 448 lines) —
 `VIEWSHED_BUDGET_MS = 4.0`; `ViewshedTool{Terrain,BuildingWash}` keys the slots so there is one
 active job per tool and a submit cancels only its own. `submit_terrain` builds the job from the same
 manifest and params `compute_viewshed_for` uses, bumps the generation, drops the previous job before
@@ -68,7 +68,7 @@ pumps is over the finished terrain, not the first batch. The wash lane
 the building's BVH cannot be parked in a `'static` thread-local. `last_refusal()` surfaces the cap
 message.
 
-**`apps/frontend/src/editor/tools/los_tool.rs`** (+13 net) — `place_viewshed` submits and
+**`crates/frontend/shell/frontend_application/src/editor/tools/los_tool.rs`** (+13 net) — `place_viewshed` submits and
 encodes, nothing more; the inline `ViewshedState` write is extracted **verbatim** as
 `publish_viewshed_raster` so the scheduler can repeat it on completion; `everon_manifest` becomes
 `pub(crate)`. `compute_viewshed_for` untouched. No banned Class-R token introduced; both RGBA

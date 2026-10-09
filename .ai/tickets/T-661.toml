@@ -52,18 +52,18 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 owns = [
-    "apps/frontend/src/eden_chrome.rs",
-    "apps/frontend/src/eden_layout.rs",
-    "apps/frontend/src/eden_top_strip.rs",
-    "apps/frontend/src/eden_env.rs",
-    "apps/frontend/src/eden_tree.rs",
-    "apps/frontend/src/eden_dock_left.rs",
-    "apps/frontend/src/eden_dock_right.rs",
-    "apps/frontend/src/eden_vehicles_panel.rs",
-    "apps/frontend/src/eden_zones.rs",
-    "apps/frontend/src/eden_toolbelt.rs",
-    "apps/frontend/src/eden_settings.rs",
-    "apps/frontend/src/main.rs",
+    "crates/frontend/shell/frontend_application/src/eden_chrome.rs",
+    "crates/frontend/shell/frontend_application/src/eden_layout.rs",
+    "crates/frontend/shell/frontend_application/src/eden_top_strip.rs",
+    "crates/frontend/shell/frontend_application/src/eden_env.rs",
+    "crates/frontend/shell/frontend_application/src/eden_tree.rs",
+    "crates/frontend/shell/frontend_application/src/eden_dock_left.rs",
+    "crates/frontend/shell/frontend_application/src/eden_dock_right.rs",
+    "crates/frontend/shell/frontend_application/src/eden_vehicles_panel.rs",
+    "crates/frontend/shell/frontend_application/src/eden_zones.rs",
+    "crates/frontend/shell/frontend_application/src/eden_toolbelt.rs",
+    "crates/frontend/shell/frontend_application/src/eden_settings.rs",
+    "crates/frontend/shell/frontend_application/src/main.rs",
 ]
 
 [scope]

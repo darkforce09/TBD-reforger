@@ -5,7 +5,7 @@ reads `.ai/tickets/wave.lock` itself, projects the recorded
 [wave](/documentation/glossary/n_to_z.md#wave) lanes exactly as stored, lists the dispatchable
 [tickets](/documentation/glossary/n_to_z.md#ticket) no wave holds, and lists the colliding `owns`
 pairs the ticket comparison explains. The desktop application paints the tab from
-`apps/ticketboard/src/wave_plan/ui/`.
+`tools/tickets/ticketboard_desktop/src/wave_plan/ui/`.
 
 ## Contents
 
@@ -49,9 +49,9 @@ it writes. `ticket_wave_lock::collides` and this reader's `colliding_pairs` give
   (`WaveLockUnparsable`); `ticket_model` (`StatusName`, `Ticket`, `TicketId`); `ticket_wave_lock`
   (`lock_path`, `missing_lock_error`); `serde` and `toml`.
 - Used by: `crate::application_state` (`background_loading.rs`, `workspace_state.rs`,
-  `events.rs`) and its tests; the desktop application: `apps/ticketboard/src/wave_plan/ui/`,
-  `apps/ticketboard/src/application/` (`mod.rs`, `feature_views.rs`) and the comparison view in
-  `apps/ticketboard/src/ticket_browser/ui/detail_panel/comparison.rs`.
+  `events.rs`) and its tests; the desktop application: `tools/tickets/ticketboard_desktop/src/wave_plan/ui/`,
+  `tools/tickets/ticketboard_desktop/src/application/` (`mod.rs`, `feature_views.rs`) and the comparison view in
+  `tools/tickets/ticketboard_desktop/src/ticket_browser/ui/detail_panel/comparison.rs`.
 - Rules:
   - the feature reads the lock and never writes it or recomputes packing
     (`lanes_render_the_lock_verbatim_never_sorted` in `models/tests/wave_projection.rs`);

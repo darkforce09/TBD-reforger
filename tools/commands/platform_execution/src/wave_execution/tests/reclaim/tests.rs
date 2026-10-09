@@ -48,7 +48,7 @@ const SCRATCH_FOLDERS: &[&str] = &[
     "dist-gate-frontend",
     "target-T-454",
     "target-container",
-    "apps/frontend/dist",
+    "crates/frontend/shell/frontend_application/dist",
 ];
 
 /// A scratch main checkout holding [`SCRATCH_FOLDERS`], unique per test and process.
@@ -96,7 +96,7 @@ const NEVER_SWEPT_HERE: &[&str] = &[
     "target/ci",
     "target-T-454",
     "target-container",
-    "apps/frontend/dist",
+    "crates/frontend/shell/frontend_application/dist",
 ];
 
 /// The retired root-level folders go by default; nothing else at the root or in `target/` does.

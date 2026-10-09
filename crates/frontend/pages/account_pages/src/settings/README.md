@@ -62,9 +62,9 @@ puts the shipped placeholder in place of anything else. The Arma Identity card c
   `LinkStatus` and `LinkCodeResponse` from `crates/frontend/foundation/frontend_api_dtos/src/auth.rs`),
   `frontend_ui` (`PageHeader`, `MaterialIcon`, the toast queue, `safe_avatar_url`),
   `frontend_session` (`AuthGate` and the `AuthStore` context).
-- Used by: the `/settings` route in `apps/frontend/src/app_routes.rs` and
+- Used by: the `/settings` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the top bar's account menu in
-  `apps/frontend/src/shell/top_nav.rs`, which links `/settings` and
+  `crates/frontend/shell/frontend_application/src/shell/top_nav.rs`, which links `/settings` and
   `/settings#arma-link`; the DOM oracle's `settings` capture in
   `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
 - Rules: the cards wait for both fetches; the avatar source passes through `safe_avatar_url`

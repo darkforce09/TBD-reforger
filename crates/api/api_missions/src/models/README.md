@@ -50,8 +50,8 @@ each transition's wire name and confirmation deadline: `scenario_restart` 600 s,
   `mission-library.schema.json` (`MissionArmory`) and `mission-default-overrides.schema.json`.
 - Used by: the domain's handlers and services; `api_operations` (`MissionArmory` in the
   [event](/documentation/glossary/a_to_f.md#event) hub); the [API](/documentation/glossary/a_to_f.md#api) tests
-  `apps/api/tests/models_serde.rs`, `apps/api/tests/models_fromrow.rs` and
-  `apps/api/tests/mission_review_contract.rs`, which decodes live answers into the
+  `crates/api/api_server/tests/models_serde.rs`, `crates/api/api_server/tests/models_fromrow.rs` and
+  `crates/api/api_server/tests/mission_review_contract.rs`, which decodes live answers into the
   generated types. The web app's DTOs in `crates/frontend/foundation/frontend_api_dtos/src/`
   (`missions.rs`, `mission_reviews.rs`, `mission_deployments.rs`, `registry.rs`) mirror these
   shapes.

@@ -2,7 +2,7 @@
 
 The headless half of the [ticketboard](/documentation/glossary/n_to_z.md#ticketboard): everything
 the desktop viewer of the [ticket](/documentation/glossary/n_to_z.md#ticket) registry knows, without
-painting it. `apps/ticketboard` paints these models with egui.
+painting it. `tools/tickets/ticketboard_desktop` paints these models with egui.
 
 ## Contents
 
@@ -28,7 +28,7 @@ crate writes no file under the repository.
   run receipt shape), `ticket_wave_lock` (the lock path, the missing-lock text, the collision
   rule), `repository_layout`, `time_source`; `notify`, `serde`, `serde_json`, `thiserror`, `time`,
   `toml`.
-- Used by: `apps/ticketboard`, which also enables the `test_fixtures` feature from its
+- Used by: `tools/tickets/ticketboard_desktop`, which also enables the `test_fixtures` feature from its
   dev-dependencies for the shared test helpers.
 - Rules: no source names egui, eframe or rfd, `core` imports no feature, no feature imports
   `application_state`, and `ticket_registry` imports no consuming feature (the tests in

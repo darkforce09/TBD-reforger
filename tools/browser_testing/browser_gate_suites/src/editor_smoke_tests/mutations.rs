@@ -97,7 +97,7 @@ pub async fn r_auth(dist_override: Option<String>) -> Result<u8> {
     let dist = match dist_override.or_else(|| std::env::var("LEPTOS_DIST").ok()) {
         Some(dist) => dist,
         None => find_repository_root()?
-            .join(DIST_DEFAULT)
+            .join(FRONTEND_APPLICATION_DIST)
             .to_string_lossy()
             .into_owned(),
     };

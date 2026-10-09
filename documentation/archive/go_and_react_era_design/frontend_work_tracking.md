@@ -1,4 +1,4 @@
-**Status:** archived — see [frontend documentation](/documentation/apps/frontend/README.md)
+**Status:** archived — see [frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md)
 
 # Frontend work tracking
 

@@ -30,7 +30,7 @@
 //!   past a broken limiter would only reach a handler that 500s.
 //! * **The exempt mount is structural, not a path test.** [`RATE_LIMIT_EXEMPT_MOUNT`] is served
 //!   **outside** this middleware entirely: `Router::layer` wraps the routes registered before it,
-//!   so the API router (`api::router::router`) mounts that `ServeDir` on the line
+//!   so the API router (`api_server::router::router`) mounts that `ServeDir` on the line
 //!   *after* the `rate_limit` layer. The limiter is never asked about a map asset, so it can
 //!   never get the answer wrong. This module holds exactly one path predicate — [`STRICT_PREFIXES`] — and that
 //!   is the only one it should ever hold: a `starts_with("/map-assets")` here would also exempt
@@ -73,7 +73,7 @@ pub const STRICT_PREFIXES: [&str; 1] = ["/api/v1/auth/"];
 /// The router mount point that is served **outside** [`rate_limit`] entirely.
 ///
 /// This is a **`Router::nest_service` argument**, not a request-path predicate. It is passed to
-/// axum once, at registration, in the API router (`api::router::router`); nothing in
+/// axum once, at registration, in the API router (`api_server::router::router`); nothing in
 /// this module compares it against `req.uri().path()`, and nothing should.
 ///
 /// The literal is pinned by `tests::the_exempt_mount_is_the_path_the_editor_requests` against the
