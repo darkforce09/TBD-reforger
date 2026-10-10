@@ -34,7 +34,7 @@
 //! Default mode is CHECK: read-only, exit 1 on drift. That is the gate this repo did not have —
 //! run on the day such a change lands goes red with the rows it is about to strand.
 //!
-//! **Position:** the `reclassify` subcommand and the platform wave gate run it.
+//! **Position:** the `world reclassify` subcommand runs it.
 //! **Signals & state:** none at the module root.
 //! **Invariants:** the default mode writes nothing; `--write` rewrites only the classification
 //! lane.

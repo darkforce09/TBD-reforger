@@ -8,7 +8,6 @@ use clap::{Parser, Subcommand};
 use deployment::DeployCmd;
 use enfusion_mcp::McpCmd;
 use mod_operations::ModCmd;
-use platform_execution::PlatformCmd;
 use remote_debugging::DebugCmd;
 use schema_tooling::GenCmd;
 use staging_procedures::StagingCmd;
@@ -99,11 +98,6 @@ pub(crate) enum TopCmd {
     Gen {
         #[command(subcommand)]
         cmd: GenCmd,
-    },
-    /// Platform factory helpers
-    Platform {
-        #[command(subcommand)]
-        cmd: PlatformCmd,
     },
     /// Agent context guards + output filtering (token-efficiency rework)
     Ai {

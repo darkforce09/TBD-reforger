@@ -13,7 +13,7 @@
 //! has no `bool` conversion, the matcher is compiled in so an absent search tool is not a
 //! reachable state, and [`gate::probe_files`] returns `Result<bool, NotRun>` so `?` carries "did
 //! not run" upward. Failures render as one headline plus six-space continuation lines, a text
-//! contract `cargo xtask platform wave` scrapes.
+//! contract the gate logs carry.
 //!
 //! ```no_run
 //! use std::path::Path;

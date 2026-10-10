@@ -410,7 +410,7 @@ mission_hub_pages = { path = "crates/frontend/pages/mission_hub_pages" }
 # (`tools/checks/mod_script_checks`).
 mod_script_checks = { path = "tools/checks/mod_script_checks" }
 # The game mod's operations: compile gate, world boot, playtest server, equipment export
-# publication, website API client and the mod wave driver (`tools/commands/mod_operations`).
+# publication and website API client (`tools/commands/mod_operations`).
 mod_operations = { path = "tools/commands/mod_operations" }
 # The offline cache policy the service worker and the page share
 # (`crates/contracts/offline_cache_policy`).
@@ -433,9 +433,6 @@ paper_doll_scene = { path = "crates/paper_doll/paper_doll_scene" }
 # Spot heights, town labels and road names, their declutter, the labels archive and their glyph
 # packing (`crates/world_objects/place_names`).
 place_names = { path = "crates/world_objects/place_names" }
-# The platform factory: the wave driver, slice execution, slice worktrees and the unattended-run
-# preflight (`tools/commands/platform_execution`).
-platform_execution = { path = "tools/commands/platform_execution" }
 png = "0.17"
 # A terrain's prefab catalogue and world payload decoding (`crates/world_formats/prefab_catalog`).
 prefab_catalog = { path = "crates/world_formats/prefab_catalog" }
@@ -525,9 +522,6 @@ terrain_relief = { path = "crates/terrain/terrain_relief" }
 # (`crates/line_of_sight/terrain_line_of_sight`).
 terrain_line_of_sight = { path = "crates/line_of_sight/terrain_line_of_sight" }
 thiserror = "2.0.18"
-# The typed client of the central ticket manager's `ttm` command line and its JSON contract
-# (`tools/foundation/ticket_manager_client`).
-ticket_manager_client = { path = "tools/foundation/ticket_manager_client" }
 time = "0.3"
 # Wall-clock and monotonic time and RFC 3339 UTC stamps (`crates/foundation/time_source`).
 time_source = { path = "crates/foundation/time_source" }

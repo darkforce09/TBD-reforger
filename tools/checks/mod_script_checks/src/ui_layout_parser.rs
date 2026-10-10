@@ -50,9 +50,8 @@
 //! The deviation is kept, for the reason `verification_core::scan::walk_files` already sorts: *"a gate's
 //! output must not depend on readdir ordering, or two runs over the same tree disagree and the
 //! diff-based port acceptance becomes meaningless."* The same argument applies to a hash order
-//! that varies by implementation. Nothing consumes the order: the mod wave driver runs
-//! this gate through a `run()` helper that branches on the exit status alone and, on failure,
-//! prints `tail -12` of the merged output for a human. The finding SET, the finding TEXT and the
+//! that varies by implementation. Nothing consumes the order: `cargo xtask verify ui-layouts`
+//! prints the findings for a human and its caller branches on the exit status alone. The finding SET, the finding TEXT and the
 //! EXIT CODE are unchanged. `tests::multiple_c6_findings_come_out_in_ascending_line_order` pins
 //! the choice so it stays a decision rather than an accident.
 

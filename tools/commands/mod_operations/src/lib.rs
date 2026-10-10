@@ -6,11 +6,10 @@
 //! `mod dev-server`); `equipment_gameplay` and `equipment_vehicle_export` validate, project and
 //! publish the Workbench equipment export; `website_api_client` is the website API client those
 //! commands drive; `development_bootstrap`, `mission_test` and `game_runtime_api_smoke` prepare and
-//! probe a Workbench session; `wave_execution` is the mod program's wave driver (`mod wave`).
+//! probe a Workbench session.
 //! [`ModCmd`] is the group's command line and [`run`] dispatches it.
-//! **Position:** tier 10 of `tools/commands`, over `platform_execution` (the slice worktrees),
-//! `workstation_setup`, `enfusion_mcp`, `remote_debugging`,
-//! `mod_script_checks`, `ticket_manager_client` and the tool foundations. The xtask binary's `mod` group
+//! **Position:** tier 10 of `tools/commands`, over `workstation_setup`, `enfusion_mcp`,
+//! `remote_debugging`, `mod_script_checks` and the tool foundations. The xtask binary's `mod` group
 //! calls it.
 //! **Signals & state:** the compile gate and the playtest server install SIGINT and SIGTERM
 //! handlers that stop the server's process group; every child process runs through
@@ -33,7 +32,6 @@ mod mod_dispatch;
 mod playtest_server;
 pub mod prelude;
 mod server_launcher;
-mod wave_execution;
 mod website_api_client;
 mod world_boot;
 mod world_boot_verdict;

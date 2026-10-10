@@ -1,7 +1,8 @@
 //! The command vocabulary the documentation link check judges `cargo xtask` citations against.
 //!
 //! **Role:** [`documentation_command_vocabulary`] hands the link check this binary's own clap
-//! command tree, the build recipe names `mk` looks up and the CI task names `ci` looks up.
+//! command tree, the build recipe and gate-step helper names `mk` looks up and the CI task names
+//! `ci` looks up.
 //! **Position:** the binary's side of the injection: `verify link-check` passes the vocabulary to
 //! the gate, so the documentation checks never read the command line themselves.
 //! **Signals & state:** none; it builds a value per call.
@@ -13,6 +14,7 @@ use clap::CommandFactory;
 use super::Cli;
 use ci_task_catalog::build_lane::recipes;
 use ci_task_catalog::task_runner;
+use ci_task_catalog::wave_gate_steps;
 use documentation_checks::link_check::CommandVocabulary;
 
 /// xtask's clap command tree, as clap derives it from [`Cli`] before parsing.
@@ -21,11 +23,15 @@ pub(crate) fn xtask_command_tree() -> clap::Command {
 }
 
 /// The vocabulary the documentation link check judges command citations against: this binary's
-/// command tree, the `mk` recipe names and the `ci` task names.
+/// command tree, the `mk` recipe and gate-step helper names and the `ci` task names.
 pub(crate) fn documentation_command_vocabulary() -> CommandVocabulary {
     CommandVocabulary {
         command_tree: xtask_command_tree,
-        recipe_targets: recipes::TARGETS.to_vec(),
+        recipe_targets: recipes::TARGETS
+            .iter()
+            .chain(wave_gate_steps::HELPER_TARGETS)
+            .copied()
+            .collect(),
         task_names: task_runner::TASKS.iter().map(|task| task.name).collect(),
     }
 }

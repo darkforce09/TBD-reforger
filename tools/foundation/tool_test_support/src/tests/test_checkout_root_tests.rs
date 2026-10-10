@@ -11,7 +11,7 @@ fn nested_tooling_directories_resolve_repository_and_fixtures() {
         for fixture in [
             "contracts/definitions/mission.schema.json",
             "tools/map_assets/blueprint_compiler/test_fixtures/blueprint/FarmHouse_E_1L01_Wood_children.json",
-            "tools/commands/platform_execution/src/wave_execution/schema.rs",
+            "tools/commands/ci_task_catalog/src/task_definitions.rs",
             "tools/enfusion_mcp_node_package/package.json",
         ] {
             assert!(resolved.join(fixture).is_file(), "missing {fixture}");

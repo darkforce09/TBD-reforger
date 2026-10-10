@@ -68,9 +68,6 @@ pub enum Error {
     /// The staging host check or the MCP game root could not run.
     #[error(transparent)]
     WorkstationSetup(#[from] workstation_setup::Error),
-    /// A slice worktree step of the mod wave driver could not run.
-    #[error(transparent)]
-    PlatformExecution(#[from] platform_execution::Error),
 }
 
 impl From<jsonschema::ValidationError<'static>> for Error {

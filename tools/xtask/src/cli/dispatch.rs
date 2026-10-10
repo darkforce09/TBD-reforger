@@ -18,7 +18,6 @@ pub(crate) fn run() -> Result<u8> {
         TopCmd::Ballistics { cmd } => Ok(ballistics_oracle_tooling::run(cmd)?),
         TopCmd::Map { cmd } => commands::map::dispatch::run(cmd),
         TopCmd::Verify { cmd } => commands::verify::dispatch::run(cmd),
-        TopCmd::Platform { cmd } => Ok(platform_execution::run(cmd)?),
         TopCmd::Ai { cmd } => commands::agent_context::dispatch::run(cmd),
         TopCmd::Mk { args } => Ok(ci_task_catalog::build_lane::recipes::run(&args)?),
         TopCmd::Ci { target } => {

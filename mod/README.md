@@ -135,8 +135,6 @@ Other mod commands:
 - [Mod documentation](/documentation/mod/README.md) — the index of the mod's deeper documents.
 - [Mod design](/documentation/mod/tbd-framework/mod_design.md) — what the framework is for and
   its non-negotiables.
-- [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — how mod work runs
-  through Workbench and the gates.
 - [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) — the MCP call path
   and its checks.
 - [Game server staging](/documentation/runbooks/game_server_staging/README.md) — deploying to the

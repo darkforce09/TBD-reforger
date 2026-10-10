@@ -62,8 +62,8 @@ nothing; 2 when `file-length` could not read a root or a file.
     `verify-no-node`, `verify-no-shell` and `verify-coding-standards` rows run these in process,
     and `ci-local`, which runs those rows;
   - the `language-gates` job of `.github/workflows/ci.yml`;
-  - the platform [wave](/documentation/glossary/n_to_z.md#wave) gate
-    (`tools/commands/platform_execution/src/wave_execution/gate/gate_dispatch.rs`), which runs
+  - the ticket manager's platform [wave](/documentation/glossary/n_to_z.md#wave) gate
+    ([`ticket_manager_execution.toml`](/ticket_manager_execution.toml)), which runs
     `verify no-python`, `verify no-node` and `verify no-shell`.
 - Rules:
   - The ban widens only by adding a row to `TRACKED_LANGUAGE_BANS`, never by a path exception.

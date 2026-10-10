@@ -73,7 +73,8 @@ crates and the app are in the [crate boundary rules](/documentation/standards/cr
 | build output | `target/host/` (cargo on the host through `hcargo`) or `target/container/` (cargo inside the development container), each with its purpose subfolders |
 | a [ticket](/documentation/glossary/n_to_z.md#ticket), its run receipts and its place in a wave | the central ticket manager, written through `ttm --project reforger` commands, never a file in the repository |
 | a ticket's spec and plan | the ticket manager, beside the ticket (`ttm --project reforger spec get <ticket>`, `ttm --project reforger plan get <ticket>`) |
-| code that talks to the ticket manager | through `tools/foundation/ticket_manager_client/`, never a `ttm` call of its own |
+| how the ticket manager runs this repository's slices and waves (worktrees, gate steps, landing, preflight) | [`ticket_manager_execution.toml`](/ticket_manager_execution.toml) at the repository root; no crate calls `ttm` |
+| a repository-specific gate step the ticket manager runs | a `cargo xtask mk` helper in `tools/commands/ci_task_catalog/src/wave_gate_steps/` |
 
 ## Documentation
 

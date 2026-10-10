@@ -8,8 +8,7 @@
 //! License (read, cite and design-mirror, never copy); `playable_selector` carries no licence at
 //! all, so default copyright applies and nothing of it may be copied, adapted or redistributed.
 //!
-//! **Position:** Called by `cargo xtask verify no-crf-leak` and by the mod wave gate, which invoke
-//! it by that name. Reads the paths `Lanes` resolves (the two addons, both lanes, and the
+//! **Position:** Called by `cargo xtask verify no-crf-leak`. Reads the paths `Lanes` resolves (the two addons, both lanes, and the
 //! vanilla `.pak` folder of the local game install), prints a transcript and returns the exit code.
 //!
 //! **Signals & state:** None across runs. One run reads every input once; the vanilla probe runs

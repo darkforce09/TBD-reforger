@@ -13,15 +13,15 @@ module to the tooling; each crate's README then says what its own folders hold.
   [`xtask/`](/tools/xtask/README.md), the [foundation crates](/tools/foundation/README.md)
   ([`verification_core/`](/tools/foundation/verification_core/README.md),
   [`process_runner/`](/tools/foundation/process_runner/README.md),
-  [`repository_laws/`](/tools/foundation/repository_laws/README.md),
-  [`ticket_manager_client/`](/tools/foundation/ticket_manager_client/README.md)),
+  [`repository_laws/`](/tools/foundation/repository_laws/README.md)),
   [`developer_tools/`](/tools/developer_tools/README.md) and
   [`enfusion_mcp_node_package/`](/tools/enfusion_mcp_node_package/README.md).
 - Entry: `cargo xtask`, the alias `run --package xtask --` in `.cargo/config.toml`; the eight
   `developer_tools` executables (`enf`, `gate`, `mcpd`, `world`, `map`, `capture`,
   `acknowledgement-dropping-relay`, `staging-load`).
 - Related features: the [developer tools documentation](/documentation/tools/developer_tools/README.md);
-  the wave and slice runner lives in the central ticket manager (`ttm`), outside the repository.
+  the wave and slice runner lives in the central ticket manager (`ttm`), outside the repository,
+  and [`ticket_manager_execution.toml`](/ticket_manager_execution.toml) configures it for this one.
 
 ## Behaviour
 
@@ -29,14 +29,13 @@ module to the tooling; each crate's README then says what its own folders hold.
 
 | Unit | Kind | Owns |
 |---|---|---|
-| `xtask` | binary | the command router: database, deploys, mod servers, map helpers, the platform factory, and every repository verification and CI task |
+| `xtask` | binary | the command router: database, deploys, mod servers, map helpers, the wave gate steps the ticket manager calls, and every repository verification and CI task |
 | `verification_core` | library, `tools/foundation` tier 0 | the fail-closed primitives: verdicts, findings, pattern scans, the report and the shared verification lock |
 | `process_runner` | library, `tools/foundation` tier 1 | child processes in their own process group with deadlines and honest statuses, the container-to-host bridge, the ssh transport |
 | `repository_laws` | library, `tools/foundation` tier 1 | the structural engineering laws as pure checks: file length and the workspace laws (crate tiers, crate anatomy, test-file reachability, frontend layering, Tailwind sources) |
 | `repository_layout` | library, `tools/foundation` tier 0 | the repository locations more than one tool names |
 | `deploy_settings` | library, `tools/foundation` tier 2 | the `deploy/deploy.env` reader: the precedence of the file over the process environment, the deploy host, its remote folders and the ssh transport choice |
 | `tool_test_support` | library, `tools/foundation` tier 1, dev-dependency only | the environment and working-directory locks and the test checkout root the tool tests share |
-| `ticket_manager_client` | library, `tools/foundation` tier 2 | the typed client of the central ticket manager: it runs `ttm --json --project <project>` and parses the [ticket](/documentation/glossary/n_to_z.md#ticket), receipt and [wave](/documentation/glossary/n_to_z.md#wave) documents it prints; `platform_execution` and `mod_operations` reach tickets and waves through it alone |
 | `enfusion_pak` | library, `tools/enfusion` tier 0 | the [Enfusion](/documentation/glossary/a_to_f.md#enfusion) `.pak` archive reader: one parser and one decompressor under the blueprint and world policies, the loose and layered sources |
 | `blueprint_compiler` | library, `tools/map_assets` tier 6 | the building-blueprint compiler: voxel dumps and game models to blueprints, occlusion sidecars, the prefab occluder library and the blueprint archive, behind the `cargo xtask map` blueprint, BVH and model commands |
 | `map_asset_verification` | library, `tools/map_assets` tier 7 | the map asset gates: the terrain manifest, the prefab BLAS library, the labels, the elevation anchors and the map-object goldens behind `cargo xtask schema` and `verify blas-manifest`, and the world line-of-sight probe behind `cargo xtask map world-los` |
@@ -57,12 +56,13 @@ the ticket rules are the central ticket manager's (`ttm --project reforger check
 verification_core ◀── process_runner, repository_laws        (tools/foundation, tiers 0 and 1)
         ▲                      ▲
         │                      │
-        └──────── xtask ───────┴──▶ platform_execution, mod_operations (tools/commands)
-                    │                          │
-                    │                          ▼
-                    │               ticket_manager_client (tools/foundation) ──runs──▶ ttm
-                    ▼ runs as child processes
-             developer_tools (binaries only)
+        └──────── xtask ───────┴──▶ ci_task_catalog, mod_operations (tools/commands)
+                    ▲
+                    │ runs `cargo xtask mk gate-step`, `cargo xtask verify`, `cargo xtask mod`
+                    │
+             ttm (the central ticket manager, outside the repository)
+
+xtask ──runs as child processes──▶ developer_tools (binaries only)
                     │
                     ├── mcpd ──▶ enfusion_mcp_broker (tools/enfusion) ──starts──▶ enfusion_mcp_node_package (after npm ci)
                     ├── world, map ──▶ world_export_pipeline, map_raster_pipeline (tools/map_assets)
@@ -79,9 +79,9 @@ verification_core ◀── process_runner, repository_laws        (tools/founda
 3. No tokio, axum, reqwest, resvg or image enters xtask's dependency closure (rule 6 of `cargo xtask verify crate-tiers`):
    the async servers and the raster crates run behind the `developer_tools` binaries, so neither
    a server nor an image codec rebuilds the command surface.
-4. Ticket logic has one owner, the central ticket manager: the workspace reads and records
-   tickets, run receipts and the wave plan only through `ticket_manager_client`, which runs
-   `ttm`, and no crate reads or writes ticket files.
+4. Ticket logic has one owner, the central ticket manager: no crate reads or writes ticket
+   files or runs `ttm`; the ticket manager's [wave](/documentation/glossary/n_to_z.md#wave) runner
+   calls into `cargo xtask` for the gate steps `ticket_manager_execution.toml` names.
 
 ### One owner per path
 

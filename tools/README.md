@@ -12,11 +12,11 @@ crates under `crates/` and the game mod in `mod/`.
 tools/
 ├── browser_testing/            the headless browser gate crates: the DevTools protocol client, and the gate suites with the `gate` and `capture` command lines
 ├── checks/                     the repository verification crates: repository checks, mod script checks and documentation checks
-├── commands/                   the crates behind the `cargo xtask` command groups: ci, platform, mod, db, deploy, staging, schema and the rest
+├── commands/                   the crates behind the `cargo xtask` command groups: ci, mod, db, deploy, staging, schema and the rest
 ├── developer_tools/            the eight one-line tool binaries: enf, gate, mcpd, world, map, capture, the staging relay and load
 ├── enfusion/                   the Enfusion crates: the `.pak` reader, the script index, the MCP broker
 ├── enfusion_mcp_node_package/  the npm package that pins the `enfusion-mcp` server
-├── foundation/                 verdicts and the verification lock, child processes, the repository laws, the layout, the deploy settings, the ticket manager client, the test locks
+├── foundation/                 verdicts and the verification lock, child processes, the repository laws, the layout, the deploy settings, the test locks
 ├── map_assets/                 the map asset crates: the blueprint compiler, the world export, raster and verification pipelines
 ├── staging/                    the staging crates: the load plan, the load generator, the acknowledgement-dropping relay
 └── xtask/                      the `cargo xtask` command line and dispatch, and the groups without a crate of their own
@@ -26,7 +26,7 @@ tools/
 
 `cargo xtask` is the alias `run --package xtask --` in `.cargo/config.toml`. The `xtask` binary
 parses the command line and dispatches every command group; the verifications, the CI tasks, the
-deploys and the platform's agent, worktree and wave orchestration live in the crates below, and
+deploys and the wave gate steps live in the crates below, and
 xtask keeps only the `ai`, `fetch`, `map`, `refactor`, `schema` and `verify` groups as modules of
 its own. It passes each crate the checkout root:
 
@@ -36,10 +36,7 @@ its own. It passes each crate the checkout root:
   processes with process-group isolation and deadlines, the container-to-host bridge and the ssh
   transport, `repository_laws` the structural engineering laws as pure checks,
   `repository_layout` the shared locations, `deploy_settings` the
-  reader of `deploy/deploy.env`, `ticket_manager_client` the typed client of the central ticket
-  manager's `ttm` command line, which holds the [tickets](/documentation/glossary/n_to_z.md#ticket),
-  run receipts and the [wave](/documentation/glossary/n_to_z.md#wave) plan, and
-  `tool_test_support` the locks and the checkout root the tool tests share (a dev-dependency
+  reader of `deploy/deploy.env`, and `tool_test_support` the locks and the checkout root the tool tests share (a dev-dependency
   only).
 - The [command crates](/tools/commands/README.md) hold the work of xtask command groups:
   `workstation_setup` the `cargo xtask setup` commands; `enfusion_mcp` the Enfusion MCP client
@@ -55,11 +52,11 @@ its own. It passes each crate the checkout root:
   `cargo xtask debug` and `cargo xtask mod remote-logs`; `staging_procedures` the staging acceptance harness, its host
   actions and recorded receipts behind `cargo xtask staging`; and `deployment` the website and
   staging deploys behind `cargo xtask deploy`; and `ci_task_catalog` the CI task table and
-  runner, the build lane's recipes, the cargo target pin and the CI workflow checks behind
-  `cargo xtask ci`, `cargo xtask help` and `cargo xtask mk`; and `platform_execution` the
-  platform factory behind `cargo xtask platform`: the wave driver, slice runs, slice worktrees
-  and the preflight; and `mod_operations` the game mod's compile gate, world boot, playtest
-  server, equipment export publication and mod wave driver behind `cargo xtask mod`.
+  runner, the build lane's recipes, the cargo target pin, the CI workflow checks and the
+  [wave](/documentation/glossary/n_to_z.md#wave) gate steps the central ticket manager's runner
+  calls (`ticket_manager_execution.toml`) behind `cargo xtask ci`, `cargo xtask help` and
+  `cargo xtask mk`; and `mod_operations` the game mod's compile gate, world boot, playtest server
+  and equipment export publication behind `cargo xtask mod`.
 - The [check crates](/tools/checks/README.md) hold the repository verifications behind
   `cargo xtask verify`: `repository_checks` the structural, language-ban, licensing and registry
   checks, `mod_script_checks` the Enfusion mod script checks and the Workbench spawn runs, and
@@ -111,8 +108,7 @@ xtask ──runs──▶ developer_tools (binaries only)
   ├────▶ staging_procedures (tools/commands), the staging group ──▶ staging_load_plan (tools/staging), the plan crate under staging_load_generator
   ├────▶ command crates (tools/commands); enfusion_mcp: mcp; schema_tooling ──▶ prefab_catalog (INSTANCE_KINDS)
   ├────▶ ci_task_catalog (tools/commands): ci, help, mk ──▶ check crates, command crates, map_asset_verification (map asset steps)
-  ├────▶ platform_execution (tools/commands): platform ──▶ ci_task_catalog, ticket_manager_client (tools/foundation) ──runs──▶ ttm
-  ├────▶ mod_operations (tools/commands): mod ──▶ platform_execution, command crates, mod_script_checks, ticket_manager_client
+  ├────▶ mod_operations (tools/commands): mod ──▶ command crates, mod_script_checks
   ├────▶ enfusion_script_index (tools/enfusion): cargo xtask fetch
   ├────▶ blueprint_compiler (tools/map_assets): map blueprint, BVH and model commands ──▶ enfusion_pak
   ├────▶ map_asset_verification (tools/map_assets): map world-los, the schema and verify map asset gates ──▶ world_export_pipeline
@@ -135,7 +131,6 @@ Run these from the repository root:
 ```bash
 cargo xtask --help                                 # every command group
 cargo test -p repository_checks -p mod_script_checks -p documentation_checks   # the check crates' tests
-cargo test -p ticket_manager_client               # the ticket manager client's tests
 cargo test -p verification_core -p process_runner -p repository_laws   # the foundation crates' tests
 cargo xtask mod dev-bootstrap                      # a mod workstation: npm ci for the MCP server, Workbench
 ```
@@ -147,16 +142,17 @@ Each crate's README lists its own commands and checks.
 - Depends on: the library crates under `crates/` whose `targets` is `any`; the checkout's data
   (`contracts/`, `assets/`, `mod/reference_symbol_index/`, `documentation/`); and the external tools
   individual commands run: git, Docker or Podman, Postgres, Chromium, Trunk, npm and Node.js, ssh
-  and rsync, the Arma Reforger tools, and the central ticket manager's `ttm`.
+  and rsync, and the Arma Reforger tools.
 - Used by: developers and AI agents at the command line; the GitHub workflows in `.github/`; the
   backup and backup-drill units in `deploy/systemd/`, which run
-  `cargo xtask deploy db backup` and `cargo xtask deploy db drill`.
+  `cargo xtask deploy db backup` and `cargo xtask deploy db drill`; and the central ticket
+  manager's runner, which runs the gate steps `ticket_manager_execution.toml` names.
 - Rules, over every tool crate (each `tools/<name>` and `tools/<category>/<name>` holding a
   `Cargo.toml`):
   - `developer_tools` never depends on `xtask`, and `xtask` never depends on
     `developer_tools`;
   - a `tools/foundation` crate depends only on lower `tools/foundation` crates and on
-    `repository_root`; and only `ticket_manager_client` runs `ttm`;
+    `repository_root`;
   - in production source only a layout module — a file of the `repository_layout` crate, or a
     file whose first line declares it one (`//! The repository locations only …`) — spells a
     repository path literal, such as one under `.workstation/` or `documentation/`; no tracked tooling
@@ -173,5 +169,6 @@ Each crate's README lists its own commands and checks.
   documents on each crate.
 - [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) — the MCP daemon and
   call path.
-- [Factory waves](/documentation/runbooks/factory_waves/README.md) — running waves of tickets
-  with the xtask platform commands.
+- The central ticket manager (`ttm`, its own repository) runs slices and waves of
+  [tickets](/documentation/glossary/n_to_z.md#ticket) here, configured by
+  [`ticket_manager_execution.toml`](/ticket_manager_execution.toml).

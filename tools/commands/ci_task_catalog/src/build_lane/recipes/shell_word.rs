@@ -217,7 +217,7 @@ pub(crate) fn gate_doctor() -> Vec<Step> {
 
 pub(crate) fn leptos_gates() -> Vec<Step> {
     // The build, the doctor, then `gate editor-suite` (selfcheck, editor, save-export, undo).
-    // Chromium stays OUT of `cargo xtask platform wave gate`.
+    // Chromium stays OUT of the ticket manager's wave gate.
     // `leptos-gates: leptos-build gate-doctor` and `gate-doctor: leptos-build`. make builds a
     // prerequisite ONCE per run, so `trunk build --release` appears once here, not twice —
     // reproducing that dedupe is part of the byte-for-byte contract.

@@ -87,8 +87,6 @@ policy's digest.
   - `cargo xtask schema map-object-enums`
     (`tools/commands/schema_tooling/src/schema_checks/object_enumerations.rs`), which checks every
     rule's and the fallback's `kind` and `class` against the closed enums;
-  - the [wave](/documentation/glossary/n_to_z.md#wave) gate's catalogue-drift step in
-    `tools/commands/platform_execution/src/wave_execution/gate/checkrun.rs`, which runs `reclassify`;
   - the map engine's mission compiler, which embeds `kit-aliases.json`
     (`crates/mission/mission_payload/src/kit_aliases/aliases.rs`), and through it the
     [API](/documentation/glossary/a_to_f.md#api)'s mission compile; the API's release image copies the

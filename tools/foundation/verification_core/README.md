@@ -70,8 +70,8 @@ same values.
 - Used by: `process_runner` and `repository_laws`, which report through `NotRun` and `Verdict`;
   the check crates under `tools/checks/` and the command crates under `tools/commands/`;
   `xtask`: its command groups under
-  `tools/xtask/src/commands/` (the lock holders are the platform wave driver and the MCP broker
-  start in `tools/commands/enfusion_mcp/src/call.rs`).
+  `tools/xtask/src/commands/` (the lock holder is the MCP broker start in
+  `tools/commands/enfusion_mcp/src/call.rs`; the ticket manager's wave gate locks the same file).
 - Rules:
   - the crate depends on no workspace crate;
   - "did not run" never becomes a pass, which each module's tests in `src/tests/` hold.

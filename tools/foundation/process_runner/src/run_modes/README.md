@@ -53,7 +53,7 @@ Run::new(program).args(..).cwd(..).env(..).timeout(..).stdin*(..)
 - Depends on: `../runner.rs` (`spawn`, `feed_stdin`, `isolate`, `kill`, `wait_within`,
   `exit_code`), `../stream.rs` (the byte and line drains), `verification_core` (`NotRun`).
 - Used by: the xtask command crates under `tools/commands/` (`ci_task_catalog`,
-  `database_operations`, `enfusion_mcp`, `platform_execution`, and `mod_operations`, whose
+  `database_operations`, `enfusion_mcp` and `mod_operations`, whose
   dedicated server launcher and world boot read the server's lines through `stream_lines`) and
   `tools/checks/mod_script_checks`.
 - Rules: each mode's signal, timeout, stdin and session behaviour is pinned in `tests/`;

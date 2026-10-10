@@ -52,7 +52,7 @@ subcommand prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
 - Synopsis: `schema list-gates`
 - Does: prints the `schema-validate` gate set, one name per line, read from the `ci` task table:
   `validate`, `map-object-golden`, `map-glyphs`, `height-labels`, `map-object-enums`,
-  `type-inventory`. The platform wave gate compares its own list against it.
+  `type-inventory`. The wave gate's schema step compares its own list against the same table.
 - Exit codes: 0.
 - Example: `cargo xtask schema list-gates`
 
@@ -113,9 +113,9 @@ subcommand prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
   - the `schema-validate`, `schema-codegen` and `verify-terrain` rows of
     `tools/commands/ci_task_catalog/src/task_definitions.rs`, and through them `ci-local-schema` and
     `ci-local`;
-  - the platform wave gate's schema step
-    (`tools/commands/platform_execution/src/wave_execution/schema.rs`), which runs the listed gates
-    as `cargo xtask schema <gate>` subprocesses;
+  - the wave gate's schema step
+    (`tools/commands/ci_task_catalog/src/wave_gate_steps/schema_step.rs`, `cargo xtask mk
+    gate-step schema`), which runs the listed gates as `cargo xtask schema <gate>` subprocesses;
   - the `schema` job of `.github/workflows/ci.yml` (through `ci ci-local-schema`);
   - people, for `validate-file` and `flatten-orbat-slots`.
 - Rules:

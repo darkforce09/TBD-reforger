@@ -17,10 +17,8 @@ documentation/runbooks/
 ├── editor_capture.md           screenshot a running Mission Creator in headless Chromium
 ├── editor_gates.md             run and debug the headless browser gates of the single-page app
 ├── enfusion_mcp_tooling.md     drive a running Workbench through the pinned MCP bridge
-├── factory_waves/              run a platform wave: plan, dispatch slices, land, verify, close
 ├── game_server_staging/        prepare, deploy, verify and join the staging dedicated server
 ├── local_development.md        bring up Postgres, the API and the single-page app on a dev machine
-├── mod_slice_workflow.md       run a mod wave: slice agents in worktrees, `mod wave` landing
 ├── offline_mortar_page.md      prepare the offline pack of the mortar calculator, gate it, check it by hand
 ├── spawn_determinism.md        prove Workbench Play, spawn and equip repeat byte-identically
 ├── staging_verification/       record the fleet, Discord and load receipts against the staging host
@@ -55,7 +53,7 @@ Start from the task:
 | A new game build, or a change to the ballistics oracle | [ballistics oracle run](/documentation/runbooks/ballistics_oracle_run.md) |
 | The mortar calculator offline | [offline mortar page](/documentation/runbooks/offline_mortar_page.md) |
 | A broad search or parallel independent pieces handed to sub-agents | [sub-agent orchestration](/documentation/runbooks/sub_agent_orchestration.md) |
-| A [ticket](/documentation/glossary/n_to_z.md#ticket), or a [wave](/documentation/glossary/n_to_z.md#wave) of tickets run by agents in worktrees | the central ticket manager (`ttm --project reforger …`) and its runner, documented in the ticket manager's own repository |
+| A [ticket](/documentation/glossary/n_to_z.md#ticket), or a [wave](/documentation/glossary/n_to_z.md#wave) of tickets run by agents in worktrees | the central ticket manager (`ttm --project reforger …`) and its runner (`ttm worktree`, `ttm wave`), documented in the ticket manager's own repository and configured here by [`ticket_manager_execution.toml`](/ticket_manager_execution.toml) |
 
 The terrain export runbook lives beside the exporter it drives, in the Workbench map export
 feature folder, rather than here; this index lists it so every procedure is found from one place.
@@ -78,8 +76,7 @@ feature folder, rather than here; this index lists it so every procedure is foun
   every command; `deploy/api.env.example` and `deploy/deploy.env.example`
   for settings.
 - Used by: xtask code that prints or pins runbook paths (`HOME_SERVER_RUNBOOK`,
-  `STAGING_SERVER_RUNBOOK`, `SLICE_WORKFLOW_RUNBOOK`, `PLATFORM_FACTORY_RUNBOOK` and
-  `SPAWN_DETERMINISM_RUNBOOK` in `tools/foundation/repository_layout/src/documentation_locations.rs`;
+  `STAGING_SERVER_RUNBOOK` and `SPAWN_DETERMINISM_RUNBOOK` in `tools/foundation/repository_layout/src/documentation_locations.rs`;
   `EDITOR_GATE_RUNBOOK` in `tools/browser_testing/browser_gate_suites/src/gate_layout.rs`); comments in the
   browser testing drivers, the deploy units, `Caddyfile`,
   `deploy/compose.staging.yml`, `deploy/api.env.example` and mod scripts; the code READMEs of the folders above; the glossary and

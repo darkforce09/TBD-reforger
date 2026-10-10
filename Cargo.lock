@@ -4467,7 +4467,6 @@ dependencies = [
  "jsonschema",
  "libc",
  "mod_script_checks",
- "platform_execution",
  "process_runner",
  "regex",
  "remote_debugging",
@@ -4477,7 +4476,6 @@ dependencies = [
  "serde_json",
  "tar",
  "thiserror 2.0.18",
- "ticket_manager_client",
  "tool_test_support",
  "verification_core",
  "walkdir",
@@ -5038,26 +5036,6 @@ dependencies = [
  "terrain_elevation",
  "thiserror 2.0.18",
  "world_file_formats",
-]
-
-[[package]]
-name = "platform_execution"
-version = "0.1.0"
-dependencies = [
- "ci_task_catalog",
- "clap",
- "process_runner",
- "regex",
- "repository_laws",
- "repository_layout",
- "repository_root",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "ticket_manager_client",
- "time_source",
- "verification_core",
- "walkdir",
 ]
 
 [[package]]
@@ -7064,18 +7042,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ticket_manager_client"
-version = "0.1.0"
-dependencies = [
- "newtype_ids",
- "process_runner",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "verification_core",
-]
-
-[[package]]
 name = "time"
 version = "0.3.53"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8476,7 +8442,6 @@ dependencies = [
  "map_asset_verification",
  "mod_operations",
  "mod_script_checks",
- "platform_execution",
  "process_runner",
  "remote_debugging",
  "repository_checks",

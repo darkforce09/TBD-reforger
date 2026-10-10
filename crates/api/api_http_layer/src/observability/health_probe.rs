@@ -53,7 +53,8 @@ pub(super) async fn probe_db(pool: &PgPool) -> (bool, Duration, Option<String>) 
 /// caller who finds the URL, that is reconnaissance handed over for free.
 ///
 /// Putting auth in front of the whole route is the wrong fix: `/healthz` is probed **without
-/// credentials** by `cargo xtask platform preflight`, `deploy/caddy/Caddyfile`,
+/// credentials** by `cargo xtask mk preflight-api-freshness` (the ticket manager's preflight),
+/// `deploy/caddy/Caddyfile`,
 /// `.github/workflows/editor-gates.yml:95` and
 /// `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests.rs:2714`, and it stays open
 /// for exactly that reason while `/metrics` sits behind the `OBSERVABILITY_TOKEN` bearer.
@@ -62,7 +63,7 @@ pub(super) async fn probe_db(pool: &PgPool) -> (bool, Duration, Option<String>) 
 ///
 /// * **Public** (`detailed == false`) — `{"status": "ok" | "unavailable"}` and the 200/503 split.
 ///   That is everything a prober reads: `curl -fsS` only looks at the code, and
-///   `cargo xtask platform preflight` compares the code. Nothing about the build, the uptime, the pool or the schema is disclosed.
+///   `cargo xtask mk preflight-api-freshness` compares the code. Nothing about the build, the uptime, the pool or the schema is disclosed.
 /// * **`OBSERVABILITY_TOKEN` bearer** (`detailed == true`) — the full report: `version`, `uptime_seconds`,
 ///   per-check `status`/`latency_ms`/`error`, the applied/failed migration counts and the pool
 ///   gauges. An operator's tooling sees the same fields, names and values it always did; it just

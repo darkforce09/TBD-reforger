@@ -8,7 +8,7 @@
 //! **Invariants:** the three corrections below hold for every child; a status is passed through
 //! raw.
 //!
-//! Gates, deployments and the wave driver spawn `cargo`, `git`, `ssh`, `rsync`, `podman`, `npm`
+//! Gates, deployments and the wave gate steps spawn `cargo`, `git`, `ssh`, `rsync`, `podman`, `npm`
 //! and the game server binaries. Five things happen to every one of those children — it runs, it
 //! reports a status, it writes output, it may take too long, it may need another attempt — and
 //! three of them have a failure mode that turns a verification into a false result. Correcting

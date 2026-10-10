@@ -40,7 +40,8 @@ The root files are the workspace manifest and lockfile, the toolchain pin, `clip
 build context of the API's release image (`.dockerignore`), the editor and checker settings (`.editorconfig`, `.editorconfig-checker.json`), the Git LFS patterns
 (`.gitattributes`), the ignore rules (`.gitignore`), the per-mission warning budget of the mod
 world-boot gate (`.world-boot-warning-baseline`), the checkout-root marker `.repository_root` that
-every tool and test walks up to, the root `README.md`, and `CLAUDE.md` with `AGENTS.md` as a
+every tool and test walks up to, the ticket manager's runner configuration for this repository
+(`ticket_manager_execution.toml`: worktrees, slice branches, gate steps), the root `README.md`, and `CLAUDE.md` with `AGENTS.md` as a
 symlink to it.
 
 Three gitignored folders hold what is never tracked. `target/` holds all build output, one
@@ -54,11 +55,11 @@ repository in the central ticket manager (`ttm`).
 
 ## Workspace members
 
-One Cargo workspace (resolver 3) holds every Rust crate: 152 members, which are 115 crates under
+One Cargo workspace (resolver 3) holds every Rust crate: 150 members, which are 115 crates under
 `crates/` (111 library crates and four applications: the API server, the single-page app, the
-offline service worker and the game server host agent), 35 tool crates under `tools/<category>/`
+offline service worker and the game server host agent), 33 tool crates under `tools/<category>/`
 and the two tool binaries `tools/xtask` and `tools/developer_tools`. The crate-tier law judges the
-150 crates and leaves out only the two binaries; no member depends on one of the four
+148 crates and leaves out only the two binaries; no member depends on one of the four
 applications. Members inherit edition 2024 and
 rust-version 1.95 from `[workspace.package]`. The applications come first in the table.
 
@@ -186,7 +187,6 @@ rust-version 1.95 from `[workspace.package]`. The applications come first in the
 | [`tools/foundation/repository_layout/`](/tools/foundation/repository_layout/README.md) | `repository_layout` | the paths every tool shares, relative to the checkout root; its prelude re-exports `repository_root`'s finder |
 | [`tools/foundation/deploy_settings/`](/tools/foundation/deploy_settings/README.md) | `deploy_settings` | the one reader of `deploy/deploy.env` and its precedence rule over exported variables |
 | [`tools/foundation/tool_test_support/`](/tools/foundation/tool_test_support/README.md) | `tool_test_support` | the test locks (process variables, working directory) and the checkout root the tool crates' tests share (dev-only) |
-| [`tools/foundation/ticket_manager_client/`](/tools/foundation/ticket_manager_client/README.md) | `ticket_manager_client` | the typed client of the central ticket manager's `ttm` command line and its JSON documents |
 | [`tools/commands/agent_context_guards/`](/tools/commands/agent_context_guards/README.md) | `agent_context_guards` | the AI agent tool-call guard behind `cargo xtask ai` (Bash and Read rules, the session read set) and the filtered command runner that never hides a failure |
 | [`tools/commands/schema_tooling/`](/tools/commands/schema_tooling/README.md) | `schema_tooling` | the contract codegen, the contract schema gates, the ORBAT slot flattening and the font-table generator behind `cargo xtask schema` and `cargo xtask gen` |
 | [`tools/commands/ballistics_oracle_tooling/`](/tools/commands/ballistics_oracle_tooling/README.md) | `ballistics_oracle_tooling` | the ballistics catalog and calibration fixtures behind `cargo xtask ballistics trim-export` |
@@ -196,9 +196,8 @@ rust-version 1.95 from `[workspace.package]`. The applications come first in the
 | [`tools/commands/deployment/`](/tools/commands/deployment/README.md) | `deployment` | the website and staging fleet deploys behind `cargo xtask deploy website` and `cargo xtask deploy staging`, and the staging compose-path check behind `cargo xtask verify` |
 | [`tools/commands/remote_debugging/`](/tools/commands/remote_debugging/README.md) | `remote_debugging` | the staging server-join probes and the direct-join report behind `cargo xtask debug` and the remote console log verdict behind `cargo xtask mod remote-logs` |
 | [`tools/commands/staging_procedures/`](/tools/commands/staging_procedures/README.md) | `staging_procedures` | the staging acceptance harness behind `cargo xtask staging`: the fleet, Discord and load procedures and their receipts, the confirmed host actions and the read-only commands around them |
-| [`tools/commands/ci_task_catalog/`](/tools/commands/ci_task_catalog/README.md) | `ci_task_catalog` | the CI task table and its runner behind `cargo xtask ci` and `cargo xtask help`, the build lane recipes behind `cargo xtask mk`, the shared cargo target pin and its checks, and the map asset checks |
-| [`tools/commands/platform_execution/`](/tools/commands/platform_execution/README.md) | `platform_execution` | the platform factory behind `cargo xtask platform`: the wave driver, slice runs and their receipts, the slice worktree lifecycle and the unattended-run preflight |
-| [`tools/commands/mod_operations/`](/tools/commands/mod_operations/README.md) | `mod_operations` | the game mod's operations behind `cargo xtask mod`: the headless compile gate, the world boot, the playtest server, the equipment and vehicle export publication, the website API client and the mod wave driver |
+| [`tools/commands/ci_task_catalog/`](/tools/commands/ci_task_catalog/README.md) | `ci_task_catalog` | the CI task table and its runner behind `cargo xtask ci` and `cargo xtask help`, the build lane recipes behind `cargo xtask mk`, the shared cargo target pin and its checks, the map asset checks, and the wave gate steps the ticket manager runs through `cargo xtask mk` |
+| [`tools/commands/mod_operations/`](/tools/commands/mod_operations/README.md) | `mod_operations` | the game mod's operations behind `cargo xtask mod`: the headless compile gate, the world boot, the playtest server, the equipment and vehicle export publication and the website API client |
 | [`tools/checks/repository_checks/`](/tools/checks/repository_checks/README.md) | `repository_checks` | the workspace-law, language-ban, file-length, upstream code-leak and registry alias checks behind `cargo xtask verify` |
 | [`tools/checks/mod_script_checks/`](/tools/checks/mod_script_checks/README.md) | `mod_script_checks` | the UI layout gate and the Workbench spawn runs behind `cargo xtask verify` and `cargo xtask mod` |
 | [`tools/checks/documentation_checks/`](/tools/checks/documentation_checks/README.md) | `documentation_checks` | the link-check gate behind `cargo xtask verify link-check` |

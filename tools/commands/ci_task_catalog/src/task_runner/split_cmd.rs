@@ -261,10 +261,10 @@ pub fn help() -> i32 {
     0
 }
 
-/// `cargo xtask schema list-gates` — the input the wave driver's drift tripwire reads.
+/// `cargo xtask schema list-gates` — the set the wave gate's drift tripwire checks against.
 ///
-/// The wave driver reads the `schema-validate` recipe and refuses to report PASS
-/// when the parse comes back empty. This prints the same set, derived from the
+/// The wave gate's schema step reads the `schema-validate` row and refuses to report PASS
+/// when the read comes back empty. This prints the same set, derived from the
 /// `schema-validate` row of [`TASKS`] — the code that runs the gates — so the replacement input
 /// is the executable list itself and not a third transcription of it.
 pub fn schema_list_gates() -> i32 {

@@ -11,8 +11,7 @@
 //! **Invariants:** the filter is a token filter, never a verdict filter: a non-zero exit also
 //! prints the raw last 80 lines unfiltered, the exit code returned is the command's own, and the
 //! dropped-line count is always printed. A filter that hid a failure would be the defect this
-//! repository's gates exist to refuse, a tool reporting success over input it never examined
-//! (`documentation/runbooks/factory_waves/README.md`).
+//! repository's gates exist to refuse, a tool reporting success over input it never examined.
 
 use crate::error::Result;
 

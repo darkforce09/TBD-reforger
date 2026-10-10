@@ -2,11 +2,10 @@
 //!
 //! **Role:** the name of the one gitignored folder at a checkout root that holds all build
 //! output, the toolchain environment folder inside it (one per glibc a machine builds with), the
-//! name of each tool's purpose subfolder inside that, the formula that joins them, and the
-//! root-level folder names no tool writes any more.
-//! **Position:** `xtask` pins the shared cargo target folder and builds its `mk` recipes, its wave
-//! gate steps, its MCP daemon and its database selftest into these subfolders, and its reclaim
-//! sweeps delete the retired names; `developer_tools` writes its mesh dumps under the folder.
+//! name of each tool's purpose subfolder inside that, and the formula that joins them.
+//! **Position:** `xtask` pins the shared cargo target folder and builds its `mk` recipes, the gate
+//! steps the ticket manager's runner calls, its MCP daemon and its database selftest into these
+//! subfolders; `developer_tools` writes its mesh dumps under the folder.
 //! **Signals & state:** none; constants and pure path joins.
 //! **Invariants:** all build output lives under one `target/` folder, split by
 //! [`ToolchainEnvironment`] so binaries linked against two glibcs never share a folder. Each
@@ -86,13 +85,6 @@ pub const CONTINUOUS_INTEGRATION_SUBFOLDER: &str = "ci";
 pub const MCP_DAEMON_SUBFOLDER: &str = "dev-mcpd";
 /// The throwaway compose project of `cargo xtask db selftest`'s compose-parity arm.
 pub const DATABASE_SELFTEST_SUBFOLDER: &str = "db-selftest";
-/// The prefix every wave-gate subfolder shares; `platform wave reclaim --gate-dirs` sweeps the
-/// subfolders that carry it.
-pub const GATE_SUBFOLDER_PREFIX: &str = "gate-";
-/// The wave driver's run lane: the one extra target directory inside the shared cache, named for
-/// its owner, the main checkout.
-pub const RUN_TARGET_SUBDIR: &str = "run-main";
-
 /// Every fixed purpose subfolder name under [`BUILD_OUTPUT_FOLDER`], for the proof that none
 /// collides with an entry cargo writes there itself.
 pub const PURPOSE_SUBFOLDERS: &[&str] = &[
@@ -117,23 +109,4 @@ pub fn build_output_subfolder(
     subfolder: &str,
 ) -> PathBuf {
     toolchain_build_folder(checkout_root, environment).join(subfolder)
-}
-
-/// Root-level folder names beside [`BUILD_OUTPUT_FOLDER`] that no tool writes; a machine that ran
-/// earlier tooling can still hold them, and the reclaim commands delete them.
-pub const RETIRED_ROOT_LEVEL_FOLDERS: &[&str] = &[
-    "target-dev-api",
-    "target-ci",
-    "target-dev-mcpd",
-    "target-mk-db-selftest",
-];
-/// Prefixes of the retired root-level gate folders (cargo target folders and trunk dist folders).
-pub const RETIRED_ROOT_LEVEL_FOLDER_PREFIXES: &[&str] = &["target-gate-", "dist-gate-"];
-
-/// Is `name` (a folder at a checkout root) one of the retired root-level build folders?
-pub fn is_retired_root_level_build_folder(name: &str) -> bool {
-    RETIRED_ROOT_LEVEL_FOLDERS.contains(&name)
-        || RETIRED_ROOT_LEVEL_FOLDER_PREFIXES
-            .iter()
-            .any(|prefix| name.starts_with(prefix))
 }

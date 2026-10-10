@@ -1,11 +1,11 @@
 //! The machine-local folders of a checkout: the workstation state folder and the worktree base.
 //!
 //! **Role:** the repository-relative paths of [`WORKSTATION_DIR`], the gitignored folder that holds
-//! one machine's local state (logs, run records, tool roots), and of [`WORKTREES_DIR`], where every
-//! linked git worktree of the checkout lives, with the wave driver's verified-commit marker and
-//! verdict folder inside the workstation folder.
-//! **Position:** the platform wave driver keeps its slice worktrees, gate verdicts and
-//! verified-commit marker there; the deploy excludes keep both folders off a host.
+//! one machine's local state (logs, run records, tool roots), the tool roots inside it, and
+//! [`WORKTREES_DIR`], where every linked git worktree of the checkout lives (the ticket manager's
+//! runner creates them there, per `ticket_manager_execution.toml`).
+//! **Position:** the MCP, pak, playtest and blueprint tools default to the tool roots; the deploy
+//! excludes keep both folders off a host.
 //! **Signals & state:** none; constants.
 //! **Invariants:** both folders are gitignored and never an input to a gate; every run record lies
 //! under [`WORKSTATION_DIR`].
@@ -33,13 +33,6 @@ pub const REFORGER_EXTRACT_DIR: &str = ".workstation/reforger_extract";
 
 /// Where every linked git worktree of the checkout is created, one folder per worktree. Gitignored.
 pub const WORKTREES_DIR: &str = ".worktrees";
-
-/// The file holding the commit the last verifier examined, so the wave gate can report how many
-/// commits of unverified debt stand behind the tip.
-pub const LAST_VERIFIED_MARKER: &str = ".workstation/run_records/last-verified";
-
-/// Recorded gate verdicts, one file per gate run.
-pub const VERDICTS_DIR: &str = ".workstation/run_records/verdicts";
 
 /// [`ENFUSION_MCP_GAME_ROOT`] under a checkout root: the game folder the pak readers open when
 /// `ENFUSION_GAME_PATH` is unset.

@@ -7,7 +7,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 ## 1. Core Project Laws
 
 1. **No silent deferrals.** Do the whole ask. Never invent "out of scope", "deferred", "fold forward" or ship an MVP and call the task done. Only the operator's explicit words ("defer X", "skip X", "not this pass") defer a piece; quote them in the commit body and record the piece as a `deferred` ticket in `ttm`. Soft plan prose ("optional", "if feasible", "P1 later") is not authorization, even when you wrote it. Truly blocked (secrets, Workbench down, no GPU): stop and ask.
-2. **Git: direct to `main`.** Never create a branch by hand. The only branches are the `slice/<slug>` branches the ticket manager's runner (`ttm worktree`, `ttm wave`) creates, merges and deletes itself, in worktrees under `.worktrees/`. Commit only when asked; a commit that lands a ticket names its slug in the subject.
+2. **Git: direct to `main`.** Never create a branch by hand. The only branches are the `slice/<slug>` branches the ticket manager's runner (`ttm worktree`, `ttm wave`, configured by `ticket_manager_execution.toml`) creates, merges and deletes itself, in worktrees under `.worktrees/`. Commit only when asked; a commit that lands a ticket names its slug in the subject.
 3. **Clean architecture over hacks.** No ad-hoc code to "just make it work"; when the clean fix needs a structural refactor, plan it and do it.
 4. **Self-describing names.** Every folder, file, module and symbol name says what it is without project history or jargon; no cryptic abbreviations.
 5. **Group variants.** No flat dumps of dozens of files or variants in one folder; group them into well-named subfolders.
@@ -78,6 +78,9 @@ cargo xtask help               # Every ci / mk / db task with its help line
 ttm -p reforger next           # Running tickets and the next ones to take
 ttm -p reforger show <ref>     # One ticket (slug or legacy T-<n>)
 ttm -p reforger check          # Validate the project's tickets
+ttm wave status                # The current wave and its slices (--program mod for the mod profile)
+ttm worktree new <ref>         # A slice worktree in .worktrees/<slug> on slice/<slug>
+ttm wave gate --slice <ref>    # The slice gate; ttm wave land merges ready slices to main
 
 # Deployment (deploy/deploy.env)
 cargo xtask deploy website --dry-run  # Print the plan

@@ -4,8 +4,8 @@ The `cargo xtask mod` group: gates, launchers and workstation setup for the
 [Enfusion](/documentation/glossary/a_to_f.md#enfusion) [mod](/documentation/glossary/g_to_m.md#mod). It
 compiles the scripts and boots the world headless, runs a local playtest server, prepares a
 [Workbench](/documentation/glossary/n_to_z.md#workbench) session, publishes the Workbench equipment
-export, and drives the mod program's [waves](/documentation/glossary/n_to_z.md#wave). Mod developers,
-mod slice agents and the `mod-gates` CI workflow run them.
+export. Mod developers, mod slice agents, the ticket manager's mod wave gate and the `mod-gates`
+CI workflow run them.
 
 ## Contents
 
@@ -29,8 +29,6 @@ tools/commands/mod_operations/src/
 ├── playtest_server.rs         `mod playtest`: help text, options and module wiring
 ├── prelude.rs                 the names a caller imports with one `use`
 ├── server_launcher.rs         a server launcher's line drain and its stop after the server's group is killed
-├── wave_execution/            the mod wave driver's status, prep, gate, land and push
-├── wave_execution.rs          `mod wave`: help text, worktree states and module wiring
 ├── website_api_client/        the website API client the playtest, world boot and smoke tests use
 ├── world_boot/                the headless world boot driver and its compiled-mission lane
 ├── world_boot.rs              `mod world-boot`: options, run state and module wiring
@@ -40,8 +38,8 @@ tools/commands/mod_operations/src/
 ## How it works
 
 `tools/xtask/src/cli/mod.rs` mounts `ModCmd` as the `mod` group, and the crate's `run` maps each
-variant to one entry function that returns the exit code. Five subcommands (`dev-server`,
-`playtest`, `compile`, `world-boot`, `wave`) take their arguments raw, with clap's help flag
+variant to one entry function that returns the exit code. Four subcommands (`dev-server`,
+`playtest`, `compile`, `world-boot`) take their arguments raw, with clap's help flag
 turned off, and parse them in their own module. The others parse with clap. Four delegate to
 modules outside this folder: `remote-logs` to `remote_debugging::debug::remote_logs`,
 `spawn-determinism` and `spawn-verify` to `mod_script_checks`,
@@ -226,30 +224,21 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 - Exit codes: 0 pass; 1 code failure; 2 usage; 3 environment.
 - Example: `cargo xtask mod world-boot --mission=bridgehead-at-levie`
 
-### wave
-
-- Synopsis: `mod wave [status | gate | land | prep [N] | push]` (default `status`)
-- Does: reports the mod program's current wave and each slice's worktree state; runs the mod wave
-  gate; lands (merge, gate, reap, push); creates a wave's worktrees; pushes `main`.
-- Exit codes: 0 done; 1 a refusal or failed gate, merge or push; 2 a missing lock or an unknown
-  subcommand, which prints the help.
-- Example: `cargo xtask mod wave status`
-
 ## Boundaries
 
 - Depends on:
   - `repository_layout`, `process_runner::host_execution`, and `tool_test_support` in the equipment tests;
   - `remote_debugging::debug::remote_logs`, `workstation_setup` (`staging_server`,
-    `mcp_game_root`), `enfusion_mcp::daemon` and `platform_execution::slice_worktree`;
+    `mcp_game_root`), and `enfusion_mcp::daemon`;
   - `mod_script_checks` (`spawn_determinism`, `spawn_verification`);
-  - the `ticket_manager_client` (the mod wave plan), `process_runner` (every child process) and
-    `verification_core` crates;
+  - the `process_runner` (every child process) and `verification_core` crates;
   - the Arma Reforger dedicated server and Workbench under Steam, `curl`, `git`, `npm`, and the
     website API for the platform lanes.
 - Used by:
   - `tools/xtask/src/cli/mod.rs` and `tools/xtask/src/cli/dispatch.rs`, which mount the group;
   - `.github/workflows/mod-gates.yml` (`compile-preflight`, `compile`, `world-boot`);
-  - `mod wave gate`, which runs `compile` and `world-boot`, and
+  - the ticket manager's mod wave gate (`ticket_manager_execution.toml`), which runs `compile`
+    and `world-boot`, and
     `mod dev-bootstrap --server`, which runs `mod dev-server`;
   - mod developers and slice agents.
 - Rules:
@@ -260,8 +249,6 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 
 ## Related documentation
 
-- [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — the slice and wave
-  cycle `mod wave` automates.
 - [Two-client playtest](/documentation/runbooks/two_client_playtest/README.md) — a playtest a
   second client joins, with `mod playtest`.
 - [Playtest server](/documentation/runbooks/two_client_playtest/playtest_server.md) and

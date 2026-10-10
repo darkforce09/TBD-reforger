@@ -9,7 +9,7 @@ map-asset and npm package modules also offer functions that do that join for a g
 ```text
 tools/foundation/repository_layout/src/
 ├── browser_gate_environment.rs  `BROWSER_GATE_ENVIRONMENT`: the committed pin file of the headless browser gates
-├── build_output.rs         `BUILD_OUTPUT_FOLDER`, the purpose subfolders inside it, `build_output_subfolder` and the retired root-level names
+├── build_output.rs         `BUILD_OUTPUT_FOLDER`, the toolchain environment folders and the purpose subfolders inside it, `build_output_subfolder`
 ├── contracts.rs            `CONTRACTS_DIR` and the definition, rule, catalog and fixture locations inside it, joined onto a given root
 ├── deployment.rs           `DEPLOY_DIR` and the deploy and API settings files, their examples, the compose file, the Caddy site and the systemd units inside it
 ├── documentation.rs        `DOCUMENTATION_ROOT`
@@ -23,7 +23,7 @@ tools/foundation/repository_layout/src/
 ├── upstream_references.rs  `REFERENCES_DIR`, the Coalition Reforger Framework and vanilla lanes, and the PlayableSelector lane
 ├── vanilla_reference_lanes.rs  the extracted scripts, Script API pages, source pages and reconstructed sources inside the vanilla lane
 ├── workspace_folders.rs    the Enfusion mod, library crate and tool folders, the API server crate, and the API database crate's migration and seed folders
-├── workstation_folders.rs  `WORKSTATION_DIR` (machine-local state, gitignored), `WORKTREES_DIR` and the wave driver's verified-commit marker and verdict folder
+├── workstation_folders.rs  `WORKSTATION_DIR` (machine-local state, gitignored) with the tool roots inside it, and `WORKTREES_DIR`
 └── tests/                  unit tests for the shared locations
 ```
 
@@ -32,7 +32,7 @@ tools/foundation/repository_layout/src/
 - The location modules hold constants; `contracts.rs`, `map_assets.rs` and
   `enfusion_mcp_node_package.rs` add one function per location that joins it onto the root the
   caller passes and never touches the filesystem; `build_output.rs` adds
-  `build_output_subfolder` and `is_retired_root_level_build_folder`, pure as well. Each tree
+  `toolchain_build_folder` and `build_output_subfolder`, pure as well. Each tree
   constant has no trailing slash, and each location inside a tree starts with the tree followed by
   `/`.
 - `build_output.rs` names every purpose subfolder a tool builds into under `target/`, each its own

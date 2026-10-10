@@ -15,12 +15,19 @@ use super::*;
 /// not a convenience — it is the only deterministic acceptance surface for the targets that never
 /// terminate (`leptos`, `leptos-debug`) or that start a server (`rust-api`).
 pub fn run(args: &[String]) -> Result<u8> {
+    // The gate helper commands the ticket manager's runner names in ticket_manager_execution.toml.
+    if let Some(rc) = crate::wave_gate_steps::dispatch(args) {
+        return Ok(rc);
+    }
     let dry = args.iter().any(|a| a == "--dry-run" || a == "-n");
     let target = args.iter().find(|a| !a.starts_with('-')).cloned();
     let Some(target) = target else {
         println!("usage: cargo xtask mk <target> [--dry-run]");
         for t in TARGETS {
             println!("  {t}");
+        }
+        for t in crate::wave_gate_steps::HELPER_TARGETS {
+            println!("  {t}  (gate helper)");
         }
         return Ok(if args.iter().any(|a| a == "--list") {
             0

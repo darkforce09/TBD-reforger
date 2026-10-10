@@ -19,9 +19,8 @@
 //!   viewport readings, and the frontend's countdown and draft ids;
 //! - injected clocks take an `Arc<dyn Clock>`: the CRDT undo-group clocks wrap [`PlatformClock`]
 //!   (or [`ManualClock`] in tests) in a `yrs::sync::Clock` adapter with a 1 ms floor;
-//! - the developer tools and the platform factory format and validate timestamps with the
-//!   formatters and [`validate_rfc3339_utc`], whose [`Error`] text is the message their callers
-//!   print.
+//! - the developer tools format timestamps with the formatters; [`validate_rfc3339_utc`] checks
+//!   a stamp, and its [`Error`] text is the message a caller prints.
 //!
 //! **Signals & state:** none, except [`ManualClock`]'s atomic reading and the native
 //! [`monotonic_ms`] origin, fixed by its first call.

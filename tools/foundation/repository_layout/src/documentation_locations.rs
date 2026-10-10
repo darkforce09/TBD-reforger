@@ -1,30 +1,20 @@
 //! The documents and documentation areas the commands read, walk or name in what they print.
 //!
-//! **Role:** the runbooks a refusal cites, the factory's pack marker, and the roots and exemptions
+//! **Role:** the runbooks a refusal cites, and the roots and exemptions
 //! of the documentation gates, each spelled once.
-//! **Position:** read by the `xtask` command groups and verifications (deploy, setup, platform,
-//! mod, licensing and documentation checks). Moving the documentation tree rewrites this module,
+//! **Position:** read by the `xtask` command groups and verifications (deploy, setup, mod,
+//! licensing and documentation checks). Moving the documentation tree rewrites this module,
 //! not the help texts and refusals that name a document. The tree root is [`crate::documentation::DOCUMENTATION_ROOT`].
 //! **Signals & state:** none; constants.
 //! **Invariants:** every item is classified as a location a checkout holds or as an exemption with
 //! its reason; the areas lie under
 //! [`crate::documentation::DOCUMENTATION_ROOT`].
 
-/// A one-line marker an operator drops in while the factory packs a wave, so the wave gate
-/// can report which wave is being packed without being told.
-pub const FACTORY_PACK_WAVE: &str = ".workstation/run_records/factory_pack_wave";
-
 /// Installing and operating the website host: units, Caddy, backups.
 pub const HOME_SERVER_RUNBOOK: &str = "documentation/runbooks/website_deployment.md";
 
 /// Standing up and operating the dedicated game server.
 pub const STAGING_SERVER_RUNBOOK: &str = "documentation/runbooks/game_server_staging/README.md";
-
-/// The slice worktree lifecycle the mod wave driver automates.
-pub const SLICE_WORKFLOW_RUNBOOK: &str = "documentation/runbooks/mod_slice_workflow.md";
-
-/// The platform wave lifecycle `cargo xtask platform wave` automates.
-pub const PLATFORM_FACTORY_RUNBOOK: &str = "documentation/runbooks/factory_waves/README.md";
 
 /// The mod's design authority, including the upstream-code oracle lanes.
 pub const MOD_DESIGN: &str = "documentation/mod/tbd-framework/mod_design.md";

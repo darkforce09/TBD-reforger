@@ -4,7 +4,7 @@
 //! **Role:** Admits both reference lanes, runs the identifier step for each lane prefix, hands the
 //! asset-GUID step to [`super::asset_guid_reuse`], and prints the epilogue with exit 1 or the PASS
 //! line with exit 0.
-//! **Position:** Called through [`verify_crf_leak`] by the `verify` dispatch and the mod wave gate;
+//! **Position:** Called through [`verify_crf_leak`] by the `verify` dispatch;
 //! the tests call [`run`] with fixture [`Lanes`].
 //! **Signals & state:** None; every printed line goes through [`Log`].
 //! **Invariants:** A lane that cannot be compared, an addon tree that cannot be walked, or a file
@@ -52,11 +52,7 @@ pub(super) fn run(lanes: &Lanes, log: &mut Log) -> u8 {
         log.say("Oracles are reference-only. Design-mirror them; never copy them.");
         log.say("  CRF              — Arma Public License; read, cite, do not vendor.");
         log.say(EPILOGUE_PS);
-        log.say(format!(
-            "See {} §2 and {} §Oracle lanes.",
-            repository_layout::MOD_DESIGN,
-            repository_layout::SLICE_WORKFLOW_RUNBOOK
-        ));
+        log.say(format!("See {} §2.", repository_layout::MOD_DESIGN));
         return 1;
     }
     log.say("no-oracle-leak: PASS (CRF + PlayableSelector)");

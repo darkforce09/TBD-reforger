@@ -67,8 +67,7 @@ The Everon tests read Git LFS objects under `assets/terrains/everon/`; pull them
 - Used by: the `world` binary of `developer_tools` (`entrypoint`); the `map_raster_pipeline`
   crate (`json_number_formatting`, `topo`, `enfusion_texture_decoder`) and the map verification
   (`binary_emit`, `forest_contours`, `polygon_geometry`, `vegetation_density`); xtask's `map`
-  dispatch (`export_terrain_driver::run`, `map_tile_index::run`); the platform wave gate runs the
-  `world` binary.
+  dispatch (`export_terrain_driver::run`, `map_tile_index::run`).
 - Rules: tier 6 of `tools/map_assets` (`cargo xtask verify crate-tiers`); no tokio, axum, reqwest,
   resvg or image in its dependency tree, since xtask depends on it; every failure is an `Error`
   and only the binary (`world` or xtask) decides the exit code; `census` and `validate-exports` run `cargo xtask schema type-inventory`

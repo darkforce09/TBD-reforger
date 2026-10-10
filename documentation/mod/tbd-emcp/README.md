@@ -38,7 +38,5 @@ documentation/mod/tbd-emcp/
 
 - [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) — the broker, the
   pinned server package, exit codes and the live checks.
-- [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — how mod work runs
-  through Workbench and the gates.
 - [Map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
   the export handler reached through `cargo xtask mcp wbcall`.

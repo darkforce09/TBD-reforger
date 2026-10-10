@@ -95,7 +95,7 @@ fn a_square_ring_rounds() {
 /// The LOCKED carve-out, spelled out because it is in tension with the test above and a
 /// reader will otherwise think one of them is a bug.
 ///
-/// `documentation/tickets/specs/t149_forest_smooth.md` LOCKED says "rings under 6 vertices
+/// The locked forest smoothing spec says "rings under 6 vertices
 /// untouched", and `trace_rings` drops collinear points — so a solid rectangular block of cells,
 /// however large, traces exactly four vertices and the EMIT leaves it square. `chaikin` above
 /// rounds the same ring; `smooth_ring` is where the rule lives.

@@ -43,9 +43,7 @@ structure, or a pattern that did not compile.
 
 - Depends on: `repository_layout::registry_items_catalog_path`;
   `verification_core` (`Pattern`, `Verdict`, `Finding`, `NotRun`, `gate::require`); `serde_json`.
-- Used by: `tools/xtask/src/commands/verify/dispatch.rs`; the platform [wave](/documentation/glossary/n_to_z.md#wave) gate's
-  `VERIFY_STEPS` (`tools/commands/platform_execution/src/wave_execution/gate.rs`), which prints the
-  last 15 lines of a failure.
+- Used by: `tools/xtask/src/commands/verify/dispatch.rs`.
 - Rules:
   - The derivation here is a hand copy on purpose, never an import of the map-engine code, and it
     must match it (`the_mirror_matches_the_frontend` in

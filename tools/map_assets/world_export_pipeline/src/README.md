@@ -117,8 +117,7 @@ no raster code, so xtask runs it in process.
   `png` and `bcdec_rs`; `cargo`, which `census`, `validate-exports` and the export driver run as a
   child process through `process_runner`.
 - Used by: the `world` binary; xtask's `map` dispatch (`cargo xtask map export-terrain` through
-  `export_terrain_driver.rs`, `cargo xtask map tile-index` through `map_tile_index.rs`); the
-  platform wave gate, which runs `world reclassify`; the map raster pipeline and the map verification gates through the modules above.
+  `export_terrain_driver.rs`, `cargo xtask map tile-index` through `map_tile_index.rs`); the map raster pipeline and the map verification gates through the modules above.
 - Rules: every census bucket is one of `prefab_catalog`'s `INSTANCE_KINDS`, in its order; a JSON
   artifact and its binary twin change together; no stage writes an empty set over a committed one
   (`refuse_empty_write`); the seven source files that

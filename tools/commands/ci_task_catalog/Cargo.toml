@@ -23,6 +23,8 @@ libc = { workspace = true }
 # The map asset checks (map-object goldens, terrain manifest, labels).
 map_asset_verification = { workspace = true }
 process_runner = { workspace = true }
+# The include-input patterns the gate helper commands resolve.
+regex = { workspace = true }
 # The language bans and the workspace laws.
 repository_checks = { workspace = true }
 # The workspace member list the member test lane derives.
@@ -35,6 +37,8 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 verification_core = { workspace = true }
+# The source walks of the gate helper commands (fingerprint touch, include inputs).
+walkdir = { workspace = true }
 
 [lints]
 workspace = true

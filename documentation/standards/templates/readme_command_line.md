@@ -169,7 +169,7 @@ a subcommand prints its usage, and a clap usage error exits 2.
   - `cargo xtask mk gate-doctor` and `cargo xtask mk leptos-gates`, which run `gate doctor` and
     `gate editor-suite`;
   - `cargo xtask mcp daemon` and `cargo xtask mcp selftest`, which build and launch `mcpd`;
-  - `cargo xtask map export-terrain` and the platform wave gate, which run `world`;
+  - `cargo xtask map export-terrain`, which runs `world`;
   - the `map-water-everon`, `map-cartographic-everon` and `map-cartographic-verify` tasks of
     `cargo xtask ci`, which run `map`;
   - people, for `enf` and `capture`; `cargo xtask fetch vanilla-api` and

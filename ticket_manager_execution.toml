@@ -1,0 +1,468 @@
+# How the ticket manager (`ttm`) runs this repository's slices and waves: slice worktrees, the
+# slice and wave gates, landing, the close ceremony, preflight, reclaim and agent runs.
+#
+# The runner is generic (ttm's `ttm_execution` crate); everything below is what TBD-Reforger does
+# differently. Commands are argv arrays (no shell). Placeholders: {range} {base} {slice} {wave}
+# {root} {main_root} {main} {environment} (container | host: where the command runs, so two glibcs
+# never share a build folder). Repository-specific logic lives in `cargo xtask mk` helpers
+# (tools/commands/ci_task_catalog/src/wave_gate_steps/).
+#
+# Profiles: `platform` (the default, first) and `mod` (`--program mod`).
+
+[repository]
+main_branch = "main"
+remote = "origin"
+worktree_folder = ".worktrees"
+branch_prefix = "slice/"
+verdict_folder = ".workstation/run_records/verdicts"
+verified_marker = ".workstation/run_records/last-verified"
+gate_lock = "target/.repository-verification.lock"
+
+# The licensed upstream reference lanes are gitignored, so a fresh worktree lacks them; each is
+# linked in read-only from the main checkout. Every lane is required.
+[[repository.reference_links]]
+path = "mod/References/crf_framework"
+
+[[repository.reference_links]]
+path = "mod/References/vanilla_reference"
+
+[[repository.reference_links]]
+path = "mod/References/playable_selector"
+source_env = "TBD_PS_ORACLE"
+
+[worktree]
+merge_message = "merge {branch}\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
+notes = [
+    "assets/terrains is LFS pointers here — run 'cargo xtask schema validate', not 'cargo xtask ci schema-validate'",
+]
+
+[host_bridge]
+command = ["distrobox-host-exec"]
+container_markers = ["/run/.containerenv", "/.dockerenv"]
+container_env = "container"
+forward_env = [
+    "TEST_DATABASE_URL",
+    "TBD_GATE_DB",
+    "TBD_GATE_WAVE",
+    "TBD_GATE_CHECK_TARGET",
+    "TBD_GATE_SCHEMA_TARGET",
+    "TBD_GATE_TRUNK_TARGET",
+    "TBD_GATE_TRUNK_DIST",
+]
+
+[cargo_target]
+env = "CARGO_TARGET_DIR"
+shared_folder = "target/{environment}"
+slice_folder = "target/{environment}/slice-{slice}"
+
+[gate]
+timeout_seconds = 1200
+lock_poll_seconds = 30
+lock_max_seconds = 3600
+changed_packages = ["cargo", "xtask", "mk", "changed-packages", "--range", "{range}"]
+base_confirm_env = "TBD_GATE_BASE_CONFIRM"
+unserialised_env = "TBD_GATE_ALLOW_UNSERIALISED"
+verify_debt_nag = 8
+
+[run_lane]
+folder = "target/{environment}/run-main"
+stamp_file = "tbd-built-from"
+build = ["cargo", "build"]
+run = ["cargo", "run"]
+release_flag = "--release"
+profiles = ["debug", "release"]
+refuse_args = ["--target-dir", "CARGO_TARGET_DIR="]
+guard = ["cargo", "xtask", "mk", "target-abi-guard", "{target}"]
+
+[test_lane]
+command = ["cargo", "test"]
+pre = ["cargo", "xtask", "mk", "gate-step", "touch-changed"]
+require_any = ["-p", "--package"]
+env = { CARGO_INCREMENTAL = "0" }
+host = true
+
+[agent]
+command = ["claude", "--print", "--output-format", "json"]
+command_env = "TBD_SLICE_RUN_AGENT_CMD"
+executor = "claude-code"
+require_spec = true
+prompt_suffix = "Read CLAUDE.md first, follow the brief above, and commit on the slice branch only."
+
+# ── reclaim ────────────────────────────────────────────────────────────────────────────────────
+[[reclaim.rule]]
+kind = "slice"
+folder = "target/host"
+name = "slice-{slice}"
+note = "per-slice test folders (host)"
+
+[[reclaim.rule]]
+kind = "slice"
+folder = "target/container"
+name = "slice-{slice}"
+note = "per-slice test folders (container)"
+
+[[reclaim.rule]]
+kind = "slice"
+folder = "target/host"
+name = "gate-slice-frontend-{slice}"
+note = "slice gate frontend test folders"
+
+[[reclaim.rule]]
+kind = "always"
+folder = "."
+name = "target-dev-api"
+
+[[reclaim.rule]]
+kind = "always"
+folder = "."
+name = "target-ci"
+
+[[reclaim.rule]]
+kind = "always"
+folder = "."
+name = "target-dev-mcpd"
+
+[[reclaim.rule]]
+kind = "always"
+folder = "."
+name = "target-mk-db-selftest"
+
+[[reclaim.rule]]
+kind = "always"
+folder = "."
+name = "target-gate-*"
+
+[[reclaim.rule]]
+kind = "always"
+folder = "."
+name = "dist-gate-*"
+
+[[reclaim.rule]]
+kind = "gate"
+folder = "target/host"
+name = "gate-*"
+
+[[reclaim.rule]]
+kind = "gate"
+folder = "target/container"
+name = "gate-*"
+
+[[reclaim.rule]]
+kind = "slice"
+folder = "target/container"
+name = "gate-slice-frontend-{slice}"
+note = "slice gate frontend test folders"
+
+[[reclaim.rule]]
+kind = "report"
+folder = "target"
+name = "host"
+note = "shared build folder of the host toolchain, never reclaimed whole"
+
+[[reclaim.rule]]
+kind = "report"
+folder = "target"
+name = "container"
+note = "shared build folder of the container toolchain, never reclaimed whole"
+
+# ── preflight ──────────────────────────────────────────────────────────────────────────────────
+[preflight]
+disk_block_gb = 20
+disk_warn_gb = 40
+memory_block_mib = 1024
+swap_warn_percent = 70
+idle_worktree_minutes = 10
+stray_build_folders = ["target"]
+
+[[preflight.check]]
+name = "cargo"
+command = ["cargo", "--version"]
+severity = "block"
+fail_detail = "cargo unusable"
+
+[[preflight.check]]
+name = "postgres :5434"
+tcp = "127.0.0.1:5434"
+severity = "warn"
+fail_detail = "down — API integration tests will skip (cargo xtask db up on the HOST)"
+
+[[preflight.check]]
+name = "api :8080"
+command = ["cargo", "xtask", "mk", "preflight-api-freshness"]
+severity = "warn"
+
+[[preflight.check]]
+name = "trunk serve"
+process_count = "trunk serve"
+ok_detail = "fine; the gate builds into private dist and target folders"
+
+[[preflight.check]]
+name = "chrome"
+process_absent = "chrome-linux64/chrome"
+severity = "warn"
+fail_detail = "leptos-gates will refuse"
+
+# ── profile: platform (the Rust platform factory) ─────────────────────────────────────────────
+[[profile]]
+name = "platform"
+description = "Rust slices, gated on cargo and trunk"
+
+[profile.prep]
+create_worktrees = false
+
+[profile.hooks]
+migrate_persist = ["cargo", "xtask", "mk", "gate-step", "migrate-persist"]
+
+[profile.land]
+merge_message = "{slug}: {title}"
+require_receipt = true
+record_landing = true
+cleanup = "drop"
+repack = true
+push = true
+close_subject = "wave {n} CLOSED — {summary}"
+
+[profile.slice_gate]
+verdict_label = "SLICE GATE"
+
+[[profile.slice_gate.step]]
+label = "touch changed"
+command = ["cargo", "xtask", "mk", "gate-step", "touch-changed", "--range", "{range}"]
+host = true
+
+[[profile.slice_gate.step]]
+label = "touch workspace"
+command = ["cargo", "xtask", "mk", "gate-step", "touch-workspace"]
+host = true
+
+[[profile.slice_gate.step]]
+label = "cargo check"
+command = ["cargo", "check", "--workspace", "--quiet"]
+env = { CARGO_TARGET_DIR = "{main_root}/target/{environment}/gate-check", CARGO_INCREMENTAL = "0" }
+host = true
+
+[[profile.slice_gate.step]]
+label = "fmt (changed)"
+command = ["cargo", "xtask", "mk", "gate-step", "fmt-changed", "--range", "{range}"]
+host = true
+
+[[profile.slice_gate.step]]
+label = "test (frontend, changed)"
+command = ["cargo", "xtask", "mk", "gate-step", "frontend-tests-changed", "--slice", "{slice}", "--range", "{range}"]
+host = true
+
+[profile.wave_gate]
+base = "derived"
+verdict_label = "GATE"
+
+[[profile.wave_gate.step]]
+label = "touch changed"
+command = ["cargo", "xtask", "mk", "gate-step", "touch-changed", "--range", "{range}"]
+host = true
+
+[[profile.wave_gate.step]]
+label = "touch workspace"
+command = ["cargo", "xtask", "mk", "gate-step", "touch-workspace"]
+host = true
+
+[[profile.wave_gate.step]]
+label = "fmt (changed)"
+command = ["cargo", "xtask", "mk", "gate-step", "fmt-changed", "--range", "{range}"]
+host = true
+
+[[profile.wave_gate.step]]
+label = "clippy native crates"
+command = ["cargo", "xtask", "mk", "gate-step", "clippy-native"]
+host = true
+
+[[profile.wave_gate.step]]
+label = "clippy wasm32 members"
+command = ["cargo", "xtask", "mk", "gate-step", "clippy-wasm32"]
+host = true
+
+[[profile.wave_gate.step]]
+label = "clippy frontend"
+command = ["cargo", "xtask", "mk", "gate-step", "clippy-frontend"]
+host = true
+
+[[profile.wave_gate.step]]
+label = "clippy frontend (native)"
+command = ["cargo", "xtask", "mk", "gate-step", "clippy-frontend-native"]
+host = true
+
+[[profile.wave_gate.step]]
+label = "gate database"
+command = ["cargo", "xtask", "mk", "gate-step", "gate-database"]
+host = true
+
+[[profile.wave_gate.step]]
+label = "db_migrate persist"
+command = ["cargo", "xtask", "mk", "gate-step", "migrate-persist", "advance"]
+host = true
+
+[[profile.wave_gate.step]]
+label = "test api"
+command = ["cargo", "xtask", "mk", "gate-step", "test-api"]
+host = true
+
+[[profile.wave_gate.step]]
+label = "test frontend"
+command = ["cargo", "xtask", "mk", "gate-step", "test-frontend"]
+host = true
+
+[[profile.wave_gate.step]]
+label = "test workspace members"
+command = ["cargo", "xtask", "mk", "gate-step", "test-workspace-members"]
+host = true
+
+[[profile.wave_gate.step]]
+label = "clippy xtask+developer_tools"
+command = ["cargo", "xtask", "mk", "gate-step", "clippy-tools"]
+host = true
+
+[[profile.wave_gate.step]]
+label = "trunk build"
+command = ["cargo", "xtask", "mk", "gate-step", "trunk-build"]
+host = true
+when_scope = "wasm_scope"
+
+[[profile.wave_gate.step]]
+label = "codegen fresh"
+command = ["cargo", "run", "-q", "-p", "xtask", "--", "ci", "verify-codegen-fresh"]
+env = { CARGO_TARGET_DIR = "{main_root}/target/{environment}/gate-check", CARGO_INCREMENTAL = "0" }
+host = true
+
+[[profile.wave_gate.step]]
+label = "schema"
+command = ["cargo", "xtask", "mk", "gate-step", "schema"]
+host = true
+
+[[profile.wave_gate.step]]
+label = "crate tiers"
+command = ["cargo", "run", "-q", "-p", "xtask", "--", "verify", "crate-tiers"]
+env = { CARGO_TARGET_DIR = "{main_root}/target/{environment}/gate-check", CARGO_INCREMENTAL = "0" }
+host = true
+
+[[profile.wave_gate.step]]
+label = "crate anatomy"
+command = ["cargo", "run", "-q", "-p", "xtask", "--", "verify", "crate-anatomy"]
+env = { CARGO_TARGET_DIR = "{main_root}/target/{environment}/gate-check", CARGO_INCREMENTAL = "0" }
+host = true
+
+[[profile.wave_gate.step]]
+label = "tailwind sources"
+command = ["cargo", "run", "-q", "-p", "xtask", "--", "verify", "tailwind-sources"]
+env = { CARGO_TARGET_DIR = "{main_root}/target/{environment}/gate-check", CARGO_INCREMENTAL = "0" }
+host = true
+
+[[profile.wave_gate.step]]
+label = "no-python"
+command = ["cargo", "run", "-q", "-p", "xtask", "--", "verify", "no-python"]
+env = { CARGO_TARGET_DIR = "{main_root}/target/{environment}/gate-check", CARGO_INCREMENTAL = "0" }
+host = true
+
+[[profile.wave_gate.step]]
+label = "no-node"
+command = ["cargo", "run", "-q", "-p", "xtask", "--", "verify", "no-node"]
+env = { CARGO_TARGET_DIR = "{main_root}/target/{environment}/gate-check", CARGO_INCREMENTAL = "0" }
+host = true
+
+[[profile.wave_gate.step]]
+label = "no-shell"
+command = ["cargo", "run", "-q", "-p", "xtask", "--", "verify", "no-shell"]
+env = { CARGO_TARGET_DIR = "{main_root}/target/{environment}/gate-check", CARGO_INCREMENTAL = "0" }
+host = true
+
+[[profile.wave_gate.step]]
+label = "file length"
+command = ["cargo", "run", "-q", "-p", "xtask", "--", "verify", "file-length"]
+env = { CARGO_TARGET_DIR = "{main_root}/target/{environment}/gate-check", CARGO_INCREMENTAL = "0" }
+host = true
+
+# ── profile: mod (the game-mod program, children of T-181) ────────────────────────────────────
+[[profile]]
+name = "mod"
+description = "Enfusion mod slices, gated on the script compiler and a headless world boot"
+program = "T-181"
+
+[profile.prep]
+create_worktrees = true
+
+[profile.hooks]
+migrate_persist = ["cargo", "xtask", "mk", "gate-step", "migrate-persist"]
+
+[profile.land]
+merge_message = "merge slice/{slug}\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
+require_receipt = false
+record_landing = false
+cleanup = "reap"
+repack = false
+push = true
+refuse_dirty_wave = true
+close_subject = "wave {n} CLOSED — {summary}"
+
+# A mod slice merges only with a green slice verdict; it is the platform slice gate.
+[profile.slice_gate]
+verdict_label = "SLICE GATE"
+
+[[profile.slice_gate.step]]
+label = "touch changed"
+command = ["cargo", "xtask", "mk", "gate-step", "touch-changed", "--range", "{range}"]
+host = true
+
+[[profile.slice_gate.step]]
+label = "touch workspace"
+command = ["cargo", "xtask", "mk", "gate-step", "touch-workspace"]
+host = true
+
+[[profile.slice_gate.step]]
+label = "cargo check"
+command = ["cargo", "check", "--workspace", "--quiet"]
+env = { CARGO_TARGET_DIR = "{main_root}/target/{environment}/gate-check", CARGO_INCREMENTAL = "0" }
+host = true
+
+[[profile.slice_gate.step]]
+label = "fmt (changed)"
+command = ["cargo", "xtask", "mk", "gate-step", "fmt-changed", "--range", "{range}"]
+host = true
+
+[[profile.slice_gate.step]]
+label = "test (frontend, changed)"
+command = ["cargo", "xtask", "mk", "gate-step", "frontend-tests-changed", "--slice", "{slice}", "--range", "{range}"]
+host = true
+
+[profile.wave_gate]
+base = "none"
+lock = false
+tail_lines = 12
+label_width = 26
+verdict_label = "GATE"
+
+[[profile.wave_gate.step]]
+label = "compile"
+command = ["cargo", "run", "-q", "-p", "xtask", "--", "mod", "compile"]
+
+[[profile.wave_gate.step]]
+label = "world boot"
+command = ["cargo", "run", "-q", "-p", "xtask", "--", "mod", "world-boot"]
+
+[[profile.wave_gate.step]]
+label = "world boot +mission"
+command = ["cargo", "run", "-q", "-p", "xtask", "--", "mod", "world-boot", "--mission=bridgehead-at-levie"]
+
+[[profile.wave_gate.step]]
+label = "schema validate"
+command = ["cargo", "run", "-q", "-p", "xtask", "--", "ci", "schema-validate"]
+
+[[profile.wave_gate.step]]
+label = "capability"
+command = ["cargo", "run", "-q", "-p", "developer_tools", "--bin", "enf", "--", "capability"]
+
+[[profile.wave_gate.step]]
+label = "oracle citations"
+command = ["cargo", "run", "-q", "-p", "developer_tools", "--bin", "enf", "--", "citations"]
+
+[[profile.wave_gate.step]]
+label = "enf unit tests"
+command = ["cargo", "test", "-q", "-p", "enfusion_script_index", "--lib"]
+host = true

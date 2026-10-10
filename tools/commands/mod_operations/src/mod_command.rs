@@ -1,12 +1,12 @@
 //! The `cargo xtask mod` command line.
 //!
 //! **Role:** [`ModCmd`], the clap subcommands of the mod group: the equipment export commands,
-//! the compile gate, the world boot, the playtest server, the Workbench session helpers, the
-//! staging and announcement one-offs and the mod wave driver.
+//! the compile gate, the world boot, the playtest server, the Workbench session helpers and the
+//! staging one-offs.
 //! **Position:** parsed by the xtask binary inside its top-level command; [`crate::run`] receives
 //! it.
 //! **Signals & state:** none; plain data.
-//! **Invariants:** `dev-server`, `playtest`, `compile`, `world-boot` and `wave` take their
+//! **Invariants:** `dev-server`, `playtest`, `compile` and `world-boot` take their
 //! arguments raw (hyphens included) with clap's help flag off, since their drivers parse them and
 //! answer `--help` with their own usage text.
 
@@ -129,13 +129,6 @@ pub enum ModCmd {
     #[command(name = "world-boot", disable_help_flag = true)]
     WorldBoot {
         /// Passthrough (`--compiled[=uuid]`, `--mission=<golden>`, `--keep-logs`).
-        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
-        args: Vec<String>,
-    },
-    /// The mod program wave driver — NOT the platform factory (`platform wave`).
-    #[command(name = "wave", disable_help_flag = true)]
-    Wave {
-        /// `status` | `gate` | `land` | `prep [N]` | `push` (default status).
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },

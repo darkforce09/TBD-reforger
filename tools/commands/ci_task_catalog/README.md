@@ -4,15 +4,17 @@ The `ci_task_catalog` crate: the `cargo xtask ci`, `cargo xtask help` and `cargo
 It holds the table of named CI tasks (the local CI replay `ci-local`, the schema gates, the
 verifications and the map composites) with the runner that executes them, the `mk` recipes that
 build, test and serve the API, the single-page app and the engine crates, the shared cargo target
-pin, and the map asset checks the schema and terrain tasks run. Developers run `ci-local` before
-pushing; the GitHub workflows run single tasks and recipes by name.
+pin, the map asset checks the schema and terrain tasks run, and the `mk` helpers the central
+ticket manager's slice and wave gates run (`wave_gate_steps/`, named as steps in
+[`ticket_manager_execution.toml`](/ticket_manager_execution.toml)). Developers run `ci-local`
+before pushing; the GitHub workflows run single tasks and recipes by name.
 
 ## Contents
 
 ```text
 tools/commands/ci_task_catalog/
 ├── Cargo.toml  the `ci_task_catalog` library package: the check, schema and database crates, `map_asset_verification` for the map asset checks, layout tier 8
-└── src/        the task table and runner, the build lane, the target pin, the map asset steps and the errors
+└── src/        the task table and runner, the build lane, the target pin, the map asset steps, the wave gate steps and the errors
 ```
 
 ## How it works
@@ -39,9 +41,10 @@ The commands themselves are described in the
   `repository_layout`, `process_runner`, `verification_core`, `libc`, `serde`, `serde_json`,
   `thiserror`; `map_asset_verification` for the map asset checks; cargo, trunk, git, git-lfs, go,
   curl, unzip and apt-get as subprocesses.
-- Used by: the xtask binary's `ci`, `help`, `mk` and `schema` groups and its wave driver (the
-  `schema-validate` gate list, the workspace test command line, the glibc stamp guard); the GitHub
-  workflows, through `cargo xtask ci` and `cargo xtask mk`.
+- Used by: the xtask binary's `ci`, `help`, `mk` and `schema` groups; the GitHub workflows,
+  through `cargo xtask ci` and `cargo xtask mk`; the central ticket manager's runner, through the
+  `cargo xtask mk` helpers its configuration names (`changed-packages`, `gate-step <name>`,
+  `preflight-api-freshness`, `target-abi-guard`).
 - Rules: tier 8 of `tools/commands` (`cargo xtask verify crate-tiers`); the crate never reads the
   command line; a composite runs the very rows it names; every workspace member is tested by some
   CI task (the API family by `api-test`, the frontend family by `ci-local-leptos`, every other

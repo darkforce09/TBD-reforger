@@ -43,7 +43,7 @@ pub(crate) fn cwd_root() -> PathBuf {
 /// The **primary** checkout: `git rev-parse --path-format=absolute --git-common-dir` with its
 /// trailing `/.git` removed.
 ///
-/// The same derivation as the xtask wave driver's `main_root`:
+/// The same derivation as the wave gate steps' `main_root` fallback (`TTM_MAIN_ROOT` unset):
 /// one formula, not two. A git that cannot answer falls back to this checkout, which is at worst a
 /// cold build and never a write to `/`.
 pub(crate) fn primary_root() -> PathBuf {
@@ -77,8 +77,8 @@ pub(crate) fn toolchain_environment() -> ToolchainEnvironment {
 /// a `remove_var` (unsafe, global, and racy with any thread).
 pub(crate) fn resolve_target_dir(env: Option<&str>) -> String {
     match env {
-        // An operator or driver export wins: the wave driver hands its gate steps a private
-        // directory, and a pin that overrode it would put every gate back in the shared cache.
+        // An operator or runner export wins: the ticket manager's runner hands its gate steps a
+        // build folder, and a pin that overrode it would put every gate back in the shared cache.
         Some(v) if !v.is_empty() => v.to_string(),
         _ => toolchain_build_folder(&primary_root(), toolchain_environment())
             .display()

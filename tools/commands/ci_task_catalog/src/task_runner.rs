@@ -5,7 +5,8 @@
 //! steps, recursing into named rows, spawning command lines and calling in-process leaves;
 //! [`help`] and [`schema_list_gates`] render the same table.
 //! **Position:** the crate's centre; the xtask binary's `ci`, `help` and `schema list-gates` verbs
-//! call it, and the wave driver reads the `schema-validate` row.
+//! call it, and the wave gate's schema step ([`crate::wave_gate_steps`]) reads the
+//! `schema-validate` row.
 //! **Signals & state:** none held; each step's child inherits this process's stdio.
 //! **Invariants:** a composite runs the very rows it names; the runner stops at the first red step
 //! and returns that leaf's raw exit code; a step naming no row is refused, never skipped.
@@ -17,7 +18,7 @@
 //! `cargo xtask verify …` command. Every child gets the `PATH` prepend that puts
 //! `editorconfig-checker` (`~/go/bin`) on the path and, unless the caller exported one, the shared
 //! `CARGO_TARGET_DIR` of the primary checkout, so linked worktrees share one warm cache.
-//! [`schema_list_gates`] prints the `schema-validate` row's sub-gates, the list the wave driver's
+//! [`schema_list_gates`] prints the `schema-validate` row's sub-gates, the list the wave gate's
 //! schema step cross-checks its own against.
 
 use std::io::Write;

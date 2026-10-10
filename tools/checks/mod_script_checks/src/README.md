@@ -63,8 +63,7 @@ not run (a missing layout folder).
   their report streams live.
 - Used by:
   - `tools/xtask/src/commands/verify/dispatch.rs` and
-    `tools/commands/mod_operations/src/mod_dispatch.rs`;
-  - the ticket manager's mod wave gate, which runs `verify ui-layouts`.
+    `tools/commands/mod_operations/src/mod_dispatch.rs`.
 - Rules:
   - A missing layout folder never reads as a pass.
   - The printed report is part of each check's contract.

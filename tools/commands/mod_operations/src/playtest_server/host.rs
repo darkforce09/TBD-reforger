@@ -4,7 +4,7 @@
 //! detection and the `distrobox-host-exec`/`host-spawn` bridge.
 //! **Position:** under [`crate::playtest_server`]; `boot.rs`, `lifecycle.rs` and the run order
 //! import `super::host::Host`; the implementation, its tests and the reason the bridge exists live
-//! in [`process_runner::host_execution`], shared with the wave drivers.
+//! in [`process_runner::host_execution`], shared with the database lane and the wave gate steps.
 //! **Signals & state:** none.
 //! **Invariants:** holds no behaviour; new bridge work belongs in `process_runner`.
 

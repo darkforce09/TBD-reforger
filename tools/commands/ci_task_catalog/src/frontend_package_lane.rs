@@ -9,8 +9,8 @@
 //! `run_frontend_format`, `run_frontend_wasm32_clippy`, `run_frontend_native_clippy` and
 //! `run_frontend_tests`; the `mk ci-local-leptos` recipe ([`crate::build_lane`]) runs the same
 //! argv through [`frontend_line_argv`]; [`crate::wasm32_lint_lane`] and
-//! [`crate::workspace_member_tests`] leave the family to this lane; the wave gate
-//! (`platform_execution`) renders its frontend steps through [`frontend_family_argv`]. Reads
+//! [`crate::workspace_member_tests`] leave the family to this lane; the wave gate steps
+//! ([`crate::wave_gate_steps`]) render their frontend steps through [`frontend_family_argv`]. Reads
 //! [`repository_laws::workspace_members`].
 //! **Signals & state:** none; reads the checkout, and each runner spawns one cargo through the task
 //! runner, with the environment every task line gets.

@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
-description = "Repository command router, verifications and platform execution (cargo xtask)"
+description = "Repository command router and verifications (cargo xtask)"
 
 [[bin]]
 name = "xtask"
@@ -49,10 +49,8 @@ remote_debugging = { workspace = true }
 staging_procedures = { workspace = true }
 # The `ci`, `help` and `mk` lanes, the cargo target pin, the CI workflow checks and the map asset checks.
 ci_task_catalog = { workspace = true }
-# The `platform` group: the wave driver, slice runs, slice worktrees and the preflight.
-platform_execution = { workspace = true }
-# The `mod` group: the compile gate, the world boot, the playtest server, the equipment export
-# publication and the mod wave driver.
+# The `mod` group: the compile gate, the world boot, the playtest server and the equipment export
+# publication.
 mod_operations = { workspace = true }
 # The contract codegen, the font-table generator, the schema gates and the ORBAT slot flattening.
 schema_tooling = { workspace = true }

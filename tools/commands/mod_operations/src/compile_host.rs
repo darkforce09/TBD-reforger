@@ -8,8 +8,8 @@
 //! [`Session::install`] and taken once by whichever of the session's drop and a signal comes first.
 //! **Invariants:** the cleanup runs at most once; a signal ends the process with 130 (SIGINT) or
 //! 143
-//! (SIGTERM) after it; the container test also honours a `container` variable, the mod wave
-//! driver's own definition.
+//! (SIGTERM) after it; the container test also honours a `container` variable, the marker the
+//! ticket manager's host bridge reads (`ticket_manager_execution.toml`).
 
 use std::fs;
 use std::io::{self, Write};

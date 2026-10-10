@@ -4,9 +4,9 @@
 //! **Role:** [`Host`] answers "am I containerised?" and "which bridge is on `PATH`?" separately,
 //! and runs a command through the bridge only when both hold; [`in_container`] is the container
 //! test on its own. This module is the only bridge: no shell shim sits beside it.
-//! **Position:** over [`crate::Run`]; the xtask `db` group, the playtest server of the `mod`
-//! group and the platform wave driver go through it to reach Steam, the Workbench and
-//! `ArmaReforgerServer`.
+//! **Position:** over [`crate::Run`]; the xtask `db` group and the playtest server of the `mod`
+//! group go through it to reach Steam, the Workbench and `ArmaReforgerServer`, and the wave gate
+//! steps of `ci_task_catalog` use its container test.
 //! **Signals & state:** none; a [`Host`] is a value resolved once by [`Host::detect`].
 //! **Invariants:** the bridge is never prepended outside a container (the 126 trap below); a
 //! bridge that could not run is never read as a command that answered.
@@ -91,7 +91,8 @@ const BRIDGES: &[&str] = &["distrobox-host-exec", "host-spawn"];
 /// This is distrobox's own test (`distrobox-host-exec:130`), copied rather than reinvented so the
 /// two can never disagree about what "in a container" means.
 ///
-/// The wave driver adds a THIRD clause, `|| [ -n "${container:-}" ]`, on its own side; this
+/// The ticket manager's host bridge (`container_env` in `ticket_manager_execution.toml`) and the
+/// mod compile gate add a THIRD clause, a non-empty `container` variable, on their own side; this
 /// two-clause form is the one every caller here was built and measured against. Widening it is a
 /// behaviour change that needs its own measurement.
 pub fn in_container() -> bool {
@@ -240,8 +241,7 @@ impl Host {
     /// bash `hostrun "$@"` in its LOUD form: run direct on the metal, via the bridge in a container,
     /// and when containerised with NO bridge print the real diagnosis and return 127.
     ///
-    /// This is the entry point for callers that show the operator stderr — the wave driver among
-    /// them. The point of the refusal text is that the alternative is a linker or `GLIBC_2.39` error
+    /// This is the entry point for callers that show the operator stderr. The point of the refusal text is that the alternative is a linker or `GLIBC_2.39` error
     /// that LOOKS like a broken repo; see the module docs for what that cost the last time.
     ///
     /// Returns the child's raw exit code, or 127 for the refusal, or 127 if the child could not be

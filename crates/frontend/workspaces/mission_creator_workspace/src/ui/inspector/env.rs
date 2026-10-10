@@ -24,10 +24,8 @@
 /// document struct and the schema would both have to grow a field; and neither word appears anywhere
 /// in `mod` or `contracts` — the framework has no view-distance or thermals concept
 /// to receive them, so even a widened schema would land the values in a document nothing reads. That
-/// is a mod feature (`executor: workbench`), not an editor fix. Meanwhile the design corpus
-/// (`documentation/archive/go_and_react_era_design/mission_creator_engineering_plan.md`,
-/// `mission_creator_design.md`) has always described both as *auto-derived*
-/// from the mission, never author-set. Two live controls for a setting nobody had planned to honour
+/// is a mod feature (`executor: workbench`), not an editor fix. Meanwhile the Mission Creator's
+/// design has always described both as *auto-derived* from the mission, never author-set. Two live controls for a setting nobody had planned to honour
 /// is worse than no controls: the author sets a view distance, saves, and the mission runs at the
 /// default with nothing said.
 ///

@@ -18,7 +18,7 @@
 # toolchain rust-toolchain.toml pins.
 #
 # The runtime listens on 0.0.0.0:$PORT (default 8080). Supply at least DATABASE_URL and
-# JWT_SECRET (see crates/api/api_server/.env.example). This image does not serve the single-page app:
+# JWT_SECRET (see deploy/api.env.example). This image does not serve the single-page app:
 # deploy/caddy/Caddyfile does, with COOP/COEP and the /api reverse proxy.
 
 FROM docker.io/library/rust:1.95.0-bookworm AS builder

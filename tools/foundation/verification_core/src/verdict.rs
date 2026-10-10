@@ -30,8 +30,8 @@
 //!
 //! ── OUTPUT IS A CONTRACT ─────────────────────────────────────────────────────────────────────
 //!
-//! [`Finding`] renders one headline plus six-space-indented continuation lines, and `cargo xtask
-//! platform wave` scrapes those logs to build its step table — so the text is a contract, not
+//! [`Finding`] renders one headline plus six-space-indented continuation lines, and the ticket
+//! manager's wave gate shows those logs under its step table — so the text is a contract, not
 //! decoration.
 
 use std::fmt;

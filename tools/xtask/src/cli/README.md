@@ -31,19 +31,20 @@ raw instead of as a clap tree: `mk` (the target list lives in
 | Command | What it holds | Module in `tools/xtask/src/commands/` |
 |---|---|---|
 | `mcp` | the Enfusion MCP bridge: daemon, calls, selftest, Workbench logs | none: the `enfusion_mcp` crate (`tools/commands/enfusion_mcp/`) |
-| `debug` | server-join probes and their primitives | `debug` |
-| `mod` | mod compile, servers, mission tests, world boot, mod wave | none: the `mod_operations` crate (`tools/commands/mod_operations/`) |
-| `deploy` | website and staging deploys, database backup and restore | `deploy` |
-| `db` | the local Postgres lane | `db` |
-| `setup` | local and dedicated-server profile setup | `setup` |
+| `debug` | server-join probes and their primitives | none: the `remote_debugging` crate (`tools/commands/remote_debugging/`) |
+| `mod` | mod compile, servers, mission tests, world boot | none: the `mod_operations` crate (`tools/commands/mod_operations/`) |
+| `deploy` | website and staging deploys, database backup and restore | none: the `deployment` crate (`tools/commands/deployment/`) |
+| `db` | the local Postgres lane | none: the `database_operations` crate (`tools/commands/database_operations/`) |
+| `staging` | the staging acceptance harness | none: the `staging_procedures` crate (`tools/commands/staging_procedures/`) |
+| `setup` | local and dedicated-server profile setup | none: the `workstation_setup` crate (`tools/commands/workstation_setup/`) |
 | `fetch` | vanilla source and API reference mirrors | `fetch` |
+| `ballistics` | the ballistics catalog trim | none: the `ballistics_oracle_tooling` crate (`tools/commands/ballistics_oracle_tooling/`) |
 | `map` | map-asset pipeline helpers | `map` |
 | `schema` | contract codegen, contract and map-asset gates, mission-file tools | `schema` |
 | `verify` | the repository verifications | `verify` |
-| `gen` | code generators | `generate` |
-| `platform` | the platform factory: slice worktrees, slice runs, platform waves | `platform` |
+| `gen` | code generators | none: the `schema_tooling` crate (`tools/commands/schema_tooling/`) |
 | `ai` | the agent tool-call guard and the filtered command runner | `agent_context` |
-| `mk` | build and development-server recipes | none: the `ci_task_catalog` crate (`tools/commands/ci_task_catalog/`, `build_lane`) |
+| `mk` | build and development-server recipes, and the wave gate steps the ticket manager runs | none: the `ci_task_catalog` crate (`tools/commands/ci_task_catalog/`, `build_lane`, `wave_gate_steps`) |
 | `ci` | the CI, composite and map task table | none: the `ci_task_catalog` crate (`task_runner`) |
 | `help` | lists every `ci` task by group, and points at `mk` and `db --help` | none: the `ci_task_catalog` crate (`task_runner::help`) |
 

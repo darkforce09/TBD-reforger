@@ -63,10 +63,8 @@ Each is a licence decision (re-author from vanilla or record an attribution), ne
 - Depends on: `verification_core` (`scan`, `Verdict`, `NotRun`, `Pattern`); `process_runner::Run`; `regex`;
   the `grep` binary; `repository_layout` (the lane paths and the documents the
   closing note names).
-- Used by: `tools/xtask/src/commands/verify/dispatch.rs`; the mod
-  [wave](/documentation/glossary/n_to_z.md#wave) gate's `no-crf-leak` step
-  (`tools/commands/mod_operations/src/wave_execution/execution.rs`); people following the mod slice
-  workflow runbook, which runs the gate before a slice lands.
+- Used by: `tools/xtask/src/commands/verify/dispatch.rs`; mod developers and mod slice agents,
+  who run `cargo xtask verify no-crf-leak` before a mod slice lands.
 - Rules:
   - A lane the gate cannot compare against is exit 2 naming it, never a pass
     (`a_lane_the_gate_cannot_compare_against_is_did_not_run` in `tests/upstream_code_leaks/tests.rs`).
@@ -77,8 +75,8 @@ Each is a licence decision (re-author from vanilla or record an attribution), ne
     every GUID as a `grep -qla` per GUID does
     (`one_vanilla_pass_answers_every_guid_as_a_grep_per_guid_does`); symlinked lanes are followed
     (`asset_dirs_descend_through_symlinked_lanes`).
-  - The command keeps the name `no-crf-leak`, which the slice workflow runbook and the wave gate
-    cite, although it covers both lanes.
+  - The command keeps the name `no-crf-leak`, which the mod documents cite, although it covers
+    both lanes.
   - Tests that change `PATH` keep `/usr/bin` on it, so this gate's `grep` still resolves
     (`tools/foundation/process_runner/src/search_path.rs`).
 

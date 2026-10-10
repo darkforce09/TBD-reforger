@@ -1,0 +1,308 @@
+//! The wave gate's schema step, and the provenance stamp of the binary it runs.
+//!
+//! **Role:** `gate_schema` runs the whole set of contract sub-gates of `cargo xtask ci
+//! schema-validate`; content-stamps the xtask build it runs (`.tbd-xtask-src` in the gate's schema
+//! folder) and throws that folder away when another tree's sources built it.
+//!
+//! **Position:** `mk gate-step schema`, which the ticket manager's wave gate runs; the sub-gate list is cross-checked against
+//! [`crate::task_runner::TASKS`]' `schema-validate` row.
+//!
+//! **Signals & state:** none held; spawns xtask and rewrites the stamp file in the gate's schema
+//! folder.
+//!
+//! **Invariants:** a single `schema validate` is never the step, because it never opens the
+//! classification rules a contract change can break; `VALIDATE_GATES` equals the task table's set
+//! in its order, and a sub-gate added to one side only fails closed; the step is not change-scoped,
+//! because the sub-gates read code, rules, mod files and assets as well as contracts; the stamp
+//! hashes content, never modification times, over xtask's normal and build dependency closure
+//! (derived from the manifests, development dependencies excluded), and a closure with no inputs is
+//! red.
+
+use std::collections::{BTreeSet, HashMap};
+use std::path::{Path, PathBuf};
+
+use repository_laws::workspace_members::{WorkspaceMember, read_workspace_members};
+use verification_core::NotRun;
+
+use super::host;
+use super::step_context::Ctx;
+use super::wprintln;
+
+/// Must equal `cargo xtask ci schema-validate`'s sub-gate SET, in the `TASKS` row's order.
+const VALIDATE_GATES: &[&str] = &["validate", "map-object-enums", "type-inventory"];
+
+/// The sub-gate names `cargo xtask ci schema-validate` will actually run, in table order.
+///
+/// This is what `cargo xtask schema list-gates` prints. It is read from [`crate::task_runner::TASKS`] rather
+/// than shelled out to, because the two live in the same binary: a subprocess could only ever be
+/// the SAME list one build-freshness hazard later (the hazard `gate_schema`'s content stamp
+/// further down exists to fight). Empty means the `schema-validate` row is gone, which the caller
+/// treats as a refusal — never as "no gates to check".
+pub(crate) fn task_validate_gates() -> Vec<String> {
+    crate::task_runner::find("schema-validate")
+        .map(crate::task_runner::validate_gate_names)
+        .unwrap_or_default()
+}
+
+pub(crate) fn gate_schema(ctx: &Ctx) -> i32 {
+    // DRIFT TRIPWIRE. A hardcoded list is readable and greppable but it rots silently: when
+    // `schema-validate` grows a new sub-gate and nobody adds it here, the wave gate goes on
+    // printing PASS over whatever that gate checks. Diff the SET against the executable task table
+    // every run and refuse when they disagree — including PARTIAL reads. Refusing only an EMPTY
+    // read is not enough: a truncated list still passes a one-way ⊆ check while the task runs
+    // sub-gates this step never hears about.
+    let mk_gates = task_validate_gates();
+    if mk_gates.is_empty() {
+        wprintln!(
+            "schema: read 0 sub-gates out of the schema-validate task (tools/commands/ci_task_catalog/src/task_definitions.rs)."
+        );
+        wprintln!(
+            "        The drift check is the only thing keeping this step's list honest, so a step that"
+        );
+        wprintln!(
+            "        could not run it must not go on to report PASS. Fix the read, or the task row."
+        );
+        return 1;
+    }
+    let mut mk_sorted = mk_gates.clone();
+    mk_sorted.sort();
+    let mut want_sorted: Vec<String> = VALIDATE_GATES.iter().map(|s| (*s).to_string()).collect();
+    want_sorted.sort();
+    if mk_sorted != want_sorted {
+        wprintln!("schema: schema-validate task set disagrees with GATE_SCHEMA_VALIDATE_GATES.");
+        wprintln!("        list-gates: {}", mk_sorted.join(" "));
+        wprintln!("        VALIDATE_GATES: {}", want_sorted.join(" "));
+        wprintln!(
+            "        A narrowed read or an unlisted sub-gate would keep printing PASS over unchecked"
+        );
+        wprintln!("        contracts. Fail closed: sync the list, or fix the task row.");
+        return 1;
+    }
+
+    let run_gates: Vec<String> = VALIDATE_GATES.iter().map(|s| (*s).to_string()).collect();
+
+    // ---- make sure the xtask we are about to trust is THIS tree's ----
+    //
+    // A PRIVATE TARGET DIR. Cargo's freshness test is "is any source NEWER than the artifact?", so
+    // sibling worktrees sharing `target/` clobber each other: a neighbour rebuilds `target/debug/
+    // xtask` from ITS sources, this tree's older sources then look fresh against that newer
+    // artifact, and `cargo run` executes the neighbour's binary with no rebuild and no warning.
+    // The clobber is one-directional and therefore easy to miss.
+    //
+    // ONE dir, not one per tree (a per-tree dir grows without bound at ~1.7 GB each), plus a
+    // CONTENT stamp: when this tree's xtask *and its path deps* hash differently from whatever last
+    // built here, the dir is thrown away and rebuilt. Every crate xtask depends on BY PATH, directly
+    // or through another path dependency, must sit under a stamp root, or two trees can share this
+    // target dir under one stamp while a path dep differs. The roots are therefore DERIVED from the
+    // manifests ([`xtask_build_closure`]), never listed by hand: a hand list goes stale the day a
+    // crate is born. Each root contributes its `.rs` sources and its `Cargo.toml` manifests.
+    // Content, not mtime — mtime is the thing that lies.
+    let stamp_roots = match xtask_build_closure(Path::new(".")) {
+        Ok(roots) if !roots.is_empty() => roots,
+        Ok(_) => {
+            wprintln!(
+                "schema: the workspace has no `xtask` member — cannot tell whose binary would run."
+            );
+            return 1;
+        }
+        Err(cause) => {
+            wprintln!(
+                "schema: cannot read the workspace manifests to derive the stamp roots: {cause}"
+            );
+            return 1;
+        }
+    };
+    let mut srcs: Vec<PathBuf> = Vec::new();
+    for r in &stamp_roots {
+        for e in walkdir::WalkDir::new(r).into_iter().flatten() {
+            let is_source = e.path().extension().is_some_and(|x| x == "rs");
+            let is_manifest = e.file_name() == "Cargo.toml";
+            if e.file_type().is_file() && (is_source || is_manifest) {
+                srcs.push(e.path().to_path_buf());
+            }
+        }
+    }
+    if srcs.is_empty() {
+        wprintln!(
+            "schema: found no stamp inputs under {} — cannot tell whose binary would run.",
+            stamp_roots.join(" + ")
+        );
+        return 1;
+    }
+    // Byte order, so the concatenation is stable across locales.
+    srcs.sort_by(|a, b| {
+        a.as_os_str()
+            .as_encoded_bytes()
+            .cmp(b.as_os_str().as_encoded_bytes())
+    });
+    let mut blob: Vec<u8> = Vec::new();
+    for s in &srcs {
+        if let Ok(b) = std::fs::read(s) {
+            blob.extend_from_slice(&b);
+        }
+    }
+    for m in ["Cargo.toml", "Cargo.lock"] {
+        if let Ok(b) = std::fs::read(m) {
+            blob.extend_from_slice(&b);
+        }
+    }
+    let stamp = cksum(&blob);
+    let stampfile = Path::new(&ctx.gate_schema_target).join(".tbd-xtask-src");
+    if std::fs::read_to_string(&stampfile).unwrap_or_default() != stamp {
+        let _ = std::fs::remove_dir_all(&ctx.gate_schema_target);
+        if std::fs::create_dir_all(&ctx.gate_schema_target).is_err() {
+            wprintln!("schema: cannot create {}", ctx.gate_schema_target);
+            return 1;
+        }
+    }
+
+    // Build once and separately, so a compile error reads as a compile error rather than as one
+    // identical schema failure per sub-gate. The step runner shows the tail, and a broken xtask
+    // fails every sub-gate otherwise.
+    let build_argv = ctx.host.hostrun_argv(&host::v(&[
+        "env",
+        &format!("CARGO_TARGET_DIR={}", ctx.gate_schema_target),
+        "cargo",
+        "build",
+        "-q",
+        "-p",
+        "xtask",
+    ]));
+    let (build_out, build_rc) = host::capture(&build_argv);
+    if build_rc != 0 {
+        let lines: Vec<&str> = build_out.lines().collect();
+        for l in lines.iter().skip(lines.len().saturating_sub(12)) {
+            wprintln!("{l}");
+        }
+        wprintln!("schema: xtask failed to BUILD (rc {build_rc}) — no sub-gate was run.");
+        if build_rc == 124 {
+            return 124;
+        }
+        return 1;
+    }
+    // `printf '%s\n' "$stamp" > "$stampfile"` — written only after a successful build.
+    let _ = std::fs::write(&stampfile, format!("{stamp}\n"));
+
+    let want = run_gates.len();
+    let mut ran = 0usize;
+    let mut timedout = false;
+    let mut failed = String::new();
+    let mut detail = String::new();
+    for g in &run_gates {
+        let argv = ctx.host.hostrun_argv(&host::v(&[
+            "env",
+            &format!("CARGO_TARGET_DIR={}", ctx.gate_schema_target),
+            "cargo",
+            "run",
+            "-q",
+            "-p",
+            "xtask",
+            "--",
+            "schema",
+            g,
+        ]));
+        let (out, rc) = host::capture(&argv);
+        ran += 1;
+        if rc == 0 {
+            continue;
+        }
+        // 124 is hostrun's timeout, not a broken schema. Propagated below so run() can say so.
+        if rc == 124 {
+            timedout = true;
+        }
+        failed.push(' ');
+        failed.push_str(g);
+        detail.push_str(&format!("\n── schema {g} (rc {rc}) ──\n"));
+        let lines: Vec<&str> = out.lines().collect();
+        let tail: Vec<&str> = lines
+            .iter()
+            .skip(lines.len().saturating_sub(6))
+            .copied()
+            .collect();
+        detail.push_str(&tail.join("\n"));
+    }
+
+    // NON-VACUITY. An empty run-set, or a loop that exits early, reaches the verdict below having
+    // validated nothing — and would print PASS. That is the defect this function was added to fix,
+    // one layer in. Count what actually executed and refuse to interpret a set that did not run.
+    if ran == 0 || ran != want {
+        wprintln!(
+            "schema: executed {ran} of {want} sub-gate(s) — refusing to report on a set it did not run."
+        );
+        return 1;
+    }
+
+    // Summary LAST, on purpose: both step runners print `tail -15` of a failed step, so a verdict
+    // printed first is the line that gets cut when several sub-gates fail at once.
+    let run_list = run_gates.join(" ");
+    if !failed.is_empty() {
+        wprintln!("{detail}");
+        wprintln!("schema: FAILED{failed}  ({ran} sub-gates run)");
+        if timedout {
+            return 124;
+        }
+        return 1;
+    }
+    wprintln!("schema: {ran} sub-gates OK ({run_list})");
+    0
+}
+
+/// The folder of every workspace member `cargo build -p xtask` compiles: xtask and each member it
+/// reaches through normal or build dependencies, directly or through another member, sorted.
+///
+/// Development dependencies are left out: the gate builds and runs the binary, never its tests.
+pub(crate) fn xtask_build_closure(root: &Path) -> Result<Vec<String>, NotRun> {
+    let members = read_workspace_members(root)?;
+    let by_package: HashMap<&str, &WorkspaceMember> = members
+        .iter()
+        .map(|member| (member.package_name.as_str(), member))
+        .collect();
+    let mut folders: BTreeSet<String> = BTreeSet::new();
+    let mut pending: Vec<&str> = vec!["xtask"];
+    while let Some(package) = pending.pop() {
+        let Some(member) = by_package.get(package) else {
+            continue;
+        };
+        if !folders.insert(member.path.clone()) {
+            continue;
+        }
+        for edge in &member.manifest.dependencies {
+            if !edge.is_dev_dependency() && by_package.contains_key(edge.package.as_str()) {
+                pending.push(edge.package.as_str());
+            }
+        }
+    }
+    Ok(folders.into_iter().collect())
+}
+
+/// POSIX `cksum` — CRC-32 (poly 0x04C11DB7, MSB-first) over the bytes then over the length,
+/// complemented, rendered as `<crc><bytes>`.
+///
+/// Reimplemented rather than shelled out because the stamp file is SHARED with the bash gate during
+/// the overlap: if the two disagreed about the stamp, each would throw away the other's
+/// `target/gate-schema` and pay a 14 s cold rebuild every alternate run. `tr -d ' '` in the bash
+/// joined the two fields, so the rendering is `crc` immediately followed by `length`.
+fn cksum(data: &[u8]) -> String {
+    let mut table = [0u32; 256];
+    for (i, slot) in table.iter_mut().enumerate() {
+        let mut c = (i as u32) << 24;
+        for _ in 0..8 {
+            c = if c & 0x8000_0000 != 0 {
+                (c << 1) ^ 0x04C1_1DB7
+            } else {
+                c << 1
+            };
+        }
+        *slot = c;
+    }
+    let mut crc: u32 = 0;
+    for b in data {
+        crc = (crc << 8) ^ table[(((crc >> 24) as u8) ^ *b) as usize];
+    }
+    let mut n = data.len() as u64;
+    while n != 0 {
+        crc = (crc << 8) ^ table[(((crc >> 24) as u8) ^ (n as u8)) as usize];
+        n >>= 8;
+    }
+    format!("{}{}", !crc, data.len())
+}

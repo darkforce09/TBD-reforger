@@ -41,7 +41,6 @@ The procedures that span the addons live in `documentation/runbooks/`:
 
 | Runbook | What it covers |
 |---|---|
-| [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) | how a mod change runs through Workbench, the gates and a slice worktree |
 | [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) | `cargo xtask mcp call`, the warm broker, exit codes and the MCP checks |
 | [Spawn determinism](/documentation/runbooks/spawn_determinism.md) | the spawn and equip determinism gate, its assertions and where its log goes |
 | [Game server staging](/documentation/runbooks/game_server_staging/README.md) | bootstrapping and deploying the staging server named by `TBD_SSH_HOST`, Direct Join and client setup |

@@ -1,8 +1,8 @@
 # Xtask repository commands
 
 The `xtask` crate: the `cargo xtask` command router of the repository. It runs the repository's
-operations (database, deploys, mod servers, map pipelines, the platform factory and its
-[wave](/documentation/glossary/n_to_z.md#wave) driver) and orchestrates its verifications and CI tasks. Developers, AI agents, the GitHub workflows and the host's systemd
+operations (database, deploys, mod servers, map pipelines, the
+[wave](/documentation/glossary/n_to_z.md#wave) gate steps) and orchestrates its verifications and CI tasks. Developers, AI agents, the GitHub workflows and the host's systemd
 timers all run it.
 
 ## Contents
@@ -28,9 +28,10 @@ selftest; the deploys read the repository root's `deploy/`. The `repository_layo
 (`tools/foundation/repository_layout`) names each of them once, and `deploy_settings`
 (`tools/foundation/deploy_settings`) reads `deploy/deploy.env`.
 
-The crate owns repository operations and the orchestration of checks. Tickets and the wave plan
-live in the central ticket manager, which the platform and mod wave drivers reach through
-`ticket_manager_client` (its `ttm` command line); verdict primitives belong to `verification_core`, child processes, the
+The crate owns repository operations and the orchestration of checks. Tickets, the wave plan and
+the slice and wave runner live in the central ticket manager (`ttm`), which calls back into
+`cargo xtask` for the gate steps [`ticket_manager_execution.toml`](/ticket_manager_execution.toml)
+names; verdict primitives belong to `verification_core`, child processes, the
 host bridge and the ssh transport to `process_runner`, the structural laws to `repository_laws`, and
 building blueprints to `blueprint_compiler`, the map asset gates to `map_asset_verification`, the
 terrain export driver and the map tile index to `world_export_pipeline`, and the world export

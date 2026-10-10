@@ -46,8 +46,9 @@ No feature and no environment variable; the crate holds constants and pure path 
 ## Public surface
 
 - At the crate root: the machine-local folders (`WORKSTATION_DIR`, `.workstation`, gitignored;
-  `WORKTREES_DIR`, `.worktrees`) and the wave driver's run records inside the first
-  (`LAST_VERIFIED_MARKER`, `VERDICTS_DIR`); the reference lanes (`REFERENCES_DIR`,
+  `WORKTREES_DIR`, `.worktrees`) and the tool roots inside the first (`WORKSTATION_LOGS_DIR`,
+  `ENFUSION_MCP_GAME_ROOT` with `enfusion_mcp_game_root`, `PLAYTEST_SERVER_DIR`,
+  `REFORGER_EXTRACT_DIR`); the reference lanes (`REFERENCES_DIR`,
   `CRF_FRAMEWORK_REFERENCE`, `VANILLA_REFERENCE`) and the vanilla lane's folders
   (`VANILLA_EXTRACTED_SCRIPTS`, `VANILLA_SCRIPT_API_PAGES`, `VANILLA_SOURCE_PAGES`,
   `VANILLA_RECONSTRUCTED_SOURCE`); `BUILD_OUTPUT_FOLDER`; `BROWSER_GATE_ENVIRONMENT`.
@@ -65,16 +66,14 @@ No feature and no environment variable; the crate holds constants and pure path 
   `DEPLOY_ENV`, `DEPLOY_ENV_EXAMPLE`, `API_SETTINGS_FILE`, `API_SETTINGS_TEMPLATE`, `CADDYFILE`, `DEVELOPMENT_COMPOSE_FILE`, `SYSTEMD_UNITS_DIR`,
   `WEBSITE_API_UNIT`); the tool inputs (`DEDICATED_SERVER_PROFILES_DIR`, `DEV_SERVER_PROFILE`,
   `MCP_TRANSCRIPT_FIXTURES_DIR`); the PlayableSelector lane (`PLAYABLE_SELECTOR_REFERENCE`,
-  `PLAYABLE_SELECTOR_OVERRIDE_ENV`); and the documents and documentation areas (`FACTORY_PACK_WAVE`,
-  `HOME_SERVER_RUNBOOK`, `STAGING_SERVER_RUNBOOK`, `SLICE_WORKFLOW_RUNBOOK`,
-  `PLATFORM_FACTORY_RUNBOOK`, `MOD_DESIGN`, `SPAWN_DETERMINISM_RUNBOOK`,
+  `PLAYABLE_SELECTOR_OVERRIDE_ENV`); and the documents and documentation areas (
+  `HOME_SERVER_RUNBOOK`, `STAGING_SERVER_RUNBOOK`, `MOD_DESIGN`, `SPAWN_DETERMINISM_RUNBOOK`,
   `PENDING_MERGE_DIR`, `PROJECT_INSTRUCTIONS`, `RETIRED_TOP_LEVEL_FOLDERS` with
   `is_retired_top_level_folder`, `HISTORICAL_PATH_SPELLINGS`, `PERMALINK_BASE`).
-- `build_output`: `BUILD_OUTPUT_FOLDER`, the purpose subfolder names (`DEV_API_SUBFOLDER`, the
-  `GATE_*` folders and prefixes, `CONTINUOUS_INTEGRATION_SUBFOLDER`, `MCP_DAEMON_SUBFOLDER`,
-  `DATABASE_SELFTEST_SUBFOLDER`, `RUN_TARGET_SUBDIR`, `PURPOSE_SUBFOLDERS`),
-  `build_output_subfolder`, and the retired root-level names with
-  `is_retired_root_level_build_folder`.
+- `build_output`: `BUILD_OUTPUT_FOLDER`, `ToolchainEnvironment` with `toolchain_build_folder` (the
+  `target/host` and `target/container` split), the purpose subfolder names (`DEV_API_SUBFOLDER`,
+  the `GATE_*` folders and prefix, `CONTINUOUS_INTEGRATION_SUBFOLDER`, `MCP_DAEMON_SUBFOLDER`,
+  `DATABASE_SELFTEST_SUBFOLDER`, `PURPOSE_SUBFOLDERS`) and `build_output_subfolder`.
 - `documentation`: `DOCUMENTATION_ROOT`.
 - `workspace_folders`: the workspace's top-level folders (`ENFUSION_MOD_DIR`, `LIBRARY_CRATES_DIR`,
   `TOOLS_DIR`), the API server crate (`API_SERVER_CRATE_DIR`), and the API database crate with its SQL folders

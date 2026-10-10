@@ -25,6 +25,7 @@ tools/commands/ci_task_catalog/src/
 ├── task_runner/         the runner, the child environment, `help`, the gate list
 ├── task_runner.rs       the `Task`, `Step` and `Lane` types, re-exports
 ├── wasm32_lint_lane.rs  the packages the wasm32 lint covers, derived from the workspace, and the `wasm-ci` row's lint step
+├── wave_gate_steps/     the `mk` helper commands the ticket manager's slice and wave gates run (`changed-packages`, `gate-step <name>`, `preflight-api-freshness`, `target-abi-guard`)
 └── workspace_member_tests.rs  the `workspace-member-tests` task: one `cargo test --workspace` excluding the API and frontend families
 ```
 
@@ -136,10 +137,12 @@ the rest in one `cargo clippy --target wasm32-unknown-unknown`.
 - Used by:
   - `tools/xtask/src/cli/dispatch.rs`, for `ci`, `help` and `mk`;
   - `tools/xtask/src/commands/schema/dispatch.rs`, whose `schema list-gates` prints the
-    `schema-validate` step names, and `tools/commands/platform_execution/src/wave_execution/schema.rs`,
-    which checks the wave gate's list against them;
-  - `tools/commands/platform_execution/src/wave_execution/gate/gate_dispatch.rs`, whose
-    `test workspace members` step runs `workspace_test_argv`;
+    `schema-validate` step names, and `wave_gate_steps/schema_step.rs`, which checks the wave
+    gate's list against them;
+  - `wave_gate_steps/clippy_lanes.rs`, whose `test-workspace-members` gate step runs
+    `workspace_test_argv`;
+  - the central ticket manager's slice and wave gates, which run the `wave_gate_steps` helpers
+    through `cargo xtask mk` ([`ticket_manager_execution.toml`](/ticket_manager_execution.toml));
   - `.github/workflows/ci.yml` (`api-test`, `workspace-member-tests`, `ci-local-schema`,
     `verify-editorconfig`, `verify-language-bans`, and `rust-fmt`, `rust-clippy`, `wasm-ci` and
     `ci-local-leptos` through `mk`) and `.github/workflows/editor-gates.yml` (`ci-chrome`,

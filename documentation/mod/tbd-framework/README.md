@@ -53,5 +53,5 @@ the screens; each screen folder holds its `<screen>_specification.md` feature do
 
 ## Related documentation
 
-- [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — how a mod slice is
-  built and verified
+- [Mod commands](/tools/commands/mod_operations/src/README.md) — the compile gate and the world
+  boot that verify a mod change

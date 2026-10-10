@@ -65,9 +65,9 @@ scan::walk_files + matching_lines ──► Result<Vec<Hit>, NotRun>   (the call
 - `gate`: the verifications and the `debug`, `deploy` and `mcp` command groups.
 - `scan`: the `architecture`, `database`, `language_bans`, `licensing` and `mod_scripts`
   verifications, the CI task runner and `tools/commands/mod_operations/src/mission_test.rs`.
-- `lock`: the platform wave driver (`tools/commands/platform_execution/src/wave_execution/lock.rs`
-  and `mod.rs`, which resolves `GATE_LOCK_RELPATH`) and the MCP broker start
-  (`tools/commands/enfusion_mcp/src/call.rs`, one lock per socket).
+- `lock`: the MCP broker start (`tools/commands/enfusion_mcp/src/call.rs`, one lock per socket);
+  the ticket manager's wave gate takes the file `GATE_LOCK_RELPATH` names through its own `flock`
+  (`gate_lock` in `ticket_manager_execution.toml`).
 
 ## Boundaries
 

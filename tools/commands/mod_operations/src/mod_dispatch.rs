@@ -58,6 +58,5 @@ pub fn run(cmd: ModCmd) -> Result<u8> {
         ModCmd::Compile { args } => crate::compile::run(&args),
         ModCmd::CompilePreflight => crate::compile::run_preflight(),
         ModCmd::WorldBoot { args } => crate::world_boot::run(&args),
-        ModCmd::Wave { args } => crate::wave_execution::run(&args),
     }
 }

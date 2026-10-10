@@ -1,14 +1,15 @@
 //! The gate lock — `flock(2)`, with "I failed to lock" made unrepresentable.
 //!
 //! **Role:** the exclusive file lock that serialises the expensive steps of parallel worktrees.
-//! **Position:** over [`crate::verdict`]; the platform wave driver and the MCP broker start hold it.
+//! **Position:** over [`crate::verdict`]; the MCP broker start holds it, and the ticket manager's
+//! wave gate takes the same file (`gate_lock` in `ticket_manager_execution.toml`).
 //! **Signals & state:** a [`GateLock`] owns the open lock file; dropping it releases the lock.
 //! **Invariants:** a [`GateLock`] exists only after a successful acquisition; running out of time
 //! is [`NotRun::Timeout`].
 //!
 //! ── THE DEFECT THIS TYPE EXISTS TO PREVENT ───────────────────────────────────────────────────
 //!
-//! `cargo xtask platform wave` serialises its expensive steps on one lock file so that two
+//! The ticket manager's wave gate serialises its expensive steps on one lock file so that two
 //! worktrees cannot build into the same paths at once. Tracking that in a separate success flag —
 //! a variable the acquiring function sets to 1 when it believes it succeeded — is the same shape
 //! as a gate that reports OK over an input it never examined: a failed lock (a full disk, say)
