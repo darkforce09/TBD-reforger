@@ -21,7 +21,7 @@ routes, models and rules exactly; this document is the map that leads to them.
   `deploy/systemd/tbd-website-api.service` runs on the deploy host.
 - Related: the [environment variable reference](/documentation/crates/api/api_server/environment_variables.md),
   the [API decisions log](/documentation/crates/api/api_server/decisions.md), the
-  [API design notes](/documentation/crates/api/api_server/verification_evidence/README.md) of
+  [API design notes](/documentation/crates/api/api_server/design_notes/README.md) of
   each domain, and the [frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md)
   of the pages that call it.
 
@@ -29,8 +29,8 @@ routes, models and rules exactly; this document is the map that leads to them.
 
 ### Boot
 
-1. `Config::load` reads the environment and the first `.env` found upward from the working
-   directory; a required variable that is empty, or a set value that cannot work, stops the boot
+1. The binary loads the settings file (`TBD_API_ENV_FILE`, else `deploy/api.env` under the
+   checkout root), then `Config::load` reads the environment; a required variable that is empty, or a set value that cannot work, stops the boot
    (the [environment variable reference](/documentation/crates/api/api_server/environment_variables.md)
    lists each rule).
 2. `api_database::connect` opens the Postgres pool with the `TBD_DB_POOL_*` settings.
@@ -168,11 +168,11 @@ stream of an inactive server are a 404 for anyone but an administrator; and `GET
 answers `fleet {servers, totals}` over the active servers in place of a single server status. The
 match-telemetry ingests answer a refusal the game runtime must act on as a 400 or 409 carrying
 `details.code`, never a 404; the
-[telemetry design](/documentation/crates/api/api_server/verification_evidence/telemetry.md) lists the
+[telemetry design](/documentation/crates/api/api_server/design_notes/telemetry.md) lists the
 codes, the results-revision rules and the event batch rules.
 
 The administration and content routes answer these shapes; the
-[administration and content design](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md)
+[administration and content design](/documentation/crates/api/api_server/design_notes/administration_and_content.md)
 holds the full rules:
 
 - `GET /admin/users` answers one page of the roster, `{items, page, per_page, total}`, ordered by
@@ -316,24 +316,16 @@ cargo xtask db test-it
 
 Then call the changed endpoint and compare its JSON with the domain's `models/` and the matching
 DTO in `crates/frontend/foundation/frontend_api_dtos/src/`. The per-domain design notes are
-indexed in the [API design notes](/documentation/crates/api/api_server/verification_evidence/README.md).
+indexed in the [API design notes](/documentation/crates/api/api_server/design_notes/README.md).
 
 ## Open work
 
-- [T-940 — Website platform: events, telemetry, admin, content](/documentation/tickets/specs/t940_website_platform.md)
-  (queued, [plan](/documentation/tickets/plans/t-940_plan.md)): the program whose open children
-  follow.
-- [T-940.10 — Mortar ballistics crate for API and offline frontend](/documentation/tickets/specs/t940_website_platform.md)
-  (ready, [plan](/documentation/tickets/plans/t-940_10_plan.md)): the scope is built by
-  milestone B, [game ballistics](/documentation/crates/api/api_server/verification_evidence/game_ballistics.md):
-  `fire_mission_planning`'s `solve_fire_mission` runs in the mortar page, which solves without the API
-  and works offline, and in `POST /api/v1/fire-missions`, which re-solves every save; the
-  registry closes the ticket with the milestone.
-- [T-940.13 — Combat, medical and vehicle telemetry events](/documentation/tickets/specs/t940_website_platform.md)
-  (ready, [plan](/documentation/tickets/plans/t-940_13_plan.md)): the events schema
-  (`contracts/definitions/match-telemetry.schema.json`), `POST /api/v1/ingest/match-events` and
-  `GET /api/v1/matches/{matchId}/events` exist; the after-action replay that plays them does
-  not.
+- Website platform: events, telemetry, admin, content (ticket `website-platform-events-telemetry` in
+  `ttm`): the program whose open children follow.
+- Combat, medical and vehicle telemetry events (ticket
+  `website-platform-events-telemetry.combat-medical-vehicle-telemetry` in `ttm`): the events schema
+  (`contracts/definitions/match-telemetry.schema.json`), `POST /api/v1/ingest/match-events` and `GET
+  /api/v1/matches/{matchId}/events` exist; the after-action replay that plays them does not.
 
 ## Decisions
 

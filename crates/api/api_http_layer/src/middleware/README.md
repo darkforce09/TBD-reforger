@@ -112,5 +112,5 @@ reconnects with `Last-Event-ID` as after any end of stream.
 
 ## Related documentation
 
-- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/design_notes/identity_transactions.md)
   — how a bearer token's persisted session supplies the caller's current authority.

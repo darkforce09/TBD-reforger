@@ -20,7 +20,9 @@ pub fn catalog_sap_cells(terrain: &str) -> Result<u8> {
         return Ok(1);
     }
     let out_dir = map_scratch_dir(&find_repository_root()?, "everon").join("sap"); // E2c-allow
-    let vfs = PakVfs::open_default()?;
+    let vfs = PakVfs::open_default(&repository_layout::enfusion_mcp_game_root(
+        &repository_root::find_repository_root()?,
+    ))?;
     let cells = super::super::enfusion_texture_decoder::list_eden_cells(&vfs);
     if cells.len() as u32 != CELL_COUNT {
         eprintln!(

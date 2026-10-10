@@ -66,10 +66,7 @@ carries on, so the resolver falls to the npm cache or a download. To install by 
     module, and `server_entrypoint` in `tools/commands/enfusion_mcp/src/`,
     which resolves it for `mcpd`;
   - `cargo xtask mcp call` and `cargo xtask mcp daemon` (`tools/commands/enfusion_mcp/src/`),
-    through that resolver, and `cargo xtask mod dev-bootstrap`, which runs `npm ci` here;
-  - the repository root's `.cursor/mcp.json`, which starts the installed module with `node` by an
-    absolute path. `mod/.mcp.json` starts `npx -y enfusion-mcp` instead, which this package
-    does not pin.
+    through that resolver, and `cargo xtask mod dev-bootstrap`, which runs `npm ci` here.
 - Rules: `package.json` exists here; the entry module stays under this folder's `node_modules/`;
   only the manifest, the lockfile and `.nvmrc` are tracked.
 

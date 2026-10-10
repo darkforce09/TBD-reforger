@@ -194,14 +194,13 @@ rows added for shipped code.
 
 ## Open work
 
-- [T-848 — Group to must use exclusive ORBAT membership](/documentation/tickets/specs/t848_group_to_exclusive_orbat.md)
-  (ready, [plan](/documentation/tickets/plans/t-848_plan.md)): "Group to" moves the slot into
-  the target's squad instead of stacking an edge.
-- [T-939.6 — Canvas: error badges and connection wires](/documentation/tickets/specs/t939_editor_usability.md)
-  (ready, [plan](/documentation/tickets/plans/t-939_6_plan.md)): validation findings show as
-  badges on the map beside the connection wires.
-- [T-1050 — Fix mission re-hydrate keeping stale connections](/.ai/tickets/T-1050.toml) (idea, no
-  plan): a re-hydrate clears connections first.
+- Group to must use exclusive ORBAT membership (ticket `group-must-use-exclusive` in `ttm`): "Group
+  to" moves the slot into the target's squad instead of stacking an edge.
+- Canvas: error badges and connection wires (ticket
+  `editor-usability-selection-gizmo.error-badges-connection-wires` in `ttm`): validation findings
+  show as badges on the map beside the connection wires.
+- Fix mission re-hydrate keeping stale connections (ticket `fix-mission-re-hydrate` in `ttm`): a
+  re-hydrate clears connections first.
 
 ## Decisions
 

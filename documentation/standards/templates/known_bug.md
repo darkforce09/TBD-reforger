@@ -44,8 +44,7 @@ what was ruled out.>
 
 ## Related tickets
 
-- [<ticket id> — <ticket title>](<link to its spec, or to its .ai/tickets file when it has none>)
-  (<status>): <what it did or will do>
+- <ticket title> (ticket `<ticket slug>` in `ttm`, <status>): <what it did or will do>
 ````
 
 ## Worked sample
@@ -108,8 +107,8 @@ resolved and whether the gate's font cache is in place.
 
 ## Related tickets
 
-- [T-177 — MC chrome UX + ORBAT dock cutover](/documentation/tickets/specs/t177_mc_chrome_orbat_cutover.md)
-  (shipped): the full Chromium build and `--headless=new`.
-- [T-320 — Gate harness wedges on editor — CDP unverifiable](/.ai/tickets/T-320.toml) (shipped):
-  the gate-owned font cache.
+- MC chrome UX + ORBAT dock cutover (ticket `mc-chrome-ux-orbat` in `ttm`, shipped): the full
+  Chromium build and `--headless=new`.
+- Gate harness wedges on editor — CDP unverifiable (ticket `gate-harness-wedges-editor` in `ttm`,
+  shipped): the gate-owned font cache.
 ````

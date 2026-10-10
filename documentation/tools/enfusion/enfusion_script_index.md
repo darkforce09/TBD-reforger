@@ -17,8 +17,7 @@ document that cites a symbol the tables do not hold. Mod developers and the AI a
   behind `enf extract`).
 - Entry: `cargo run -q -p developer_tools --bin enf -- <command>`; the ten commands are in the
   [executables README](/tools/developer_tools/src/bin/README.md#enf).
-- Related features: the [mod slice workflow](/documentation/runbooks/mod_slice_workflow.md),
-  which sets when a slice consults the oracle and which oracle lanes it may read; the
+- Related features: the
   [capability verdicts](/documentation/mod/tbd-framework/capability_verdicts.md), the table
   `enf capability` checks; the [Enfusion MCP tooling runbook](/documentation/runbooks/enfusion_mcp_tooling.md),
   for the live [Workbench](/documentation/glossary/n_to_z.md#workbench) half of the same tooling.
@@ -29,7 +28,7 @@ document that cites a symbol the tables do not hold. Mod developers and the AI a
 
 ```text
 mod/References/crf_framework/     ──▶ enf index crf     ─┐
-mod/References/vanilla_reference/ ──▶ enf index vanilla ─┴▶ .ai/artifacts/enf-index/<lane>_{symbols,files,modded,rplprops}.tsv
+mod/References/vanilla_reference/ ──▶ enf index vanilla ─┴▶ mod/reference_symbol_index/<lane>_{symbols,files,modded,rplprops}.tsv
 game paks ─▶ enf extract | enf carve ─▶ mod/References/vanilla_reference/{Scripts,Carved}/
 cargo xtask fetch vanilla-api    ─▶ cached Script API pages ─▶ enf apidoc ─▶ vanilla_api_{classes,members}.tsv
 cargo xtask fetch vanilla-source ─▶ cached source pages     ─▶ enf source ─▶ mod/References/vanilla_reference/Source/
@@ -61,27 +60,26 @@ cargo xtask fetch vanilla-source ─▶ cached source pages     ─▶ enf sourc
   the coordinates, so no line number is typed by hand.
 - `enf capability` joins the framework index with the rules in
   `documentation/mod/tbd-framework/capability_verdicts.tsv`, writes
-  `.ai/artifacts/enf-index/capability_matrix.tsv`, and exits 1 when a framework file matches no
+  `mod/reference_symbol_index/capability_matrix.tsv`, and exits 1 when a framework file matches no
   rule, so no upstream subsystem goes untriaged.
 
 ### Where the checks run
 
-Both checks run by hand and as steps of the mod wave gate
-(`tools/commands/mod_operations/src/wave_execution/execution.rs`), which calls `enf capability` and
-`enf citations` through `cargo run -q -p developer_tools --bin enf` and runs this crate's unit tests
-with `cargo test -q -p enfusion_script_index --lib`. No CI workflow runs the two checks; CI runs
+Both checks run by hand and as steps of the mod wave gate of the ticket manager's runner, which
+calls `enf capability` and `enf citations` through `cargo run -q -p developer_tools --bin enf` and
+runs this crate's unit tests with `cargo test -q -p enfusion_script_index --lib`. No CI workflow runs the two checks; CI runs
 the unit tests with every workspace member.
 
 ## Data
 
-- `.ai/artifacts/enf-index/`: the committed tables, `crf_*.tsv` and `vanilla_*.tsv` (symbols,
+- `mod/reference_symbol_index/`: the committed tables, `crf_*.tsv` and `vanilla_*.tsv` (symbols,
   files, `modded`, `rplprops`), `vanilla_api_classes.tsv` and `vanilla_api_members.tsv`, and the
   generated `capability_matrix.tsv`.
 - `documentation/mod/tbd-framework/capability_verdicts.tsv`: the hand-kept verdict per
   framework path prefix; its format is in the capability verdicts document.
 - The `crf_framework` and `vanilla_reference` lanes of
   [`mod/References/`](/mod/References/README.md): the gitignored source lanes, linked
-  into each slice worktree by `cargo xtask platform slice-worktree`.
+  into each slice worktree by the ticket manager's runner.
 
 ## Design
 
@@ -93,9 +91,7 @@ and unlicensed source out of the repository while the facts stay checkable.
 
 ## Open work
 
-- [T-1001 — Mod wave gate calls make targets with no Makefile](/.ai/tickets/T-1001.toml) (idea,
-  no plan): the gate calls `enf citations`, `enf capability`, the schema validation and
-  `verify no-crf-leak` directly, so the oracle checks run on every mod wave.
+None.
 
 ## Decisions
 

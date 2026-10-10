@@ -35,7 +35,7 @@ does. Read the editing layer first. Each document follows the
 
 - Depends on: the [feature doc template](/documentation/standards/templates/feature_doc.md); the
   code of the mission editing crates and of the Mission Creator that calls them; the ticket
-  registry in `.ai/tickets/` for open work; the glossary for its terms.
+  manager (`ttm`) for open work; the glossary for its terms.
 - Used by: the READMEs of the mission editing crates, the
   [map rendering documentation](/documentation/crates/map_rendering/README.md) and its overview, and the
   [crate boundary rules](/documentation/standards/crate_boundary_rules.md).

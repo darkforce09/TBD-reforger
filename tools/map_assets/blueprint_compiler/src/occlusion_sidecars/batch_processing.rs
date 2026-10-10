@@ -385,6 +385,7 @@ mod asset_sources_and_classification;
 pub(crate) use asset_sources_and_classification::classify_prefab;
 pub(crate) use asset_sources_and_classification::cover_for_prefab;
 pub(crate) use asset_sources_and_classification::decode_asset;
+pub(crate) use asset_sources_and_classification::default_pak_dir;
 use asset_sources_and_classification::default_scale;
 pub(crate) use asset_sources_and_classification::open_sources;
 pub(crate) use asset_sources_and_classification::slug_of;

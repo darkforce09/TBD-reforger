@@ -30,9 +30,9 @@ decide in an access sheet who may join, from which pools, and why each participa
   where members see and join what this page schedules; the
   [API](/documentation/glossary/a_to_f.md#api)'s
   [operations domain](/crates/api/api_operations/src/README.md); the
-  [event administration evidence](/documentation/crates/api/api_server/verification_evidence/event_administration.md),
-  [eligibility and allocation evidence](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
-  and [reservation and attendance evidence](/documentation/crates/api/api_server/verification_evidence/reservation_attendance.md).
+  [event administration design note](/documentation/crates/api/api_server/design_notes/event_administration.md),
+  [eligibility and allocation design note](/documentation/crates/api/api_server/design_notes/event_eligibility_allocation.md)
+  and [reservation and attendance design note](/documentation/crates/api/api_server/design_notes/reservation_attendance.md).
 
 ## Behaviour
 
@@ -233,8 +233,7 @@ ACCESS SHEET (side sheet over the calendar)
 ```
 
 - Design target: the [event manager blueprint](/documentation/crates/frontend/pages/administration_pages/event_manager/visual_references/event_manager_blueprint/README.md),
-  a design-phase reference, and the archived platform spec's
-  [Event Manager section](/documentation/archive/go_and_react_era_design/platform_context_handoff.md#8-event-manager).
+  a design-phase reference.
   The built page differs from the blueprint:
   - the heading reads "Operations Calendar" with its own line, not "Event Manager" with
     "Schedule upcoming deployments and toggle registration locks.";
@@ -246,16 +245,16 @@ ACCESS SHEET (side sheet over the calendar)
 
 ## Open work
 
-- [T-1015 — Fix detach and delete confirm dialogs that misstate server effects](/.ai/tickets/T-1015.toml)
-  (idea, no plan): the detach and delete confirmations say what the API does: detaching withdraws
-  the attachment's registrations and keeps its ORBAT and history, and deleting withdraws every
-  reservation.
-- [T-1016 — Fix event manager calendar showing only the 20 earliest events](/.ai/tickets/T-1016.toml)
-  (idea, no plan): the calendar receives every operation, not only the API's first page of 20,
-  and a failed read no longer looks like an empty month.
-- [T-1019 — Fix operation scheduling toasting failed mission attaches as success](/.ai/tickets/T-1019.toml)
-  (idea, no plan): the schedule form checks each mission attach and reports a failed one instead
-  of counting the staged missions.
+- Fix detach and delete confirm dialogs that misstate server effects (ticket
+  `fix-detach-delete-confirm` in `ttm`): the detach and delete confirmations say what the API does:
+  detaching withdraws the attachment's registrations and keeps its ORBAT and history, and deleting
+  withdraws every reservation.
+- Fix event manager calendar showing only the 20 earliest events (ticket
+  `fix-event-manager-calendar` in `ttm`): the calendar receives every operation, not only the API's
+  first page of 20, and a failed read no longer looks like an empty month.
+- Fix operation scheduling toasting failed mission attaches as success (ticket
+  `fix-operation-scheduling-toasting` in `ttm`): the schedule form checks each mission attach and
+  reports a failed one instead of counting the staged missions.
 
 ## Decisions
 

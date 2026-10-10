@@ -116,46 +116,45 @@ Where the built crates differ from that target:
 
 ## Open work
 
-- [T-1058 — Fix map basemap switch back never restoring the satellite imagery](/.ai/tickets/T-1058.toml)
-  (idea, no plan): switching the basemap from `map` back to `satellite` shows the imagery again.
-- [T-1059 — Check whether empty uploads leave stale height and road labels](/.ai/tickets/T-1059.toml)
-  (idea, no plan): an empty height or road label upload removes the old labels, as the town
-  labels do.
-- [T-1062 — Derive map grid, basemap, peaks and forest from terrain size](/.ai/tickets/T-1062.toml)
-  (idea, no plan): the fixed 12,800 m constants give way to the loaded terrain's size.
-- [T-1063 — Check map render bench stress helpers and calibration hide](/.ai/tickets/T-1063.toml)
-  (idea, no plan): `seed_stress` and `clear_stress` stop destroying the map lanes, or go.
-- [T-1064 — Add guards for map binary formats and doll shader layout](/.ai/tickets/T-1064.toml)
-  (idea, no plan): the density decoder checks its version, and the doll's region and layout
-  constants get tests.
-- [T-1065 — Lint map engine render code in the wasm32 clippy step](/.ai/tickets/T-1065.toml)
-  (idea, no plan): `wasm-ci`'s wasm32 clippy compiles the render code, not the default tier
-  alone.
-- [T-1067 — Remove dead map engine code, facades and duplicated constants](/.ai/tickets/T-1067.toml),
-  [T-1068 — Rewrite stale map engine comments outside mission data](/.ai/tickets/T-1068.toml) and
-  [T-1069 — Rename unclear map engine modules and numbered file splits](/.ai/tickets/T-1069.toml)
-  (idea, no plan): cleanup across the former map engine code, including the placeholder field
-  docs of `RenderEngine`.
-- [T-1042 — Rename ticket ids out of code names and UI strings](/.ai/tickets/T-1042.toml) (idea,
-  no plan): the test names and messages that carry ticket ids get subject names.
-- [T-938 — Engine and wasm performance](/documentation/tickets/specs/t938_engine_perf.md)
-  (queued, [plan](/documentation/tickets/plans/t-938_plan.md)): pooled lane buffers, measured
-  chunk uploads, GPU culling for every icon lane, frame-sliced viewsheds and a wasm memory guard.
+- Fix map basemap switch back never restoring the satellite imagery (ticket `fix-map-basemap-switch`
+  in `ttm`): switching the basemap from `map` back to `satellite` shows the imagery again.
+- Check whether empty uploads leave stale height and road labels (ticket
+  `check-whether-empty-uploads` in `ttm`): an empty height or road label upload removes the old
+  labels, as the town labels do.
+- Derive map grid, basemap, peaks and forest from terrain size (ticket `derive-map-grid-basemap` in
+  `ttm`): the fixed 12,800 m constants give way to the loaded terrain's size.
+- Check map render bench stress helpers and calibration hide (ticket `check-map-render-bench` in
+  `ttm`): `seed_stress` and `clear_stress` stop destroying the map lanes, or go.
+- Add guards for map binary formats and doll shader layout (ticket `add-guards-map-binary` in
+  `ttm`): the density decoder checks its version, and the doll's region and layout constants get
+  tests.
+- Lint map engine render code in the wasm32 clippy step (ticket `lint-map-engine-render` in `ttm`):
+  `wasm-ci`'s wasm32 clippy compiles the render code, not the default tier alone.
+- Remove dead map engine code, facades and duplicated constants (ticket `remove-dead-map-engine` in
+  `ttm`), Rewrite stale map engine comments outside mission data (ticket
+  `rewrite-stale-map-engine-comments` in `ttm`) and Rename unclear map engine modules and numbered
+  file splits (ticket `rename-unclear-map-engine` in `ttm`): cleanup across the former map engine
+  code, including the placeholder field docs of `RenderEngine`.
+- Rename ticket ids out of code names and UI strings (ticket `rename-ticket-ids-out` in `ttm`): the
+  test names and messages that carry ticket ids get subject names.
+- Engine and wasm performance (ticket `engine-wasm-performance` in `ttm`): pooled lane buffers,
+  measured chunk uploads, GPU culling for every icon lane, frame-sliced viewsheds and a wasm memory
+  guard.
 
 Open work of the former map engine outside the rendering crates, kept here until each subject's
 crate has a feature doc:
 
-- [T-1049 — Add @contract tags to map-engine compiled mission document structs](/.ai/tickets/T-1049.toml)
-  (idea, no plan): the AST, world, io and descriptor models that project `contracts` schemas
-  gain `@contract` tags the citations gate resolves.
-- [T-1061 — Check world line-of-sight sidecar eviction ignoring recency](/.ai/tickets/T-1061.toml)
-  (idea, no plan): the line-of-sight occluder's sidecar cap evicts the least recently used
-  sidecar, as the chunk residency does, instead of the lowest path.
-- [T-1066 — Fix map object instance schema naming a nonexistent pod file](/.ai/tickets/T-1066.toml)
-  (idea, no plan): the schema cites `io/pod/instance.rs`.
-- [T-1071 — Decide whether ignored map engine inputs are intended](/.ai/tickets/T-1071.toml)
-  (idea, no plan): the hillshade slope scale, the satellite `Retry-After` and the archived
-  blueprints' door and furniture fields are used or documented as ignored.
+- Add @contract tags to map-engine compiled mission document structs (ticket `add-contract-tags-map`
+  in `ttm`): the AST, world, io and descriptor models that project `contracts` schemas gain
+  `@contract` tags the citations gate resolves.
+- Check world line-of-sight sidecar eviction ignoring recency (ticket `check-world-line-sight` in
+  `ttm`): the line-of-sight occluder's sidecar cap evicts the least recently used sidecar, as the
+  chunk residency does, instead of the lowest path.
+- Fix map object instance schema naming a nonexistent pod file (ticket `fix-map-object-instance` in
+  `ttm`): the schema cites `io/pod/instance.rs`.
+- Decide whether ignored map engine inputs are intended (ticket `decide-whether-ignored-map` in
+  `ttm`): the hillshade slope scale, the satellite `Retry-After` and the archived blueprints' door
+  and furniture fields are used or documented as ignored.
 
 ## Decisions
 

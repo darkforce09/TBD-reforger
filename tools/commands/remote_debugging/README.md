@@ -1,26 +1,23 @@
 # Remote debugging
 
-The `remote_debugging` crate, behind the `cargo xtask debug` and `cargo xtask repro` groups and
+The `remote_debugging` crate, behind the `cargo xtask debug` group and
 `cargo xtask mod remote-logs`: the tools a developer runs by hand when something fails away from
-the checkout. The debug probes find out why a client cannot join the staging game server, the
+the checkout. The debug probes find out why a client cannot join the staging game server, and the
 remote log verdict grades the boot of the [mod](/documentation/glossary/g_to_m.md#mod) from the
-staging server's `console.log`, and the reproduction replays large
-[mission](/documentation/glossary/g_to_m.md#mission) version uploads against a local
-[API](/documentation/glossary/a_to_f.md#api).
+staging server's `console.log`.
 
 ## Contents
 
 ```text
 tools/commands/remote_debugging/
 ├── Cargo.toml  the `remote_debugging` library package: `clap`, `deploy_settings`, `deployment`, `process_runner`, `repository_layout`, layout tier 6
-└── src/        the debug group, the remote log verdict, the repro group and the errors
+└── src/        the debug group, the remote log verdict and the errors
 ```
 
 ## How it works
 
-`tools/xtask/src/cli/mod.rs` mounts `DebugCmd` as the `debug` group and `ReproCmd` as the
-`repro` group; `tools/xtask/src/cli/dispatch.rs` hands them to `remote_debugging::debug::run` and
-`remote_debugging::reproduction::run`, and `tools/commands/mod_operations/src/mod_dispatch.rs` sends
+`tools/xtask/src/cli/mod.rs` mounts `DebugCmd` as the `debug` group;
+`tools/xtask/src/cli/dispatch.rs` hands it to `remote_debugging::debug::run`, and `tools/commands/mod_operations/src/mod_dispatch.rs` sends
 `mod remote-logs` to `remote_debugging::debug::remote_logs::run`. Every entry returns the
 command's exit code; an `Error` means the command could not run, and xtask prints it as
 `xtask: <cause>` with exit 1.
@@ -31,8 +28,8 @@ command's exit code; an `Error` means the command could not run, and xtask print
   so a fleet the deploy refuses is refused here too.
 - Every child process (ssh, sshpass, ping, curl) runs through `process_runner`; a probe that
   cannot reach the host records that in its row or its verdict and never fails the command.
-- `src/debug/README.md`, `src/debug/remote_logs/README.md` and `src/reproduction/README.md` give
-  each command's synopsis, behaviour and exit codes.
+- `src/debug/README.md` and `src/debug/remote_logs/README.md` give each command's synopsis,
+  behaviour and exit codes.
 
 ## Boundaries
 
@@ -40,8 +37,8 @@ command's exit code; an `Error` means the command could not run, and xtask print
   `deployment` (the staging fleet's instances, ports, folders and units), `process_runner`,
   `repository_root` (the checkout root), `verification_core` (`NotRun`, patterns and probes),
   `time_source` (the NDJSON rows' timestamps), `clap`, `serde_json`, `regex` and `thiserror`.
-- Used by: the `debug`, `repro` and `mod` groups of `tools/xtask`; `cargo xtask deploy staging`,
-  which runs `mod remote-logs` last; people diagnosing a failed join, boot or upload.
+- Used by: the `debug` and `mod` groups of `tools/xtask`; `cargo xtask deploy staging`, which
+  runs `mod remote-logs` last; people diagnosing a failed join or boot.
 - Rules:
   - An unreadable or absent log is ENVIRONMENT, never a zero count.
   - The remote log vocabulary is shared by hand with
@@ -52,7 +49,7 @@ command's exit code; an `Error` means the command could not run, and xtask print
 Run from the repository root:
 
 ```bash
-cargo build -p remote_debugging   # the probes, the verdicts and the token extraction
+cargo build -p remote_debugging   # the probes and the verdicts
 ```
 
 ## Related documentation
@@ -62,5 +59,3 @@ cargo build -p remote_debugging   # the probes, the verdicts and the token extra
   server the debug commands probe.
 - [Boot and log verification](/documentation/runbooks/game_server_staging/boot_and_log_verification.md)
   — running `mod remote-logs`, its four outcomes and the log lines it matches.
-- [Local development](/documentation/runbooks/local_development.md) — the database and the API
-  the upload reproduction runs against.

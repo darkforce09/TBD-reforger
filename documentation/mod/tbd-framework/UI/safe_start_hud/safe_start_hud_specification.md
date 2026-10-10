@@ -100,7 +100,7 @@ The HUD makes no HTTP call and sends no RPC of its own:
 
 ## Open work
 
-None. Checked `.ai/tickets/` for open tickets on safe start, its countdown and its notices.
+None. Checked `ttm` for open tickets on safe start, its countdown and its notices.
 
 ## Decisions
 

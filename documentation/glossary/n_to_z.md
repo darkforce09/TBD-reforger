@@ -18,7 +18,7 @@ partial run still writes a failing receipt that names its missing dependencies.
 
 In code: `tools/commands/staging_procedures/src/procedure_receipts/`.
 
-See: [Staging receipts design](/documentation/crates/api/api_server/verification_evidence/staging.md), [Staging procedure receipts](/tools/commands/staging_procedures/src/procedure_receipts/README.md).
+See: [Staging receipts design](/documentation/crates/api/api_server/design_notes/staging.md), [Staging procedure receipts](/tools/commands/staging_procedures/src/procedure_receipts/README.md).
 
 ### operations
 
@@ -36,13 +36,13 @@ See: [Operations domain](/crates/api/api_operations/src/README.md).
 A source an agent checks a fact against instead of recalling it. The Enfusion script oracle is the
 `enf` tool over the vanilla game scripts and the upstream framework: it indexes their symbols,
 answers lookups and checks `@idx` citations. Its sources, the gitignored oracle lanes, are linked
-into every [slice](#slice) worktree to read and cite, never to copy. The ballistics oracle is the tbd-export
+into every [slice](#slice) worktree by the ticket manager's runner to read and cite, never to copy. The ballistics oracle is the tbd-export
 Workbench plugin and play-mode component that record the engine's own shell flights, against
 which a ballistics catalog is calibrated.
 
-In code: `tools/enfusion/enfusion_script_index/src/` (the `enf` binary); the lane links in `tools/commands/platform_execution/src/slice_worktree/git_plain.rs`; `cargo xtask verify no-crf-leak`; `mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/` and `mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle/`.
+In code: `tools/enfusion/enfusion_script_index/src/` (the `enf` binary); `cargo xtask verify no-crf-leak`; `mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/` and `mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle/`.
 
-See: [Enfusion script oracle](/tools/enfusion/enfusion_script_index/src/README.md), [Oracle lanes](/documentation/runbooks/mod_slice_workflow.md#oracle-lanes), [Ballistics oracle run](/documentation/runbooks/ballistics_oracle_run.md).
+See: [Enfusion script oracle](/tools/enfusion/enfusion_script_index/src/README.md), [Ballistics oracle run](/documentation/runbooks/ballistics_oracle_run.md).
 
 ### ORBAT
 
@@ -55,13 +55,13 @@ See: [ORBAT selection page](/crates/frontend/pages/operations_pages/src/orbat_se
 
 ### orchestrator
 
-The agent session that plans, launches, reviews, integrates and verifies the work of sub-agents,
-never implementing beyond mechanical fixes: in a sub-agent program and in the factory's
-[wave](#wave) alike. In the mod, the round orchestrator `TBD_FrameworkManager`.
+The agent session that launches sub-agents, reviews their reports against the tree, runs the
+gates and commits when the operator asks: in an operator-requested sub-agent program and in the
+factory's [wave](#wave) alike. In the mod, the round orchestrator `TBD_FrameworkManager`.
 
-In code: `cargo xtask platform wave`; `mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/`.
+In code: `mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/`.
 
-See: [Sub-agent orchestration](/documentation/runbooks/sub_agent_orchestration.md), [Factory waves](/documentation/runbooks/factory_waves/README.md), [command center](/documentation/glossary/a_to_f.md#command-center).
+See: [Sub-agent orchestration](/documentation/runbooks/sub_agent_orchestration.md), [command center](/documentation/glossary/a_to_f.md#command-center).
 
 ### personnel
 
@@ -72,16 +72,6 @@ member's [role](#role) follows their Discord roles, so the dossier explains it a
 In code: `PersonnelRosterPage` in `crates/frontend/pages/administration_pages/src/personnel/`.
 
 See: [Personnel roster page](/documentation/crates/frontend/pages/administration_pages/personnel/personnel_roster_page.md).
-
-### perturbation proof
-
-Evidence that a check can fail: a deliberate defect is planted in the code or data a new test or
-gate guards, the check is run and its red cases recorded, and the file is restored and proven
-byte-equal to its saved copy by `sha256sum`. Every new check in a sub-agent program carries one.
-
-In code: none; each proof is a row of the program's execution record, with its logs.
-
-See: [orchestrator](#orchestrator), [Sub-agent orchestration](/documentation/runbooks/sub_agent_orchestration.md).
 
 ### probable error
 
@@ -210,14 +200,15 @@ See: [Offline mortar page](/documentation/runbooks/offline_mortar_page.md), [Mor
 ### slice
 
 One ticket's unit of work in the [factory](/documentation/glossary/a_to_f.md#factory) or the mod
-program, built by one agent in its own git worktree, `.ai/artifacts/worktrees/<slice>/` on the
-branch `slice/<slice>` made from `main`. The agent runs the slice
+program, built by one agent in its own git worktree under `.worktrees/<slice>/` on the branch
+`slice/<slice>` made from `main`. The agent runs the slice
 [gate](/documentation/glossary/g_to_m.md#gate) and reports; the orchestrator lands it. A
 sub-slice, with two dots in its ID, shares its parent's worktree.
 
-In code: `cargo xtask platform slice-worktree` in `tools/commands/platform_execution/src/slice_worktree/`, which also links the [oracle](#oracle) lanes; `cargo xtask platform slice-run`; `cargo xtask platform wave gate`.
+In code: none in the repository; the central ticket manager (`ttm`) creates, gates and merges the
+slice worktrees.
 
-See: [wave](#wave), [Factory waves](/documentation/runbooks/factory_waves/README.md).
+See: [wave](#wave), [factory](/documentation/glossary/a_to_f.md#factory).
 
 ### slot
 
@@ -279,13 +270,14 @@ See: [load workload](/documentation/glossary/g_to_m.md#load-workload), [staging 
 
 One unit of planned work, held in the central ticket manager under the project `reforger` and
 keyed by a readable slug (`slot-identity.flatten-emit`); a ticket imported with a legacy number
-(`T-674.1`) still resolves by it. A ticket is a `program` with child slices or `work`, and its
-status runs from `idea` to `shipped` or `cancelled`. Every ticket operation is a
-`ttm --project reforger` command; the legacy files in `.ai/tickets/` are data awaiting import.
+(`T-674.1`) still resolves by it (`ttm --project reforger resolve <reference>`). A ticket is a
+`program` with child slices or `work`, its status runs from `idea` to `shipped` or `cancelled`,
+and its spec and plan are stored beside it. Every ticket operation is a `ttm --project reforger`
+command; no ticket file lives in the repository.
 
-In code: `TicketDocument` in `tools/foundation/ticket_manager_client/src/ticket_documents.rs`; `TicketSlug` and `LegacyTicketNumber` in `tools/foundation/ticket_manager_client/src/ticket_references.rs`.
+In code: none in the repository; the central ticket manager's `ttm` command line.
 
-See: [wave](#wave), [slice](#slice), [Ticket manager client](/tools/foundation/ticket_manager_client/README.md).
+See: [wave](#wave), [slice](#slice).
 
 ### time fuze
 
@@ -305,12 +297,12 @@ See: [charge ring](/documentation/glossary/a_to_f.md#charge-ring), [Game ballist
 A numbered group of [tickets](#ticket) in the wave plan the central ticket manager holds
 (`ttm --project reforger wave show`), which `ttm --project reforger wave repack` alone rewrites.
 Tickets run in parallel only when the files they own do not overlap (`ttm --project reforger wave
-collisions`); `cargo xtask platform wave` and `cargo xtask mod wave` drive a wave for the platform
-and the mod, and a closed wave is recorded with `ttm --project reforger wave close`.
+collisions`); the ticket manager's runner drives a wave for the platform and the mod, and a closed
+wave is recorded with `ttm --project reforger wave close`.
 
-In code: `WavePlan` and `WaveRow` in `tools/foundation/ticket_manager_client/src/wave_documents.rs`; `tools/commands/platform_execution/src/wave_execution/`; `tools/commands/mod_operations/src/wave_execution/`.
+In code: none in the repository; the central ticket manager's `ttm` command line.
 
-See: [Factory waves](/documentation/runbooks/factory_waves/README.md).
+See: [ticket](#ticket), [slice](#slice), [factory](/documentation/glossary/a_to_f.md#factory).
 
 ### Workbench
 

@@ -18,7 +18,7 @@ documentation/architecture/
 [Workspace layout](/documentation/architecture/workspace_layout.md) describes the tree as it is at
 the latest commit, never as planned: a change that moves a top-level folder, adds or removes a
 workspace member or changes where a kind of file lives updates it in the same commit. The
-[directory atlas](/CLAUDE.md#2-monorepo-directory-atlas) in `CLAUDE.md` names the folders one
+[repository map](/CLAUDE.md#3-repository-map) in `CLAUDE.md` names the folders one
 level deeper, and the [crate boundary rules](/documentation/standards/crate_boundary_rules.md)
 state the laws every member is held to.
 
@@ -33,14 +33,10 @@ state the laws every member is held to.
 
 - Depends on: the root `Cargo.toml` and the tracked tree, which every statement is checked
   against; the [documentation standards](/documentation/standards/documentation_standards.md).
-- Used by: the [documentation entry](/documentation/README.md), `CLAUDE.md`, the Cursor platform
-  rule and the archive topics whose layout plans it replaces.
+- Used by: the [documentation entry](/documentation/README.md) and `CLAUDE.md`.
 - Rules: describes only what exists; a planned path is written as plain text, never as a
   backticked path.
 
 ## Related documentation
 
-- [Architecture blueprint draft](/documentation/archive/restructure_research/00_architecture_blueprint_draft.md)
-  — the archived first draft of the crate workspace, which this document succeeds as the living
-  description.
 - [Where does X go?](/documentation/standards/where_does_x_go.md) — where a new file belongs.

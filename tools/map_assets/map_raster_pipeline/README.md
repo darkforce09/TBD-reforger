@@ -54,7 +54,7 @@ satellite and DEM lanes read Git LFS objects there (`git lfs pull --include "ass
 
 | Variable | Default | Effect |
 |---|---|---|
-| `ENFUSION_GAME_PATH` | `$HOME/.cache/enfusion-mcp-root` | the game folder whose archives `stitch-sap-ortho`, `analyze-water` and `build-cartographic` read (through `enfusion_pak`) |
+| `ENFUSION_GAME_PATH` | `<checkout>/.workstation/enfusion_mcp_game_root` | the game folder whose archives `stitch-sap-ortho`, `analyze-water` and `build-cartographic` read (through `enfusion_pak`) |
 
 ## Boundaries
 

@@ -158,9 +158,9 @@ schema file itself.
 
 ## Open work
 
-- [T-1080 — Clean up contract schema descriptions, $id hosts and workflow name](/.ai/tickets/T-1080.toml)
-  (idea, no plan): the bridge schema's description stops naming a phase for the transport
-  choice.
+- Clean up contract schema descriptions, $id hosts and workflow name (ticket
+  `clean-up-contract-schema` in `ttm`): the bridge schema's description stops naming a phase for the
+  transport choice.
 
 ## Decisions
 

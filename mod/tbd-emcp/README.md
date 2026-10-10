@@ -112,8 +112,6 @@ script list when it loads the project.
 
 - [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) — the MCP call path,
   the daemon, exit codes and the live checks.
-- [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — how mod work runs in
-  Workbench and the gates.
 - [Enfusion MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — `mcp call` against
   `mcp wbcall`, the bootstrap order, the loading rules and the known gaps.
 - [Spawn determinism](/documentation/runbooks/spawn_determinism.md) — the Workbench gate that

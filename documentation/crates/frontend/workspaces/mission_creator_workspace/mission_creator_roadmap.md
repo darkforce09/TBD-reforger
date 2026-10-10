@@ -5,8 +5,8 @@
 The planning view of the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator): what the
 editor ships today, area by area, the open work that changes it, grouped into tracks, the work
 deferred for now, and the questions no [ticket](/documentation/glossary/n_to_z.md#ticket) answers yet.
-Every status here is the ticket's status in the central ticket manager (`ttm --project reforger
-show <ticket>`); the feature inventory and the code READMEs hold the detail.
+Every ticket here is named by its slug in the central ticket manager (`ttm --project reforger show
+<ticket>`), which holds its status; the feature inventory and the code READMEs hold the detail.
 
 ## Recommended next work
 
@@ -40,110 +40,107 @@ pairs each feature with its Arma 3 Eden counterpart and names the ticket that cl
 
 ## Open work
 
-Each row links the ticket's spec, or its ticket file when it has none, then its status and plan.
+Each row names its ticket by slug; the ticket manager (`ttm`) holds its status, spec and plan.
 
 ### Editor usability and fixes
 
-| Ticket | Status | What changes |
-|---|---|---|
-| [T-939 — Editor usability: selection, gizmo, arrange, templates](/documentation/tickets/specs/t939_editor_usability.md) | queued, [plan](/documentation/tickets/plans/t-939_plan.md) | batch faction and squad reassign (T-939.2), Arrange in the context menu with shortcuts (T-939.4), squad templates (T-939.5), canvas error badges and connection wires (T-939.6), a virtualized vehicles panel (T-939.7), Ctrl+F for the document search (T-939.8); all ready |
-| [T-704 — Command palette over every editor command](/documentation/tickets/specs/t704_command_palette.md) | ready, [plan](/documentation/tickets/plans/t-704_plan.md) | one searchable list of every editor command |
-| [T-158 — Editor shell UX consolidation](/documentation/tickets/specs/t158_editor_shell.md) | ready, [plan](/documentation/tickets/plans/t-158_plan.md) | one settings entry point; the inert top-strip buttons wired |
-| [T-142 — MC shell layout polish](/documentation/tickets/specs/t131_north_star_backlog.md) | ready, [plan](/documentation/tickets/plans/t-142_plan.md) | toolbelt placement, Attributes grouping, stub-tool visibility |
-| [T-821 — Save version prefill static; second save 409s](/documentation/tickets/specs/t821_save_version_prefill.md) | ready, [plan](/documentation/tickets/plans/t-821_plan.md) | the Save Version pre-fill bumps from the current version |
-| [T-823 — OBJ readout must count vehicles or rename honestly](/documentation/tickets/specs/t823_obj_readout_vehicles.md) | ready, [plan](/documentation/tickets/plans/t-823_plan.md) | "OBJ" counts what it names |
-| [T-837 — Vehicles cannot be deleted](/documentation/tickets/specs/t837_vehicle_delete.md) | ready, [plan](/documentation/tickets/plans/t-837_plan.md) | Delete removes vehicles |
-| [T-845 — A selected vehicle looks identical to an unselected one](/documentation/tickets/specs/t845_selected_vehicle_treatment.md) | ready, [plan](/documentation/tickets/plans/t-845_plan.md) | selected vehicles are highlighted |
-| [T-926 — Vehicle Attributes Transform/Position tab](/documentation/tickets/specs/t926_vehicle_transform_tab.md) | ready, [plan](/documentation/tickets/plans/t-926_plan.md) | vehicles gain X, Y, Z and heading fields |
-| [T-838 — Map markers selectable; outliner lists; dblclick opens Attributes](/documentation/tickets/specs/t838_marker_select_outliner.md) | ready, [plan](/documentation/tickets/plans/t-838_plan.md) | markers join selection, the outliner and the Attributes dialog |
-| [T-831 — Per-side marker authoring audit then explicit UI](/documentation/tickets/specs/t831_per_side_markers_audit.md) | ready, [plan](/documentation/tickets/plans/t-831_plan.md) | markers authored per side |
-| [T-828 — Marker captions drift when zoom changes without rebind](/documentation/tickets/specs/t828_marker_caption_drift.md) | ready, [plan](/documentation/tickets/plans/t-828_plan.md) | captions stay on their markers |
-| [T-824 — Placed zones must render visibly at rest on map](/documentation/tickets/specs/t824_zone_render_at_rest.md) | ready, [plan](/documentation/tickets/plans/t-824_plan.md) | zones drawn when idle |
-| [T-833 — Rotation ring: relative delta plus live preview](/documentation/tickets/specs/t833_rotation_ring_relative.md) | ready, [plan](/documentation/tickets/plans/t-833_plan.md) | the rotate ring turns by the drag's delta, with a preview |
-| [T-848 — Group to must use exclusive ORBAT membership](/documentation/tickets/specs/t848_group_to_exclusive_orbat.md), [T-849 — Add ungroup leave-squad verb](/documentation/tickets/specs/t849_ungroup_verb.md), [T-850 — Squad tether must follow drag](/documentation/tickets/specs/t850_squad_tether_drag.md) | ready, plans [848](/documentation/tickets/plans/t-848_plan.md), [849](/documentation/tickets/plans/t-849_plan.md), [850](/documentation/tickets/plans/t-850_plan.md) | squad grouping on the map |
-| [T-839 — Retire floating Select/Ruler/LoS bottom-centre pill](/documentation/tickets/specs/t839_retire_floating_pill.md) | ready, [plan](/documentation/tickets/plans/t-839_plan.md) | the mode toolbar goes |
-| [T-816 — Armed composition hint; one Esc clears both layers](/documentation/tickets/specs/t816_esc_hint_layer.md) | ready, [plan](/documentation/tickets/plans/t-816_plan.md) | Escape closes one layer at a time |
-| [T-817 — Grid labels lag on stationary wheel zoom](/documentation/tickets/specs/t817_grid_label_zoom_lag.md) | ready, [plan](/documentation/tickets/plans/t-817_plan.md) | grid labels follow the zoom |
-| [T-820 — Catalog failure generic cause; chips visible wrongly](/documentation/tickets/specs/t820_catalog_failure_cause.md) | ready, [plan](/documentation/tickets/plans/t-820_plan.md) | the catalog failure names its cause |
-| [T-822 — Outliner dblclick must not open asset picker](/documentation/tickets/specs/t822_outliner_dblclick_bubble.md), [T-927 — Editor chrome dblclick leak to map](/documentation/tickets/specs/t927_chrome_dblclick_leak.md) | ready, plans [822](/documentation/tickets/plans/t-822_plan.md), [927](/documentation/tickets/plans/t-927_plan.md) | a double-click on the chrome stays off the map |
-| [T-827 — Validation chip red under 4.5:1](/documentation/tickets/specs/t827_validation_chip_contrast.md), [T-830 — Outliner rows cramped](/documentation/tickets/specs/t830_outliner_density.md), [T-841 — Type picker popover translucent](/documentation/tickets/specs/t841_type_picker_opaque.md) | ready, plans [827](/documentation/tickets/plans/t-827_plan.md), [830](/documentation/tickets/plans/t-830_plan.md), [841](/documentation/tickets/plans/t-841_plan.md) | contrast and density of the chrome |
-| [T-834 — Wave-205 residue](/documentation/tickets/specs/t834_wave205_residue.md), [T-653 — Preserve the three headless editor-screenshot findings](/documentation/tickets/specs/t653_headless_screenshot.md) | ready, plans [834](/documentation/tickets/plans/t-834_plan.md), [653](/documentation/tickets/plans/t-653_plan.md) | stale comments and dead code; the screenshot runbook |
+| Ticket | What changes |
+|---|---|
+| Editor usability: selection, gizmo, arrange, templates (`editor-usability-selection-gizmo`) | batch faction and squad reassign (`editor-usability-selection-gizmo.batch-faction-squad-reassign`), Arrange in the context menu with shortcuts (`editor-usability-selection-gizmo.arrange-tools-context-menu`), squad templates (`editor-usability-selection-gizmo.faction-catalog-squad-templates`), canvas error badges and connection wires (`editor-usability-selection-gizmo.error-badges-connection-wires`), a virtualized vehicles panel (`editor-usability-selection-gizmo.vehicles-panel-virtualization-memoized`), Ctrl+F for the document search (`editor-usability-selection-gizmo.ctrl-f-focuses-document`) |
+| Command palette over every editor command (`command-palette-over-editor`) | one searchable list of every editor command |
+| Editor shell UX consolidation (`editor-shell-ux-consolidation`) | one settings entry point; the inert top-strip buttons wired |
+| MC shell layout polish (`mc-shell-layout-polish`) | toolbelt placement, Attributes grouping, stub-tool visibility |
+| Save version prefill static; second save 409s (`save-version-prefill-static`) | the Save Version pre-fill bumps from the current version |
+| OBJ readout must count vehicles or rename honestly (`obj-readout-must-count`) | "OBJ" counts what it names |
+| Vehicles cannot be deleted (`vehicles-cannot-deleted-slots`) | Delete removes vehicles |
+| A selected vehicle looks identical to an unselected one (`selected-vehicle-looks-identical`) | selected vehicles are highlighted |
+| Vehicle Attributes Transform/Position tab (`vehicle-attributes-transform-position`) | vehicles gain X, Y, Z and heading fields |
+| Map markers selectable; outliner lists; dblclick opens Attributes (`map-markers-selectable-outliner`) | markers join selection, the outliner and the Attributes dialog |
+| Per-side marker authoring audit then explicit UI (`side-marker-authoring-audit`) | markers authored per side |
+| Marker captions drift when zoom changes without rebind (`marker-captions-drift-when`) | captions stay on their markers |
+| Placed zones must render visibly at rest on map (`placed-zones-must-render`) | zones drawn when idle |
+| Rotation ring: relative delta plus live preview (`rotation-ring-relative-delta`) | the rotate ring turns by the drag's delta, with a preview |
+| Group to must use exclusive ORBAT membership (`group-must-use-exclusive`), Add ungroup leave-squad verb (`add-ungroup-leave-squad`), Squad tether must follow drag (`squad-tether-must-follow`) | squad grouping on the map |
+| Retire floating Select/Ruler/LoS bottom-centre pill (`retire-floating-select-ruler`) | the mode toolbar goes |
+| Armed composition hint; one Esc clears both layers (`armed-composition-hint-open`) | Escape closes one layer at a time |
+| Grid labels lag on stationary wheel zoom (`grid-labels-lag-1`) | grid labels follow the zoom |
+| Catalog failure generic cause; chips visible wrongly (`catalog-failure-generic-cause`) | the catalog failure names its cause |
+| Outliner dblclick must not open asset picker (`outliner-dblclick-must-not`), Editor chrome dblclick leak to map (`editor-chrome-dblclick-leak`) | a double-click on the chrome stays off the map |
+| Validation chip red under 4.5:1 (`validation-chip-red-under`), Outliner rows cramped (`outliner-rows-cramped-density`), Type picker popover translucent (`type-picker-popover-translucent`) | contrast and density of the chrome |
+| Wave-205 residue (`wave-205-residue-two`), Preserve the three headless editor-screenshot findings (`preserve-three-headless-editor`) | stale comments and dead code; the screenshot runbook |
 
 ### Mission data and the wire to the game
 
-| Ticket | Status | What changes |
-|---|---|---|
-| [T-212 — Typed per-side objectives with attributes](/documentation/tickets/specs/t212_typed_objectives.md) | ready, [plan](/documentation/tickets/plans/t-212_plan.md) | objectives become typed, placed, per-side entities |
-| [T-290 — Nine dead flatten fields mod never reads](/documentation/tickets/specs/t290_dead_flatten_fields.md) | ready, [plan](/documentation/tickets/plans/t-290_plan.md) | the [mod](/documentation/glossary/g_to_m.md#mod) reads, or the compiler drops, nine compiled fields |
-| [T-674 — Slot identity reaches the wire](/documentation/tickets/specs/t674_slot_identity_wire.md) | queued, [plan](/documentation/tickets/plans/t-674_plan.md) | slot identity fields reach the compiled document |
-| [T-675 — Vehicle roster reaches game](/documentation/tickets/specs/t675_vehicle_roster_wire.md) | queued, [plan](/documentation/tickets/plans/t-675_plan.md) | placed vehicles and crews reach the compiled document |
-| [T-932 — Parked briefing markers survive server save/reload](/documentation/tickets/specs/t932_parked_markers_persist.md) | queued, [plan](/documentation/tickets/plans/t-932_plan.md) | parked briefing markers survive a save and reload |
-| [T-309 — FactionDoc squad level for Apply Template](/documentation/tickets/specs/t309_faction_doc_squads.md) | ready, [plan](/documentation/tickets/plans/t-309_plan.md) | faction templates keep their squads |
-| [T-146 — Asset Browser Data Wiring](/documentation/tickets/specs/t146_asset_browser_data_wiring.md) | ready, [plan](/documentation/tickets/plans/t-146_plan.md) | [registry](/documentation/glossary/n_to_z.md#registry) vehicles and crates placeable from the asset browser |
-| [T-140 — Mission client payload budget](/documentation/tickets/specs/t131_north_star_backlog.md) | ready, [plan](/documentation/tickets/plans/t-140_plan.md) | compile reports a payload-budget diagnostic |
-| [T-141 — Procedural slot naming](/documentation/tickets/specs/t131_north_star_backlog.md) | ready, [plan](/documentation/tickets/plans/t-141_plan.md) | generated slot display names with a manual override |
-| [T-068.14 — Phase 2 E2E gate editor to player](/documentation/tickets/specs/t068_14_phase2_e2e_gate.md) | queued, no plan | a human sign-off from an editor loadout to a dressed player in game |
+| Ticket | What changes |
+|---|---|
+| Typed per-side objectives with attributes (`typed-side-objectives-attributes`) | objectives become typed, placed, per-side entities |
+| Nine dead flatten fields mod never reads (`nine-dead-flatten-fields`) | the [mod](/documentation/glossary/g_to_m.md#mod) reads, or the compiler drops, nine compiled fields |
+| Slot identity reaches the wire (`slot-identity-reaches-wire`) | slot identity fields reach the compiled document |
+| Vehicle roster reaches game (`vehicle-roster-reaches-game`) | placed vehicles and crews reach the compiled document |
+| Parked briefing markers survive server save/reload (`parked-briefing-markers-survive`) | parked briefing markers survive a save and reload |
+| FactionDoc squad level for Apply Template (`factiondoc-squad-level-apply`) | faction templates keep their squads |
+| Asset Browser Data Wiring (`asset-browser-data-wiring`) | [registry](/documentation/glossary/n_to_z.md#registry) vehicles and crates placeable from the asset browser |
+| Mission client payload budget (`mission-client-payload-budget`) | compile reports a payload-budget diagnostic |
+| Procedural slot naming (`procedural-slot-naming`) | generated slot display names with a manual override |
+| Phase 2 E2E gate editor to player (`virtual-arsenal.phase-2-e2e-gate`) | a human sign-off from an editor loadout to a dressed player in game |
 
 ### Map and terrain
 
-| Ticket | Status | What changes |
-|---|---|---|
-| [T-090 — Map visualization program](/documentation/tickets/specs/t090_091_map_terrain_program.md) | ready, no plan | the open children below |
-| [T-090.4 — Z placement audit](/documentation/tickets/specs/t090_4_z_placement_audit.md), [T-090.6 — Geometry-aware placement audit](/documentation/tickets/specs/t090_6_geometry_placement_audit.md) | ready, plans [090.4](/documentation/tickets/plans/t-090_4_plan.md), [090.6](/documentation/tickets/plans/t-090_6_plan.md) | buried and floating objects found automatically |
-| [T-090.7 — Eden AI world object schema](/documentation/tickets/specs/t090_eden_ai_world_object_schema.md) | ready, [plan](/documentation/tickets/plans/t-090_7_plan.md) | the exact field contract of a world object |
-| [T-090.9 — World-object interaction](/documentation/tickets/specs/t090_9_world_object_interaction.md) | ready, [plan](/documentation/tickets/plans/t-090_9_plan.md) | hover, inspect, filter and legend for world objects |
-| [T-090.10.2 — Map Engine v2 cleanup](/documentation/tickets/specs/t090_10_map_engine_v2.md) | ready, [plan](/documentation/tickets/plans/t-090_10_2_plan.md) | the legacy map-view branches and tile fallback go |
-| [T-090.12.7 — Docs pass: LOS tool, world-los bench, map-assets, MCP](/documentation/tickets/specs/t090_091_map_terrain_program.md) | ready, [plan](/documentation/tickets/plans/t-090_12_7_plan.md) | documentation of the line-of-sight tool and the map assets |
-| [T-129 — Building floor selector](/documentation/tickets/specs/t090_eden_map_reference.md) | ready, [plan](/documentation/tickets/plans/t-129_plan.md) | placement on a chosen floor of a building |
-| [T-143 — Water mask placement guard and exact hydrology](/documentation/tickets/specs/t090_091_map_terrain_program.md) | ready, [plan](/documentation/tickets/plans/t-143_plan.md) | placement refuses the ocean and warns in lakes |
-| [T-294 — Arland has a manifest and no object data](/documentation/tickets/specs/t294_arland_objects.md) | ready, [plan](/documentation/tickets/plans/t-294_plan.md) | Arland gets its world objects |
-| [T-131 — Route planner tool](/documentation/tickets/specs/t131_north_star_backlog.md) | ready, [plan](/documentation/tickets/plans/t-131_plan.md) | routes planned on the road graph, with distance and profile |
+| Ticket | What changes |
+|---|---|
+| Map visualization program (`map-visualization-program`) | the open children below |
+| Z placement audit (`map-visualization-program.z-placement-audit`), Geometry-aware placement audit (`map-visualization-program.geometry-aware-placement-audit`) | buried and floating objects found automatically |
+| Eden AI world object schema (`map-visualization-program.eden-ai-world-object`) | the exact field contract of a world object |
+| World-object interaction (`map-visualization-program.world-object-interaction`) | hover, inspect, filter and legend for world objects |
+| Map Engine v2 cleanup (`map-visualization-program.engine-v2-delete`) | the legacy map-view branches and tile fallback go |
+| Docs pass: LOS tool, world-los bench, map-assets, MCP (`map-visualization-program.docs-pass-los-tool`) | documentation of the line-of-sight tool and the map assets |
+| Building floor selector (`building-floor-selector`) | placement on a chosen floor of a building |
+| Water mask placement guard and exact hydrology (`water-mask-placement-guard`) | placement refuses the ocean and warns in lakes |
+| Arland has a manifest and no object data (`arland-has-manifest-no`) | Arland gets its world objects |
+| Route planner tool (`route-planner-tool`) | routes planned on the road graph, with distance and profile |
 
 ### Map asset storage
 
-| Ticket | Status | What changes |
-|---|---|---|
-| [T-935 — Map binary storage — hybrid rkyv + POD](/documentation/tickets/specs/t935_map_binary_storage.md) | queued, [plan](/documentation/tickets/plans/t-935_plan.md) | T-935.1 to T-935.14 shipped; T-935.16 (ready) finishes the gz-JSON cutover; T-935.15 and T-935.17 to T-935.20 (queued) replace the chunk files with one object container, a spatial index and range fetches |
+| Ticket | What changes |
+|---|---|
+| Map binary storage — hybrid rkyv + POD (`map-binary-storage-hybrid`) | `map-binary-storage-hybrid.finish-gz-cutover-left` finishes the gz-JSON cutover; its remaining children replace the chunk files with one object container, a spatial index and range fetches |
 
 ### Collaboration
 
-| Ticket | Status | What changes |
-|---|---|---|
-| [T-295 — Realtime collaborative editing](/documentation/tickets/specs/t295_realtime_collab.md) | ready, [plan](/documentation/tickets/plans/t-295_plan.md) | several authors edit one mission live over a websocket |
-| [T-132 — Multiplayer MC + visual git](/documentation/tickets/specs/t131_north_star_backlog.md) | ready, [plan](/documentation/tickets/plans/t-132_plan.md) | an entity-level diff between two versions, for review before publishing |
-
-### Programs whose children have all shipped
-
-[T-936 — Mission logic the audit found missing](/documentation/tickets/specs/t936_mission_logic.md),
-[T-937 — Editor data layer: id arrays, undo, persist](/documentation/tickets/specs/t937_editor_data_layer.md) and
-[T-938 — Engine and wasm performance](/documentation/tickets/specs/t938_engine_perf.md) are queued, while every child of
-each has shipped; they wait only for their own closure.
+| Ticket | What changes |
+|---|---|
+| Realtime collaborative editing (`realtime-collaborative-editing`) | several authors edit one mission live over a websocket |
+| Multiplayer MC + visual git (`multiplayer-mc-visual-git`) | an entity-level diff between two versions, for review before publishing |
 
 ### Idea-stage findings
 
-The code audits filed these as `idea` tickets, each without a spec: the status bar's dead "OPEN"
-button (T-1033), the hidden side census (T-1034), multi-folder drop onto the dock header
-(T-1032), the paper-doll hotspots and the keyboard (T-1035), dead frontend code (T-1043), stale
-doc comments (T-1045), compile findings misfiling refused blocks (T-1046), validation policy for
-cargo and loadouts (T-1047), block checks against the mission schema (T-1048), stale connections
-after a re-hydrate (T-1050), minted-id collisions (T-1051), placement scatter across releases
-(T-1052), one duplicate-slot check for upload and save (T-1053), unused document store helpers
-(T-1054), the basemap switch back to satellite (T-1058), terrain-size-derived map layers (T-1062)
-and hosted commands on no-op edits (T-1077); and, beyond the editor, frontend pages importing the
-editor (T-1005).
+The code audits filed these tickets, each without a spec: the status bar's dead "OPEN"
+button (`fix-editor-status-bar`), the hidden side census (`fix-top-strip-slot`), multi-folder drop
+onto the dock header (`fix-multi-folder-drop`), the paper-doll hotspots and the keyboard
+(`fix-arsenal-paper-doll`), dead frontend code (`remove-dead-frontend-code`), stale doc comments
+(`rewrite-stale-frontend-doc`), compile findings misfiling refused blocks
+(`fix-compile-findings-misfiling`), validation policy for cargo and loadouts
+(`decide-whether-mission-creator`), block checks against the mission schema
+(`check-align-mission-block`), stale connections after a re-hydrate (`fix-mission-re-hydrate`),
+minted-id collisions (`check-whether-minted-vehicle`), placement scatter across releases
+(`decide-whether-placement-scatter`), one duplicate-slot check for upload and save
+(`decide-whether-mission-upload`), unused document store helpers (`remove-unused-mission-document`),
+the basemap switch back to satellite (`fix-map-basemap-switch`), terrain-size-derived map layers
+(`derive-map-grid-basemap`) and hosted commands on no-op edits (`check-hosted-commands-running`);
+and, beyond the editor, frontend pages importing the editor (`refactor-frontend-core-pages`).
 
 ## Deferred work
 
 | Ticket | What waits |
 |---|---|
-| [T-068 — Virtual Arsenal](/documentation/tickets/specs/t068_virtual_arsenal_program.md) | the program closes with T-068.14, a human two-client sign-off |
-| [T-110 — Terrain base + sparse deltas](/documentation/tickets/specs/t110_terrain_base_mission_layers.md) | a binary terrain base with sparse prop deltas for a million or more map objects, kept apart from the authored mission layer |
-| [T-090.3](/documentation/tickets/specs/t090_3_map_asset_export.md), [T-090.5](/documentation/tickets/specs/t090_5_map_object_render_layer.md), [T-090.8](/documentation/tickets/specs/t090_8_forest_vegetation_regions.md) | the remaining map asset export, world-object render layer and forest region slices |
-| [T-121 — Terrain DEM export automation](/documentation/tickets/specs/t121_terrain_dem_export_automation.md) | an automated elevation export |
-| [T-083](/.ai/tickets/T-083.toml), [T-093](/.ai/tickets/T-093.toml), [T-094](/.ai/tickets/T-094.toml) | an Eden-style full menu bar, autosave feedback polish, typed-array icon buffers |
-| [T-205](/.ai/tickets/T-205.toml), [T-206](/.ai/tickets/T-206.toml), [T-652](/.ai/tickets/T-652.toml) | vehicle seats and turrets, the empty item data, rock rendering |
-| T-712 to T-734, T-825, T-829, T-835, T-840, T-844, T-846, T-847, T-851, T-852 | deferred editor defects from the headless audits, each in its ticket file |
-| [T-1000 — Rename scenario to mission across code, data and mod](/.ai/tickets/T-1000.toml) | code identifiers that still say scenario |
+| Virtual Arsenal (`virtual-arsenal`) | the program closes with `virtual-arsenal.phase-2-e2e-gate`, a human two-client sign-off |
+| Terrain base + sparse deltas (`terrain-base-sparse-deltas`) | a binary terrain base with sparse prop deltas for a million or more map objects, kept apart from the authored mission layer |
+| `map-visualization-program.asset-export`, `map-visualization-program.object-render-layer`, `map-visualization-program.forest-vegetation-regions` | the remaining map asset export, world-object render layer and forest region slices |
+| Terrain DEM export automation (`terrain-dem-export-automation`) | an automated elevation export |
+| `top-menu-bar`, `continuous-autosave-polish`, `typed-array-iconlayer` | an Eden-style full menu bar, autosave feedback polish, typed-array icon buffers |
+| `vehicle-seats-crew-roles`, `item-data-78-empty`, `rocks-not-rendered` | vehicle seats and turrets, the empty item data, rock rendering |
+| the deferred editor defect tickets in `ttm` | deferred editor defects from the headless audits |
+| Rename scenario to mission across code, data and mod (`rename-scenario-mission-across`) | code identifiers that still say scenario |
 
 ## Open questions
 

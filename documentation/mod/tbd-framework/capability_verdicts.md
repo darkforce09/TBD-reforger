@@ -42,9 +42,9 @@ those screens ship.
   A new CRF file that no prefix covers needs a new row.
 - `cargo run -q -p developer_tools --bin enf -- capability` reads the table from
   `CAPABILITY_VERDICTS` (`tools/enfusion/enfusion_script_index/src/script_index_layout.rs`), joins it against
-  the CRF index (`crf_files.tsv` and `crf_symbols.tsv` in `.ai/artifacts/enf-index/`), prints one
+  the CRF index (`crf_files.tsv` and `crf_symbols.tsv` in `mod/reference_symbol_index/`), prints one
   row per capability (verdict, files, lines, symbols, note, heaviest first) and writes the same
-  matrix to `.ai/artifacts/enf-index/capability_matrix.tsv`. Each matrix row carries the verdict
+  matrix to `mod/reference_symbol_index/capability_matrix.tsv`. Each matrix row carries the verdict
   and note of the rule that matched the capability's last CRF file. A CRF file that matches no
   rule is reported as `UNTRIAGED` and the command exits 1.
 - The capabilities by matrix verdict, as the command prints them:

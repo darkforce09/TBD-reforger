@@ -106,5 +106,5 @@ The invariants that span the tabs:
 
 - [Event manager page](/documentation/crates/frontend/pages/administration_pages/event_manager/event_manager_page.md)
   — the access sheet's behaviour, what each access call means server-side, and its design.
-- [Event eligibility and allocation evidence](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation design note](/documentation/crates/api/api_server/design_notes/event_eligibility_allocation.md)
   — how the API evaluates policies, pools and reservations.

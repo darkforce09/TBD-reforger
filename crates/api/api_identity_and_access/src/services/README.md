@@ -77,5 +77,5 @@ crates/api/api_identity_and_access/src/services/
 
 ## Related documentation
 
-- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/design_notes/identity_transactions.md)
   — authorization, Discord observations, linking and their rollout.

@@ -127,10 +127,10 @@ fn no_tracked_file_matches_a_development_machine_only_path() {
 fn the_list_names_the_root_target_folders_and_the_local_tool_state() {
     for needed in [
         "/target-*/",
-        "/.ai/artifacts/worktrees/T-*/",
+        "/.worktrees/",
+        "/.workstation/",
         "/.claude/settings.local.json",
         "/.claude/worktrees/",
-        "/.codex/",
         "/.mcp.json",
         "/.compile-vanilla-baseline",
     ] {

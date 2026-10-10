@@ -13,13 +13,13 @@ names stays in that tool's own layout module
 ```text
 tools/foundation/repository_layout/
 ├── Cargo.toml  the `repository_layout` library package: `repository_root` (the finder its prelude re-exports), layout tier 1
-└── src/        the legacy ticket data, artifact, documentation, reference-lane, build-output, contract, map-asset, npm package, browser gate pin, workspace folder and Enfusion mod addon folder locations
+└── src/        the workstation, worktree, documentation, reference-lane, build-output, contract, map-asset, npm package, browser gate pin, workspace folder and Enfusion mod addon folder locations
 ```
 
 ## How it works
 
 ```text
-prelude::find_repository_root()?  ──► root ──► root.join(ARTIFACTS_DIR | REFERENCES_DIR | …)
+prelude::find_repository_root()?  ──► root ──► root.join(WORKSTATION_DIR | REFERENCES_DIR | …)
 (re-exported from repository_root)          └──► contracts_dir(&root), terrain_dir(&root, "everon"), …
 ```
 
@@ -45,10 +45,9 @@ No feature and no environment variable; the crate holds constants and pure path 
 
 ## Public surface
 
-- At the crate root: the legacy ticket data folder `LEGACY_TICKETS_DIR` (`.ai/tickets`, records
-  awaiting import into the central ticket manager, which the link check and the relocation tool
-  leave alone); the artifact tree (`ARTIFACTS_DIR`, `WORKTREES_DIR`,
-  `LAST_VERIFIED_MARKER`, `VERDICTS_DIR`); the reference lanes (`REFERENCES_DIR`,
+- At the crate root: the machine-local folders (`WORKSTATION_DIR`, `.workstation`, gitignored;
+  `WORKTREES_DIR`, `.worktrees`) and the wave driver's run records inside the first
+  (`LAST_VERIFIED_MARKER`, `VERDICTS_DIR`); the reference lanes (`REFERENCES_DIR`,
   `CRF_FRAMEWORK_REFERENCE`, `VANILLA_REFERENCE`) and the vanilla lane's folders
   (`VANILLA_EXTRACTED_SCRIPTS`, `VANILLA_SCRIPT_API_PAGES`, `VANILLA_SOURCE_PAGES`,
   `VANILLA_RECONSTRUCTED_SOURCE`); `BUILD_OUTPUT_FOLDER`; `BROWSER_GATE_ENVIRONMENT`.
@@ -63,14 +62,13 @@ No feature and no environment variable; the crate holds constants and pure path 
   `glyph_manifest_path`, `map_scratch_dir`); the npm package (`ENFUSION_MCP_NODE_PACKAGE_DIR`,
   `ENFUSION_MCP_ENTRYPOINT`, `enfusion_mcp_node_package_dir`, `enfusion_mcp_entrypoint`).
 - At the crate root, the locations the commands read: the deployment files (`DEPLOY_DIR`,
-  `DEPLOY_ENV`, `DEPLOY_ENV_EXAMPLE`, `CADDYFILE`, `DEVELOPMENT_COMPOSE_FILE`, `SYSTEMD_UNITS_DIR`,
+  `DEPLOY_ENV`, `DEPLOY_ENV_EXAMPLE`, `API_SETTINGS_FILE`, `API_SETTINGS_TEMPLATE`, `CADDYFILE`, `DEVELOPMENT_COMPOSE_FILE`, `SYSTEMD_UNITS_DIR`,
   `WEBSITE_API_UNIT`); the tool inputs (`DEDICATED_SERVER_PROFILES_DIR`, `DEV_SERVER_PROFILE`,
   `MCP_TRANSCRIPT_FIXTURES_DIR`); the PlayableSelector lane (`PLAYABLE_SELECTOR_REFERENCE`,
   `PLAYABLE_SELECTOR_OVERRIDE_ENV`); and the documents and documentation areas (`FACTORY_PACK_WAVE`,
   `HOME_SERVER_RUNBOOK`, `STAGING_SERVER_RUNBOOK`, `SLICE_WORKFLOW_RUNBOOK`,
   `PLATFORM_FACTORY_RUNBOOK`, `MOD_DESIGN`, `SPAWN_DETERMINISM_RUNBOOK`,
-  `ARCHIVE_DIR`, `TICKET_DOCUMENTS_DIR`,
-  `PENDING_MERGE_DIR`, `CURSOR_RULE_DIRS`, `PROJECT_INSTRUCTIONS`, `RETIRED_TOP_LEVEL_FOLDERS` with
+  `PENDING_MERGE_DIR`, `PROJECT_INSTRUCTIONS`, `RETIRED_TOP_LEVEL_FOLDERS` with
   `is_retired_top_level_folder`, `HISTORICAL_PATH_SPELLINGS`, `PERMALINK_BASE`).
 - `build_output`: `BUILD_OUTPUT_FOLDER`, the purpose subfolder names (`DEV_API_SUBFOLDER`, the
   `GATE_*` folders and prefixes, `CONTINUOUS_INTEGRATION_SUBFOLDER`, `MCP_DAEMON_SUBFOLDER`,
@@ -79,8 +77,7 @@ No feature and no environment variable; the crate holds constants and pure path 
   `is_retired_root_level_build_folder`.
 - `documentation`: `DOCUMENTATION_ROOT`.
 - `workspace_folders`: the workspace's top-level folders (`ENFUSION_MOD_DIR`, `LIBRARY_CRATES_DIR`,
-  `TOOLS_DIR`), the API server crate and the `.env` its binaries read (`API_SERVER_CRATE_DIR`,
-  `API_SERVER_ENVIRONMENT_FILE`), and the API database crate with its SQL folders
+  `TOOLS_DIR`), the API server crate (`API_SERVER_CRATE_DIR`), and the API database crate with its SQL folders
   (`API_DATABASE_CRATE_DIR`, `API_DATABASE_MIGRATIONS_DIR`, `API_DATABASE_SEEDS_DIR`), which the
   `db` commands and the staging, mod and fixture tools read.
 - `enfusion_mod_folders`: each Enfusion mod addon once, as its folder name
@@ -88,7 +85,7 @@ No feature and no environment variable; the crate holds constants and pure path 
   is also the name a dedicated server's `addons/` folder links it under, and as its folder under
   `ENFUSION_MOD_DIR` (`FRAMEWORK_ADDON_DIR`, `EXPORT_ADDON_DIR`, `MCP_BRIDGE_ADDON_DIR`); read by the
   mod commands, the deploys, the workstation setup and the schema checks' mission validation.
-- `prelude`: the top-level trees (`ARTIFACTS_DIR`, `CONTRACTS_DIR`, `DEPLOY_DIR`,
+- `prelude`: the top-level trees (`WORKSTATION_DIR`, `WORKTREES_DIR`, `CONTRACTS_DIR`, `DEPLOY_DIR`,
   `REFERENCES_DIR`, `TERRAIN_ASSETS_DIR`, `BUILD_OUTPUT_FOLDER`) and the checkout-root finder's
   names re-exported from `repository_root` (`find_repository_root`, `find_repository_root_from`,
   `is_repository_root`, `ROOT_MARKER`).

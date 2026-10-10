@@ -76,7 +76,6 @@ api_command_center = { workspace = true }
 # integration suites also run.
 api_background_workers = { workspace = true }
 axum = { workspace = true, features = ["macros", "multipart"] }
-dotenvy = { workspace = true }
 sqlx = { workspace = true, features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "json", "macros", "migrate"] }
 tokio = { workspace = true, features = ["full"] }
 tower = { workspace = true, features = ["util"] }

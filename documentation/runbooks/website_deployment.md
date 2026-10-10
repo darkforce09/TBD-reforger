@@ -95,15 +95,15 @@ Run the development-machine steps from the repository root; a step that runs on 
    ```
 
    Expected, exit 0: `==> deploy-website → <TBD_SSH_HOST>:<TBD_REMOTE_DIR>`, then the map-asset
-   probe, `==> preflight: the API's .env on the host` with its probe of
-   `<TBD_REMOTE_DIR>/crates/api/api_server/.env`, the rsync with one `[dry-run]   --exclude=` line
-   per protected path (`.git/`, `target/`, the gate build folders, `node_modules/`, the paths the
-   host owns, `crates/api/api_server/.env`, the host's own tools folder .tools beside it, and
+   probe, `==> preflight: the API's settings file on the host` with its probe of
+   `<TBD_REMOTE_DIR>/deploy/api.env`, the rsync with one `[dry-run]   --exclude=` line
+   per protected path (`.git/`, `target/`, `node_modules/`, the paths the host owns,
+   `deploy/api.env`, the host's own tools folder `.tools/` in `crates/api/api_server/`, and
    `crates/frontend/shell/frontend_application/dist/`, then `deploy/deploy.env`, `assets/terrains/`,
    `assets/scratch/`, `packages/` and the reference mod folders, then what only the
-   development machine holds, anchored at the checkout root: `/target-*/` and the other build
-   folders, the worktrees under `.ai/artifacts/worktrees/`, the wave gate's receipts, and the
-   local files of Claude Code, Codex and `.mcp.json`), the six remote steps below,
+   development machine holds, anchored at the checkout root: `/target-*/` and the other retired
+   build folders, the worktrees under `.worktrees/`, the machine-local `.workstation/`, and the
+   local files of Claude Code and `.mcp.json`), the six remote steps below,
    `==> remote: restart tbd-website-api.service`,
    `==> unit: deploy/systemd/tbd-website-api.service is installed by hand (see documentation/runbooks/website_deployment.md Phase D)`,
    the smoke hints and `==> done`. The printed list is the authority; the code is
@@ -128,16 +128,17 @@ Run the development-machine steps from the repository root; a step that runs on 
 
 ### Phase B — Prepare the host
 
-3. Create the checkout folder with the API server's settings file in it, from the template in
-   this checkout. The deploy's first act is a probe that `cd`s into the folder and refuses when it
-   cannot (probe exit 12); its second refuses the rsync until
-   `<TBD_REMOTE_DIR>/crates/api/api_server/.env` is a readable file, because the rsync never
-   carries that file and `--delete` would remove one left anywhere else. A host deployed before
-   the API server's folder moved already holds its `.env` and the API's .tools folder: move
-   both into `<TBD_REMOTE_DIR>/crates/api/api_server/` instead, and keep the file's mode.
+3. Create the checkout folder with the API's settings file in it, from the template in this
+   checkout. The deploy's first act is a probe that `cd`s into the folder and refuses when it
+   cannot (probe exit 12); its second refuses the rsync until `<TBD_REMOTE_DIR>/deploy/api.env`
+   is a readable file, because the rsync never carries that file and `--delete` would remove one
+   left anywhere else. A host that still keeps its settings file at
+   `<TBD_REMOTE_DIR>/crates/api/api_server/.env` needs no step: the same probe moves that file to
+   `<TBD_REMOTE_DIR>/deploy/api.env`, keeping its mode, before the rsync, and never moves it over
+   a file already there.
 
    ```bash
-   ssh <TBD_SSH_HOST> 'mkdir -p <TBD_REMOTE_DIR>/crates/api/api_server && install -m 600 /dev/stdin <TBD_REMOTE_DIR>/crates/api/api_server/.env' < crates/api/api_server/.env.example
+   ssh <TBD_SSH_HOST> 'mkdir -p <TBD_REMOTE_DIR>/deploy && install -m 600 /dev/stdin <TBD_REMOTE_DIR>/deploy/api.env' < deploy/api.env.example
    ```
 
    Expected: no output; the file on the host is the template, readable by the deploy user only.
@@ -177,8 +178,9 @@ the password its volume was first created with. The database listens on the host
    while the unit is missing, and `==> done` either way.
 
 The rsync mirrors the checkout with `--delete`: a file on the host outside the excluded paths
-disappears at the next deploy, so the server keeps its own files only at `crates/api/api_server/.env`,
-in the .tools folder beside it, under `assets/terrains/`, and outside the checkout. The glyph atlas `assets/glyphs/` is not
+disappears at the next deploy, so the server keeps its own files only at `deploy/api.env`, in
+the `.tools/` folder of `crates/api/api_server/`, under `assets/terrains/`, and outside the
+checkout. The glyph atlas `assets/glyphs/` is not
 excluded; it is tracked and arrives with every deploy. An excluded path that is already on the
 host is neither updated nor deleted: a development machine's build folder or tool state found
 there stays until it is removed by hand.
@@ -193,7 +195,7 @@ checkout, with `terrain-registry.json` at its top; see
 ### Phase D — Install and run the API
 
 6. Fill in the server's API settings. No command: on the host, edit
-   `<TBD_REMOTE_DIR>/crates/api/api_server/.env`, the template step 3 put there, keeping its mode
+   `<TBD_REMOTE_DIR>/deploy/api.env`, the template step 3 put there, keeping its mode
    600. Set these values; the full list, with defaults and failure modes, is
    [API environment variables](/documentation/crates/api/api_server/environment_variables.md).
 
@@ -231,8 +233,8 @@ checkout, with `terrain-registry.json` at its top; see
    sed 's|TBD_REPO_DIR_PLACEHOLDER|<TBD_REMOTE_DIR without its leading slash>|g' deploy/systemd/tbd-website-api.service > ~/.config/systemd/user/tbd-website-api.service
    ```
 
-   Expected: no output. The unit runs `target/release/api-server` from `crates/api/api_server`, loads that
-   folder's `.env`, pins `MAP_ASSETS_DIR` and `GLYPH_ASSETS_DIR` to the checkout's
+   Expected: no output. The unit runs `target/release/api-server` from `crates/api/api_server`,
+   loads its settings from `deploy/api.env` (`EnvironmentFile`), pins `MAP_ASSETS_DIR` and `GLYPH_ASSETS_DIR` to the checkout's
    `assets/terrains` and `assets/glyphs`, and keeps uploads and the imported equipment data
    under its state directory (`StateDirectory=tbd-website-api`); the
    [systemd README](/deploy/systemd/README.md#configuration) explains each line.
@@ -316,9 +318,6 @@ run one or the other.
     Expected: signing in with Discord returns to the app's `/auth/callback` page and signs in.
 
 ### Redeploy
-
-A host whose checkout is not yet in the layout of restructure stage S2 takes the one-time host
-steps W1 to W3 of the [S2 operator steps](/documentation/archive/restructure_agent_briefs/s2_a2_to_a6.md#oc-deploy-operator-steps) around its next deploy.
 
 16. Deploy the current checkout. This is the whole procedure after the first deployment.
 
@@ -435,8 +434,8 @@ On a Podman host, `podman exec` takes the same arguments.
 | `<path>:<line>: TBD_SSH_HOST: …`, or `<path>:<line>: <message>`, exit 1 | the value on that line of the file is not `user@host`, or the line is not `KEY=VALUE` | fix that line |
 | `Refusing to deploy: TBD_SSH_HOST must name the deploy user (user@host) …`, exit 1 | `TBD_SSH_HOST` names no user, so there is no `/home/<user>/tbd/` to hold `TBD_REMOTE_DIR` | write `user@host` |
 | `Refusing to deploy: TBD_REMOTE_DIR must be under …`, or `… must not contain 'prairielearn'`, exit 1 | the folder is outside `/home/<user>/tbd/`, contains `..`, or names the other service | point `TBD_REMOTE_DIR` inside `/home/<user>/tbd/`, or leave it unset |
-| `ERROR: the API's .env is missing or unreadable on the host: <TBD_REMOTE_DIR>/crates/api/api_server/.env`, exit 1, before the rsync | the host holds no `.env` at the API server's folder: a fresh host, or one whose `.env` still sits where an earlier folder layout kept it | step 3 |
-| `ERROR: could not determine whether the host holds <path> (probe exit <n>).`, exit 1 | the probe of the `.env` could not run, as when ssh fails | check ssh with the Verify row, then deploy again |
+| `ERROR: the API's settings file is missing or unreadable on the host: <TBD_REMOTE_DIR>/deploy/api.env`, exit 1, before the rsync | the host holds no settings file at `deploy/api.env` nor at `crates/api/api_server/.env`, which the probe would have moved there: a fresh host | step 3 |
+| `ERROR: could not determine whether the host holds <path> (probe exit <n>).`, exit 1 | the probe of the settings file could not run, as when ssh fails | check ssh with the Verify row, then deploy again |
 | `ERROR: could not determine the server's map asset layout (probe exit 12)` | `TBD_REMOTE_DIR` does not exist on the host; exit 255 means ssh itself failed | step 3; check ssh with the Verify row |
 | `ERROR: <dir>/assets/terrains is missing, but the pre-relocation packages/map-assets is present.` | the host keeps its terrain tree at the old place, which this build does not serve | on the host, move `packages/map-assets/everon`, `arland` and `terrain-registry.json` into `assets/terrains/`, as the message prints, then deploy again |
 | `sshpass: command not found`, exit 127 | `TBD_SSH_PASS` is set without sshpass installed | install sshpass, or use `TBD_SSH_IDENTITY_FILE` |
@@ -445,8 +444,8 @@ On a Podman host, `podman exec` takes the same arguments.
 | the API refuses to boot with `migration N was previously applied but has been modified` | a comments-only edit to an applied migration; sqlx hashes the whole file | the deploy repairs it before each restart; by hand, [repair a migration checksum](/documentation/runbooks/database_operations.md#repair-a-migration-checksum) (step 2 there, on the host). Never reset the database for it |
 | the journal shows `DISCORD_CLIENT_ID is required` (or the secret or redirect) | outside development the three Discord settings are required | step 6 |
 | `UPLOAD_DIR is required`, or the same for `MAP_ASSETS_DIR` or `GLYPH_ASSETS_DIR` | the API was started without the unit, which sets all three outside development | start it through the unit (steps 8 to 10) |
-| `UPLOAD_DIR is malformed: must be an absolute path outside development` | the `.env` sets `UPLOAD_DIR` to a relative path, and a value in the `.env` overrides the unit's | delete that line from the `.env` (step 6), then `systemctl --user restart tbd-website-api.service` |
-| `EQUIPMENT_DATA_DIR is malformed: must be an absolute path outside development` | the `.env` sets `EQUIPMENT_DATA_DIR` to a relative path, and a value in the `.env` overrides the unit's | delete that line from the `.env` (step 6), then `systemctl --user restart tbd-website-api.service` |
+| `UPLOAD_DIR is malformed: must be an absolute path outside development` | `deploy/api.env` sets `UPLOAD_DIR` to a relative path, and a value in the settings file overrides the unit's | delete that line from `deploy/api.env` (step 6), then `systemctl --user restart tbd-website-api.service` |
+| `EQUIPMENT_DATA_DIR is malformed: must be an absolute path outside development` | `deploy/api.env` sets `EQUIPMENT_DATA_DIR` to a relative path, and a value in the settings file overrides the unit's | delete that line from `deploy/api.env` (step 6), then `systemctl --user restart tbd-website-api.service` |
 | every `/map-assets` request answers 404 and the requests log nothing | the terrain tree is missing at the `MAP_ASSETS_DIR` the unit pins to the checkout's `assets/terrains`; the boot logs one warning naming the folder, and the asset server never checks its root again | put the tree at `assets/terrains/`, and run the API through the unit, which pins both folders |
 | the Mission Creator reports that `SharedArrayBuffer` is missing | the page is not served through the Caddyfile, so it lacks the cross-origin isolation headers | open the site through Caddy on port 3080 or the tunnel (step 12) |
 | the deploy stops at `staging Caddy on :3080 …`, and `docker logs tbd_staging_caddy` shows `address already in use` | another process holds port 3080 or Caddy's admin port 2019 on the host, such as a Caddy started outside the compose file | stop it (`caddy stop` for such a Caddy; `ss -tlnp` names the holder), then deploy again |
@@ -471,7 +470,7 @@ On a Podman host, `podman exec` takes the same arguments.
 - [Testing and CI](/documentation/runbooks/testing_and_ci.md) — the gates a change passes before
   it is deployed.
 - [API environment variables](/documentation/crates/api/api_server/environment_variables.md) — every
-  setting of the server's `.env`.
+  setting of the server's `deploy/api.env`.
 - [Deployment templates](/deploy/README.md) — `deploy.env`, the Caddyfile and the
   units; [the deploy commands](/tools/commands/deployment/src/website/README.md) — how
   `deploy website` works.

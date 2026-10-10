@@ -135,35 +135,33 @@ export.
 
 ## Open work
 
-- [T-1123 — Decide whether chunk index paths name the .bin or .json.gz](/.ai/tickets/T-1123.toml)
-  and [T-1122 — Fix world validate-exports failing on the committed Everon chunks](/.ai/tickets/T-1122.toml)
-  (idea, no plan): one authoritative chunk path form, which the builder, the committed index and
-  `validate-exports` all follow.
-- [T-1124 — Fix validate-exports density check ignoring the canopy blur](/.ai/tickets/T-1124.toml)
-  (idea, no plan): the density check compares like with like.
-- [T-1125 — Stop world export library code exiting the process mid-gate](/.ai/tickets/T-1125.toml)
-  (idea, no plan): a failed rebuild inside `verify-phase` returns an error instead of ending the
-  run.
-- [T-1127 — Widen world verify-phase density checks and the E2c source scan](/.ai/tickets/T-1127.toml)
-  (idea, no plan): later phases recheck density.
-- [T-1074 — Fix world build-objects panicking on a manifest without objects](/.ai/tickets/T-1074.toml)
-  and [T-1076 — Derive terrain checks and create dialog from the terrain registry](/.ai/tickets/T-1076.toml)
-  (idea, no plan): a second terrain exports and checks without code changes.
-- [T-1075 — Remove orphan BLAS files and fix stale terrain manifest docs](/.ai/tickets/T-1075.toml)
-  (idea, no plan): every committed BLAS file is listed, and the manifest schema's texts match the
-  loader.
-- [T-1148 — Fix map export files overwriting each other and cell-edge duplicates](/.ai/tickets/T-1148.toml)
-  and [T-1101 — Fix map export road classes, spline transforms and DEM result](/.ai/tickets/T-1101.toml)
-  (idea, no plan): the Workbench exports stop overwriting each other, recording entities twice or
-  misclassifying roads.
-- [T-1117 — Stream map export-terrain world output while each step runs](/.ai/tickets/T-1117.toml)
-  (idea, no plan): long builds show progress as they run.
-- [T-935 — Map binary storage — hybrid rkyv + POD](/.ai/tickets/T-935.toml) (queued,
-  [plan](/documentation/tickets/plans/t-935_plan.md)) and its child
-  [T-935.15 — Delete chunking: one container, spatial index, range fetch](/.ai/tickets/T-935.15.toml)
-  (queued, [plan](/documentation/tickets/plans/t-935_15_plan.md)): the object chunks give way to
+- Decide whether chunk index paths name the .bin or .json.gz (ticket `decide-whether-chunk-index` in
+  `ttm`) and Fix world validate-exports failing on the committed Everon chunks (ticket
+  `fix-world-validate-exports` in `ttm`): one authoritative chunk path form, which the builder, the
+  committed index and `validate-exports` all follow.
+- Fix validate-exports density check ignoring the canopy blur (ticket `fix-validate-exports-density`
+  in `ttm`): the density check compares like with like.
+- Stop world export library code exiting the process mid-gate (ticket `stop-world-export-library` in
+  `ttm`): a failed rebuild inside `verify-phase` returns an error instead of ending the run.
+- Widen world verify-phase density checks and the E2c source scan (ticket `widen-world-verify-phase`
+  in `ttm`): later phases recheck density.
+- Fix world build-objects panicking on a manifest without objects (ticket `fix-world-build-objects`
+  in `ttm`) and Derive terrain checks and create dialog from the terrain registry (ticket
+  `derive-terrain-checks-create` in `ttm`): a second terrain exports and checks without code
+  changes.
+- Remove orphan BLAS files and fix stale terrain manifest docs (ticket `remove-orphan-blas-files` in
+  `ttm`): every committed BLAS file is listed, and the manifest schema's texts match the loader.
+- Fix map export files overwriting each other and cell-edge duplicates (ticket
+  `fix-map-export-files` in `ttm`) and Fix map export road classes, spline transforms and DEM result
+  (ticket `fix-map-export-road` in `ttm`): the Workbench exports stop overwriting each other,
+  recording entities twice or misclassifying roads.
+- Stream map export-terrain world output while each step runs (ticket `stream-map-export-terrain` in
+  `ttm`): long builds show progress as they run.
+- Map binary storage — hybrid rkyv + POD (ticket `map-binary-storage-hybrid` in `ttm`) and its child
+  Delete chunking: one container, spatial index, range fetch (ticket
+  `map-binary-storage-hybrid.delete-chunking-one-container` in `ttm`): the object chunks give way to
   one container with a spatial index fetched by HTTP ranges.
-- [T-121 — Terrain DEM export automation](/.ai/tickets/T-121.toml) (deferred, no plan): Arland's
+- Terrain DEM export automation (ticket `terrain-dem-export-automation` in `ttm`): Arland's
   re-export and a game-mode height fallback.
 
 ## Decisions

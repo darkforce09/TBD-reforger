@@ -186,7 +186,7 @@ pub fn build(src: &Path, out: &Path) -> Result<ApiStats> {
         }
     }
 
-    // Refuse header-only TSV overwrite of the committed enf-index.
+    // Refuse a header-only TSV overwrite of the committed reference symbol index.
     // The bin used to write first and only then exit 1 on classes==0 — damage already done.
     crate::empty_write_guard::refuse_empty_write(
         "enf apidoc classes TSV",

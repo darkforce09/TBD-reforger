@@ -80,7 +80,7 @@ level; findings are ordered by line.
 
 ## Related documentation
 
-- [Administration and community content](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md)
+- [Administration and community content](/documentation/crates/api/api_server/design_notes/administration_and_content.md)
   — the wiki markup, revision and save design.
 - [Wiki page](/documentation/crates/frontend/pages/doctrine_pages/wiki/wiki_page.md) — the
   page that renders the blocks.

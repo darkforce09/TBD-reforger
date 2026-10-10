@@ -1437,7 +1437,7 @@ ON CONFLICT (id) DO NOTHING;
 --        DISCORD_CLIENT_SECRET= DISCORD_BOT_TOKEN= DISCORD_WEBHOOK_URL= \
 --        cargo run -p api_server --bin api-server
 --      The access-participants fixture names the configured guild, so the guild
---      id is part of the recipe. The API also reads crates/api/api_server/.env,
+--      id is part of the recipe. The API also reads deploy/api.env,
 --      which never overrides a variable already set, so the empty Discord
 --      variables keep the capture API from calling Discord.
 --   2. Take a development login token: GET /api/v1/auth/dev-login?role=admin,

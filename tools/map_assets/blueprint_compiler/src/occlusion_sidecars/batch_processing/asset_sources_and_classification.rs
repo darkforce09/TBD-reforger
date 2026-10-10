@@ -7,11 +7,24 @@
 
 use super::*;
 
-/// The operator's hand-extracted tree, layered under the paks when present.
+/// The operator's hand-extracted tree (`.workstation/reforger_extract/unpacked` of this checkout),
+/// layered under the paks when present.
 pub(super) fn default_extraction_dir() -> Option<PathBuf> {
-    std::env::var_os("HOME")
-        .map(|h| PathBuf::from(h).join("ReforgerExtract/unpacked"))
+    repository_root::find_repository_root()
+        .ok()
+        .map(|root| {
+            root.join(repository_layout::REFORGER_EXTRACT_DIR)
+                .join("unpacked")
+        })
         .filter(|p| p.is_dir())
+}
+
+/// The game's `addons/` folder: `ENFUSION_GAME_PATH`'s, else that of this checkout's MCP game root
+/// (`.workstation/enfusion_mcp_game_root`).
+pub(crate) fn default_pak_dir() -> Option<PathBuf> {
+    repository_root::find_repository_root()
+        .ok()
+        .map(|root| PakSet::game_addons_dir(&root.join(repository_layout::ENFUSION_MCP_GAME_ROOT)))
 }
 
 /// Paks first (the shipped truth), loose extract second.
@@ -19,7 +32,7 @@ pub(crate) fn open_sources(paks: Option<&Path>, extract: Option<&Path>) -> Resul
     let mut layers: Vec<Box<dyn AssetSource>> = Vec::new();
     let pak_dir = paks
         .map(Path::to_path_buf)
-        .or_else(PakSet::default_dir)
+        .or_else(default_pak_dir)
         .filter(|d| d.is_dir());
     if let Some(dir) = pak_dir {
         let set = PakSet::from_dir(&dir)?;

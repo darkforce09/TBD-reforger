@@ -117,7 +117,7 @@ string of a step may name the placeholders `{account_index}`, `{discord_id}`, `{
 
 ## Related documentation
 
-- [Staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md) — the
+- [Staging design note](/documentation/crates/api/api_server/design_notes/staging.md) — the
   load procedure, its ten cases and how the report maps onto them.
 - [Staging load generator](/tools/staging/staging_load_generator/README.md) — the crate this
   folder is the source of.

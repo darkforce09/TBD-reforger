@@ -22,7 +22,7 @@ it.
 
 - `repository_root.rs`: `repository_root(manifest_dir)` is
   `repository_root::find_repository_root_from` from the caller's `env!("CARGO_MANIFEST_DIR")`, the
-  nearest folder holding the `.ai/ROOT` marker, and panics with the walk's error (the
+  nearest folder holding the `.repository_root` marker, and panics with the walk's error (the
   folder searched from and the marker) when there is none. `repository_text` and
   `repository_path` address a file by its path from that root, so a test reads the same file
   whatever the depth of its crate; `repository_text` reads each file once per test process and

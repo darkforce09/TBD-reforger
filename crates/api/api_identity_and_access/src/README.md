@@ -96,7 +96,7 @@ administrator does to a member lives in `api_administration`.
 ## Related documentation
 
 - [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
-- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/design_notes/identity_transactions.md)
   — session authorization, Discord observations, linking and attribution.
 - [API environment variables](/documentation/crates/api/api_server/environment_variables.md)
   — the Discord, token and

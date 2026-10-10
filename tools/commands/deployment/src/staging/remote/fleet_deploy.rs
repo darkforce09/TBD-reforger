@@ -16,7 +16,7 @@
 //! per instance.
 //!
 //! **Invariants:** nothing on the host changes before its secret files are proven present; no
-//! rsync runs before the host's API `.env` is proven present
+//! rsync runs before the host's API settings file is proven present
 //! ([`crate::api_environment_file_preflight`]); the deploy stops at the first step that fails, with that step's code, except that every instance
 //! gets its boot verdict before a failing one stops the deploy; it runs no compose command, because
 //! the website stack on the host belongs to `cargo xtask deploy website`; no secret appears in an
@@ -56,7 +56,7 @@ pub(crate) fn dry_run_plan(env: &Env, instances: &[FleetInstance], migrate: bool
     }
     plan.push(retired_names_absent_plan_line());
     plan.push(format!(
-        "[dry-run] the API's .env, refusing the rsync unless the host answers 0: {}",
+        "[dry-run] the API's settings file, refusing the rsync unless the host answers 0: {}",
         probe_script(&env.remote_dir)
     ));
     plan.push(format!(
@@ -222,7 +222,7 @@ pub(crate) fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
         return Ok(code);
     }
 
-    println!("==> the API's .env on the host");
+    println!("==> the API's settings file on the host");
     let probe_exit = runner.ssh(
         &base,
         &host,

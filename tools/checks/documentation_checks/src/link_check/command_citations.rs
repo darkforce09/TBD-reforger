@@ -17,7 +17,7 @@
 //!
 //! **Signals & state:** the counts of one run.
 //!
-//! **Invariants:** frozen records are never judged; only `cargo` standing as a word of its own
+//! **Invariants:** only `cargo` standing as a word of its own
 //! opens a citation, so `hcargo xtask` is none; a flag is skipped wherever it stands, and a flag
 //! that takes a value takes the next word with it; while the command reached has subcommands,
 //! every other word must name one of them or an alias of one, and a placeholder ends the walk
@@ -28,7 +28,6 @@
 
 use clap::{Arg, Command};
 
-use super::judged_documents::DocumentArea;
 use super::markdown_scan::CodeBlock;
 use super::{BreakRule, DocumentRule, JudgedDocument, RuleContext, RuleFindings};
 
@@ -390,10 +389,6 @@ impl<'c> CommandCitations<'c> {
 }
 
 impl DocumentRule for CommandCitations<'_> {
-    fn judges(&self, area: DocumentArea) -> bool {
-        !area.is_frozen()
-    }
-
     fn judge(
         &mut self,
         document: &JudgedDocument<'_>,

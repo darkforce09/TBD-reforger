@@ -2,7 +2,7 @@
 
 # Equipment and vehicle export documentation
 
-The acceptance evidence of the export addon's equipment and vehicle source exporter: the
+The export addon's equipment and vehicle source exporter: the
 [Workbench](/documentation/glossary/n_to_z.md#workbench) exporter that captures installed equipment,
 vehicles and their gameplay dependencies as source-backed records, which xtask validates and
 publishes as one immutable bundle.
@@ -11,14 +11,14 @@ publishes as one immutable bundle.
 
 ```text
 documentation/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/
-└── verification_evidence/  the frozen acceptance record: findings, field mapping, hashes, examples
+└── README.md  this page: how a generation is exported, validated and published
 ```
 
 ## How it works
 
 The exporter's own README in the code tree describes the export, its records and the validate and
-publish commands; this folder holds only the evidence that accepted it. A complete generation runs
-from the Workbench menu entry "Export Equipment and Vehicles" (category `TBD`), lands under
+publish commands. A complete generation runs from the Workbench menu entry "Export Equipment and
+Vehicles" (category `TBD`), lands under
 `$profile:TBD_Export/equipment_vehicle_exports/generations/<generation_id>/`, and is checked and
 sealed with:
 
@@ -26,9 +26,6 @@ sealed with:
 cargo xtask mod validate-equipment-vehicle-export --input <generation_directory>
 cargo xtask mod publish-equipment-vehicle-export --input <generation_directory>
 ```
-
-The evidence files are frozen: a later change to the exporter adds new evidence rather than
-rewording these files.
 
 ## Code
 
@@ -44,11 +41,12 @@ rewording these files.
 
 ## Boundaries
 
-- Depends on: the exporter and the xtask commands above, whose acceptance the evidence records.
+- Depends on: the exporter and the xtask commands above.
 - Used by: the exporter's README in `mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/`
   and the validation README in `tools/commands/mod_operations/src/equipment_vehicle_export/`, which
   point here.
-- Rules: the evidence stays byte-for-byte as recorded; only its folder indexes change.
+- Rules: the export contract is the one shape a generation is validated against; the publisher
+  rejects diagnostic generations.
 
 ## Related documentation
 

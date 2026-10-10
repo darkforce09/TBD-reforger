@@ -73,5 +73,3 @@ None: Workbench runs these scripts in the editor.
 
 - [Export contract](/contracts/definitions/equipment-vehicle-export.schema.json) — the
   `resource_record` document and the capability names.
-- [Field mapping](/documentation/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/field-mapping/README.md)
-  — which source facts each organized field carries.

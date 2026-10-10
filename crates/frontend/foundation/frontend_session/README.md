@@ -79,7 +79,7 @@ None: no feature, no environment variable. The persisted slice lives under the l
 
 - [Account pages](/documentation/crates/frontend/pages/account_pages/account_pages.md) — sign-in, the auth
   callback and settings.
-- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/design_notes/identity_transactions.md)
   — sessions, refresh rotation and replay revocation in the API.
 - [Frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md#shared-foundations) — the shared
   foundations among the routes, pages and workspaces of the app.

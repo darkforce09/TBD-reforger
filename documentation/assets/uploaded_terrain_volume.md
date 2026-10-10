@@ -106,7 +106,7 @@ paths) come before the checks that protect the map (schema, bounds, anchors).
 
 ## Open work
 
-None. No ticket in `.ai/tickets/` covers terrain uploads or this volume.
+None. No ticket in `ttm` covers terrain uploads or this volume.
 
 ## Decisions
 

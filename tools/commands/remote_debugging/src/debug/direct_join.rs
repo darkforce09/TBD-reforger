@@ -8,7 +8,7 @@
 //! once, and the ping and the A2S probe both use that address.
 //!
 //! **Signals & state:** prepends `$HOME/.local/bin` to `PATH` for the run and restores it on
-//! return; appends six rows to `.cursor/debug-8fc1e0.log` in the checkout.
+//! return; appends six rows to `.workstation/logs/direct_join_report.log` in the checkout.
 //!
 //! **Invariants:** every local probe is soft, because the summary is worth more complete than
 //! strict: a missing Steam manifest or an unmatched `buildid` reports `unknown`, a symlink that
@@ -154,9 +154,10 @@ fn staging_host(
     })
 }
 
-/// The report file, in the checkout's `.cursor/`.
+/// The report file, in the checkout's machine-local logs folder.
 fn debug_log_path(root: &Path) -> PathBuf {
-    root.join(".cursor/debug-8fc1e0.log")
+    root.join(repository_layout::WORKSTATION_LOGS_DIR)
+        .join("direct_join_report.log")
 }
 
 /// Entry for `xtask debug direct-join [RUN_ID] [--instance N]`.
@@ -249,6 +250,9 @@ fn write_report(
     };
 
     let log = debug_log_path(root);
+    if let Some(folder) = log.parent() {
+        let _ = std::fs::create_dir_all(folder);
+    }
     probes::cmd_direct_join_log(
         &log,
         &DirectJoinObservations {

@@ -98,5 +98,5 @@ each folder clears its static state when a new world starts.
   non-negotiables and the [Enfusion](/documentation/glossary/a_to_f.md#enfusion) facts it relies on
 - [Mod UI documentation](/documentation/mod/tbd-framework/UI/README.md) — the specification of
   each in-game screen
-- [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — how mod work runs through
-  Workbench and the gates
+- [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) — driving Workbench
+  and the mod gates from a session

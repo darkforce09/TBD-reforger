@@ -29,7 +29,7 @@ pub struct Item {
     pub display_name: ItemDisplayName,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub icon_url: ::std::option::Option<::std::string::String>,
-    ///v3 item classification. The phase 1 kinds are all still valid. `gear_uniform` carries no rows — it is split into `gear_jacket`, `gear_pants` and `gear_boots` — but is still accepted. `other` is the escape hatch, and its count is reported in the export verify logs. The taxonomy mapping lives at `.ai/artifacts/ace_arsenal_taxonomy_map.md`.
+    ///v3 item classification. The phase 1 kinds are all still valid. `gear_uniform` carries no rows — it is split into `gear_jacket`, `gear_pants` and `gear_boots` — but is still accepted. `other` is the escape hatch, and its count is reported in the export verify logs. The taxonomy mapping lives at `documentation/contracts/ace_arsenal_taxonomy_map.md`.
     pub kind: ItemKind,
     ///Container volume capacity (storage component MaxCumulativeVolume, cm³) for items that ARE containers. Absent when the prefab relies on the engine class default — never guessed. Feeds the later cargo-budget slice.
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
@@ -165,7 +165,7 @@ impl<'de> ::serde::Deserialize<'de> for ItemDisplayName {
             })
     }
 }
-///v3 item classification. The phase 1 kinds are all still valid. `gear_uniform` carries no rows — it is split into `gear_jacket`, `gear_pants` and `gear_boots` — but is still accepted. `other` is the escape hatch, and its count is reported in the export verify logs. The taxonomy mapping lives at `.ai/artifacts/ace_arsenal_taxonomy_map.md`.
+///v3 item classification. The phase 1 kinds are all still valid. `gear_uniform` carries no rows — it is split into `gear_jacket`, `gear_pants` and `gear_boots` — but is still accepted. `other` is the escape hatch, and its count is reported in the export verify logs. The taxonomy mapping lives at `documentation/contracts/ace_arsenal_taxonomy_map.md`.
 #[derive(
     ::serde::Deserialize,
     ::serde::Serialize,

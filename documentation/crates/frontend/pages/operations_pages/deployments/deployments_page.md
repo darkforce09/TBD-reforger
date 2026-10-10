@@ -131,8 +131,7 @@ The page stores nothing in the browser.
   leave panel and the review queue. The three tables share one column heading style
   (`ServiceHead`).
 - Design target: the [service record blueprint](/documentation/crates/frontend/pages/operations_pages/deployments/visual_references/service_record_blueprint/README.md),
-  a design-phase reference, and the archived platform spec's
-  [My Deployments section](/documentation/archive/go_and_react_era_design/platform_context_handoff.md#3-my-deployments).
+  a design-phase reference.
   The built page follows the blueprint's two columns and differs:
   - the identity column shows the name, the role and the deployment count, and "No telemetry
     recorded" where the blueprint shows a K/D ratio, a win rate, a favourite weapon and a
@@ -148,11 +147,10 @@ The page stores nothing in the browser.
 
 ## Open work
 
-- [T-1031 — Add kills, deaths and K/D to the deployments page](/.ai/tickets/T-1031.toml) (idea,
-  no plan): once telemetry flows, the identity column shows the kills, deaths and K/D the API
-  already serves instead of "No telemetry recorded".
-- [T-136 — 3D AAR / OCAP-style replay](/documentation/tickets/specs/t131_north_star_backlog.md)
-  (ready, [plan](/documentation/tickets/plans/t-136_plan.md)): a replay page for each match,
+- Add kills, deaths and K/D to the deployments page (ticket `add-kills-deaths-k` in `ttm`): once
+  telemetry flows, the identity column shows the kills, deaths and K/D the API already serves
+  instead of "No telemetry recorded".
+- 3D AAR / OCAP-style replay (ticket `3d-aar-ocap-style` in `ttm`): a replay page for each match,
   which the history's `aar_replay_url` and its "View Replay" link lead to.
 
 ## Decisions

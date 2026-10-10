@@ -92,9 +92,9 @@ from the same export.
 
 ## Open work
 
-- [T-946.71 — Viewshed wash lane shipped with no consumer](/.ai/tickets/T-946.71.toml) (idea, no
-  plan): the bench computes each wash in one synchronous call; the budgeted wash lane the map
-  engine offers has no caller yet.
+- Viewshed wash lane shipped with no consumer (ticket
+  `wave-close-child-tickets.viewshed-wash-lane-shipped` in `ttm`): the bench computes each wash in
+  one synchronous call; the budgeted wash lane the map engine offers has no caller yet.
 
 ## Decisions
 

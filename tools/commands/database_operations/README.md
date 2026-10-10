@@ -5,9 +5,8 @@ The `database_operations` crate: the database side of the repository tooling. It
 [API](/documentation/glossary/a_to_f.md#api), its seeds and registry import, the isolated
 integration-test run, the migration checksum repair and the lane's self-test), the
 `cargo xtask deploy db` verbs (the verified backup, the guarded restore, the restore drill and the
-container helpers they share), the database source gate `cargo xtask verify no-select-star`,
-and the announcement seed that
-`cargo xtask mod seed-announcement` runs. Developers run the `db` group locally; the systemd
+container helpers they share) and the database source gate `cargo xtask verify no-select-star`.
+Developers run the `db` group locally; the systemd
 timers on the website host run the backup and the drill.
 
 ## Contents
@@ -149,16 +148,6 @@ clap usage error exits 2.
 - Does: the API's SQL never reads `*` from a table. It needs no running database.
 - Exit codes: 0 held; 1 findings; 2 a check could not run.
 - Example: `cargo xtask verify no-select-star`
-
-### mod seed-announcement
-
-- Synopsis: `cargo xtask mod seed-announcement`, defined in the `mod` group.
-- Does: inserts the pinned "Milestone #1" website announcement unless one exists, through `psql`
-  with `DATABASE_URL` from the environment or `crates/api/api_server/.env`, else through
-  `podman exec -i tbdevent-postgres psql` when that container runs.
-- Exit codes: 0 inserted or present; 1 no `psql` and no container, or no `DATABASE_URL`; `psql`'s
-  own code; 127 a tool that is not installed.
-- Example: `cargo xtask mod seed-announcement`
 
 ## Boundaries
 

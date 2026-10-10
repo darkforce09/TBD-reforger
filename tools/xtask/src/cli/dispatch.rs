@@ -9,7 +9,6 @@ pub(crate) fn run() -> Result<u8> {
     match cli.cmd {
         TopCmd::Mcp { cmd } => Ok(enfusion_mcp::run(cmd)),
         TopCmd::Debug { cmd } => Ok(remote_debugging::debug::run(cmd)?),
-        TopCmd::Repro { cmd } => Ok(remote_debugging::reproduction::run(cmd)?),
         TopCmd::Mod { cmd } => Ok(mod_operations::run(cmd)?),
         TopCmd::Deploy { cmd } => Ok(deployment::run(cmd)?),
         TopCmd::Db { cmd } => Ok(database_operations::local_database::run(cmd)?),
@@ -29,6 +28,5 @@ pub(crate) fn run() -> Result<u8> {
         TopCmd::Help => Ok(u8::try_from(ci_task_catalog::task_runner::help()).unwrap_or(1)),
         TopCmd::Gen { cmd } => Ok(schema_tooling::run_gen_command(cmd)?),
         TopCmd::Schema { cmd } => commands::schema::dispatch::run(cmd),
-        TopCmd::Refactor { cmd } => commands::refactor::dispatch::run(cmd),
     }
 }

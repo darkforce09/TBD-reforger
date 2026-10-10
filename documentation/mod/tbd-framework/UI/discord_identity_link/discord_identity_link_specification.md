@@ -101,8 +101,8 @@ None found: each reply matches the status the platform's handler returns.
 
 ## Open work
 
-- [T-327 — Chat shows `#tbd link` before TBD can suppress](/.ai/tickets/T-327.toml) (deferred,
-  no plan): the typed code could show in chat before the server consumes the line.
+- Chat shows `#tbd link` before TBD can suppress (ticket `chat-shows-tbd-link` in `ttm`): the typed
+  code could show in chat before the server consumes the line.
 
 ## Decisions
 

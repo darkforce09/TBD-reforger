@@ -1,5 +1,0 @@
-# Stage S7 X7b, second of two — with engine-layer rule 5 retired and rule 7's mission-editing cases beside the other rule 7 tests, the engine-layer test file left holding the per-rule report results takes that subject's name. Paths name the tree before the move.
-kind	from	to	scope
-#
-# the per-rule results tests of the engine-layer report
-path	tools/foundation/repository_laws/src/engine_layers/tests/editing_module_isolation.rs	tools/foundation/repository_laws/src/engine_layers/tests/engine_layer_rule_results.rs

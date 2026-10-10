@@ -197,23 +197,20 @@ merges a payload straight through the hosted document (`merge_mission_json` on
 
 ## Open work
 
-- [T-821 — Save version prefill static; second save 409s](/documentation/tickets/specs/t821_save_version_prefill.md)
-  (ready, [plan](/documentation/tickets/plans/t-821_plan.md)): the dialog proposes a free
-  version number.
-- [T-827 — Validation chip red under 4.5:1 live-effective](/documentation/tickets/specs/t827_validation_chip_contrast.md)
-  (ready, [plan](/documentation/tickets/plans/t-827_plan.md)): the chip's error colour meets
-  contrast.
-- [T-158 — Editor shell UX consolidation](/documentation/tickets/specs/t158_editor_shell.md)
-  (ready, [plan](/documentation/tickets/plans/t-158_plan.md)): one settings entry point and
-  the inert buttons wired.
-- [T-704 — Command palette over every editor command](/documentation/tickets/specs/t704_command_palette.md)
-  (ready, [plan](/documentation/tickets/plans/t-704_plan.md)): a searchable palette of the
-  commands.
-- [T-1034 — Fix top strip slot census and summary line never showing](/.ai/tickets/T-1034.toml)
-  (idea, no plan): the census shows or goes.
-- [T-1053 — Decide whether mission upload and save share one duplicate-slot check](/.ai/tickets/T-1053.toml)
-  (idea, no plan): one duplicate-id check for Save Version and the library upload.
-- [T-083 — Top menu bar](/.ai/tickets/T-083.toml) (deferred, no plan): Eden-style menus.
+- Save version prefill static; second save 409s (ticket `save-version-prefill-static` in `ttm`): the
+  dialog proposes a free version number.
+- Validation chip red under 4.5:1 live-effective (ticket `validation-chip-red-under` in `ttm`): the
+  chip's error colour meets contrast.
+- Editor shell UX consolidation (ticket `editor-shell-ux-consolidation` in `ttm`): one settings
+  entry point and the inert buttons wired.
+- Command palette over every editor command (ticket `command-palette-over-editor` in `ttm`): a
+  searchable palette of the commands.
+- Fix top strip slot census and summary line never showing (ticket `fix-top-strip-slot` in `ttm`):
+  the census shows or goes.
+- Decide whether mission upload and save share one duplicate-slot check (ticket
+  `decide-whether-mission-upload` in `ttm`): one duplicate-id check for Save Version and the library
+  upload.
+- Top menu bar (ticket `top-menu-bar` in `ttm`): Eden-style menus.
 
 No open ticket covers version history in the editor, the merge surface or the export envelope's
 version field.

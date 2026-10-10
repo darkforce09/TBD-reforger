@@ -93,11 +93,11 @@ lists both RPCs):
 
 ## Open work
 
-- [T-1083 — Keep the marker client poll off dedicated servers](/.ai/tickets/T-1083.toml) (idea,
-  no plan): the client loop starts only where a player sees the map, not on a headless server.
-- [T-831 — Per-side marker authoring audit then explicit UI](/documentation/tickets/specs/t831_per_side_markers_audit.md)
-  (ready, [plan](/documentation/tickets/plans/t-831_plan.md)): the Mission Creator authors
-  markers per side explicitly, which changes the rows each side receives.
+- Keep the marker client poll off dedicated servers (ticket `keep-marker-client-poll` in `ttm`): the
+  client loop starts only where a player sees the map, not on a headless server.
+- Per-side marker authoring audit then explicit UI (ticket `side-marker-authoring-audit` in `ttm`):
+  the Mission Creator authors markers per side explicitly, which changes the rows each side
+  receives.
 
 ## Decisions
 

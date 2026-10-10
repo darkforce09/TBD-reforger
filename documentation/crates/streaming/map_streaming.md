@@ -158,47 +158,42 @@ read.
   resident and panning back over it fetches nothing until the floor is passed.
 - Every limit that bounds the work of one pass is a count (12 fetches at a time, 24 ingests, 96
   occluder wants); the 4 ms ingest budget is measured and reported, not enforced.
-- Design target: the [map binary storage spec](/documentation/tickets/specs/t935_map_binary_storage.md)
-  and the [engine performance spec](/documentation/tickets/specs/t938_engine_perf.md), a
-  design-phase reference. Differences: the world objects still ship as one file per 512 m chunk
-  with gzip JSON beside the binaries, where the target is one object container with a spatial
-  index read by range requests, the shape the satellite bundle already has.
+- Design target: the specs of the tickets `map-binary-storage-hybrid` and `engine-wasm-performance`
+  in `ttm`, a design-phase reference. Differences: the world objects still ship as one file per 512 m chunk with
+  gzip JSON beside the binaries, where the target is one object container with a spatial index read
+  by range requests, the shape the satellite bundle already has.
 - The grid and the basemap extent are fixed at 12,800 m for every terrain
   (`crates/streaming/map_streaming_host/src/queries.rs:16`), while Arland is 4,096 m.
 
 ## Open work
 
-- [T-1057 — Fix occluder residency events piling up after prefab load failure](/.ai/tickets/T-1057.toml)
-  (idea, no plan): when the prefab catalogue fails to load, the occluder never becomes ready and
-  returns before draining the residency's events, so the queue grows for the session; the fix
-  drains them.
-- [T-1060 — Check map streaming stubs re-fetched and satellite budget never released](/.ai/tickets/T-1060.toml)
-  (idea, no plan): an evicted stub stops being fetched again, and the satellite's reserved bytes
-  are released or replaced.
-- [T-1062 — Derive map grid, basemap, peaks and forest from terrain size](/.ai/tickets/T-1062.toml)
-  (idea, no plan): the grid and basemap follow the loaded terrain's size.
-- [T-1123 — Decide whether chunk index paths name the .bin or .json.gz](/.ai/tickets/T-1123.toml)
-  (idea, no plan): Everon's chunk index and the object builder agree on one chunk form.
-- [T-935.15 — Delete chunking: one container, spatial index, range fetch](/documentation/tickets/specs/t938_engine_perf.md)
-  (queued, [plan](/documentation/tickets/plans/t-935_15_plan.md)),
-  [T-935.18 — Emit the object container and spatial index beside the chunks](/documentation/tickets/specs/t938_engine_perf.md)
-  (queued, [plan](/documentation/tickets/plans/t-935_18_plan.md)) and
-  [T-935.20 — Delete residency chunk_bin and the chunk vocabulary](/documentation/tickets/specs/t938_engine_perf.md)
-  (queued, [plan](/documentation/tickets/plans/t-935_20_plan.md)): world objects move to one
-  container with a spatial index and range fetches, and the chunk residency's chunk vocabulary
-  goes.
-- [T-935.16 — Finish the gz-JSON cutover T-935.13 left half done](/documentation/tickets/specs/t938_engine_perf.md)
-  (ready, [plan](/documentation/tickets/plans/t-935_16_plan.md)): the gzip JSON chunks,
+- Fix occluder residency events piling up after prefab load failure (ticket
+  `fix-occluder-residency-events` in `ttm`): when the prefab catalogue fails to load, the occluder
+  never becomes ready and returns before draining the residency's events, so the queue grows for the
+  session; the fix drains them.
+- Check map streaming stubs re-fetched and satellite budget never released (ticket
+  `check-map-streaming-stubs` in `ttm`): an evicted stub stops being fetched again, and the
+  satellite's reserved bytes are released or replaced.
+- Derive map grid, basemap, peaks and forest from terrain size (ticket `derive-map-grid-basemap` in
+  `ttm`): the grid and basemap follow the loaded terrain's size.
+- Decide whether chunk index paths name the .bin or .json.gz (ticket `decide-whether-chunk-index` in
+  `ttm`): Everon's chunk index and the object builder agree on one chunk form.
+- Delete chunking: one container, spatial index, range fetch (ticket
+  `map-binary-storage-hybrid.delete-chunking-one-container` in `ttm`), Emit the object container and
+  spatial index beside the chunks (ticket `map-binary-storage-hybrid.emit-object-container-spatial`
+  in `ttm`) and Delete residency chunk_bin and the chunk vocabulary (ticket
+  `map-binary-storage-hybrid.delete-residency-chunk-bin` in `ttm`): world objects move to one
+  container with a spatial index and range fetches, and the chunk residency's chunk vocabulary goes.
+- Finish the gz-JSON cutover
+  (ticket `map-binary-storage-hybrid.finish-gz-cutover-left` in `ttm`): the gzip JSON chunks,
   prefabs, roads and forest regions go, and with them `flate2`.
-- [T-938 — Engine and wasm performance](/documentation/tickets/specs/t938_engine_perf.md)
-  (queued, [plan](/documentation/tickets/plans/t-938_plan.md)): measured chunk-crossing uploads
-  and a wasm memory budget guard, among the render findings.
-- [T-1042 — Rename ticket ids out of code names and UI strings](/.ai/tickets/T-1042.toml) (idea,
-  no plan): the `t9382` and `__t9386` names get subject names (the budget's test folder already
-  has one).
-- [T-1067 — Remove dead map engine code, facades and duplicated constants](/.ai/tickets/T-1067.toml)
-  (idea, no plan): the test-only `ingest_budget_exhausted_at`, the callerless `invalidate_chunk`
-  and `release_inflight` go.
+- Engine and wasm performance (ticket `engine-wasm-performance` in `ttm`): measured chunk-crossing
+  uploads and a wasm memory budget guard, among the render findings.
+- Rename ticket ids out of code names and UI strings (ticket `rename-ticket-ids-out` in `ttm`): the
+  `t9382` and `__t9386` names get subject names (the budget's test folder already has one).
+- Remove dead map engine code, facades and duplicated constants (ticket `remove-dead-map-engine` in
+  `ttm`): the test-only `ingest_budget_exhausted_at`, the callerless `invalidate_chunk` and
+  `release_inflight` go.
 
 ## Decisions
 

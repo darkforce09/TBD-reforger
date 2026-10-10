@@ -131,7 +131,7 @@ The page itself writes nothing and stores nothing in the browser.
 
 ## Open work
 
-None. No open ticket in `.ai/tickets/` changes this page; the known discrepancies above have no
+None. No open ticket in `ttm` changes this page; the known discrepancies above have no
 ticket yet.
 
 ## Decisions

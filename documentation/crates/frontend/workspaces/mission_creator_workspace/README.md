@@ -69,7 +69,7 @@ in `feature_inventory/`, an Eden catalog in `eden_editor_reference/`, a design s
 - Depends on: the [feature doc template](/documentation/standards/templates/feature_doc.md),
   the [documentation folder README template](/documentation/standards/templates/readme_documentation_folder.md)
   and the [glossary](/documentation/glossary/README.md); the editor code, the map engine's data and
-  editing modules, the missions API and the ticket registry in `.ai/tickets/`, which the documents
+  editing modules, the missions API and the ticket manager (`ttm`), which the documents
   are written from; the Bohemia wiki's Eden pages, which the Eden catalogs cite.
 - Used by: the glossary's Mission Creator entry; the documentation root README; the frontend,
   full-screen workspaces, mission hub, review workspace and map-engine documentation; the in-code
@@ -78,7 +78,7 @@ in `feature_inventory/`, an Eden catalog in `eden_editor_reference/`, a design s
   the app README template, whose sample links here.
 - Rules: every Mission Creator document lives under this folder; prose says Mission Creator and
   mission, and quotes code identifiers such as `scenario` as spelled; the feature inventory's IDs
-  are never reused; open work is listed from `.ai/tickets/` with each ticket's status, never from
+  are never reused; open work is listed from `ttm`, never from
   memory.
 
 ## Related documentation

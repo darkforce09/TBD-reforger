@@ -55,7 +55,7 @@ The Everon tests read Git LFS objects under `assets/terrains/everon/`; pull them
 
 | Variable | Default | Effect |
 |---|---|---|
-| `ENFUSION_GAME_PATH` | `$HOME/.cache/enfusion-mcp-root` | the game folder whose archives `build-objects`, `build-roads`, `topo-stats`, `edds-cell`, `sap-catalog` and the E6 gate read (through `enfusion_pak`) |
+| `ENFUSION_GAME_PATH` | `<checkout>/.workstation/enfusion_mcp_game_root` | the game folder whose archives `build-objects`, `build-roads`, `topo-stats`, `edds-cell`, `sap-catalog` and the E6 gate read (through `enfusion_pak`) |
 | `PROFILE`, `ENFUSION_PROFILE_PATH` | `$HOME/Documents/Games/ArmaReforgerWorkbench/profile` | the [Workbench](/documentation/glossary/n_to_z.md#workbench) profile folder `copy-export-profile` reads when `--profile` is not given, `PROFILE` first |
 
 ## Boundaries

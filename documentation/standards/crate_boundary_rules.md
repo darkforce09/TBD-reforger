@@ -441,8 +441,8 @@ than passes.
 
 Tickets:
 
-- [T-1070 — Remove map nouns from graphics engine names; widen rule 2](/.ai/tickets/T-1070.toml)
-  (idea, no plan): renames the graphics crates' map-named items to geometry terms and adds
+- `remove-map-nouns-graphics` in `ttm` — Remove map nouns from graphics engine names; widen
+  rule 2: renames the graphics crates' map-named items to geometry terms and adds
   building, forest, map, hillshade, slot, town and road to the noun list.
 
 ## Related documentation

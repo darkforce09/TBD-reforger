@@ -36,7 +36,7 @@ tools/enfusion/enfusion_script_index/src/
 
 ```text
 mod/References/crf_framework/ ─┐
-vanilla .c tree                    ─┴▶ enf index <crf|vanilla> ─▶ symbols::scan ─▶ .ai/artifacts/enf-index/<lane>_*.tsv
+vanilla .c tree                    ─┴▶ enf index <crf|vanilla> ─▶ symbols::scan ─▶ mod/reference_symbol_index/<lane>_*.tsv
 game paks ─▶ enf extract (PakVfs) ─▶ mod/References/vanilla_reference/Scripts/
           ─▶ enf carve            ─▶ mod/References/vanilla_reference/Carved/
 cached HTML ─▶ enf apidoc ─▶ vanilla_api_classes.tsv, vanilla_api_members.tsv
@@ -79,8 +79,7 @@ index TSVs ─▶ enf lookup | enf dirs | enf citations | enf capability ─▶ 
   - `tools/developer_tools/src/bin/enf.rs` (`run_command_line`);
   - `cargo xtask fetch vanilla-api` and `cargo xtask fetch vanilla-source`, which run
     `vanilla_page_fetch` and print the `enf apidoc` and `enf source` step that follows them;
-  - the mod wave gate in `tools/commands/mod_operations/src/wave_execution/execution.rs`, whose
-    unit-test step runs this crate's tests.
+  - the ticket manager's mod wave gate, whose unit-test step runs this crate's tests.
 - Rules: every lane shares the one scanner in `symbols.rs` (`does_not_invent_apis` and the other
   tests in `tests/symbols/tests.rs`); a committed index is never overwritten with an empty one;
   a lane output lands only inside the references folder and replaces a previous one only on
@@ -89,7 +88,5 @@ index TSVs ─▶ enf lookup | enf dirs | enf citations | enf capability ─▶ 
 
 ## Related documentation
 
-- [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — the `@idx` citations and
-  the oracle gates in mod work.
 - [Enfusion script oracle](/documentation/tools/enfusion/enfusion_script_index.md) —
   the oracle tables, their lookups and the citation gate in depth.

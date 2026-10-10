@@ -20,7 +20,8 @@
 !contracts/rules
 
 # Inside those folders, what no Rust build reads: build output, installed npm packages, and the
-# local secrets files (`crates/api/api_server/.env`), which must never reach an image layer.
+# local secrets files (any `.env`; the API's settings file `deploy/api.env` lies outside the
+# context), which must never reach an image layer.
 **/target
 **/dist
 **/node_modules

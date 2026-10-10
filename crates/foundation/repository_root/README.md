@@ -16,10 +16,10 @@ crates/foundation/repository_root/
 
 ```text
 find_repository_root()            working directory ──┐
-find_repository_root_from(start)  any folder ─────────┴─► walk up to the nearest folder holding .ai/ROOT
+find_repository_root_from(start)  any folder ─────────┴─► walk up to the nearest folder holding .repository_root
 ```
 
-A folder is the checkout root when it holds the file `.ai/ROOT` (`ROOT_MARKER`); the walk
+A folder is the checkout root when it holds the file `.repository_root` (`ROOT_MARKER`); the walk
 stops at the nearest one, so a slice worktree nested under another checkout resolves to itself,
 and a walk that reaches the filesystem root is an `Error` naming the folder it started from and
 the marker. A folder named like the marker does not count. `find_repository_root` starts from the
@@ -27,12 +27,12 @@ working directory, so a command run in a worktree reads that worktree's files ev
 was linked from a sibling checkout sharing the build folder; a test that must find the checkout it
 was compiled in starts from its own `env!("CARGO_MANIFEST_DIR")` with `find_repository_root_from`.
 
-Why the marker is `.ai/ROOT` and not the Cargo workspace root (a `Cargo.lock` beside a
+Why the marker is `.repository_root` and not the Cargo workspace root (a `Cargo.lock` beside a
 `Cargo.toml` declaring `[workspace]`):
 
 - **Every checkout carries it.** It is a tracked file, so every clone, every CI checkout (the
   workflows check out the whole tree, never a sparse one) and every `git worktree` holds it. The
-  release image's build context (`.dockerignore`) leaves `.ai/` out, but that build compiles the
+  release image's build context (`.dockerignore`) leaves the marker out, but that build compiles the
   API binary alone, which links neither this crate nor any root walk: only test code and the tools
   do.
 - **Nothing fakes it by accident.** Tests across the tools build throwaway Cargo workspaces (the
@@ -66,7 +66,7 @@ None: no feature, no environment variable. The working directory is the walk's s
 - `find_repository_root() -> Result<PathBuf>`: the root above the working directory.
 - `find_repository_root_from(start: &Path) -> Result<PathBuf>`: the root at or above `start`.
 - `is_repository_root(candidate: &Path) -> bool`: whether `candidate` holds the marker file.
-- `ROOT_MARKER`: `.ai/ROOT`, relative to the root.
+- `ROOT_MARKER`: `.repository_root`, relative to the root.
 - `Error` (`CurrentDirectory`, `RootMarkerNotFound { start }`) and `Result`.
 - `prelude`: the three functions and `ROOT_MARKER`.
 

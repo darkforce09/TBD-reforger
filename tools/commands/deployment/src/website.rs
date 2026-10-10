@@ -3,7 +3,7 @@
 //! Caddy web server, and restart the API's user-systemd unit.
 //!
 //! **Role:** reads the deploy settings, refuses what the `--delete` rsync must never touch, and
-//! runs the steps in order: the map-asset probe, the probe of the API's `.env` on the host
+//! runs the steps in order: the map-asset probe, the probe of the API's settings file on the host
 //! ([`crate::api_environment_file_preflight`]), the rsync, the remote steps of [`remote_steps`],
 //! and the restart.
 //!
@@ -18,7 +18,7 @@
 //! with defaults, and the file is parsed, never executed; a missing tool or a killed child is
 //! reported as itself and never folds into "deploy succeeded"; `TBD_REMOTE_DIR` sits under the
 //! deploy user's `/home/<user>/tbd` (from `TBD_SSH_HOST`), and a host named without a user is
-//! refused; the rsync runs only once the host's API `.env` is proven present; a failing remote
+//! refused; the rsync runs only once the host's API settings file is proven present; a failing remote
 //! step stops the deploy before the restart, so the running API keeps serving the previous
 //! build.
 //!
@@ -172,7 +172,7 @@ impl DeployCfg {
             return Ok(code);
         }
 
-        println!("==> preflight: the API's .env on the host");
+        println!("==> preflight: the API's settings file on the host");
         if let Err(code) = self.rsync_once_the_api_environment_file_is_present() {
             return Ok(code);
         }
@@ -365,7 +365,7 @@ impl DeployCfg {
         asset_preflight::report(asset_preflight::classify(code), &self.remote_dir)
     }
 
-    /// Asks the host whether its checkout holds the API's `.env`, then runs the `--delete` rsync
+    /// Asks the host whether its checkout holds the API's settings file, then runs the `--delete` rsync
     /// only when it does ([`api_environment_file_preflight::rsync_only_when_present`]). The dry run
     /// prints the probe and the rsync's exclusions instead.
     fn rsync_once_the_api_environment_file_is_present(&self) -> Result<(), u8> {

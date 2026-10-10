@@ -6,7 +6,7 @@ How to record the `staging_load` receipt: 1,100 synthetic members seeded on the 
 measured minutes of member load from five workstation addresses through Caddy on the LAN, and the
 game operations measured beside it; then the cleanup. The cases and the measurement rules are in
 the
-[staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md#load-procedure-staging_load);
+[staging design note](/documentation/crates/api/api_server/design_notes/staging.md#load-procedure-staging_load);
 the committed workload and population are in `tools/xtask/staging/`.
 
 ## Before you start

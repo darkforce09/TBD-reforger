@@ -44,7 +44,7 @@ a line in Contents and a row in the table.
 - Depends on: the [feature doc template](/documentation/standards/templates/feature_doc.md) and
   the [documentation folder README template](/documentation/standards/templates/readme_documentation_folder.md);
   the [glossary](/documentation/glossary/README.md); the page code, the API handlers it calls and the
-  ticket registry in `.ai/tickets/`, which the feature docs are written from.
+  ticket manager (`ttm`), which the feature docs are written from.
 - Used by: the in-code READMEs of `crates/frontend/pages/field_tools_pages/` and its page folders,
   which link the feature docs under Related documentation.
 - Rules: one folder per page folder of the code, spelled the same; a feature doc keeps its name,

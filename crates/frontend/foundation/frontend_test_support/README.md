@@ -18,7 +18,7 @@ crates/frontend/foundation/frontend_test_support/
 ## How it works
 
 A test passes its own `env!("CARGO_MANIFEST_DIR")`, because `env!` expands in the crate that
-spells it; `repository_root` walks up from there to the folder holding the `.ai/ROOT`
+spells it; `repository_root` walks up from there to the folder holding the `.repository_root`
 marker, so a test reads the same repository file at whatever depth its crate sits.
 `golden!("GET__me.json")` expands that argument in the calling crate and reads the captured
 response from that root. The [source tree README](src/README.md) describes each module.

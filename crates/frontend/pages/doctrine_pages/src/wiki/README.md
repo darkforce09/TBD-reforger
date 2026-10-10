@@ -133,5 +133,5 @@ red ("CAUTION", "CRITICAL RULE").
   — the page's behaviour and design.
 - [Community content domain](/crates/api/api_community_content/src/README.md) — the wiki
   routes.
-- [Administration and community content](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md#wiki-markup-and-revisions)
+- [Administration and community content](/documentation/crates/api/api_server/design_notes/administration_and_content.md#wiki-markup-and-revisions)
   — the markup service, the revision storage and the save refusals.

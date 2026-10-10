@@ -33,16 +33,18 @@ Run every command from the repository root unless a step says otherwise.
 
 ### Start the stack
 
-1. Create the API's environment file. Its development values work as they stand:
+1. Create the API's settings file. Its development values work as they stand:
    `APP_ENV=development`, `DATABASE_URL` on host port 5434, `FRONTEND_URL=http://localhost:3000`
-   and a placeholder `JWT_SECRET`. The file is gitignored, so a new git worktree has none; copy
-   the main checkout's `.env` into it instead when it holds real Discord values.
+   and a placeholder `JWT_SECRET`. The file is gitignored, so a new git worktree under
+   `.worktrees/` has none; copy the main checkout's `deploy/api.env` into it, or export
+   `TBD_API_ENV_FILE` naming that file, when it holds real Discord values.
 
    ```bash
-   cp crates/api/api_server/.env.example crates/api/api_server/.env
+   cp deploy/api.env.example deploy/api.env
    ```
 
-   Expected: no output; `crates/api/api_server/.env` exists. Every variable, its default and its
+   Expected: no output; `deploy/api.env` exists. The API reads the file `TBD_API_ENV_FILE` names,
+   else `deploy/api.env` under the checkout root. Every variable, its default and its
    failure mode is in
    [API environment variables](/documentation/crates/api/api_server/environment_variables.md).
 
@@ -56,7 +58,9 @@ Run every command from the repository root unless a step says otherwise.
    runtime it found, then compose starts the `tbd_reforger_db` container from `postgres:18-alpine`, listening on
    host port 5434 with the user, password and database `tbd`, `tbd` and `tbd_reforger`.
 
-3. Run the API. It builds the `api-server` binary into `target/dev-api/` in this checkout, applies the
+3. Run the API. It builds the `api-server` binary into the `dev-api/` subfolder of this checkout's
+   build folder for the environment (`target/host/` through `hcargo` on the host,
+   `target/container/` inside the development container), applies the
    pending migrations and stays in the foreground; leave it running and open a second terminal.
 
    ```bash
@@ -64,7 +68,7 @@ Run every command from the repository root unless a step says otherwise.
    ```
 
    Expected: the line
-   `cd crates/api/api_server && CARGO_TARGET_DIR=<checkout>/target/dev-api cargo run --bin api-server`,
+   `cd crates/api/api_server && CARGO_TARGET_DIR=<checkout>/target/<host|container>/dev-api cargo run --bin api-server`,
    the build, then the log lines `migrations applied` and `listening on 0.0.0.0:8080`. Restart it
    after a change to the API; `cargo run` does not reload.
 
@@ -210,7 +214,7 @@ person at Discord's consent screen. The request and response of each call are in
 [account pages](/documentation/crates/frontend/pages/account_pages/account_pages.md).
 
 1. Register the redirect. In the Discord Developer Portal, under the application's OAuth2
-   Redirects, add exactly the value of `DISCORD_REDIRECT_URL` in `crates/api/api_server/.env`:
+   Redirects, add exactly the value of `DISCORD_REDIRECT_URL` in `deploy/api.env`:
 
    ```text
    http://localhost:8080/api/v1/auth/discord/callback
@@ -223,14 +227,14 @@ person at Discord's consent screen. The request and response of each call are in
    generator and a bot are not involved.
 
 2. Fill the credentials and align the hosts. Set `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` and
-   `DISCORD_GUILD_ID` in `crates/api/api_server/.env`, and keep `FRONTEND_URL` on the same host as
+   `DISCORD_GUILD_ID` in `deploy/api.env`, and keep `FRONTEND_URL` on the same host as
    `DISCORD_REDIRECT_URL`: the template's `http://localhost:3000` and `http://localhost:8080/…`
    agree. The cookie is host-only (`Path=/; Max-Age=600; HttpOnly; SameSite=Lax`, no `Secure` in
    development), and `localhost` and `127.0.0.1` are different cookie hosts; ports do not matter.
    Change `FRONTEND_URL` rather than the redirect, which must stay equal to the portal entry.
 
    ```bash
-   grep -E '^(FRONTEND_URL|DISCORD_REDIRECT_URL)=' crates/api/api_server/.env
+   grep -E '^(FRONTEND_URL|DISCORD_REDIRECT_URL)=' deploy/api.env
    ```
 
    Expected: both values name the same host. In development the API refuses to start the flow
@@ -238,18 +242,18 @@ person at Discord's consent screen. The request and response of each call are in
    `/auth/callback#error=oauth_host_mismatch`.
 
 3. Check the credential pair without a browser. The client-credentials grant validates the id and
-   secret; the command reads both from `.env` and never puts them on the command line.
+   secret; the command reads both from `deploy/api.env` and never puts them on the command line.
 
    ```bash
-   cd crates/api/api_server && set -a && . ./.env && set +a && \
+   set -a && . deploy/api.env && set +a && \
      curl -s -o /dev/null -w '%{http_code}\n' -u "$DISCORD_CLIENT_ID:$DISCORD_CLIENT_SECRET" \
      -d grant_type=client_credentials -d scope=identify https://discord.com/api/oauth2/token
    ```
 
    Expected: `200`. `401` means a wrong id or secret: regenerate the secret in the portal and
-   update `.env`.
+   update `deploy/api.env`.
 
-4. Sign in. With steps 2 to 5 of Start the stack running (restart the API after editing `.env`),
+4. Sign in. With steps 2 to 5 of Start the stack running (restart the API after editing `deploy/api.env`),
    open the app on the host `FRONTEND_URL` names, not the API port, and click "Sign in with
    Discord".
 
@@ -337,8 +341,8 @@ and says where each one also runs.
 |---|---|---|
 | `db up` stops with `FATAL:` and exit 1 | no container runtime resolved from `TBD_CONTAINER_RUNTIME`, podman, docker or `distrobox-host-exec` | install podman or docker, or set `TBD_CONTAINER_RUNTIME` |
 | `db up` or `db seed` exits 125 with "looking up compose provider failed" | podman has no compose provider | install `podman-compose` or the `docker-compose` plugin; for an existing container, `podman start tbd_reforger_db` starts it, and [Database operations](/documentation/runbooks/database_operations.md) seeds without compose |
-| the API exits with `DATABASE_URL is required` or `JWT_SECRET is required` | no `crates/api/api_server/.env`, as in a new worktree | step 1 |
-| the API exits with `MAP_ASSETS_DIR is unset, and its development default needs the checkout root: …` (or the same for `GLYPH_ASSETS_DIR`, `UPLOAD_DIR` or `EQUIPMENT_DATA_DIR`) | the API was started outside a checkout, so no folder above its working directory holds `.ai/ROOT` | start it with `cargo xtask mk rust-api`, or set the four directories to absolute paths |
+| the API exits with `DATABASE_URL is required` or `JWT_SECRET is required` | no `deploy/api.env` and no `TBD_API_ENV_FILE`, as in a new worktree | step 1 |
+| the API exits with `MAP_ASSETS_DIR is unset, and its development default needs the checkout root: …` (or the same for `GLYPH_ASSETS_DIR`, `UPLOAD_DIR` or `EQUIPMENT_DATA_DIR`) | the API was started outside a checkout, so no folder above its working directory holds `.repository_root` | start it with `cargo xtask mk rust-api`, or set the four directories to absolute paths |
 | the API exits with `migration N was previously applied but has been modified` | an applied migration file changed, comments included | [Database operations](/documentation/runbooks/database_operations.md), Repair a migration checksum; never reset the volume for this |
 | `db seed` prints `relation "discord_roles" does not exist` and exits 0 | the seeds ran before the API migrated the database | step 3, then step 4 again |
 | the map shows no elevation or satellite layer | the LFS objects are pointer files | Fetch the terrain assets |
@@ -361,7 +365,7 @@ and says where each one also runs.
 - [Editor gates](/documentation/runbooks/editor_gates.md) — `cargo xtask mk gate-doctor` and
   the browser gates of the Mission Creator.
 - [API environment variables](/documentation/crates/api/api_server/environment_variables.md) — every
-  variable `.env` can set.
+  variable `deploy/api.env` can set.
 - [Website API](/crates/api/api_server/README.md) — the crate, its binaries and its configuration.
 - [Database commands](/tools/commands/database_operations/src/README.md) and
   [build and development-server commands](/tools/commands/ci_task_catalog/src/build_lane/README.md) — every

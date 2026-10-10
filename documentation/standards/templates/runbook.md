@@ -86,10 +86,10 @@ repository root; the first API build takes several minutes.
    `DATABASE_URL` on host port 5434, `JWT_SECRET`) work as they stand.
 
    ```bash
-   cp crates/api/api_server/.env.example crates/api/api_server/.env
+   cp deploy/api.env.example deploy/api.env
    ```
 
-   Expected: no output; `crates/api/api_server/.env` exists.
+   Expected: no output; `deploy/api.env` exists.
 
 2. Start Postgres 18 in the background.
 
@@ -97,7 +97,7 @@ repository root; the first API build takes several minutes.
    cargo xtask db up
    ```
 
-   Expected: the command prints `cd crates/api/api_server && podman compose up -d db` (with the
+   Expected: the command prints `cd deploy && podman compose -f compose.dev.yml up -d db` (with the
    runtime it found), then compose starts the `tbd_reforger_db` container, listening on host port
    5434.
 
@@ -107,7 +107,8 @@ repository root; the first API build takes several minutes.
    cargo xtask mk rust-api
    ```
 
-   Expected: cargo builds the `api-server` binary into `target/dev-api/`, then the API logs
+   Expected: cargo builds the `api-server` binary into the `dev-api/` subfolder of the
+   environment's build folder (`target/host/` or `target/container/`), then the API logs
    `migrations applied` and `listening on 0.0.0.0:8080`.
 
 4. In a second terminal, once the API has applied the migrations, load the development seeds.
@@ -117,7 +118,7 @@ repository root; the first API build takes several minutes.
    ```
 
    Expected: one line per seed file in `crates/api/api_database/seeds/`, in order, from
-   `cd crates/api/api_server && podman compose exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < seeds/discord_roles.sql`
+   `cd deploy && podman compose -f compose.dev.yml exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < ../crates/api/api_database/seeds/discord_roles.sql`
    through `registry_dev.sql`, `faction_library.sql` and `vehicle_database.sql` to
    `wiki_pages.sql`, each followed by psql's command tags, and exit 0. Each psql run stops at its
    first failed statement, so a failed seed ends the command with psql's exit code 3.
@@ -136,7 +137,7 @@ applied.
 | Symptom | Cause | Fix |
 |---|---|---|
 | `db up` stops with "no container runtime" | none of `TBD_CONTAINER_RUNTIME`, podman, docker or `distrobox-host-exec` resolved | install podman or docker, or set `TBD_CONTAINER_RUNTIME` |
-| the API exits at boot with `DATABASE_URL is required` or `JWT_SECRET is required` | `crates/api/api_server/.env` is missing; the API reads it from its working directory | step 1 |
+| the API exits at boot with `DATABASE_URL is required` or `JWT_SECRET is required` | `deploy/api.env` is missing; the API reads it from `TBD_API_ENV_FILE`, else `deploy/api.env` under the checkout root | step 1 |
 | `db seed` prints `relation "discord_roles" does not exist` and exits 3 | the seeds ran before the API applied the migrations, so the first seed's first statement failed | run step 3 first, then seed again |
 | `curl` exits 22 on `/healthz` | the probe returned 503: the database is down or the migrations are unreadable | check step 2's container, then the API's log |
 

@@ -121,7 +121,7 @@ The page's states and toasts are in the settings README's
   `oauth_host_mismatch` and `server_error`, since `auth_error_copy` has no line for either
   (`crates/frontend/pages/account_pages/src/auth_callback/page.rs`). The API sends
   `oauth_host_mismatch` in development for a configuration fault that no retry fixes: the two
-  URLs in `crates/api/api_server/.env` name different hosts (`reject_login_on_host_mismatch` in
+  URLs in `deploy/api.env` name different hosts (`reject_login_on_host_mismatch` in
   `crates/api/api_identity_and_access/src/handlers/oauth_host_guard.rs`).
 - `AuthCallbackPage`'s doc comment says the page shows "Completing sign in…" and navigates to the
   destination the sign-in started from (`auth_callback/page.rs`). The page shows
@@ -179,18 +179,16 @@ The READMEs' Data sections list each call with the DTO the pages read:
 - Settings: a column at most 42rem wide under the page header, holding three glass cards; the role
   shows as a primary chip, the link code in monospace on a primary tint, and the two figures in
   large monospace, primary and success.
-- Design target: no visual reference set exists for the account pages. The archived platform
-  spec's [Discord integration section](/documentation/archive/go_and_react_era_design/platform_context_handoff.md#a-discord-integration)
-  sets the one rule they follow: Discord is the only sign-in, with no local passwords.
+- Design target: no visual reference set exists for the account pages. They follow one rule: Discord is the only sign-in, with no local passwords.
 
 ## Open work
 
-- [T-1036 — Fix sign-in callback return path, status text and error copy](/.ai/tickets/T-1036.toml)
-  (idea, no plan): the callback's doc comment and its behaviour agree on where the page goes and
-  what it says, and `server_error` and `oauth_host_mismatch` get their own lines.
-- [T-946.81 — Auth callback persists a token with no user](/.ai/tickets/T-946.81.toml) (idea, no
-  plan): the callback stops leaving the store with tokens and no profile when the profile fetch
-  is interrupted.
+- Fix sign-in callback return path, status text and error copy (ticket `fix-sign-callback-return` in
+  `ttm`): the callback's doc comment and its behaviour agree on where the page goes and what it
+  says, and `server_error` and `oauth_host_mismatch` get their own lines.
+- Auth callback persists a token with no user (ticket
+  `wave-close-child-tickets.auth-callback-persists-token` in `ttm`): the callback stops leaving the
+  store with tokens and no profile when the profile fetch is interrupted.
 
 ## Decisions
 

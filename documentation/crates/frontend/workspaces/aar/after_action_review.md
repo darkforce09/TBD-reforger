@@ -42,9 +42,7 @@ None: no code replays a match. What exists around it:
 
 ## Design
 
-The design is at the idea stage, drawn from the product blueprint (archived at
-`documentation/archive/go_and_react_era_design/mission_creator_design.md`, section 5, "DCS-Style
-AAR") and the workspace's first design draft. No visual reference set exists.
+The design is at the idea stage, drawn from the product blueprint's "DCS-Style AAR" section and the workspace's first design draft. No visual reference set exists.
 
 ### Design notes
 
@@ -60,16 +58,15 @@ AAR") and the workspace's first design draft. No visual reference set exists.
 
 ## Open work
 
-- [T-136 — 3D AAR / OCAP-style replay](/documentation/tickets/specs/t131_north_star_backlog.md)
-  (ready, [plan](/documentation/tickets/plans/t-136_plan.md)): a replay read that returns a
+- 3D AAR / OCAP-style replay (ticket `3d-aar-ocap-style` in `ttm`): a replay read that returns a
   match's timeline at 1 Hz, paged, and a map scrubber with play, pause and speed that the
   deployments page links to. Its plan places the page among the routed pages rather than in a
   workspace crate, and names code paths that no longer exist.
-- [T-940.13 — Combat, medical and vehicle telemetry events](/documentation/tickets/specs/t940_website_platform.md)
-  (ready, [plan](/documentation/tickets/plans/t-940_13_plan.md)): a telemetry-events schema
-  and an ingest that stores the events, the data the replay plays.
-- [T-096 — Live game-server telemetry bridge](/.ai/tickets/T-096.toml) (deferred, no plan): live
-  game-server events bridged into the telemetry ingest.
+- Combat, medical and vehicle telemetry events (ticket
+  `website-platform-events-telemetry.combat-medical-vehicle-telemetry` in `ttm`): a telemetry-events
+  schema and an ingest that stores the events, the data the replay plays.
+- Live game-server telemetry bridge (ticket `live-game-server-telemetry` in `ttm`): live game-server
+  events bridged into the telemetry ingest.
 
 ## Decisions
 

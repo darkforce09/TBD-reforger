@@ -87,7 +87,7 @@ missing one, and a write by someone who may not edit the mission answers 403.
 
 ## Related documentation
 
-- [Mission artifacts, reviews and deployment](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
+- [Mission artifacts, reviews and deployment](/documentation/crates/api/api_server/design_notes/mission_artifacts.md)
   — submission, review decisions, artifact reads and deployments.
 - [Mission approvals page](/documentation/crates/frontend/pages/administration_pages/approvals/mission_approvals_page.md)
   — the review queue as administrators use it.

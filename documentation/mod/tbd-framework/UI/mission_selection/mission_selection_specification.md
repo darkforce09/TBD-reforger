@@ -103,10 +103,10 @@ MissionSelector README's [How it works](/mod/tbd-framework/Scripts/Game/TBD/Sess
 
 ## Open work
 
-- [T-1085 — Feed the pre-game screens live catalogs instead of mocks](/.ai/tickets/T-1085.toml)
-  (idea, no plan): the catalog reads the platform's missions.
-- [T-1084 — Arm the mission browser input context every frame](/.ai/tickets/T-1084.toml) (idea, no
-  plan): the F6 to F9 keys stay live, and the F6 comments are corrected.
+- Feed the pre-game screens live catalogs instead of mocks (ticket `feed-pre-game-screens` in
+  `ttm`): the catalog reads the platform's missions.
+- Arm the mission browser input context every frame (ticket `arm-mission-browser-input` in `ttm`):
+  the F6 to F9 keys stay live, and the F6 comments are corrected.
 
 ## Decisions
 

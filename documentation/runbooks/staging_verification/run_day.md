@@ -66,7 +66,7 @@ exists), then the fleet run, then the Discord run, each from the repository root
 The receipts and their logs are in `target/staging/receipts/`, the raw journals in
 `target/staging/<check>/<run>/`. Record the verdict, counts, timestamps and paths in the results
 section of the
-[staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md).
+[staging design note](/documentation/crates/api/api_server/design_notes/staging.md).
 
 ## Troubleshooting
 
@@ -79,5 +79,5 @@ section of the
 
 - [Recovery and cleanup](/documentation/runbooks/staging_verification/recovery_and_cleanup.md) —
   when a run stops early.
-- [Staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md) — what
+- [Staging design note](/documentation/crates/api/api_server/design_notes/staging.md) — what
   each step proves.

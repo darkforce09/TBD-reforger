@@ -37,7 +37,6 @@ documentation_checks = { workspace = true }
 # The Enfusion mod script checks behind `cargo xtask verify`.
 mod_script_checks = { workspace = true }
 # The `refactor relocate` modes: manifest-driven moves and the retired-spelling verification.
-repository_relocation = { workspace = true }
 # The `db` group, `deploy db` and the database source checks behind `cargo xtask verify`.
 database_operations = { workspace = true }
 # The `deploy` group, the staging fleet layout and the staging compose-path check.

@@ -95,6 +95,6 @@ the deployment requests reread the caller's authority against the guild of the A
 - [API missions source](/crates/api/api_missions/src/README.md) — the files, the routes and the
   path from a saved version to a running server.
 - [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
-- [Mission artifacts, reviews and deployment](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
+- [Mission artifacts, reviews and deployment](/documentation/crates/api/api_server/design_notes/mission_artifacts.md)
   — the design of artifacts, their reviews and deployments.
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.

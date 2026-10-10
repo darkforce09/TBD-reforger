@@ -20,9 +20,8 @@ module to the tooling; each crate's README then says what its own folders hold.
 - Entry: `cargo xtask`, the alias `run --package xtask --` in `.cargo/config.toml`; the eight
   `developer_tools` executables (`enf`, `gate`, `mcpd`, `world`, `map`, `capture`,
   `acknowledgement-dropping-relay`, `staging-load`).
-- Related features: the [developer tools documentation](/documentation/tools/developer_tools/README.md)
-  and the [factory waves](/documentation/runbooks/factory_waves/README.md), which run the
-  platform wave driver over the central ticket manager.
+- Related features: the [developer tools documentation](/documentation/tools/developer_tools/README.md);
+  the wave and slice runner lives in the central ticket manager (`ttm`), outside the repository.
 
 ## Behaviour
 
@@ -92,18 +91,18 @@ literal. A tool's own layout module declares itself on its first line
 
 | Module | Owns |
 |---|---|
-| `tools/foundation/repository_layout` | the locations more than one tool names: the legacy ticket data folder, the artifact tree, the reference lanes and their folders, the contract and map-asset trees, the enfusion-mcp npm package, the browser gate pins, the documentation root, the roadmap and gap analysis, the deploy tree, the server profiles, the MCP fixtures, the runbooks and documentation areas the commands name, and the build output folder with its purpose subfolders |
+| `tools/foundation/repository_layout` | the locations more than one tool names: the machine-local `.workstation/` folders and `.worktrees/`, the reference lanes and their folders, the contract and map-asset trees, the enfusion-mcp npm package, the browser gate pins, the documentation root, the roadmap and gap analysis, the deploy tree, the server profiles, the MCP fixtures, the runbooks and documentation areas the commands name, and the build output folder with its purpose subfolders |
 | `tools/map_assets/map_raster_pipeline/src/decision_record_locations.rs` | the decision records of the inland-water, aerial-orthophoto and cartographic lanes |
 | `tools/enfusion/enfusion_script_index/src/script_index_layout.rs` | the Enfusion symbol index and the capability verdict table |
 | `tools/browser_testing/browser_gate_suites/src/gate_layout.rs` | the map-asset mounts of the gates' server and the editor gate runbook |
 
 Every tool resolves the checkout root through `repository_root::find_repository_root`
 (`crates/foundation/repository_root`, the one root walk of the workspace, which the API's and the
-frontend crates' tests use as well; xtask reaches it through `repository_layout::prelude`), which walks up to `.ai/ROOT`, so a command run in a
+frontend crates' tests use as well; xtask reaches it through `repository_layout::prelude`), which walks up to `.repository_root`, so a command run in a
 linked worktree reads that worktree's files; a working directory outside any checkout is an
 error, never a guessed folder. `tools/foundation/repository_layout` spells the locations more
-than one tool names: the legacy ticket data folder, the artifact tree, the reference lanes, the documentation root
-and the build output folder.
+than one tool names: the machine-local `.workstation/` folders, the reference lanes, the
+documentation root and the build output folder.
 
 ### One outcome vocabulary
 
@@ -115,7 +114,7 @@ turns the verdicts into the exit code, 0 held, 1 failed, 2 did not run, with 2 o
 is what makes a green run evidence; the [verification core README](/tools/foundation/verification_core/README.md#how-it-works)
 gives the table and the lock rules.
 
-Gates that must not overlap (the platform wave gate, the MCP broker start) serialise on one
+Gates that must not overlap (the MCP broker start among them) serialise on one
 `flock` at `target/.repository-verification.lock` in the primary checkout, found through
 `git rev-parse --git-common-dir`, so linked worktrees share it. Running out of time is a refusal,
 never an unserialised run.
@@ -168,31 +167,35 @@ that cannot run says so, so a green run is proof.
 
 ## Open work
 
-- [T-1137 — Gate the foundational crates' and the fleet agent's tests and clippy](/.ai/tickets/T-1137.toml)
-  (idea, no plan): CI, `ci-local` and the wave gate run `cargo test` and clippy for the
-  foundational crates and the game server host agent.
-- [T-1133 — Consolidate developer_tools duplicate helpers, repo-root lookup and fixture paths](/.ai/tickets/T-1133.toml)
-  (idea, no plan): one root lookup in `developer_tools`, fixture paths through the layout module,
-  and no `cargo run -p xtask` child from inside the crate.
-- [T-1130 — Tidy xtask verifications: redundant check, scattered paths, wave gate](/.ai/tickets/T-1130.toml)
-  (idea, no plan): verification paths move into the layout module.
-- [T-1115 — Consolidate xtask host-bridge copies and move slice worktree tests](/.ai/tickets/T-1115.toml)
-  (idea, no plan): one owner for container detection and host-bridge wrapping.
-- [T-1114 — Rename xtask files named after one helper they hold](/.ai/tickets/T-1114.toml) and
-  [T-1132 — Rename developer_tools files named after one helper they hold](/.ai/tickets/T-1132.toml)
-  (idea, no plan): file names that say what the file holds.
-- [T-1118 — Rewrite xtask build and ci comments narrating the retired Makefile](/.ai/tickets/T-1118.toml),
-  [T-1119 — Rewrite xtask help, error and doc texts contradicting the code](/.ai/tickets/T-1119.toml),
-  [T-1134 — Rewrite developer_tools help texts and comments contradicting the code](/.ai/tickets/T-1134.toml)
-  and [T-1139 — Rewrite stale ticket_engine and verification_core comments](/.ai/tickets/T-1139.toml)
-  (idea, no plan): help texts and comments that match the code.
-- [T-1004 — Comment hygiene: design citations, ticket ids and history words](/.ai/tickets/T-1004.toml)
-  (idea, no plan): the prose rules also catch design-document citations and reach ticket ids in
-  Rust and EnfScript comments.
-- [T-1120 — Remove dead xtask code and move the font table generator](/.ai/tickets/T-1120.toml)
-  (idea, no plan): `gen font-table` leaves the file-length verification.
-- [T-1147 — Enforce or remove the unread enfusion_mcp_node_package .nvmrc](/.ai/tickets/T-1147.toml)
-  (idea, no plan): the pinned Node version is checked, or the file goes.
+- Gate the foundational crates' and the fleet agent's tests and clippy (ticket
+  `gate-ticket-engine-verification` in `ttm`, idea): CI, `ci-local` and the wave gate run `cargo
+  test` and clippy for the foundational crates and the game server host agent.
+- Consolidate developer_tools duplicate helpers, repo-root lookup and fixture paths (ticket
+  `consolidate-developer-tools-duplicate` in `ttm`, idea): one root lookup in `developer_tools`,
+  fixture paths through the layout module, and no `cargo run -p xtask` child from inside the crate.
+- Tidy xtask verifications: redundant check, scattered paths, wave gate (ticket
+  `tidy-xtask-verifications-redundant` in `ttm`, idea): verification paths move into the layout
+  module.
+- Consolidate xtask host-bridge copies and move slice worktree tests (ticket
+  `consolidate-xtask-host-bridge` in `ttm`, idea): one owner for container detection and host-bridge
+  wrapping.
+- Rename xtask files named after one helper they hold (ticket `rename-xtask-files-named` in `ttm`,
+  idea) and Rename developer_tools files named after one helper they hold (ticket
+  `rename-map-tool-files` in `ttm`, idea): file names that say what the file holds.
+- Rewrite xtask build and ci comments narrating the retired Makefile (ticket
+  `rewrite-xtask-build-ci` in `ttm`, idea), Rewrite xtask help, error and doc texts contradicting
+  the code (ticket `rewrite-xtask-help-error` in `ttm`, idea), Rewrite developer_tools help texts
+  and comments contradicting the code (ticket `rewrite-developer-tools-help` in `ttm`, idea) and
+  Rewrite stale ticket_engine and verification_core comments (ticket `rewrite-stale-ticket-engine`
+  in `ttm`, idea): help texts and comments that match the code.
+- Comment hygiene: design citations, ticket ids and history words (ticket
+  `comment-hygiene-design-citations` in `ttm`, idea): the prose rules also catch design-document
+  citations and reach ticket ids in Rust and EnfScript comments.
+- Remove dead xtask code and move the font table generator (ticket `remove-dead-xtask-code` in
+  `ttm`, idea): `gen font-table` leaves the file-length verification.
+- Enforce or remove the unread enfusion_mcp_node_package .nvmrc (ticket
+  `enforce-remove-unread-enfusion` in `ttm`, idea): the pinned Node version is checked, or the file
+  goes.
 
 ## Decisions
 

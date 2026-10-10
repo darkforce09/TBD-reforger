@@ -171,26 +171,22 @@ editor notes: they are saved with the mission and never compiled for the game.
 
 ## Open work
 
-- [T-816 — Armed composition hint open; one Esc clears both layers wrongly](/documentation/tickets/specs/t816_esc_hint_layer.md)
-  (ready, [plan](/documentation/tickets/plans/t-816_plan.md)): one Escape cancels one layer.
-- [T-090.4 — Z placement audit (buried / floating objects)](/documentation/tickets/specs/t090_4_z_placement_audit.md)
-  (ready, [plan](/documentation/tickets/plans/t-090_4_plan.md)) and
-  [T-143 — Water mask placement guard and exact hydrology](/documentation/tickets/specs/t090_091_map_terrain_program.md)
-  (ready, [plan](/documentation/tickets/plans/t-143_plan.md)): heights and water checks at the
-  drop.
-- [T-939.5 — Faction catalog: squad templates from compositions and defaults](/documentation/tickets/specs/t939_editor_usability.md)
-  (ready, [plan](/documentation/tickets/plans/t-939_5_plan.md)): whole squads from the
-  palette.
-- [T-824 — Placed zones must render visibly at rest on map](/documentation/tickets/specs/t824_zone_render_at_rest.md)
-  (ready, [plan](/documentation/tickets/plans/t-824_plan.md)) and
-  [T-831 — Per-side marker authoring audit then explicit UI](/documentation/tickets/specs/t831_per_side_markers_audit.md)
-  (ready, [plan](/documentation/tickets/plans/t-831_plan.md)): zones and markers after the
-  drop.
-- [T-718 — Slot removal crew residue; picker flags; undo Alt lies](/.ai/tickets/T-718.toml)
-  (deferred, no plan): the crew seats and the Alt wording.
-- [T-1051 — Check whether minted vehicle and object ids can collide](/.ai/tickets/T-1051.toml)
-  and [T-1052 — Decide whether placement scatter must stay stable across Rust releases](/.ai/tickets/T-1052.toml)
-  (idea, no plan).
+- Armed composition hint open; one Esc clears both layers wrongly (ticket
+  `armed-composition-hint-open` in `ttm`): one Escape cancels one layer.
+- Z placement audit (buried / floating objects) (ticket
+  `map-visualization-program.z-placement-audit` in `ttm`) and Water mask placement guard and exact
+  hydrology (ticket `water-mask-placement-guard` in `ttm`): heights and water checks at the drop.
+- Faction catalog: squad templates from compositions and defaults (ticket
+  `editor-usability-selection-gizmo.faction-catalog-squad-templates` in `ttm`): whole squads from
+  the palette.
+- Placed zones must render visibly at rest on map (ticket `placed-zones-must-render` in `ttm`) and
+  Per-side marker authoring audit then explicit UI (ticket `side-marker-authoring-audit` in `ttm`):
+  zones and markers after the drop.
+- Slot removal crew residue; picker flags; undo Alt lies (ticket `slot-removal-crew-residue` in
+  `ttm`): the crew seats and the Alt wording.
+- Check whether minted vehicle and object ids can collide (ticket `check-whether-minted-vehicle` in
+  `ttm`) and Decide whether placement scatter must stay stable across Rust releases (ticket
+  `decide-whether-placement-scatter` in `ttm`).
 
 No open ticket covers the unarmable object leaves or the picker's unused drop point.
 

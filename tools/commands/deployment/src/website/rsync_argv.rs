@@ -57,8 +57,8 @@ pub(crate) fn rsync_argv(rsync_e: &str, mono: &str, dest: &str) -> Vec<String> {
         format!("--exclude={}/", repository_layout::REFERENCES_DIR),
         mod_folder_exclusion(LOCAL_TEST_PROFILE),
     ];
-    // What the host owns in its checkout, excluded by `deploy staging` too: the API's `.env` and
-    // `.tools/`, and the app built there.
+    // What the host owns in its checkout, excluded by `deploy staging` too: the API's settings
+    // file, `.tools/`, and the app built there.
     argv.extend(
         HOST_OWNED_PATHS
             .iter()

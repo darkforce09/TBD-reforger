@@ -166,10 +166,10 @@ that network's address with its last byte 0; `ip -4 route` on the host prints bo
     ```
 
     Expected: the deploy plan, with no command sent to the host. The host's
-    `crates/api/api_server/.env`, which both deploys' rsync excludes, needs `JWT_SECRET` and
+    `deploy/api.env`, which both deploys' rsync excludes, needs `JWT_SECRET` and
     `OBSERVABILITY_TOKEN`; the mod authenticates every call with its machine credential. Both
-    deploys refuse before their rsync while that file is missing, so a host whose `.env` sits at
-    an older folder of the API moves it there first.
+    deploys refuse before their rsync while that file is missing; a host that still keeps it at
+    `crates/api/api_server/.env` has it moved to `deploy/api.env` by the deploy's own probe.
 
 13. On the host, let the deploy account's user services run while nobody is logged in; the game
     servers, the host agents and the relay are user units.

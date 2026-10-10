@@ -42,11 +42,10 @@ tools/commands/mod_operations/src/
 `tools/xtask/src/cli/mod.rs` mounts `ModCmd` as the `mod` group, and the crate's `run` maps each
 variant to one entry function that returns the exit code. Five subcommands (`dev-server`,
 `playtest`, `compile`, `world-boot`, `wave`) take their arguments raw, with clap's help flag
-turned off, and parse them in their own module. The others parse with clap. Five delegate to
+turned off, and parse them in their own module. The others parse with clap. Four delegate to
 modules outside this folder: `remote-logs` to `remote_debugging::debug::remote_logs`,
 `spawn-determinism` and `spawn-verify` to `mod_script_checks`,
-`bootstrap-staging` to `workstation_setup::staging_server` and `seed-announcement` to
-`database_operations::milestone_announcement`.
+and `bootstrap-staging` to `workstation_setup::staging_server`.
 
 The game-facing gates share one exit contract: 0 pass, 1 a code failure in the mod, 2 usage or
 no verdict, 3 environment (no host bridge, no dedicated server, no Workbench), so a machine fault
@@ -171,14 +170,6 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
   resolved or is refused; 127 no `ssh` or `sshpass`.
 - Example: `cargo xtask mod bootstrap-staging`
 
-### seed-announcement
-
-- Synopsis: `mod seed-announcement`
-- Does: inserts the pinned first-milestone announcement into the website database when it is not
-  there, using `DATABASE_URL` from the environment or `crates/api/api_server/.env`.
-- Exit codes: 0 inserted or present; 1 no `psql` and no database container, or no `DATABASE_URL`.
-- Example: `cargo xtask mod seed-announcement`
-
 ### test-game-runtime-api
 
 - Synopsis: `mod test-game-runtime-api`, configured by `TBD_MACHINE_CREDENTIAL` (required) and
@@ -196,7 +187,7 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 
 - Synopsis: `mod playtest --mission=<uuid> [options]`, `mod playtest --artifact-file=<p> [options]`
   or `mod playtest --selftest`; `--help` lists every option.
-- Does: stages `$HOME/tbd-playtest`, deploys the mission through the platform (or stages the
+- Does: stages `<checkout>/.workstation/playtest_server`, deploys the mission through the platform (or stages the
   offline document), renders `server.json`, boots a joinable dedicated server with the local
   addon and prints its Direct Join details; it stays in the foreground until Ctrl-C.
   `--dry-run` boots nothing. With `--mission` it prints the game runtime's telemetry queue
@@ -249,8 +240,7 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 - Depends on:
   - `repository_layout`, `process_runner::host_execution`, and `tool_test_support` in the equipment tests;
   - `remote_debugging::debug::remote_logs`, `workstation_setup` (`staging_server`,
-    `mcp_game_root`), `database_operations::milestone_announcement`,
-    `enfusion_mcp::daemon` and `platform_execution::slice_worktree`;
+    `mcp_game_root`), `enfusion_mcp::daemon` and `platform_execution::slice_worktree`;
   - `mod_script_checks` (`spawn_determinism`, `spawn_verification`);
   - the `ticket_manager_client` (the mod wave plan), `process_runner` (every child process) and
     `verification_core` crates;

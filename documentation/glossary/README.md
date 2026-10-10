@@ -45,7 +45,6 @@ across the repository.
 - [audit logs](/documentation/glossary/a_to_f.md#audit-logs)
 - [background workers](/documentation/glossary/a_to_f.md#background-workers)
 - [charge ring](/documentation/glossary/a_to_f.md#charge-ring)
-- [closing-fix batch](/documentation/glossary/a_to_f.md#closing-fix-batch)
 - [command center](/documentation/glossary/a_to_f.md#command-center)
 - [community content](/documentation/glossary/a_to_f.md#community-content)
 - [console command](/documentation/glossary/a_to_f.md#console-command)
@@ -88,7 +87,6 @@ across the repository.
 - [ORBAT](/documentation/glossary/n_to_z.md#orbat)
 - [orchestrator](/documentation/glossary/n_to_z.md#orchestrator)
 - [personnel](/documentation/glossary/n_to_z.md#personnel)
-- [perturbation proof](/documentation/glossary/n_to_z.md#perturbation-proof)
 - [probable error](/documentation/glossary/n_to_z.md#probable-error)
 - [RCON](/documentation/glossary/n_to_z.md#rcon)
 - [registry](/documentation/glossary/n_to_z.md#registry)
@@ -121,8 +119,6 @@ across the repository.
 - [Website API](/crates/api/api_server/README.md) — the API server crate and its binaries.
 - [Game server host agent](/crates/fleet/game_server_host_agent/README.md) — the game server host
   agent and RCON.
-- [Ticket manager client](/tools/foundation/ticket_manager_client/README.md) — the tools' way to
-  the central ticket manager's tickets and waves.
 
 ## Boundaries
 

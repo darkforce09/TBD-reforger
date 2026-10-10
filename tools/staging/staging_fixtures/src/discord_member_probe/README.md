@@ -63,7 +63,7 @@ and exits 0 only when it saw the bucket spent and stopped at the hold or the cap
 
 ## Related documentation
 
-- [Staging acceptance](/documentation/crates/api/api_server/verification_evidence/staging.md) — the
+- [Staging acceptance](/documentation/crates/api/api_server/design_notes/staging.md) — the
   Discord procedure's steps that use these reads.
 - [Staging fixtures crate](/tools/staging/staging_fixtures/README.md#staging-fixtures) — the subcommands'
   flags and exit codes.

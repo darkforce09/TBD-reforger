@@ -4,14 +4,14 @@
 //! against its metadata and orientation (`verify_supertexture_orthophoto`), and blends the cell seams of a canvas
 //! in place (`bridge_seams`).
 //! **Position:** child of `aerial_orthophoto`; the stitcher calls `bridge_seams`, the command line
-//! the two subcommands; the record goes under `.ai/artifacts/aerial_orthophoto/`.
+//! the two subcommands; the record goes under `documentation/tools/map_assets/decision_records/aerial_orthophoto/`.
 //! **Signals & state:** none; each call reads its inputs and writes its outputs.
 //! **Invariants:** the bridge touches only the apron columns around each seam and refuses a
 //! canvas whose size disagrees with the grid.
 
 use super::*;
 
-use crate::decision_record_locations::aerial_orthophoto_artifacts_dir;
+use crate::decision_record_locations::aerial_orthophoto_decision_records_dir;
 use ::repository_layout::{terrain_dir, terrain_manifest_path};
 
 pub(crate) fn analyze_supertexture_seams(terrain: &str) -> Result<u8> {
@@ -21,7 +21,7 @@ pub(crate) fn analyze_supertexture_seams(terrain: &str) -> Result<u8> {
     }
     let ortho_path = supertexture_scratch_dir()?.join("everon-sap-ortho.png");
     let out_path =
-        aerial_orthophoto_artifacts_dir(&find_repository_root()?).join("seam_analysis.json");
+        aerial_orthophoto_decision_records_dir(&find_repository_root()?).join("seam_analysis.json");
     eprintln!("analyze-sap-seams: decoding {} …", ortho_path.display());
     let ortho = image_operations::load_png_rgb(&ortho_path)?;
     let res = analyze_seams(&ortho);

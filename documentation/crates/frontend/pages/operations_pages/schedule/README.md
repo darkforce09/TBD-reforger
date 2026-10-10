@@ -35,7 +35,7 @@ feature doc. The code folder's README lists the page's files, calls and states.
 ## Boundaries
 
 - Depends on: the feature doc template; the page code, the operations handlers and the ticket
-  registry in `.ai/tickets/`, which the feature doc is written from.
+  manager (`ttm`), which the feature doc is written from.
 - Used by: the page's in-code README, the operations pages README and the operations domain
   README, which link the feature doc; the [event](/documentation/glossary/a_to_f.md#event) glossary
   entry; the feature doc template's worked sample; the event manager feature doc; the web app

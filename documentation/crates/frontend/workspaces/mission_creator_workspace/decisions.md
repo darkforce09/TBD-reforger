@@ -43,7 +43,7 @@ scores every Eden ID against the code.
 
 **Consequences:** A departure from Eden needs its own entry in this log. A new Eden page goes into
 the [scrape manifest](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_wiki_scrape_manifest.yaml),
-cached in `.ai/artifacts/eden-wiki/`.
+cached in `documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_wiki_scrape/`.
 
 **Supersedes:** none.
 
@@ -296,9 +296,9 @@ Version.
 thousands at most.
 
 **Decision:** The mission document (slots, vehicles, markers and the rest) lives in the Yjs CRDT
-store (`/crates/mission/mission_document/`); terrain objects are map data streamed in
-512 m chunks, never part of the document. A terrain base with sparse per-mission deltas is
-T-110 (deferred).
+store (`/crates/mission/mission_document/`); terrain objects are map data streamed in 512 m chunks,
+never part of the document. A terrain base with sparse per-mission deltas is
+`terrain-base-sparse-deltas` (deferred).
 
 **Consequences:** Undo, drafts and versions cover only authored entities.
 
@@ -312,7 +312,8 @@ slots, and each was fixed until the editor held about 360,000 slots at interacti
 **Decision:** That scale is good enough. The outliner is virtualised (`virtual_tree`,
 `ui/outliner/tree/virtual_tree.rs`), picking uses spatial indexes
 (`/crates/geometry/spatial_indexes/`), and deeper optimisation waits for a regression:
-T-094 is deferred, and T-111 and T-112 are cancelled.
+`typed-array-iconlayer` is deferred, and `lazy-chunk-residency-1m` and `gpu-viewport-cull` are
+cancelled.
 
 **Consequences:** A change that slows these paths at that scale is a regression.
 
@@ -355,13 +356,14 @@ Z and draws the hillshade and grid from it, switched by the display keys `showHi
 
 ### 2026-06-30 — World objects are read-only context; map preferences split by owner
 
-**Context:** The map programme (T-090) had to fix what the terrain's world objects are to a
-mission maker and where map display settings live.
+**Context:** The map programme (`map-visualization-program`) had to fix what the terrain's world
+objects are to a mission maker and where map display settings live.
 
 **Decision:** World objects are context on the map, never authored or selected like mission
-entities; hover, inspect and filter are T-090.9 (ready), and forests as first-class regions
-T-090.8 (deferred). The basemap view and the world-layer toggles are one browser's preferences,
-kept in `localStorage` under `tbd-mc-editor-prefs` (`state/world_layer_prefs.rs`); the grid and the
+entities; hover, inspect and filter are `map-visualization-program.world-object-interaction`
+(ready), and forests as first-class regions `map-visualization-program.forest-vegetation-regions`
+(deferred). The basemap view and the world-layer toggles are one browser's preferences, kept in
+`localStorage` under `tbd-mc-editor-prefs` (`state/world_layer_prefs.rs`); the grid and the
 hillshade belong to the mission, in its environment keys.
 
 **Consequences:** Two mission makers on one mission share its grid and hillshade but not their
@@ -491,7 +493,7 @@ second of quiet and never reaches the server (`session/persist/`). The server re
 immutable versions of "Save Version".
 
 **Consequences:** A draft is never overwritten without the mission maker's answer. Several tabs on
-one mission elect one writer. T-093 (deferred) holds the autosave polish.
+one mission elect one writer. `continuous-autosave-polish` (deferred) holds the autosave polish.
 
 **Supersedes:** [2026-06-21 — A disagreeing local copy prompts](#2026-06-21--a-disagreeing-local-copy-prompts-on-a-cold-load-a-warm-return-skips-the-fetch)
 and [2026-06-21 — Autosave overwrites one server draft](#2026-06-21--autosave-overwrites-one-server-draft-save-version-snapshots).

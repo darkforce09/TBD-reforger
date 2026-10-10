@@ -103,8 +103,7 @@ value.
   - `crates/api/api_community_content/src/services/wiki_markup/tests/wiki_markup.rs`, which
     reads the `wiki-formatting-guide` body out of `wiki_pages.sql` and checks it saves with no
     finding and shows every construct;
-  - the migration step of `cargo xtask platform wave gate`
-    (`tools/commands/platform_execution/src/wave_execution/migrate.rs`), which applies
+  - the migration step of the ticket manager's wave gate (`ttm`), which applies
     `content_golden.sql` after each run so its database stays populated;
   - the capture recipe that closes `content_golden.sql`, which applies `registry_dev.sql` and then
     `content_golden.sql` to rebuild the recorded API fixtures, and people applying

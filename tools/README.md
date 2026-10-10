@@ -12,7 +12,7 @@ crates under `crates/` and the game mod in `mod/`.
 tools/
 ├── browser_testing/            the headless browser gate crates: the DevTools protocol client, and the gate suites with the `gate` and `capture` command lines
 ├── checks/                     the repository verification crates: repository checks, mod script checks and documentation checks
-├── commands/                   the crates behind the `cargo xtask` command groups: ci, platform, mod, db, deploy, staging, schema, relocation and the rest
+├── commands/                   the crates behind the `cargo xtask` command groups: ci, platform, mod, db, deploy, staging, schema and the rest
 ├── developer_tools/            the eight one-line tool binaries: enf, gate, mcpd, world, map, capture, the staging relay and load
 ├── enfusion/                   the Enfusion crates: the `.pak` reader, the script index, the MCP broker
 ├── enfusion_mcp_node_package/  the npm package that pins the `enfusion-mcp` server
@@ -46,15 +46,13 @@ its own. It passes each crate the checkout root:
   behind `cargo xtask mcp`;
   `agent_context_guards` the agent tool-call guard and the filtered command runner behind
   `cargo xtask ai`;
-  `repository_relocation` the manifest-driven moves and the retired-spelling verification behind
-  `cargo xtask refactor relocate`; `schema_tooling` the contract codegen, the contract schema
+  `schema_tooling` the contract codegen, the contract schema
   gates and the ORBAT slot flattening behind `cargo xtask schema` and `cargo xtask gen`;
   `ballistics_oracle_tooling` the ballistics catalog trim behind `cargo xtask ballistics`;
   `database_operations` the local database lane, the verified backup, the guarded restore and
   the restore drill behind `cargo xtask db` and `cargo xtask deploy db`, with the database source
-  checks; `remote_debugging` the staging server-join probes, the remote log verdict and the
-  mission upload reproduction behind `cargo xtask debug`, `cargo xtask repro` and
-  `cargo xtask mod remote-logs`; `staging_procedures` the staging acceptance harness, its host
+  checks; `remote_debugging` the staging server-join probes and the remote log verdict behind
+  `cargo xtask debug` and `cargo xtask mod remote-logs`; `staging_procedures` the staging acceptance harness, its host
   actions and recorded receipts behind `cargo xtask staging`; and `deployment` the website and
   staging deploys behind `cargo xtask deploy`; and `ci_task_catalog` the CI task table and
   runner, the build lane's recipes, the cargo target pin and the CI workflow checks behind
@@ -147,7 +145,7 @@ Each crate's README lists its own commands and checks.
 ## Boundaries
 
 - Depends on: the library crates under `crates/` whose `targets` is `any`; the checkout's data
-  (`.ai/artifacts/`, `contracts/`, `assets/`, `documentation/`); and the external tools
+  (`contracts/`, `assets/`, `mod/reference_symbol_index/`, `documentation/`); and the external tools
   individual commands run: git, Docker or Podman, Postgres, Chromium, Trunk, npm and Node.js, ssh
   and rsync, the Arma Reforger tools, and the central ticket manager's `ttm`.
 - Used by: developers and AI agents at the command line; the GitHub workflows in `.github/`; the
@@ -161,7 +159,7 @@ Each crate's README lists its own commands and checks.
     `repository_root`; and only `ticket_manager_client` runs `ttm`;
   - in production source only a layout module — a file of the `repository_layout` crate, or a
     file whose first line declares it one (`//! The repository locations only …`) — spells a
-    repository path literal, such as one under `.ai/` or `documentation/`; no tracked tooling
+    repository path literal, such as one under `.workstation/` or `documentation/`; no tracked tooling
     file carries a retired spelling, a script file name or a history word, and no document or
     production source a ticket id;
   - every tooling crate's source files stay within their line limits

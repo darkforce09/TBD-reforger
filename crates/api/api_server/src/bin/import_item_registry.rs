@@ -67,7 +67,7 @@ fn print_counts(label: &str, c: &ImportCounts) {
 
 #[tokio::main]
 async fn main() -> api_server::Result<()> {
-    dotenvy::dotenv().ok();
+    let _ = api_configuration::configuration::settings_file::load_settings_file();
     let args = parse_args().map_err(Error::CommandLine)?;
     let url = std::env::var("DATABASE_URL").map_err(|_| Error::DatabaseUrlMissing)?;
 

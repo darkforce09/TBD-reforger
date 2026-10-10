@@ -117,19 +117,19 @@ it exists, a breaking change is not safe to ship.
 
 ## Open work
 
-- [T-946.22 — The unread-wire-field gate is one-directional](/.ai/tickets/T-946.22.toml) (idea,
-  no plan): a schema description that says nothing reads a field must keep a matching unread
-  row, so retiring the row forces the stale wording out.
-- [T-946.15 — No CI gate validates a roster-carrying compiled document](/.ai/tickets/T-946.15.toml)
-  (idea, no plan): the compiled-document schema check seeds a `vehicles[]` roster, so a document
-  that carries one is validated.
-- [T-1026 — Add @contract tags to three untagged api_v2 schema-projecting models](/.ai/tickets/T-1026.toml),
-  [T-1049 — Add @contract tags to map-engine compiled mission document structs](/.ai/tickets/T-1049.toml)
-  and [T-1088 — Add @contract tags to EnfScript JSON wire structs](/.ai/tickets/T-1088.toml)
-  (idea, no plan): the citation gate starts covering these hand-written models, so a schema change
-  fails where they still cite the old shape.
-- [T-1080 — Clean up contract schema descriptions, $id hosts and workflow name](/.ai/tickets/T-1080.toml)
-  (idea, no plan): one `$id` host for every schema, and descriptions that name live code.
+- The unread-wire-field gate is one-directional (ticket
+  `wave-close-child-tickets.unread-wire-field-gate` in `ttm`): a schema description that says
+  nothing reads a field must keep a matching unread row, so retiring the row forces the stale
+  wording out.
+- No CI gate validates a roster-carrying compiled document (ticket
+  `wave-close-child-tickets.no-ci-gate-validates` in `ttm`): the compiled-document schema check
+  seeds a `vehicles[]` roster, so a document that carries one is validated.
+- Add @contract tags to map-engine compiled mission document structs (ticket
+  `add-contract-tags-map` in `ttm`): the citation gate starts covering these hand-written models,
+  so a schema change fails where they still cite the old shape.
+- Clean up contract schema descriptions, $id hosts and workflow name (ticket
+  `clean-up-contract-schema` in `ttm`): one `$id` host for every schema, and descriptions that name
+  live code.
 
 ## Decisions
 

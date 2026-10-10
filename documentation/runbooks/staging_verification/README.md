@@ -5,7 +5,7 @@
 How to record the three staging receipts (`staging_fleet`, `staging_discord`, `staging_load`)
 against the staging host: preparing the five-instance fleet and the Discord guilds once, then
 running the three procedures. The design, the evidence rules and the case lists are
-in the [staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md).
+in the [staging design note](/documentation/crates/api/api_server/design_notes/staging.md).
 
 ## Contents
 
@@ -51,7 +51,7 @@ Rules every run follows:
 
 ## Related documentation
 
-- [Staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md) — the
+- [Staging design note](/documentation/crates/api/api_server/design_notes/staging.md) — the
   procedures, the receipt format and the witness rules.
 - [Game server staging](/documentation/runbooks/game_server_staging/README.md) — the staging host
   and its deploy.

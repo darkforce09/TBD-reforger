@@ -81,7 +81,7 @@ pub(crate) fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
         .and_then(|s| s.parse().ok())
         .unwrap_or(180);
 
-    apply_default_env();
+    apply_default_env(&root);
 
     out_line("== TBD dev bootstrap ==")?;
 
@@ -278,15 +278,19 @@ fn symlinked_home_path(path: &Path) -> PathBuf {
     path.to_path_buf()
 }
 
-fn apply_default_env() {
-    // Every default sits under the home folder; without HOME the variables stay unset.
+fn apply_default_env(root: &Path) {
+    // The game root is the checkout's own; the Workbench defaults sit under the home folder, and
+    // without HOME they stay unset.
+    set_default(
+        "ENFUSION_GAME_PATH",
+        &root
+            .join(repository_layout::ENFUSION_MCP_GAME_ROOT)
+            .display()
+            .to_string(),
+    );
     let Ok(home) = std::env::var("HOME") else {
         return;
     };
-    set_default(
-        "ENFUSION_GAME_PATH",
-        &format!("{home}/.cache/enfusion-mcp-root"),
-    );
     set_default(
         "ENFUSION_WORKBENCH_PATH",
         &format!("{home}/.local/share/Steam/steamapps/common/Arma Reforger Tools"),

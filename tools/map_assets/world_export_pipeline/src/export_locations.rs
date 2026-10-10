@@ -8,7 +8,7 @@
 //! export scratch, the agent artifact tree) come from the `repository_layout` crate.
 //! **Signals & state:** none; pure path joins.
 //! **Invariants:** every location lies under the checkout root it is given; the operation log and
-//! the type inventory lie inside the agent artifact tree.
+//! the type inventory are committed export records beside the map fixtures.
 
 use std::path::{Path, PathBuf};
 
@@ -17,18 +17,19 @@ pub fn density_fixtures_dir(root: &Path) -> PathBuf {
     repository_layout::map_fixtures_dir(root).join("density")
 }
 
-// The export writes its per-terrain operation log and type inventory into the agent artifact tree,
-// `repository_layout::ARTIFACTS_DIR`, where its verifiers read them back.
+/// The committed export records: the operation log and the type inventory of the export that
+/// produced each terrain's committed map assets, where the export verifiers read them back.
+pub fn export_records_dir(root: &Path) -> PathBuf {
+    repository_layout::map_fixtures_dir(root).join("export_records")
+}
 
 /// One terrain's export operation log: every stage that ran, with what it produced.
 pub fn export_operations_log(root: &Path, terrain: &str) -> PathBuf {
-    root.join(repository_layout::ARTIFACTS_DIR)
-        .join(format!("map_export_{terrain}.json"))
+    export_records_dir(root).join(format!("map_export_{terrain}.json"))
 }
 
 /// One terrain's object type inventory: every world-object type the export saw, and its census
 /// status.
 pub fn object_type_inventory(root: &Path, terrain: &str) -> PathBuf {
-    root.join(repository_layout::ARTIFACTS_DIR)
-        .join(format!("type_inventory_{terrain}.json"))
+    export_records_dir(root).join(format!("type_inventory_{terrain}.json"))
 }

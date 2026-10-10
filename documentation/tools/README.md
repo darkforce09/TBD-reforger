@@ -34,7 +34,6 @@ hold those rules. The subfolders mirror the crate folders that have documents of
 | `enfusion_mcp_node_package`, the pinned MCP server | [`tools/enfusion_mcp_node_package/`](/tools/enfusion_mcp_node_package/README.md) | [Enfusion MCP tooling runbook](/documentation/runbooks/enfusion_mcp_tooling.md) |
 
 Procedures that run the tooling are runbooks, not documents here: the
-[factory waves](/documentation/runbooks/factory_waves/README.md), the
 [editor gates](/documentation/runbooks/editor_gates.md) and
 [local development](/documentation/runbooks/local_development.md).
 
@@ -51,12 +50,9 @@ Procedures that run the tooling are runbooks, not documents here: the
 - Used by: the READMEs of `tools/` and its four crates, which link these documents under
   Related documentation; the [documentation root](/documentation/README.md).
 - Rules: a subfolder mirrors a crate folder's spelling; a document describes the committed code
-  and records a disagreement under Known discrepancies; the archived tooling plans stay frozen and
-  the live architecture is this folder's.
+  and records a disagreement under Known discrepancies; the live architecture is this folder's.
 
 ## Related documentation
 
-- [Tooling architecture plan, archived](/documentation/archive/tools_v2_refactor/architecture_plan.md)
-  — the frozen plan the live architecture document carries forward.
 - [Coding standards](/documentation/standards/coding_standards/README.md) — the repository-wide
   rules the tooling's structural tests enforce.

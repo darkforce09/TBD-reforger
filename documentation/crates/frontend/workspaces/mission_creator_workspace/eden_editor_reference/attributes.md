@@ -9,7 +9,7 @@ from the Bohemia wiki. The last section says which of them the Mission Creator's
 holds.
 
 Sources: [Setting Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Setting_Attributes)
-and the per-type wiki pages each section cites, scraped into `.ai/artifacts/eden-wiki/`. The IDs
+and the per-type wiki pages each section cites, scraped into `documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_wiki_scrape/`. The IDs
 follow the `ATTR-FIELD-{TYPE}-{NAME}` pattern of the
 [feature entry schema](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/feds_schema.md#feature-ids).
 The [interactions catalog](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/interactions/README.md)
@@ -176,7 +176,7 @@ The Mission Creator's Mission Settings dialog writes the time of day and the wea
 
 ## Trigger (`TRG`)
 
-Source: [Trigger#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Trigger) — scrape: `.ai/artifacts/eden-wiki/Eden_Editor__Trigger.md`
+Source: [Trigger#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Trigger) — scrape: `documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_wiki_scrape/Eden_Editor__Trigger.md`
 
 | ID | Name | Category | Property | Type |
 |----|------|----------|----------|------|
@@ -198,7 +198,7 @@ Source: [Trigger#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Tr
 
 ## Waypoint (`WP`)
 
-Source: [Waypoint#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Waypoint) — scrape: `.ai/artifacts/eden-wiki/Eden_Editor__Waypoint.md`
+Source: [Waypoint#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Waypoint) — scrape: `documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_wiki_scrape/Eden_Editor__Waypoint.md`
 
 | ID | Name | Category | Property | Type |
 |----|------|----------|----------|------|
@@ -216,7 +216,7 @@ Source: [Waypoint#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_W
 
 ## System (`SYS`)
 
-Full field tables vary per module — see [System](https://community.bistudio.com/wiki/Eden_Editor:_System) and scrape `.ai/artifacts/eden-wiki/Eden_Editor__System.md`.
+Full field tables vary per module — see [System](https://community.bistudio.com/wiki/Eden_Editor:_System) and scrape `documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_wiki_scrape/Eden_Editor__System.md`.
 
 ## Composition metadata (not entity attributes)
 

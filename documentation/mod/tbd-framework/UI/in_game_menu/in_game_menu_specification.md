@@ -125,7 +125,7 @@ The screen makes no HTTP call. Its wire, on the modded `SCR_PlayerController`
 
 ## Open work
 
-None. Checked `.ai/tickets/` for open tickets on the pause menu, the admin menu and its modules;
+None. Checked `ttm` for open tickets on the pause menu, the admin menu and its modules;
 the website's server control tickets change the platform, not this menu.
 
 ## Decisions

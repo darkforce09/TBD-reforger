@@ -170,25 +170,22 @@ connection between two entities without moving either.
 
 ## Open work
 
-- [T-837 — Vehicles cannot be deleted — slots can, vehicles cannot](/documentation/tickets/specs/t837_vehicle_delete.md)
-  (ready, [plan](/documentation/tickets/plans/t-837_plan.md)): Delete removes selected
-  vehicles.
-- [T-833 — Rotation ring: relative delta plus live preview](/documentation/tickets/specs/t833_rotation_ring_relative.md)
-  (ready, [plan](/documentation/tickets/plans/t-833_plan.md)): the ring rotates by the drag's
-  angle and previews it.
-- [T-850 — Squad tether must follow drag on auto-grouped units](/documentation/tickets/specs/t850_squad_tether_drag.md)
-  (ready, [plan](/documentation/tickets/plans/t-850_plan.md)): the squad lines follow a drag.
-- [T-848 — Group to must use exclusive ORBAT membership](/documentation/tickets/specs/t848_group_to_exclusive_orbat.md)
-  (ready, [plan](/documentation/tickets/plans/t-848_plan.md)): regrouping keeps one squad per
-  slot.
-- [T-939.4 — Arrange tools in context menu with shortcuts](/documentation/tickets/specs/t939_editor_usability.md)
-  (ready, [plan](/documentation/tickets/plans/t-939_4_plan.md)) and
-  [T-939 — Editor usability: selection, gizmo, arrange, templates](/documentation/tickets/specs/t939_editor_usability.md)
-  (queued, [plan](/documentation/tickets/plans/t-939_plan.md)): the Arrange and widget work.
-- [T-926 — Vehicle Attributes Transform/Position tab](/documentation/tickets/specs/t926_vehicle_transform_tab.md)
-  (ready, [plan](/documentation/tickets/plans/t-926_plan.md)): typed vehicle position.
-- [T-835 — No-Widget button should show select-cursor glyph](/.ai/tickets/T-835.toml)
-  (deferred, no plan): the "No widget" button's icon.
+- Vehicles cannot be deleted — slots can, vehicles cannot (ticket `vehicles-cannot-deleted-slots` in
+  `ttm`): Delete removes selected vehicles.
+- Rotation ring: relative delta plus live preview (ticket `rotation-ring-relative-delta` in `ttm`):
+  the ring rotates by the drag's angle and previews it.
+- Squad tether must follow drag on auto-grouped units (ticket `squad-tether-must-follow` in `ttm`):
+  the squad lines follow a drag.
+- Group to must use exclusive ORBAT membership (ticket `group-must-use-exclusive` in `ttm`):
+  regrouping keeps one squad per slot.
+- Arrange tools in context menu with shortcuts (ticket
+  `editor-usability-selection-gizmo.arrange-tools-context-menu` in `ttm`) and Editor usability:
+  selection, gizmo, arrange, templates (ticket `editor-usability-selection-gizmo` in `ttm`): the
+  Arrange and widget work.
+- Vehicle Attributes Transform/Position tab (ticket `vehicle-attributes-transform-position` in
+  `ttm`): typed vehicle position.
+- No-Widget button should show select-cursor glyph (ticket `no-widget-button-should` in `ttm`): the
+  "No widget" button's icon.
 
 No open ticket covers snapping the horizontal drag.
 

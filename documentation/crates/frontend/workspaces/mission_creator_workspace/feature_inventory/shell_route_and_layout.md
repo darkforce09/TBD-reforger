@@ -124,17 +124,14 @@ above the toolbelt reads "Map unavailable" with the reason, and editing goes on 
 
 ## Open work
 
-- [T-158 — Editor shell UX consolidation](/documentation/tickets/specs/t158_editor_shell.md)
-  (ready, [plan](/documentation/tickets/plans/t-158_plan.md)): one settings entry point and
-  every inert top-bar button wired.
-- [T-142 — MC shell layout polish](/documentation/tickets/specs/t131_north_star_backlog.md)
-  (ready, [plan](/documentation/tickets/plans/t-142_plan.md)): toolbelt placement and
+- Editor shell UX consolidation (ticket `editor-shell-ux-consolidation` in `ttm`): one settings
+  entry point and every inert top-bar button wired.
+- MC shell layout polish (ticket `mc-shell-layout-polish` in `ttm`): toolbelt placement and
   Attributes grouping.
-- [T-927 — Editor chrome dblclick leak to map](/documentation/tickets/specs/t927_chrome_dblclick_leak.md)
-  (ready, [plan](/documentation/tickets/plans/t-927_plan.md)): a double-click on the docks, the
-  Attributes dialog or the top bar stays off the map.
-- [T-719 — Debug HUD: invisible under DockRight; AltGr chords spuriously toggle it](/.ai/tickets/T-719.toml)
-  (deferred, no plan): the debug line, frame rate included, stays visible.
+- Editor chrome dblclick leak to map (ticket `editor-chrome-dblclick-leak` in `ttm`): a double-click
+  on the docks, the Attributes dialog or the top bar stays off the map.
+- Debug HUD: invisible under DockRight; AltGr chords spuriously toggle it (ticket
+  `debug-hud-invisible-under` in `ttm`): the debug line, frame rate included, stays visible.
 
 No open ticket covers a warning for a mission id that is not a UUID.
 

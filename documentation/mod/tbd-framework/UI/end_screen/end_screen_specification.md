@@ -112,9 +112,9 @@ replicated to every client:
 
 ## Open work
 
-- [T-1082 — Record end reason and winner for extraction, VIP, trigger endings](/.ai/tickets/T-1082.toml)
-  (idea, no plan): the extraction, VIP and trigger endings record their own reason and winner, so
-  the banner stops calling them admin endings.
+- Record end reason and winner for extraction, VIP, trigger endings (ticket
+  `record-end-reason-winner` in `ttm`): the extraction, VIP and trigger endings record their own
+  reason and winner, so the banner stops calling them admin endings.
 
 ## Decisions
 

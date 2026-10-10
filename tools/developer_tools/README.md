@@ -59,7 +59,7 @@ ci-local` nor the CI workflow runs them.
 
 | Variable | Default | Read by |
 |---|---|---|
-| `ENFUSION_GAME_PATH` | `$HOME/.cache/enfusion-mcp-root` | `tools/enfusion/enfusion_pak/src/world_source.rs`: the game folder whose `addons/` holds the paks |
+| `ENFUSION_GAME_PATH` | `<checkout>/.workstation/enfusion_mcp_game_root` | `tools/enfusion/enfusion_pak/src/world_source.rs`: the game folder whose `addons/` holds the paks |
 | `ENFUSION_MCP_BIN`, `MCP_SOCK`, `MCP_DAEMON_IDLE`, `MCP_DAEMON_MAX_LIFE`, `MCP_CALL_TIMEOUT`, `MCP_DEBUG`, `MCP_STUB`, `STUB_MODE`, `STUB_DAEMON`, `STUB_LINGER` | see the broker's README | `mcpd`, through the [Enfusion MCP broker](/tools/enfusion/enfusion_mcp_broker/README.md): the server to start, the socket, limits, logging and the offline stub |
 | `CHROME_HEADLESS_SHELL` | the Chromium the harness finds | `tools/browser_testing/chrome_devtools_protocol/src/chromium_discovery.rs`: the browser executable |
 | `PLAYWRIGHT_BROWSERS_PATH` | `~/.cache/ms-playwright` | `tools/browser_testing/chrome_devtools_protocol/src/chromium_discovery.rs`: the Playwright browser folder searched before the default cache |

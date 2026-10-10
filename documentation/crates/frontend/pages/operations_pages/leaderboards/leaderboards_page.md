@@ -98,8 +98,7 @@ The page writes nothing and stores nothing in the browser.
 - A page header, the tab strip and the search field, the podium, then the roster; the dossier is
   a `Sheet` sliding over the page.
 - Design target: the [leaderboards blueprint](/documentation/crates/frontend/pages/operations_pages/leaderboards/visual_references/leaderboards_blueprint/README.md),
-  a design-phase reference, and the archived platform spec's
-  [Global Leaderboards section](/documentation/archive/go_and_react_era_design/platform_context_handoff.md#4-global-leaderboards).
+  a design-phase reference.
   The built page follows the blueprint closely and differs:
   - the fifth tab reads "Wall of Shame" rather than "Wall of Shame (Team Kills)", and the search
     placeholder "Search operators..." rather than "Search operatives...";
@@ -111,9 +110,7 @@ The page writes nothing and stores nothing in the browser.
 
 ## Open work
 
-- [T-949 — Leaderboard paging test cannot fail on its named claim](/.ai/tickets/T-949.toml)
-  (idea, no plan): the API's paging test gains the tied rows that let it fail, guarding the
-  tie-break order the board relies on.
+None.
 
 ## Decisions
 

@@ -326,7 +326,7 @@ pub async fn shot(out: &Path, steps: &[Step], opts: ShotOptions) -> Result<u8> {
 /// ~44 KB **black rectangle** instead of the ~3.7 MB map. Reproduced across multiple runs and zooms,
 /// inside and outside the height-label band — it is NOT a zoom-range guard. It is confirmed **fine
 /// in a real browser** (147 FPS), so this is a headless artifact of the vulkan surface, not an
-/// engine bug. See `.ai/artifacts/parity/camset_panic_finding.md`. This tool carries the finding as
+/// engine bug. See `documentation/tools/developer_tools/capture_camset_panic_finding.md`. This tool carries the finding as
 /// a comment; it does not work around the panic (headless zoom would need `mouseWheel` events
 /// instead), and no ticket is filed against the engine from here.
 pub async fn zoomsweep(out_prefix: &str, mission_id: &MissionId, zooms: &[f64]) -> Result<u8> {

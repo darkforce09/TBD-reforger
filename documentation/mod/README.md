@@ -4,17 +4,16 @@
 
 The deeper documents of the Arma Reforger [mod](/documentation/glossary/g_to_m.md#mod), one folder per
 [Enfusion](/documentation/glossary/a_to_f.md#enfusion) addon under `mod/`: the game framework's
-design and screen specifications, the export addon's pipelines and evidence, and the MCP bridge.
+design and screen specifications, the export addon's pipelines, and the MCP bridge.
 Developers and agents changing the mod start here after the code README of the addon.
 
 ## Contents
 
 ```text
 documentation/mod/
-├── script_modularisation_progress_checkpoint.md  program record: resume state of the mod script modularisation
-├── tbd-emcp/                                     the Enfusion MCP bridge: call paths, bootstrap and loading rules
-├── tbd-export/                                   the export addon: map export, terrain export runbook, equipment evidence
-└── tbd-framework/                                the game framework: design, vanilla source coverage and the UI screen specs
+├── tbd-emcp/       the Enfusion MCP bridge: call paths, bootstrap and loading rules
+├── tbd-export/     the export addon: map export, terrain export runbook, equipment and vehicle export
+└── tbd-framework/  the game framework: design, vanilla source coverage and the UI screen specs
 ```
 
 ## How it works
@@ -62,16 +61,6 @@ The checks that judge mod work from the command line:
 | `cargo xtask debug direct-join` | the probes behind a LAN Direct Join |
 | `cargo xtask verify file-length` | the pinned mod Scripts roots hold to 500 lines per script, 1000 per test script |
 
-The mod script modularisation program (splitting, documenting and gating the three addons'
-scripts) keeps its resume state in the
-[progress checkpoint](/documentation/mod/script_modularisation_progress_checkpoint.md), beside
-its ticket's spec and plan in `documentation/tickets/`.
-
-The mod's milestone plans and agent handoffs are archived: the
-[milestone plan](/documentation/archive/product_plans/mod_milestones.md), the
-[first milestone announcement](/documentation/archive/product_plans/discord_milestone_1_post.md)
-and the [agent continuation handoff](/documentation/archive/handoffs_and_kickoffs/mod_claude_continuation.md).
-
 ## Code
 
 - [Mod suite](/mod/) — the three addons, their dependencies and the getting-started commands.
@@ -90,14 +79,12 @@ and the [agent continuation handoff](/documentation/archive/handoffs_and_kickoff
 - Rules: a folder here mirrors a code folder under `mod/` and keeps its spelling; a document
   describes the committed code, and a disagreement between a document and the code is recorded
   with both places and resolved in the code's favour; no document names a host address (the
-  staging host is `TBD_SSH_HOST` in `deploy/deploy.env`); frozen evidence stays in
-  `verification_evidence/` folders, indexed and never reworded.
+  staging host is `TBD_SSH_HOST` in `deploy/deploy.env`).
 
 ## Related documentation
 
-- [Mod reorganization specifications](/documentation/archive/improved_layout/mod/README.md) —
-  the archived reorganization proposals for the mod suite; the
-  [workspace layout](/documentation/architecture/workspace_layout.md) describes the tree as it is.
+- [Workspace layout](/documentation/architecture/workspace_layout.md) — the repository tree as it
+  is, the mod suite included.
 - [Library crate documentation](/documentation/crates/README.md) — the API server, the single-page
   app, the game server host agent and the other library crates.
 - [Tool documentation](/documentation/tools/README.md) — the developer tools, the Enfusion script

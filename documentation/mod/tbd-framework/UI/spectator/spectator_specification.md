@@ -120,8 +120,9 @@ lists it):
 
 ## Open work
 
-- [T-946.50 — SpectatorHost still treats 0 as unlimited](/.ai/tickets/T-946.50.toml) (idea, no
-  plan): `TBD_SpectatorHost` drops the unlimited branch and its log text, matching the component.
+- SpectatorHost still treats 0 as unlimited (ticket
+  `wave-close-child-tickets.spectatorhost-still-treats-0` in `ttm`): `TBD_SpectatorHost` drops the
+  unlimited branch and its log text, matching the component.
 
 ## Decisions
 

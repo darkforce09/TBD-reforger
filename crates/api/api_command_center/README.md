@@ -72,7 +72,7 @@ API's `LEADERBOARD_REFRESH_INTERVAL_SECS`
 
 - [API command center source](/crates/api/api_command_center/src/README.md) — the files, the
   routes and how the dashboard and the boards are read.
-- [Match telemetry, fleet status and derived statistics](/documentation/crates/api/api_server/verification_evidence/telemetry.md)
+- [Match telemetry, fleet status and derived statistics](/documentation/crates/api/api_server/design_notes/telemetry.md)
   — the fleet block and when the derived statistics are recomputed.
 - [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.

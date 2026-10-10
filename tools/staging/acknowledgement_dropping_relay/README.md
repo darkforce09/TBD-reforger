@@ -65,5 +65,5 @@ No feature and no environment variable: the `serve` flags `--listen`, `--upstrea
 - [Staging tool crates](/tools/staging/README.md) — the three staging crates.
 - [Staging verification engines](/documentation/tools/staging/staging_verification_engines.md) —
   the member load and the relay end to end.
-- [Staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md) — the fleet
+- [Staging design note](/documentation/crates/api/api_server/design_notes/staging.md) — the fleet
   procedure's waves W13 and W14 and the cases they judge.

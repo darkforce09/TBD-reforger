@@ -86,7 +86,7 @@ audit id, and reloads the history on `reset`.
 ## Related documentation
 
 - [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
-- [Administration and community content](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md)
+- [Administration and community content](/documentation/crates/api/api_server/design_notes/administration_and_content.md)
   — the roster paging, the audit stream's replay, reset and recovery semantics.
 - [Personnel roster page](/documentation/crates/frontend/pages/administration_pages/personnel/personnel_roster_page.md)
   — the roster, discipline and resync as administrators use them.

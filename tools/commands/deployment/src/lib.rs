@@ -6,14 +6,14 @@
 //! fleet ([`staging`]: its settings, units, payloads and boot verdicts), and `deploy db`, which
 //! the `database_operations` crate carries; [`remote_rust_toolchain`] is the toolchain line every
 //! remote build payload starts with. Both deploys exclude the same host-owned paths from their
-//! `--delete` rsync and refuse it while the host lacks the API's `.env`.
+//! `--delete` rsync and refuse it while the host lacks the API's settings file.
 //! **Position:** tier 5 of `tools/commands`, over `database_operations`, `deploy_settings`,
 //! `process_runner`, `repository_layout` and `verification_core`. The xtask binary's `deploy`
 //! and `ci` groups call it, and the `staging_procedures` and `remote_debugging` crates
 //! read the fleet layout.
 //! **Signals & state:** none; each call reads `deploy/deploy.env` and the checkout afresh.
 //! **Invariants:** no deploy ships a path the development machine alone holds or touches a path
-//! the host owns; no rsync runs before the host's API `.env` is proven present; every remote
+//! the host owns; no rsync runs before the host's API settings file is proven present; every remote
 //! build names its package and binary explicitly; a deploy's verdict is its exit code.
 
 mod api_environment_file_preflight;

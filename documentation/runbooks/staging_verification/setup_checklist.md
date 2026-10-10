@@ -14,8 +14,9 @@ changes the staging host is approved by the operator first, one numbered list pe
 - `deploy/deploy.env` names the host and the fleet, and none of the retired
   single-server keys (the deploy refuses them)
   ([staging deploy settings](/documentation/runbooks/game_server_staging/staging_deploy.md)).
-- On the host, the API's `.env` sits at `crates/api/api_server/.env` of the checkout, and no host
-  agent carries the former name `fleet_host_agent`: both deploys refuse otherwise. A host that
+- On the host, the API's settings file sits at `deploy/api.env` of the checkout (the deploy's
+  probe moves one still at `crates/api/api_server/.env` there), and no host agent carries the
+  former name `fleet_host_agent`: both deploys refuse otherwise. A host that
   still does runs `cargo xtask deploy staging --migrate-host-agent-name` once
   ([staging deploy](/documentation/runbooks/game_server_staging/staging_deploy.md) step 3).
 - The operator's Chrome runs the Claude extension, signed in to the site as an administrator and to

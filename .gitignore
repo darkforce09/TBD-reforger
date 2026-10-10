@@ -1,10 +1,13 @@
 # ==============================================================================
 # 1. Version Control & Worktrees
 # ==============================================================================
-# Slice worktrees, one folder per ticket slug or legacy number (git worktree add — not committed;
-# see worktrees/README.md and documentation/runbooks/mod_slice_workflow.md). Live checkouts;
-# staging one causes git to treat it as an embedded repository.
-.ai/artifacts/worktrees/*/
+# Every linked git worktree of this checkout (git worktree add), one folder per worktree. Live
+# checkouts; staging one makes git treat it as an embedded repository.
+/.worktrees/
+
+# One machine's local state: logs, run records, tool roots (the Enfusion MCP game root, the
+# playtest server, extracted game files) and the host-bridge wrappers. Never committed.
+/.workstation/
 
 # ==============================================================================
 # 2. Environment & Secrets
@@ -13,6 +16,7 @@
 .env.*
 !.env.example
 deploy/deploy.env
+deploy/api.env
 
 # ==============================================================================
 # 3. Editor & OS Cruft
@@ -23,8 +27,10 @@ deploy/deploy.env
 *.swp
 *.swo
 *~
-# Local enfusion-mcp IDE config (machine paths — see documentation/runbooks/mod_slice_workflow.md)
+# Machine-local agent configuration (absolute paths of this workstation)
 .mcp.json
+/.claude/settings.local.json
+/.claude/launch.json
 
 # ==============================================================================
 # 4. Global Dependencies, Caches & Logs
@@ -37,17 +43,9 @@ __pycache__/
 # ==============================================================================
 # 5. Rust / Cargo Build Directories
 # ==============================================================================
-# All build output: the target directory shared across worktrees and its purpose
-# subfolders (dev-api, ci, gate-*)
+# All build output: one target folder shared across worktrees, with one subfolder per toolchain
+# environment (target/host, target/container) and the purpose subfolders inside each
 /target/
-# Retired root-level build folders: local folders no tool writes any more, which
-# `cargo xtask platform wave reclaim` deletes where a machine still holds them
-/target-ci/
-/target-dev-api/
-/target-gate-*/
-/dist-gate-*/
-# Per-slice and hand-set target directories (target-<ticket id>, target-container)
-target-*/
 
 # ==============================================================================
 # 6. Frontend Build Output (crates/frontend/shell/frontend_application)
@@ -92,14 +90,5 @@ assets/terrains/**/tiles/
 /assets/equipment/
 
 # ==============================================================================
-# 9. Tooling & Pipeline Artifacts (.ai/, tools/)
+# 9. Tooling (tools/)
 # ==============================================================================
-
-# T-159 gate run artifacts only (regenerable)
-/.ai/artifacts/t159_gates/v/
-/.ai/artifacts/t159_gates/logs/
-/.ai/artifacts/t159_gates/.devtoken
-
-# Wave gate receipts & execution evidence
-/.ai/artifacts/last-verified
-/.ai/artifacts/verdicts/

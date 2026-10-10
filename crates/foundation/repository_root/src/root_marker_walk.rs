@@ -15,10 +15,10 @@ use std::path::{Path, PathBuf};
 
 use crate::error::{Error, Result};
 
-/// The file whose presence marks a checkout root, relative to that root. It is a tracked file of
-/// the agent folder `.ai/`, so every clone, CI checkout and slice worktree carries it, and only a
-/// test that plants it on purpose makes a throwaway folder a root.
-pub const ROOT_MARKER: &str = ".ai/ROOT";
+/// The file whose presence marks a checkout root, relative to that root. It is a tracked file at
+/// the root, so every clone, CI checkout and linked worktree carries it, and only a test that
+/// plants it on purpose makes a throwaway folder a root.
+pub const ROOT_MARKER: &str = ".repository_root";
 
 /// The checkout root above the working directory.
 ///

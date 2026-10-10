@@ -125,13 +125,13 @@ action.
 - [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
 - [API decisions](/documentation/crates/api/api_server/decisions.md) — why game hosts are reached only
   through commands they claim.
-- [Machine credentials and runtime sessions](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md)
+- [Machine credentials and runtime sessions](/documentation/crates/api/api_server/design_notes/machine_credentials.md)
   — credentials, the session fence and their consumers.
-- [Match telemetry, fleet status and derived statistics](/documentation/crates/api/api_server/verification_evidence/telemetry.md)
+- [Match telemetry, fleet status and derived statistics](/documentation/crates/api/api_server/design_notes/telemetry.md)
   — the telemetry queue reading on the status and the configured fleet's scoping.
-- [Fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/crates/api/api_server/design_notes/fleet_command_ledger.md)
   — the ledger's commands, states, rules and executors.
-- [Live slot occupancy](/documentation/crates/api/api_server/verification_evidence/live_occupancy.md)
+- [Live slot occupancy](/documentation/crates/api/api_server/design_notes/live_occupancy.md)
   — how player lives hold a runtime session open.
 - [Server control page](/documentation/crates/frontend/pages/administration_pages/server_control/server_control_page.md)
   — the administrators' console over these routes.

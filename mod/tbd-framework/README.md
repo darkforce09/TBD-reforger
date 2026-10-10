@@ -174,5 +174,5 @@ minute apart, so a credential pasted in later takes effect without a restart.
 - [Playtest session steps](/documentation/runbooks/two_client_playtest/session_join_to_deploy.md)
   and [known limitations](/documentation/runbooks/two_client_playtest/known_limitations.md) —
   the framework's log lines as two players meet them, and what the session cannot yet prove.
-- [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — how mod work runs
-  through Workbench and the gates.
+- [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) — driving Workbench
+  and the mod gates from a session.

@@ -18,7 +18,7 @@ tools/enfusion/enfusion_script_index/
 ## How it works
 
 ```text
-reference lanes ─▶ enf index ─▶ .ai/artifacts/enf-index/<lane>_*.tsv ─▶ enf lookup | dirs | citations | capability
+reference lanes ─▶ enf index ─▶ mod/reference_symbol_index/<lane>_*.tsv ─▶ enf lookup | dirs | citations | capability
 game paks (enfusion_pak) ─▶ enf extract | carve | dump-entry ─▶ mod/References/vanilla_reference/
 cargo xtask fetch vanilla-api | vanilla-source (vanilla_page_fetch) ─▶ cached HTML ─▶ enf apidoc | source
 ```
@@ -44,7 +44,7 @@ cargo xtask fetch vanilla-api                                # the Script API in
 
 | Variable | Default | Effect |
 |---|---|---|
-| `ENFUSION_GAME_PATH` | `$HOME/.cache/enfusion-mcp-root` | the game folder `enf extract` and `enf dump-entry` read |
+| `ENFUSION_GAME_PATH` | `<checkout>/.workstation/enfusion_mcp_game_root` | the game folder `enf extract` and `enf dump-entry` read |
 | `TBD_FETCH_DELAY` | 0.3 s (`vanilla-api`), 0.4 s (`vanilla-source`) | the pause after each page fetched from the network |
 | `TBD_FETCH_VANILLA_API_CURL` | `curl` on `PATH` | the curl binary `vanilla-api` runs |
 
@@ -53,7 +53,8 @@ cargo xtask fetch vanilla-api                                # the Script API in
 - Depends on: `enfusion_pak`, `repository_layout`, `content_digest`, `process_runner`,
   `verification_core`, `clap`, `regex`, `thiserror`.
 - Used by: the `enf` binary in `tools/developer_tools/src/bin/enf.rs`; xtask's `fetch` command
-  line (`tools/xtask/src/commands/fetch/`); the mod wave gate, which runs this crate's tests.
+  line (`tools/xtask/src/commands/fetch/`); the ticket manager's mod wave gate, which runs this
+  crate's tests.
 - Rules: tier 2 of `tools/enfusion`; an index carries names and coordinates, never code bodies;
   no `std::process::exit` in the library (only `run_command_line` returns an exit code); every
   `curl` runs through `process_runner`.
@@ -62,5 +63,3 @@ cargo xtask fetch vanilla-api                                # the Script API in
 
 - [Enfusion script oracle](/documentation/tools/enfusion/enfusion_script_index.md) — the oracle
   tables, their lookups and the citation gate in depth.
-- [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — the `@idx` citations and
-  the oracle gates in mod work.

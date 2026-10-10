@@ -624,7 +624,7 @@ class TBD_RegistryScanner
 
 	//------------------------------------------------------------------------------------------------
 	//! Classify the prefab into a registry-items v3 kind and collect its compat facts.
-	//! Rule order mirrors .ai/artifacts/t068_10_2_census.md SRules (R0/R2..R9); the census
+	//! Rule order mirrors documentation/mod/tbd-export/Scripts/WorkbenchGame/registry_scan_census_rules.md SRules (R0/R2..R9); the census
 	//! H_pred is the acceptance contract (gate G1). Returns false when the prefab carries no
 	//! item signal at all (world dressing).
 	protected bool ClassifyAndCollect(BaseContainer root, map<string, ref array<BaseContainer>> comps, string filePath, TBD_RegistryScanItem item)

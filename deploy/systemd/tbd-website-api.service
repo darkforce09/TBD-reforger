@@ -14,8 +14,8 @@
 ; directory. Outside development the API refuses to boot unless both are named absolutely, and
 ; `ServeDir` performs no I/O when constructed, so a wrong root would produce a 404 per request
 ; and nothing at all in the journal. Both are therefore pinned to absolute paths here.
-; WorkingDirectory is the API server's crate folder, which holds the `.env` loaded below, the
-; same file the API's own `.env` lookup finds from there.
+; WorkingDirectory is the API server's crate folder; the settings file loaded below is
+; deploy/api.env, the same file the API's own lookup finds under the checkout root from there.
 ;
 ; The terrain tree is NOT rsynced by the deploy (it is ~590 MB of LFS content); the server keeps
 ; its own copy, and `cargo xtask deploy website` refuses to run while that copy still sits at the
@@ -29,7 +29,7 @@
 ; the checkout the deploy rsyncs with --delete. systemd creates %S/tbd-website-api
 ; (StateDirectory=); the API creates uploads/ at boot and equipment/ on its first import.
 ;
-; The .env loaded below must leave MAP_ASSETS_DIR, GLYPH_ASSETS_DIR, UPLOAD_DIR and
+; The settings file loaded below must leave MAP_ASSETS_DIR, GLYPH_ASSETS_DIR, UPLOAD_DIR and
 ; EQUIPMENT_DATA_DIR out: systemd lets an EnvironmentFile= value override an Environment= line for
 ; the same variable, so a path set there replaces the pin here, and a relative UPLOAD_DIR or
 ; EQUIPMENT_DATA_DIR stops the boot outside development.
@@ -46,7 +46,7 @@ WorkingDirectory=/TBD_REPO_DIR_PLACEHOLDER/crates/api/api_server
 
 ; Server-only secrets. Never rsynced from a dev PC: both deploys exclude this path, and each
 ; refuses to rsync while the host lacks it.
-EnvironmentFile=/TBD_REPO_DIR_PLACEHOLDER/crates/api/api_server/.env
+EnvironmentFile=/TBD_REPO_DIR_PLACEHOLDER/deploy/api.env
 
 ; Served at /map-assets and /map-assets/glyphs. See the note above before changing either.
 Environment=MAP_ASSETS_DIR=/TBD_REPO_DIR_PLACEHOLDER/assets/terrains
@@ -58,7 +58,8 @@ StateDirectory=tbd-website-api
 Environment=UPLOAD_DIR=%S/tbd-website-api/uploads
 
 ; The imported equipment datasets and their indexes: runtime storage like the uploads, so absolute
-; outside development. Leave EQUIPMENT_DATA_DIR out of the .env; a value there overrides this line.
+; outside development. Leave EQUIPMENT_DATA_DIR out of deploy/api.env; a value there overrides this
+; line.
 Environment=EQUIPMENT_DATA_DIR=%S/tbd-website-api/equipment
 
 ExecStart=/TBD_REPO_DIR_PLACEHOLDER/target/release/api-server

@@ -80,6 +80,6 @@ lists them.
 - [API identity and access source](/crates/api/api_identity_and_access/src/README.md) — the files,
   the routes and how sign-in, sessions and the link handshake work.
 - [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
-- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/design_notes/identity_transactions.md)
   — session authorization, Discord observations, linking and attribution.
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.

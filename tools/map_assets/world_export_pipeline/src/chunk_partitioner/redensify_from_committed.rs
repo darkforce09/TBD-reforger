@@ -259,7 +259,9 @@ pub fn build_roads_from_topo_opt(
     ops_log: bool,
     quiet: bool,
 ) -> Result<Value> {
-    let vfs = PakVfs::open_default()?;
+    let vfs = PakVfs::open_default(&repository_layout::enfusion_mcp_game_root(
+        &repository_root::find_repository_root()?,
+    ))?;
     let topo = decode_topo(&vfs, terrain)?;
     let road_class = |ty: u8| -> Option<&'static str> {
         match ty {

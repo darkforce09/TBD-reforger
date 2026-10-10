@@ -1,4 +1,5 @@
-//! The `.env` preflight: its probe, its verdicts, and that only a present file lets the rsync run.
+//! The settings file preflight: its probe, its verdicts, and that only a present file lets the
+//! rsync run.
 use super::*;
 use std::cell::Cell;
 
@@ -49,19 +50,47 @@ fn the_probe_exit_reads_as_present_missing_or_indeterminate() {
     assert_eq!(classify(12), ApiEnvironmentFile::Indeterminate(12));
 }
 
-/// The probe tests the file at the checkout's current API path for being a regular file and
-/// readable, and changes nothing on the host.
+/// Under a local shell the probe moves a settings file from the previous path, keeping its mode,
+/// and never overwrites a file already at the current path.
 #[test]
-fn the_probe_tests_the_current_api_path_and_changes_nothing() {
+fn the_probe_moves_a_file_from_the_previous_path_and_never_overwrites() {
+    use std::os::unix::fs::PermissionsExt;
+    let scratch = std::env::temp_dir().join(format!("tbd-env-move-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&scratch);
+    let checkout = scratch.join("repo");
+    let current = checkout.join(API_ENVIRONMENT_FILE);
+    let previous = checkout.join(PREVIOUS_API_ENVIRONMENT_FILE);
+    std::fs::create_dir_all(previous.parent().unwrap()).unwrap();
+    let probe = || {
+        std::process::Command::new("sh")
+            .arg("-c")
+            .arg(probe_script(&checkout.display().to_string()))
+            .status()
+            .expect("sh runs")
+            .code()
+    };
+    std::fs::write(&previous, "JWT_SECRET=old\n").unwrap();
+    std::fs::set_permissions(&previous, std::fs::Permissions::from_mode(0o600)).unwrap();
+    assert_eq!(probe(), Some(0), "the previous file moves and reads");
+    assert!(!previous.exists());
     assert_eq!(
-        probe_script(REMOTE_DIR),
-        "if [ -f '/home/deploy/tbd/repo/crates/api/api_server/.env' ] && \
-         [ -r '/home/deploy/tbd/repo/crates/api/api_server/.env' ]; then exit 0; fi; exit 20"
+        std::fs::read_to_string(&current).unwrap(),
+        "JWT_SECRET=old\n"
     );
+    let mode = std::fs::metadata(&current).unwrap().permissions().mode() & 0o777;
+    assert_eq!(mode, 0o600);
+
+    std::fs::write(&previous, "JWT_SECRET=stale\n").unwrap();
+    assert_eq!(probe(), Some(0));
     assert_eq!(
-        remote_path(REMOTE_DIR),
-        format!("{REMOTE_DIR}/{API_ENVIRONMENT_FILE}")
+        std::fs::read_to_string(&current).unwrap(),
+        "JWT_SECRET=old\n"
     );
+    assert!(
+        previous.exists(),
+        "a file at the current path is never overwritten"
+    );
+    std::fs::remove_dir_all(&scratch).unwrap();
 }
 
 /// Under a local shell the probe answers 0 for a readable file, and 20 for a missing file, a
@@ -109,32 +138,20 @@ fn only_a_present_verdict_continues() {
 }
 
 /// The refusal of a missing file prints a step that works on a fresh host, whose checkout (and so
-/// its `.env.example`) only arrives with the rsync the refusal stops: the template goes over ssh
-/// from this checkout, as the website deployment runbook's step 3 writes it. A host whose file
-/// sits where the previous folder layout kept it is told to move it instead.
+/// its template) only arrives with the rsync the refusal stops: the template goes over ssh from
+/// this checkout, as the website deployment runbook's step 3 writes it.
 #[test]
-fn the_missing_file_refusal_prints_a_step_that_works_on_a_fresh_host() {
-    assert_eq!(
-        missing_file_operator_step(REMOTE_DIR),
-        "       Operator step: on a host that already holds the API's .env where the previous \
-         folder layout kept it, move that file (and the .tools folder beside it) into \
-         /home/deploy/tbd/repo/crates/api/api_server/, keeping the file's mode. On a fresh host, \
-         copy the template from this checkout, then fill it in \
-         (documentation/runbooks/website_deployment.md, step 3):\n         ssh <TBD_SSH_HOST> \
-         'mkdir -p /home/deploy/tbd/repo/crates/api/api_server && install -m 600 /dev/stdin \
-         /home/deploy/tbd/repo/crates/api/api_server/.env' < crates/api/api_server/.env.example\n       \
-         Then rerun the deploy."
-    );
+fn the_missing_file_refusal_prints_the_runbook_step() {
+    let step = missing_file_operator_step(REMOTE_DIR);
+    let command = "ssh <TBD_SSH_HOST> 'mkdir -p <TBD_REMOTE_DIR>/deploy && install -m 600 \
+                   /dev/stdin <TBD_REMOTE_DIR>/deploy/api.env' < deploy/api.env.example";
+    assert!(step.contains(&command.replace("<TBD_REMOTE_DIR>", REMOTE_DIR)));
     let runbook = std::fs::read_to_string(
         tool_test_support::test_repo_root().join("documentation/runbooks/website_deployment.md"),
     )
     .expect("the website deployment runbook reads");
     assert!(
-        runbook.contains(
-            "ssh <TBD_SSH_HOST> 'mkdir -p <TBD_REMOTE_DIR>/crates/api/api_server && install -m 600 \
-             /dev/stdin <TBD_REMOTE_DIR>/crates/api/api_server/.env' < \
-             crates/api/api_server/.env.example"
-        ),
+        runbook.contains(command),
         "the runbook's step 3 no longer writes the command the refusal prints"
     );
 }

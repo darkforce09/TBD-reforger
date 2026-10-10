@@ -17,8 +17,7 @@ documentation/mod/tbd-export/
 ## How it works
 
 The addon's code READMEs describe each folder; the documents here cover what spans folders: the map
-export pipeline and its runbook, and the frozen acceptance evidence of the equipment and vehicle
-exporter. Start from the exporter you need:
+export pipeline and its runbook, and the equipment and vehicle exporter. Start from the exporter you need:
 
 | Exporter | Code | Entry point today | Documents |
 |---|---|---|---|
@@ -26,7 +25,7 @@ exporter. Start from the exporter you need:
 | Full world-object export | [Objects](/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/README.md) | none | [terrain export runbook](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md) |
 | Building blueprints, voxel dumps, sight parity | [Buildings](/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings/README.md) | `cargo xtask mcp wbcall EMCP_WB_TbdBlueprint` | [map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) |
 | Runtime road network | [Export game scripts](/mod/tbd-export/Scripts/Game/TBD/Export/README.md) | playing the export mission header | [map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) |
-| Equipment and vehicle source export | [EquipmentVehicleExport](/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/README.md) | menu "Export Equipment and Vehicles"; Net API `EMCP_WB_SourceExport` | [acceptance evidence](/documentation/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md) |
+| Equipment and vehicle source export | [EquipmentVehicleExport](/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/README.md) | menu "Export Equipment and Vehicles"; Net API `EMCP_WB_SourceExport` | [equipment and vehicle export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/README.md) |
 | Equipment and vehicle diagnostics | [EquipmentExport](/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/README.md), [VehicleExport](/mod/tbd-export/Scripts/WorkbenchGame/VehicleExport/README.md) | their menu entries | the code READMEs |
 | Ballistics oracle: engine ballistic tables, trajectory simulation and gravity of the vanilla mortar shells | [BallisticsOracle plugin](/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/README.md), [game scripts](/mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle/README.md) | menu "Ballistics Oracle", then playing the export mission header | [ballistics oracle](/documentation/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/ballistics_oracle.md) |
 | Registry items and compatibility | `mod/tbd-export/Scripts/WorkbenchGame/TBD_RegistryItemsExportPlugin.c` | none: its menu entry is commented out | the [contract catalogs](/contracts/catalogs/README.md) it feeds |
@@ -67,7 +66,7 @@ Workbench, mod/tbd-export/addon.gproj open
 - Used by: the [mod documentation index](/documentation/mod/README.md), and the export addon's
   code READMEs, which link these documents.
 - Rules: the addon depends on vanilla and `TBD_EMCP` only (`mod/tbd-export/addon.gproj:5-8`);
-  documents mirror the code folder they cover; evidence stays frozen in `verification_evidence/`.
+  documents mirror the code folder they cover.
 
 ## Related documentation
 

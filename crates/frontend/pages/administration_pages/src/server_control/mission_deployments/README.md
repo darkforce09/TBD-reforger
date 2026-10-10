@@ -72,5 +72,5 @@ request runs in the browser build only.
 
 - [Server control page](/documentation/crates/frontend/pages/administration_pages/server_control/server_control_page.md)
   — the panel's behaviour and what the deployment routes mean server-side.
-- [Mission artifacts evidence](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
+- [Mission artifacts design note](/documentation/crates/api/api_server/design_notes/mission_artifacts.md)
   — the design of artifacts, their reviews and deployments.

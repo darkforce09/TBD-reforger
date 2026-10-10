@@ -196,8 +196,9 @@ with the body it sends or the DTO it reads. Server-side:
 
 ## Open work
 
-- [T-1045 — Rewrite stale frontend doc comments naming missing code and behaviour](/.ai/tickets/T-1045.toml)
-  (idea, no plan): the frame's module header names all four chromeless routes.
+- Rewrite stale frontend doc comments naming missing code and behaviour (ticket
+  `rewrite-stale-frontend-doc` in `ttm`): the frame's module header names all four chromeless
+  routes.
 
 ## Decisions
 

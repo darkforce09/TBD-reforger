@@ -1,7 +1,6 @@
 use crate::commands::agent_context::cli::AiCmd;
 use crate::commands::fetch::cli::FetchCmd;
 use crate::commands::map::cli::MapCmd;
-use crate::commands::refactor::cli::RefactorCmd;
 use crate::commands::schema::cli::SchemaCmd;
 use crate::commands::verify::cli::VerifyCmd;
 use ballistics_oracle_tooling::BallisticsCmd;
@@ -10,7 +9,7 @@ use deployment::DeployCmd;
 use enfusion_mcp::McpCmd;
 use mod_operations::ModCmd;
 use platform_execution::PlatformCmd;
-use remote_debugging::{DebugCmd, ReproCmd};
+use remote_debugging::DebugCmd;
 use schema_tooling::GenCmd;
 use staging_procedures::StagingCmd;
 use workstation_setup::SetupCmd;
@@ -41,11 +40,6 @@ pub(crate) enum TopCmd {
     Debug {
         #[command(subcommand)]
         cmd: DebugCmd,
-    },
-    /// Repro helpers (mission-upload + mission-id / mission-version-body)
-    Repro {
-        #[command(subcommand)]
-        cmd: ReproCmd,
     },
     /// Mod / Workbench gates
     Mod {
@@ -105,11 +99,6 @@ pub(crate) enum TopCmd {
     Gen {
         #[command(subcommand)]
         cmd: GenCmd,
-    },
-    /// Relocation: move tracked files and rewrite every reference to them from a manifest
-    Refactor {
-        #[command(subcommand)]
-        cmd: RefactorCmd,
     },
     /// Platform factory helpers
     Platform {

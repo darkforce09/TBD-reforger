@@ -109,7 +109,7 @@ ingest.
 
 ## Open work
 
-None. Checked `.ai/tickets/` for open tickets on the debrief, the scoreboard and kill counting;
+None. Checked `ttm` for open tickets on the debrief, the scoreboard and kill counting;
 the website's replay and combat telemetry tickets change the platform, not this screen.
 
 ## Decisions

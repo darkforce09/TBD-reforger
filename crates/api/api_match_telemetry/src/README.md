@@ -96,12 +96,12 @@ mod treats as permanent. Reports about a source the server has not registered ar
 
 ## Related documentation
 
-- [Match telemetry, fleet status and derived statistics](/documentation/crates/api/api_server/verification_evidence/telemetry.md)
+- [Match telemetry, fleet status and derived statistics](/documentation/crates/api/api_server/design_notes/telemetry.md)
   — registration, revisions, detailed events, the lock order and the game runtime's queue.
 - [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
-- [Machine credentials and runtime sessions](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md)
+- [Machine credentials and runtime sessions](/documentation/crates/api/api_server/design_notes/machine_credentials.md)
   — the credential every ingest requires and the session fence a heartbeat passes.
-- [Reservation and attendance separation](/documentation/crates/api/api_server/verification_evidence/reservation_attendance.md)
+- [Reservation and attendance separation](/documentation/crates/api/api_server/design_notes/reservation_attendance.md)
   — how a match report attributes and corrects attendance.
-- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/design_notes/identity_transactions.md)
   — the lock order and gameplay attribution a report shares with identity linking.

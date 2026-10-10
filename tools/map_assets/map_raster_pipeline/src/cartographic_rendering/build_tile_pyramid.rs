@@ -144,61 +144,15 @@ pub(crate) fn patch_map_tiles_meta(terrain: &str) -> Result<u8> {
     Ok(0)
 }
 
-/// The program-wide cartographic aggregator: committed slice logs plus live sub-verifiers.
+/// The program-wide cartographic aggregator: the live sub-verifiers of every cartographic stage.
 pub(crate) fn verify_cartographic() -> Result<u8> {
     let root = find_repository_root()?;
-    let artifacts = root.join(::repository_layout::ARTIFACTS_DIR);
     let failures = std::cell::Cell::new(0usize);
     macro_rules! pass {
         ($($a:tt)*) => { println!("  PASS  {}", format!($($a)*)) };
     }
     macro_rules! failm {
         ($($a:tt)*) => {{ failures.set(failures.get() + 1); println!("  FAIL  {}", format!($($a)*)); }};
-    }
-
-    println!("verify-cartographic: slice logs (G1 subset)");
-    for i in 0..10 {
-        let path = artifacts.join(format!("t152_{i}_verify_log.md"));
-        let label = format!("slice log {i}");
-        if !path.exists() {
-            failm!("{label} missing {}", path.display());
-            continue;
-        }
-        let text = std::fs::read_to_string(&path)?;
-        let auto = match text.find("\n## Manual") {
-            Some(idx) => &text[..idx],
-            None => &text[..],
-        };
-        if auto.contains("**FAIL**") {
-            failm!("{label} verify log contains **FAIL** in automated section");
-            continue;
-        }
-        let gate_pass_rows = auto
-            .lines()
-            .filter(|l| l.starts_with("| **G") && l.contains("| **PASS**"))
-            .count();
-        let gate_fail_rows = auto
-            .lines()
-            .filter(|l| l.starts_with("| **G") && l.contains("| **FAIL**"))
-            .count();
-        let verdict_ok = gate_fail_rows == 0
-            && (gate_pass_rows > 0
-                || text.to_lowercase().contains("all gn pass")
-                || text.to_lowercase().contains("all automated gn pass")
-                || text.to_lowercase().contains("automated gn all **pass**")
-                || text
-                    .to_lowercase()
-                    .contains(&format!("tag **t-152.{i}** allowed"))
-                || (i == 0 && text.contains("**ALL Gn PASS**"))
-                || (i == 2 && text.contains("**G7**") && text.contains("**PASS**")));
-        if !verdict_ok {
-            failm!("{label} verify log missing PASS verdict / ship marker");
-            continue;
-        }
-        pass!(
-            "{label} log OK ({})",
-            path.strip_prefix(&root).unwrap_or(&path).display()
-        );
     }
 
     let run_world = |args: &[&str]| {
@@ -242,7 +196,7 @@ pub(crate) fn verify_cartographic() -> Result<u8> {
         }
     };
 
-    println!("\nverify-cartographic: glyph atlas");
+    println!("verify-cartographic: glyph atlas");
     run_cargo(&["schema", "map-glyphs"]);
     println!("\nverify-cartographic: export artifacts (G6 subset)");
     run_world(&["validate-exports"]);

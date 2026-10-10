@@ -3,7 +3,7 @@
 //! **Role:** [`run`] maps one [`ModCmd`] to the entry function that answers it and returns that
 //! entry's exit code.
 //! **Position:** called by the xtask binary's `mod` group; it reaches this crate's modules and the
-//! `remote_debugging`, `mod_script_checks`, `workstation_setup` and `database_operations` entries.
+//! `remote_debugging`, `mod_script_checks` and `workstation_setup` entries.
 //! **Signals & state:** none.
 //! **Invariants:** an exit code is the entry's verdict; an [`crate::Error`] means the command
 //! could not do its work at all.
@@ -53,7 +53,6 @@ pub fn run(cmd: ModCmd) -> Result<u8> {
         ModCmd::DevServer { args } => crate::development_server::run(&args),
         ModCmd::TestMission { target } => crate::mission_test::run(target.as_deref()),
         ModCmd::BootstrapStaging => Ok(workstation_setup::staging_server::run()?),
-        ModCmd::SeedAnnouncement => Ok(database_operations::milestone_announcement::run()?),
         ModCmd::TestGameRuntimeApi => crate::game_runtime_api_smoke::run(),
         ModCmd::Playtest { args } => crate::playtest_server::run(&args),
         ModCmd::Compile { args } => crate::compile::run(&args),

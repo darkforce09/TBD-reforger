@@ -75,9 +75,8 @@ container's does not run inside that container.
    exit code.
 
 An editor factory [wave](/documentation/glossary/n_to_z.md#wave) runs step 3 after its wave gate
-passes and before it closes: `cargo xtask platform wave gate` runs no Chromium, so this is the only
-automated run of the rect smokes (`save-dialog-rect`, `entrance-motion-rect`). The wave procedure
-is in [Factory waves](/documentation/runbooks/factory_waves/README.md).
+passes and before it closes: the wave gate of the ticket manager's runner runs no Chromium, so this
+is the only automated run of the rect smokes (`save-dialog-rect`, `entrance-motion-rect`).
 
 ### Run one gate
 

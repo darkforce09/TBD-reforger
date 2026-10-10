@@ -103,5 +103,5 @@ response header, COOP and COEP included.
   the caches and the Range answers.
 - [Mortar offline gate](/tools/browser_testing/browser_gate_suites/src/mortar_offline/README.md) —
   what each gate step checks.
-- [Game ballistics design note](/documentation/crates/api/api_server/verification_evidence/game_ballistics.md#offline-design)
+- [Game ballistics design note](/documentation/crates/api/api_server/design_notes/game_ballistics.md#offline-design)
   — the offline design and the operator decisions behind it.

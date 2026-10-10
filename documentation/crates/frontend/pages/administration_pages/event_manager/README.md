@@ -44,9 +44,9 @@ folder's README lists the page's files.
 
 ## Related documentation
 
-- [Event administration evidence](/documentation/crates/api/api_server/verification_evidence/event_administration.md)
+- [Event administration design note](/documentation/crates/api/api_server/design_notes/event_administration.md)
   — the verification of event creation, editing, cancellation and deletion.
-- [Eligibility and allocation evidence](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
+- [Eligibility and allocation design note](/documentation/crates/api/api_server/design_notes/event_eligibility_allocation.md)
   — the verification of access policies, groups and reservation pools.
-- [Reservation and attendance evidence](/documentation/crates/api/api_server/verification_evidence/reservation_attendance.md)
+- [Reservation and attendance design note](/documentation/crates/api/api_server/design_notes/reservation_attendance.md)
   — the verification of reservations, the waiting list and attendance.

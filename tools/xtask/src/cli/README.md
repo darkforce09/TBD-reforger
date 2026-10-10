@@ -32,7 +32,6 @@ raw instead of as a clap tree: `mk` (the target list lives in
 |---|---|---|
 | `mcp` | the Enfusion MCP bridge: daemon, calls, selftest, Workbench logs | none: the `enfusion_mcp` crate (`tools/commands/enfusion_mcp/`) |
 | `debug` | server-join probes and their primitives | `debug` |
-| `repro` | mission upload reproduction helpers | `reproduction` |
 | `mod` | mod compile, servers, mission tests, world boot, mod wave | none: the `mod_operations` crate (`tools/commands/mod_operations/`) |
 | `deploy` | website and staging deploys, database backup and restore | `deploy` |
 | `db` | the local Postgres lane | `db` |

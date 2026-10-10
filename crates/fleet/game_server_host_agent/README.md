@@ -196,9 +196,9 @@ bits. `src/agent_configuration/README.md` lists every rule. `RUST_LOG` sets the 
 
 ## Related documentation
 
-- [Fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/crates/api/api_server/design_notes/fleet_command_ledger.md)
   — the API side: command states, leases, fencing and execution windows.
-- [Machine credentials](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md)
+- [Machine credentials](/documentation/crates/api/api_server/design_notes/machine_credentials.md)
   — issuing and revoking the credential the agent authenticates with.
 - [Game server staging](/documentation/runbooks/game_server_staging/README.md) — deploying the
   staging game server with the host agent.

@@ -8,5 +8,3 @@ pub(crate) mod agent_context;
 pub(crate) mod verify;
 
 pub(crate) mod schema;
-
-pub(crate) mod refactor;

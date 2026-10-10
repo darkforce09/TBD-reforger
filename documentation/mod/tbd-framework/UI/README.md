@@ -114,8 +114,8 @@ draws the whole flow.
 ## Boundaries
 
 - Depends on: the [feature doc template](/documentation/standards/templates/feature_doc.md) and
-  the [style lock](/documentation/archive/refactor_v2/refactor_style_lock.md) for the screen specifications; the
-  code folders above.
+  the [documentation standards](/documentation/standards/documentation_standards.md) for the
+  screen specifications; the code folders above.
 - Used by: `TBD_UILayouts.c` and `TBD_PlayersCatalog.c`, whose
   comments cite this index; the in-code READMEs of the screens, which link their specification;
   the [mod design](/documentation/mod/tbd-framework/mod_design.md).

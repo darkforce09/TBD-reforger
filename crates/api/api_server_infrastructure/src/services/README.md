@@ -82,7 +82,7 @@ too. The ledger in `fleet_commands/` has its own README.
 
 ## Related documentation
 
-- [Machine credentials and runtime sessions](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md)
+- [Machine credentials and runtime sessions](/documentation/crates/api/api_server/design_notes/machine_credentials.md)
   — the credential format, the session fence and their consumers.
-- [Fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/crates/api/api_server/design_notes/fleet_command_ledger.md)
   — the ledger's design.

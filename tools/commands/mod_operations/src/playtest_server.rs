@@ -37,7 +37,8 @@
 //! | `playtest_server/logread.rs` | every search of `server.out`: boot phase, the addon hard gate, the error dump |
 //! | `playtest_server/boot.rs` | launching the engine, the wait loop, the join banner, Ctrl-C and shutdown |
 //!
-//! **Signals & state:** the run lock and the run folder (`$HOME/tbd-playtest` by default) for the
+//! **Signals & state:** the run lock and the run folder (`.workstation/playtest_server` of the
+//! checkout by default) for the
 //! run; the server runs in a process group of its own.
 //!
 //! **Invariants:** `tbd-framework` is also published to the Workshop, unlisted, under the SAME id
@@ -102,7 +103,7 @@ Options:
   --port=<n>            game port, default 2001
   --a2s-port=<n>        A2S port, default 17777 (MUST differ from --port)
   --max-players=<n>     default 8
-  --run-dir=<dir>       staging root, default $HOME/tbd-playtest
+  --run-dir=<dir>       staging root, default <checkout>/.workstation/playtest_server
   --timeout=<sec>       stop the server after <sec> (default: run until Ctrl-C)
   --require-telemetry   exit 1 when the runtime's telemetry does not reach the platform
   --dry-run             render + validate everything, print the command line, boot nothing
@@ -135,7 +136,7 @@ pub(crate) struct Opts {
 }
 
 impl Opts {
-    fn defaults(home: &str) -> Opts {
+    fn defaults(checkout_root: &str) -> Opts {
         Opts {
             mission: String::new(),
             event_mission: String::new(),
@@ -149,7 +150,7 @@ impl Opts {
             game_port: "2001".into(),
             a2s_port: "17777".into(),
             max_players: "8".into(),
-            run_dir: format!("{home}/tbd-playtest"),
+            run_dir: format!("{checkout_root}/{}", repository_layout::PLAYTEST_SERVER_DIR),
             run_timeout: String::new(),
             dry_run: false,
             selftest: false,

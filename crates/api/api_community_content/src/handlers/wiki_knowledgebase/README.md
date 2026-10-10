@@ -76,6 +76,6 @@ null and left off the wire.
 
 - [Wiki page](/documentation/crates/frontend/pages/doctrine_pages/wiki/wiki_page.md) — the
   page that reads and writes these routes.
-- [Administration and community content](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md)
+- [Administration and community content](/documentation/crates/api/api_server/design_notes/administration_and_content.md)
   — the wiki markup, revision and save design.
 - [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.

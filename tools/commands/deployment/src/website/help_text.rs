@@ -20,7 +20,8 @@ Usage: cargo xtask deploy website [--dry-run] [--help]
   acknowledgement-dropping-relay) and the Leptos SPA on the server, start the
   staging Caddy (compose) and reload its Caddyfile, and restart the user-systemd
   API unit. The rsync runs only once the host holds a readable
-  crates/api/api_server/.env in TBD_REMOTE_DIR.
+  deploy/api.env in TBD_REMOTE_DIR (a file still at crates/api/api_server/.env
+  is moved there first).
 
   --dry-run   Print the plan (probes/rsync/ssh/compose/builds/web server/
               checksum-repair/restart) without executing.

@@ -70,7 +70,7 @@ players and capacity, and sum every reported telemetry queue's backlog and drops
 - [API environment variables](/documentation/crates/api/api_server/environment_variables.md)
   — `LEADERBOARD_REFRESH_INTERVAL_SECS`,
   the cadence of the scheduled leaderboard refresh.
-- [Match telemetry, fleet status and derived statistics](/documentation/crates/api/api_server/verification_evidence/telemetry.md)
+- [Match telemetry, fleet status and derived statistics](/documentation/crates/api/api_server/design_notes/telemetry.md)
   — the fleet block and when the derived statistics are recomputed.
-- [Reservation and attendance separation](/documentation/crates/api/api_server/verification_evidence/reservation_attendance.md)
+- [Reservation and attendance separation](/documentation/crates/api/api_server/design_notes/reservation_attendance.md)
   — what counts as attendance, which the statistics summarise.

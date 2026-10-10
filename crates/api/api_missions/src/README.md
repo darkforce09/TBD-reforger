@@ -166,7 +166,7 @@ with the artifact's compiled slots, which the event roster in `api_operations` r
   layers they share.
 - [API decisions](/documentation/crates/api/api_server/decisions.md) — why game servers fetch artifacts over
   HTTPS rather than from staged files.
-- [Mission artifacts, reviews and deployment](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
+- [Mission artifacts, reviews and deployment](/documentation/crates/api/api_server/design_notes/mission_artifacts.md)
   — the design of artifacts, their reviews and deployments.
 - [Mission library page](/documentation/crates/frontend/pages/mission_hub_pages/library/mission_library_page.md),
   [Mission overview page](/documentation/crates/frontend/pages/mission_hub_pages/overview/mission_overview_page.md)

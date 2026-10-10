@@ -87,8 +87,7 @@ Cancel; the outputs are JSON for tools.
 
 ## Open work
 
-- [T-940.10 — Mortar ballistics crate for API and offline frontend](/.ai/tickets/T-940.10.toml)
-  (ready): the model this oracle calibrates; its calibration bundle carries these outputs.
+None.
 
 ## Decisions
 

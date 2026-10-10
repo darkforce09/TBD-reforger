@@ -161,24 +161,20 @@ button opens (LEFT-ORBAT-001).
 
 ## Open work
 
-- [T-845 — A selected vehicle looks identical to an unselected one](/documentation/tickets/specs/t845_selected_vehicle_treatment.md)
-  (ready, [plan](/documentation/tickets/plans/t-845_plan.md)): a selected vehicle gets a
-  highlight.
-- [T-838 — Map markers selectable; outliner lists; dblclick opens Attributes](/documentation/tickets/specs/t838_marker_select_outliner.md)
-  (ready, [plan](/documentation/tickets/plans/t-838_plan.md)): briefing markers join the
-  selection.
-- [T-822 — Outliner dblclick must not open asset picker under Attributes](/documentation/tickets/specs/t822_outliner_dblclick_bubble.md)
-  (ready, [plan](/documentation/tickets/plans/t-822_plan.md)) and
-  [T-927 — Editor chrome dblclick leak to map](/documentation/tickets/specs/t927_chrome_dblclick_leak.md)
-  (ready, [plan](/documentation/tickets/plans/t-927_plan.md)): a double-click on the chrome no
-  longer reaches the map.
-- [T-939 — Editor usability: selection, gizmo, arrange, templates](/documentation/tickets/specs/t939_editor_usability.md)
-  (queued, [plan](/documentation/tickets/plans/t-939_plan.md)): multi-select drags in the trees
-  among its parts.
-- [T-716 — Context menu honesty: Go Here, multi-select, keydown field hijack](/.ai/tickets/T-716.toml)
-  (deferred, no plan): the context menu's rows act on a multi-selection as they say.
-- [T-946.68 — Delete eats a tactical graphic not the selection](/.ai/tickets/T-946.68.toml)
-  (idea, no plan): a marquee or tree selection clears the armed tactical graphic.
+- A selected vehicle looks identical to an unselected one (ticket `selected-vehicle-looks-identical`
+  in `ttm`): a selected vehicle gets a highlight.
+- Map markers selectable; outliner lists; dblclick opens Attributes (ticket
+  `map-markers-selectable-outliner` in `ttm`): briefing markers join the selection.
+- Outliner dblclick must not open asset picker under Attributes (ticket `outliner-dblclick-must-not`
+  in `ttm`) and Editor chrome dblclick leak to map (ticket `editor-chrome-dblclick-leak` in `ttm`):
+  a double-click on the chrome no longer reaches the map.
+- Editor usability: selection, gizmo, arrange, templates (ticket `editor-usability-selection-gizmo`
+  in `ttm`): multi-select drags in the trees among its parts.
+- Context menu honesty: Go Here, multi-select, keydown field hijack (ticket
+  `context-menu-honesty-go` in `ttm`): the context menu's rows act on a multi-selection as they say.
+- Delete eats a tactical graphic not the selection (ticket
+  `wave-close-child-tickets.delete-eats-tactical-graphic` in `ttm`): a marquee or tree selection
+  clears the armed tactical graphic.
 
 ## Decisions
 

@@ -25,7 +25,6 @@ use std::collections::{BTreeSet, HashMap};
 use verification_core::{Kind, Verdict};
 
 use super::heading_anchors::document_anchors;
-use super::judged_documents::DocumentArea;
 use super::markdown_scan::{ScannedLink, scan};
 use super::permalink_targets::PendingPermalinks;
 use super::repository_permalinks::PermalinkObjects;
@@ -233,10 +232,6 @@ impl<'o> LinkTargets<'o> {
 }
 
 impl DocumentRule for LinkTargets<'_> {
-    fn judges(&self, _area: DocumentArea) -> bool {
-        true
-    }
-
     fn judge(
         &mut self,
         document: &JudgedDocument<'_>,

@@ -13,7 +13,6 @@ schema migrations of `crates/api/api_database/` at boot, and serves uploads and 
 
 ```text
 crates/api/api_server/
-├── .env.example         the template the gitignored `.env` is copied from, with development values
 ├── Cargo.toml           the `api_server` package: the library and its two binaries
 ├── src/                 the thin application: the router, the composition root, the error, the prelude, the binaries, the layout rules
 └── tests/               integration suites against real Postgres, with their shared support
@@ -64,8 +63,9 @@ The design note linked under Related documentation specifies each group.
 
 ## Getting started
 
-Copy `crates/api/api_server/.env.example` to `crates/api/api_server/.env` (a fresh git worktree has
-none), then run these from the repository root, in this order:
+Copy `deploy/api.env.example` to `deploy/api.env` (a fresh git worktree has none; copy the main
+checkout's, or export `TBD_API_ENV_FILE` naming it), then run these from the repository root, in
+this order:
 
 ```bash
 cargo xtask db up        # Postgres 18 in the tbd_reforger_db container, host port 5434, detached
@@ -78,9 +78,9 @@ cargo xtask mk rust-test # the library and binary unit tests; no database
 Without the recipe, `cargo run -p api_server --bin api-server` starts the same server from any
 folder of the checkout: in development the configuration finds the checkout root from the working
 directory and serves the checkout's `assets/terrains/` and `assets/glyphs/`, writes uploads into
-`assets/scratch/api/uploads/` and keeps the equipment datasets in `assets/equipment/`. The `.env`
-it reads is the first one found from the working directory upward, so run it from this folder (or
-export the variables) to pick up `crates/api/api_server/.env`.
+`assets/scratch/api/uploads/` and keeps the equipment datasets in `assets/equipment/`. It reads
+its settings from the file `TBD_API_ENV_FILE` names, else `deploy/api.env` under the checkout
+root.
 
 `db seed` applies five development seeds in a fixed order to tables that only the API's
 migrations create. Each `psql` run stops at the first failed statement, so seeding before the
@@ -100,8 +100,9 @@ fragment; outside development the route answers 404.
 
 ## Configuration
 
-`Config::load` in `crates/api/api_configuration/src/configuration/mod.rs` reads the process
-environment, then the first `.env` found from the working directory upward; an exported variable wins. `DATABASE_URL` and
+`Config::load` in `crates/api/api_configuration/src/configuration/mod.rs` loads the settings file
+(`TBD_API_ENV_FILE` when set, else `deploy/api.env` under the checkout root), then reads the
+process environment; an exported variable wins. `DATABASE_URL` and
 `JWT_SECRET` are always required. Outside development, `DISCORD_CLIENT_ID`,
 `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URL` and an absolute `UPLOAD_DIR`, `MAP_ASSETS_DIR`
 and `GLYPH_ASSETS_DIR` are required too. A value that is set but unusable stops the boot for
@@ -112,7 +113,7 @@ that `repository_root` finds above the working directory; a development process 
 any checkout with one of them unset stops the boot naming it, and never falls back to a path
 relative to the working directory. A relative value that is set resolves against the working
 directory, which is this folder under `cargo xtask mk rust-api`.
-`.env.example` carries most variables with development values; `TRUSTED_PROXIES`,
+The template `deploy/api.env.example` carries most variables with development values; `TRUSTED_PROXIES`,
 `MISSION_VERSION_MAX_BODY_BYTES`, `SKIP_MIGRATE`, `RUST_LOG` and `TEST_DATABASE_URL` are not in it.
 
 The crate declares no Cargo feature.
@@ -194,7 +195,7 @@ The crate declares no Cargo feature.
   package such as `frontend_application` (`cargo xtask verify crate-tiers`); the
   crate builds with the workspace root's `rust-toolchain.toml` and `rustfmt.toml`; the local
   Postgres 18 service
-  `db` (container `tbd_reforger_db`, port 5434) is `deploy/compose.dev.yml`; the filled `.env` is
+  `db` (container `tbd_reforger_db`, port 5434) is `deploy/compose.dev.yml`; the filled `deploy/api.env` is
   never committed.
 
 ## Related documentation
@@ -212,5 +213,5 @@ The crate declares no Cargo feature.
   tests, the migration checksum repair, sample data, backups and restores.
 - [Website deployment](/documentation/runbooks/website_deployment.md) — building and running
   the API on the home server.
-- [API design notes](/documentation/crates/api/api_server/verification_evidence/README.md)
+- [API design notes](/documentation/crates/api/api_server/design_notes/README.md)
   — the index of the per-domain design notes.

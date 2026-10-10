@@ -69,9 +69,9 @@ FILE-BOOT-001 is a row added for shipped code.
 
 ## Open work
 
-- [T-717 — Continue-without-map before hydrate resurrects the boot overlay forever](/.ai/tickets/T-717.toml)
-  (deferred, no plan): "Continue without map" dismisses the overlay for good whenever it is
-  pressed.
+- Continue-without-map before hydrate resurrects the boot overlay forever (ticket
+  `continue-without-map-before` in `ttm`): "Continue without map" dismisses the overlay for good
+  whenever it is pressed.
 
 No open ticket covers splitting the editor into its own chunk.
 

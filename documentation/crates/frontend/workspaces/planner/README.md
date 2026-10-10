@@ -26,9 +26,7 @@ documentation/crates/frontend/workspaces/planner/
 ## Boundaries
 
 - Depends on: the [feature doc template](/documentation/standards/templates/feature_doc.md); the
-  design notes of the product blueprint, archived in
-  `documentation/archive/go_and_react_era_design/mission_creator_design.md`; the ticket registry
-  in `.ai/tickets/`.
+  ticket manager (`ttm`).
 - Used by: the [workspace crate documentation](/documentation/crates/frontend/workspaces/README.md)
   and the [product roadmap](/documentation/product_roadmap.md), which links the feature doc.
 - Rules: the documents describe a planned workspace and say so; they never describe code that does

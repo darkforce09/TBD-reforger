@@ -5,7 +5,7 @@
 The documentation of the website [API](/documentation/glossary/a_to_f.md#api), the API server crate
 `api_server` in `crates/api/api_server/` and the API crates in `crates/api/` it is assembled from: the
 cross-domain overview, the environment variable reference,
-the decisions behind the design, and the verification evidence the API is accepted against.
+the decisions behind the design, and the per-domain design notes the API is held to.
 Developers and AI agents read it before changing the API or deploying it.
 
 ## Contents
@@ -15,7 +15,7 @@ documentation/crates/api/api_server/
 ├── api_overview.md           the map of the API: boot, request path, callers, routes by domain, crate map, state, ids, open work
 ├── decisions.md              the cross-domain design decisions, dated, with their consequences
 ├── environment_variables.md  every variable the API reads: default, requirement, failure, reader
-└── verification_evidence/    the per-domain design notes and the staging receipts' design
+└── design_notes/             the per-domain design notes and the staging receipts' design
 ```
 
 ## How it works
@@ -30,26 +30,26 @@ each domain. The layers split the facts:
 - The documents here carry what spans domains: the overview, the
   [environment variable reference](/documentation/crates/api/api_server/environment_variables.md),
   the [decisions log](/documentation/crates/api/api_server/decisions.md) and the open work.
-- `verification_evidence/` holds the per-domain design depth (transactions, lock orders, refusal
+- `design_notes/` holds the per-domain design depth (transactions, lock orders, refusal
   codes) and the staging receipts' design; its
-  [README](/documentation/crates/api/api_server/verification_evidence/README.md) indexes each file.
+  [README](/documentation/crates/api/api_server/design_notes/README.md) indexes each file.
 
 No domain has a document of its own here: each domain README and the design notes in
-`verification_evidence/` cover it. A domain whose behaviour, open work or decisions outgrow them
+`design_notes/` cover it. A domain whose behaviour, open work or decisions outgrow them
 gets a `<domain>.md` feature doc beside the overview, following the
 [feature doc template](/documentation/standards/templates/feature_doc.md), and a line in
 Contents. A new cross-domain decision is a new entry at the end of `decisions.md`.
 
 | Domain | Code README | Design notes |
 |---|---|---|
-| identity and access | [identity_and_access](/crates/api/api_identity_and_access/src/README.md) | [identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md) |
+| identity and access | [identity_and_access](/crates/api/api_identity_and_access/src/README.md) | [identity transactions](/documentation/crates/api/api_server/design_notes/identity_transactions.md) |
 | administration | [administration](/crates/api/api_administration/src/README.md) | none |
-| operations | [operations](/crates/api/api_operations/src/README.md) | [event eligibility](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md), [event administration](/documentation/crates/api/api_server/verification_evidence/event_administration.md), [live occupancy](/documentation/crates/api/api_server/verification_evidence/live_occupancy.md), reservations (three notes) |
-| missions | [missions](/crates/api/api_missions/src/README.md) | [mission artifacts](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md) |
-| match telemetry | [match_telemetry](/crates/api/api_match_telemetry/src/README.md) | [reservation and attendance](/documentation/crates/api/api_server/verification_evidence/reservation_attendance.md) |
+| operations | [operations](/crates/api/api_operations/src/README.md) | [event eligibility](/documentation/crates/api/api_server/design_notes/event_eligibility_allocation.md), [event administration](/documentation/crates/api/api_server/design_notes/event_administration.md), [live occupancy](/documentation/crates/api/api_server/design_notes/live_occupancy.md), reservations (three notes) |
+| missions | [missions](/crates/api/api_missions/src/README.md) | [mission artifacts](/documentation/crates/api/api_server/design_notes/mission_artifacts.md) |
+| match telemetry | [match_telemetry](/crates/api/api_match_telemetry/src/README.md) | [reservation and attendance](/documentation/crates/api/api_server/design_notes/reservation_attendance.md) |
 | command center | [command_center](/crates/api/api_command_center/src/README.md) | none |
 | community content | [community_content](/crates/api/api_community_content/src/README.md) | none |
-| server infrastructure | [server_infrastructure](/crates/api/api_server_infrastructure/src/README.md) | [machine credentials](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md), [fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md) |
+| server infrastructure | [server_infrastructure](/crates/api/api_server_infrastructure/src/README.md) | [machine credentials](/documentation/crates/api/api_server/design_notes/machine_credentials.md), [fleet command ledger](/documentation/crates/api/api_server/design_notes/fleet_command_ledger.md) |
 
 ## Code
 
@@ -70,15 +70,15 @@ Contents. A new cross-domain decision is a new entry at the end of `decisions.md
 - Depends on: the code of `crates/api/api_server/` and `crates/api/`, which every claim is checked against; the
   [feature doc](/documentation/standards/templates/feature_doc.md) and
   [decisions entry](/documentation/standards/templates/decisions_entry.md) templates; the
-  ticket registry in `.ai/tickets/` for open work.
+  ticket manager (`ttm`) for open work.
 - Used by: the READMEs of the API server and its crates, which link the overview under Related
   documentation; the [API crate documentation](/documentation/crates/api/README.md) index; the
-  glossary's evidence links; the frontend page docs that describe what their calls mean
+  glossary's design note links; the frontend page docs that describe what their calls mean
   server-side.
 - Rules: every route, variable and default is stated as the code has it, and a disagreement
-  with `.env.example` or another document is recorded, not copied; decisions entries are never
-  rewritten, and a changed decision is a new entry that supersedes the old one; the evidence
-  files are indexed, never reworded.
+  with `deploy/api.env.example` or another document is recorded, not copied; decisions entries are never
+  rewritten, and a changed decision is a new entry that supersedes the old one; every design
+  note is indexed in its folder README.
 
 ## Related documentation
 

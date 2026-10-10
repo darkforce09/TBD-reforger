@@ -42,5 +42,5 @@ effective policy, the grants that hold and the provenance of each membership fac
 
 ## Related documentation
 
-- [Event eligibility and allocation](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/crates/api/api_server/design_notes/event_eligibility_allocation.md)
   — policies, groups, quotas and how changes re-evaluate reservations.

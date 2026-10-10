@@ -144,18 +144,18 @@ The grouping clock and the cap are in the
 
 ## Open work
 
-- [T-1077 — Check hosted commands running the post-change tail on no-op edits](/.ai/tickets/T-1077.toml)
-  (idea, no plan): `commit_document_edit` and the composition edits run the tail only when the
-  document changed, or the module doc says they always run it.
-- [T-1051 — Check whether minted vehicle and object ids can collide](/.ai/tickets/T-1051.toml)
-  (idea, no plan): `next_id` restarts at 0 on every install, and the single-id mint checks slot
-  ids only; a reopened mission's vehicle or object id either cannot be overwritten, and the guard
-  is documented, or the mint checks every id map.
-- [T-1062 — Derive map grid, basemap, peaks and forest from terrain size](/.ai/tickets/T-1062.toml)
-  (idea, no plan): terrain-size constants follow the loaded terrain.
-- [T-1068 — Rewrite stale map engine comments outside mission data](/.ai/tickets/T-1068.toml)
-  (idea, no plan): `export_text.rs` stops citing the unserved `/compiled` route and retired
-  modules, and the pick and marquee comments name the current code.
+- Check hosted commands running the post-change tail on no-op edits (ticket
+  `check-hosted-commands-running` in `ttm`): `commit_document_edit` and the composition edits run
+  the tail only when the document changed, or the module doc says they always run it.
+- Check whether minted vehicle and object ids can collide (ticket `check-whether-minted-vehicle` in
+  `ttm`): `next_id` restarts at 0 on every install, and the single-id mint checks slot ids only; a
+  reopened mission's vehicle or object id either cannot be overwritten, and the guard is documented,
+  or the mint checks every id map.
+- Derive map grid, basemap, peaks and forest from terrain size (ticket `derive-map-grid-basemap` in
+  `ttm`): terrain-size constants follow the loaded terrain.
+- Rewrite stale map engine comments outside mission data (ticket `rewrite-stale-map-engine-comments`
+  in `ttm`): `export_text.rs` stops citing the unserved `/compiled` route and retired modules, and
+  the pick and marquee comments name the current code.
 
 ## Decisions
 

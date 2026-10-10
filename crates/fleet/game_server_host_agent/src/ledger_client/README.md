@@ -86,5 +86,5 @@ HTTPS, and installs the `ring` TLS provider once.
 
 ## Related documentation
 
-- [Fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/crates/api/api_server/design_notes/fleet_command_ledger.md)
   — the API side of the ledger: states, leases, fencing and execution windows.

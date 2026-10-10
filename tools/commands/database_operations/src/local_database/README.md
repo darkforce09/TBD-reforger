@@ -36,7 +36,7 @@ whichever runtime `resolve_runtime` finds. The maintenance database `IT_MAINT_DB
   reporting a signalled child as a signal. `db up`, `db down`, `db logs`, `db seed` (each seed with
   `psql -v ON_ERROR_STOP=1`, stopping at the first failed file) and `db registry-import` run here.
   `db registry-import` runs `cargo run --bin import-item-registry` in the API crate folder, where
-  the importer finds the developer's `.env`, and names both envelopes by their absolute path from
+  the importer loads the developer's `deploy/api.env` from the checkout root, and names both envelopes by their absolute path from
   the repository root, never by a path that climbs out of that folder.
 - `test_it::run` validates the label in `TBD_IT_BASE_DB`
   (default `rust_it`) against the scratch allow-list (`rust_it`, `tbd_gate*`, `*_cold`, `*_it`,

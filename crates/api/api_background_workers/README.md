@@ -69,6 +69,6 @@ Three variables, read when `spawn_all` runs: `LEADERBOARD_REFRESH_INTERVAL_SECS`
 
 - [API background workers source](/crates/api/api_background_workers/src/README.md) — the
   workers, their intervals and the services each pass calls.
-- [Fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/crates/api/api_server/design_notes/fleet_command_ledger.md)
   — the leases and expiries the fleet command reconciler enforces.
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.

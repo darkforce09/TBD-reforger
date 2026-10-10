@@ -69,10 +69,15 @@ pub(crate) fn run(tool: Option<String>, args_json: Option<String>) -> i32 {
 
 fn export_enfusion_defaults() {
     let home = env::var("HOME").unwrap_or_else(|_| "/tmp".into());
-    set_default(
-        "ENFUSION_GAME_PATH",
-        &format!("{home}/.cache/enfusion-mcp-root"),
-    );
+    if let Ok(root) = repository_root() {
+        set_default(
+            "ENFUSION_GAME_PATH",
+            &root
+                .join(repository_layout::ENFUSION_MCP_GAME_ROOT)
+                .display()
+                .to_string(),
+        );
+    }
     set_default(
         "ENFUSION_WORKBENCH_PATH",
         &format!("{home}/.local/share/Steam/steamapps/common/Arma Reforger Tools"),

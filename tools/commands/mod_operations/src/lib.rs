@@ -9,7 +9,7 @@
 //! probe a Workbench session; `wave_execution` is the mod program's wave driver (`mod wave`).
 //! [`ModCmd`] is the group's command line and [`run`] dispatches it.
 //! **Position:** tier 10 of `tools/commands`, over `platform_execution` (the slice worktrees),
-//! `workstation_setup`, `enfusion_mcp`, `database_operations`, `remote_debugging`,
+//! `workstation_setup`, `enfusion_mcp`, `remote_debugging`,
 //! `mod_script_checks`, `ticket_manager_client` and the tool foundations. The xtask binary's `mod` group
 //! calls it.
 //! **Signals & state:** the compile gate and the playtest server install SIGINT and SIGTERM

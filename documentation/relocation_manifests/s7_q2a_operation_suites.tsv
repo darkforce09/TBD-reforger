@@ -1,7 +1,0 @@
-# Stage S7 Q2a — the map engine's three crate-root integration suites, which drive only the mission crates (the authoring commands at the document's edges, paste keeping each authored height, zones surviving a save and a reload), become integration suites of mission_operations. Paths name the tree before the move; the map engine's `tests/` folder keeps its README until the folder goes.
-kind	from	to	scope
-#
-# the three suites keep their file names
-path	legacy/map_engine/tests/operation_boundaries.rs	crates/mission/mission_operations/tests/operation_boundaries.rs
-path	legacy/map_engine/tests/paste_keeps_authored_z.rs	crates/mission/mission_operations/tests/paste_keeps_authored_z.rs
-path	legacy/map_engine/tests/zone_round_trip.rs	crates/mission/mission_operations/tests/zone_round_trip.rs

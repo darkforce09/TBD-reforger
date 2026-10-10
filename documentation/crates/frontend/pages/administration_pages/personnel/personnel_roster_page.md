@@ -118,8 +118,7 @@ lists each call with the DTO it reads or sends. Server-side:
 - Initials badges stand in for avatars; the role reads as its wire value in capitals; warnings
   above zero turn yellow; the status shows as a success or error badge.
 - Design target: the [personnel roster blueprint](/documentation/crates/frontend/pages/administration_pages/personnel/visual_references/personnel_roster_blueprint/README.md),
-  a design-phase reference, and the archived platform spec's
-  [Personnel Roster section](/documentation/archive/go_and_react_era_design/platform_context_handoff.md#10-personnel-roster).
+  a design-phase reference.
   The built page differs from the blueprint:
   - no subtitle under the heading;
   - "Sort by Warnings" and "Filter by Rank" are one sort control and one filter control that
@@ -133,9 +132,9 @@ lists each call with the DTO it reads or sends. Server-side:
 
 ## Open work
 
-- [T-1017 — Fix personnel search placeholder promising Discord ID search](/.ai/tickets/T-1017.toml)
-  (idea, no plan): the placeholder and the search agree: either the placeholder stops promising a
-  Discord id search, or the API matches the Discord id too.
+- Fix personnel search placeholder promising Discord ID search (ticket
+  `fix-personnel-search-placeholder` in `ttm`): the placeholder and the search agree: either the
+  placeholder stops promising a Discord id search, or the API matches the Discord id too.
 
 ## Decisions
 

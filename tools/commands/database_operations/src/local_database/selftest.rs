@@ -61,7 +61,7 @@ use super::recipes::{expand_make_vars, recipe_body, rendered_recipes};
 use super::test_it::{reap, reap_select};
 use crate::container_database as dbc;
 use repository_layout::build_output::{
-    BUILD_OUTPUT_FOLDER, DATABASE_SELFTEST_SUBFOLDER, build_output_subfolder,
+    BUILD_OUTPUT_FOLDER, DATABASE_SELFTEST_SUBFOLDER, ToolchainEnvironment, build_output_subfolder,
 };
 use repository_root::find_repository_root;
 
@@ -386,9 +386,14 @@ fn arm_reap_fail_open() -> Verdict {
 /// Arm 6's throwaway compose project: its folder under `root`, and the same folder relative to
 /// `root` as the `WEB=` / `TBD_MK_WEB` value both sides receive.
 fn scratch_compose_project(root: &Path) -> (std::path::PathBuf, String) {
+    let environment =
+        ToolchainEnvironment::from_container_flag(process_runner::host_execution::in_container());
     (
-        build_output_subfolder(root, DATABASE_SELFTEST_SUBFOLDER),
-        format!("{BUILD_OUTPUT_FOLDER}/{DATABASE_SELFTEST_SUBFOLDER}"),
+        build_output_subfolder(root, environment, DATABASE_SELFTEST_SUBFOLDER),
+        format!(
+            "{BUILD_OUTPUT_FOLDER}/{}/{DATABASE_SELFTEST_SUBFOLDER}",
+            environment.folder_name()
+        ),
     )
 }
 

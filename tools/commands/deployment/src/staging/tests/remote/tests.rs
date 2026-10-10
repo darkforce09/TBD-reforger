@@ -87,7 +87,7 @@ fn rsync_argv_keeps_every_exclude_in_order() {
     for needed in [
         "--exclude=mod/References/",
         &deploy_env_exclude,
-        "--exclude=crates/api/api_server/.env",
+        "--exclude=deploy/api.env",
         "--exclude=mod/tbd-export/",
         "--exclude=mod/tbd-emcp/",
         // Build output and map assets: a game-server host needs neither, and `--delete` would
@@ -245,7 +245,7 @@ fn the_dry_run_plan_walks_every_instance_and_prints_no_secret() {
 }
 
 /// Before the rsync the plan refuses while a retired host agent name is left, then probes the
-/// host's API `.env` with the exact script the live run sends, with and without the migration.
+/// host's API settings file with the exact script the live run sends, with and without the migration.
 #[test]
 fn the_dry_run_plan_checks_the_retired_names_and_the_api_environment_file_before_the_rsync() {
     let env = base();
@@ -257,7 +257,8 @@ fn the_dry_run_plan_checks_the_retired_names_and_the_api_environment_file_before
                 .unwrap_or_else(|| panic!("no line starting {needle:?} in {plan:#?}"))
         };
         let retired = at("[dry-run] check on the host: no fleet_host_agent name is left");
-        let probe = at("[dry-run] the API's .env, refusing the rsync unless the host answers 0: ");
+        let probe =
+            at("[dry-run] the API's settings file, refusing the rsync unless the host answers 0: ");
         let rsync = at("[dry-run] rsync -avz --delete ... ");
         assert!(retired < probe && probe < rsync, "{plan:#?}");
         assert!(
@@ -265,7 +266,7 @@ fn the_dry_run_plan_checks_the_retired_names_and_the_api_environment_file_before
                 "/home/deploy/tbd/repo"
             ))
         );
-        assert!(plan[probe].contains("/home/deploy/tbd/repo/crates/api/api_server/.env"));
+        assert!(plan[probe].contains("/home/deploy/tbd/repo/deploy/api.env"));
     }
 }
 

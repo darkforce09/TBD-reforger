@@ -89,6 +89,6 @@ against the guild of the API's `Config`.
 - [API operations source](/crates/api/api_operations/src/README.md) — the files, the routes, the
   reservation lock order and the fire-mission re-solve.
 - [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
-- [Event eligibility and allocation](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/crates/api/api_server/design_notes/event_eligibility_allocation.md)
   — access, visibility, pools, promotion, re-evaluation and derived attendance.
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.

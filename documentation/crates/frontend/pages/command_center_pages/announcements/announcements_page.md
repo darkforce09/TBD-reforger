@@ -102,9 +102,8 @@ The page writes nothing and stores nothing in the browser.
   list rows and the reading pane, an article column at most 48rem wide.
 - The page is a reading board in the split-pane pattern the schedule also uses: the list stays
   in view while one item is read beside it.
-- Design target: the archived platform spec's
-  [Announcements section](/documentation/archive/go_and_react_era_design/platform_context_handoff.md#2-announcements-news-feed)
-  and a design-phase layout sketch, a dispatch feed beside an article viewer with a byline of
+- Design target: the design-phase platform spec's announcements section and a design-phase layout
+  sketch, a dispatch feed beside an article viewer with a byline of
   author and date. No blueprint set exists for this page. The built page differs from the spec:
   - the spec asked for a centred blog column of large news cards, each with a thumbnail, a date
     pill, a title, the author's name, a snippet and a "Read Full Briefing" button; the built page
@@ -117,15 +116,12 @@ The page writes nothing and stores nothing in the browser.
 
 ## Open work
 
-- [T-087 — CMS rich text editor](/.ai/tickets/T-087.toml) (deferred, no plan): announcements gain
-  rich text; the reading pane would then need a renderer for it, which the page's
-  plain-text rule rules out until the write path sanitises the body.
-- [T-1028 — Fix re-publishing a pinned announcement unpinning it](/.ai/tickets/T-1028.toml)
-  (idea, no plan): a pinned announcement stays pinned, and so first in this list, when an
-  administrator publishes it again.
-- [T-1105 — Fix milestone announcement body date disagreeing with its title](/.ai/tickets/T-1105.toml)
-  (idea, no plan): the pinned milestone announcement that `cargo xtask mod seed-announcement`
-  inserts, and this page lists, states the same date in its title and its body.
+- CMS rich text editor (ticket `cms-rich-text-editor` in `ttm`): announcements gain rich text; the
+  reading pane would then need a renderer for it, which the page's plain-text rule rules out until
+  the write path sanitises the body.
+- Fix re-publishing a pinned announcement unpinning it (ticket `fix-re-publishing-pinned` in `ttm`):
+  a pinned announcement stays pinned, and so first in this list, when an administrator publishes it
+  again.
 
 ## Decisions
 

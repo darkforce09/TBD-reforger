@@ -10,7 +10,7 @@
 
 use super::*;
 
-use crate::decision_record_locations::CARTOGRAPHIC_RENDERING_ARTIFACTS_DIR;
+use crate::decision_record_locations::CARTOGRAPHIC_RENDERING_DECISION_RECORDS_DIR;
 use ::repository_layout::map_scratch_dir;
 
 /// Classify the stitched orthophoto into land-cover masks: classification at CLASS_RASTER_PIXELS (nearest
@@ -211,7 +211,9 @@ pub(crate) fn build_map_cartographic(terrain: &str) -> Result<u8> {
         std::fs::create_dir_all(out_dir)?;
     }
 
-    let vfs = PakVfs::open_default()?;
+    let vfs = PakVfs::open_default(&repository_layout::enfusion_mcp_game_root(
+        &repository_root::find_repository_root()?,
+    ))?;
     let topo = decode_topo(&vfs, terrain)?;
     let landcover = build_landcover_masks(terrain)?;
 
@@ -366,7 +368,7 @@ pub(crate) fn build_map_cartographic(terrain: &str) -> Result<u8> {
                 "style": { "0": { "color": "#9aa3a2", "width": 20 }, "1": { "color": "#b0452b", "width": 10 }, "2": { "color": "#c8823c", "width": 8 }, "3": { "color": "#ded6bd", "width": 5 }, "5": { "color": "#7a7466", "width": 3 } },
             },
         },
-        "spikeArtifact": format!("{CARTOGRAPHIC_RENDERING_ARTIFACTS_DIR}/landcover_source_spike.json"),
+        "spikeArtifact": format!("{CARTOGRAPHIC_RENDERING_DECISION_RECORDS_DIR}/landcover_source_spike.json"),
         "buildSeconds": started.elapsed().as_secs(),
         "generatedAt": iso_from_system_time(std::time::SystemTime::now()),
     });

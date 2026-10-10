@@ -331,8 +331,8 @@ impl RehearsalEnvironment for LocalStack {
         words.extend(arguments.iter().cloned());
         let answer = Run::new("cargo")
             .args(&words)
-            // From the checkout root, as on the staging host: the tool reads the API env file at
-            // `crates/api/api_server/.env` relative to its working directory.
+            // From the checkout root, as on the staging host: the tool reads the API settings file
+            // at `deploy/api.env` relative to its working directory.
             .cwd(&self.root)
             .timeout(Duration::from_secs(1_800))
             .output()

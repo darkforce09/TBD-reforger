@@ -28,25 +28,27 @@ through sshpass when `TBD_SSH_PASS` is set, else with `-i` when `TBD_SSH_IDENTIT
 always with `StrictHostKeyChecking=no`.
 
 Both rsyncs exclude the paths of `host_owned_paths.rs`, which the host keeps for itself in its
-checkout: the API's `.env` and `.tools/` in `crates/api/api_server/`, and the app the website
-deploy builds in `crates/frontend/shell/frontend_application/dist/`. Before either rsync runs,
-`api_environment_file_preflight.rs` asks the host over ssh whether
-`<TBD_REMOTE_DIR>/crates/api/api_server/.env` exists and is readable, and refuses the deploy,
-naming the operator's step, when it is missing, unreadable or the probe gets no answer: the rsync
-runs with `--delete`, so a `.env` left where an earlier folder layout kept it would be deleted.
+checkout: the API's settings file `deploy/api.env`, the `.tools/` folder in
+`crates/api/api_server/`, and the app the website deploy builds in
+`crates/frontend/shell/frontend_application/dist/`. Before either rsync runs,
+`api_environment_file_preflight.rs` moves a settings file the host still keeps at
+`crates/api/api_server/.env` to `<TBD_REMOTE_DIR>/deploy/api.env` (never over an existing one),
+asks the host over ssh whether that file exists and is readable, and refuses the deploy, naming
+the operator's step, when it is missing, unreadable or the probe gets no answer: the rsync runs
+with `--delete`, so a settings file left at a path no exclusion names would be deleted.
 
 Both rsyncs append the patterns of `development_machine_only_paths.rs` to their own exclusions:
 anchored at the checkout root, they name what only a development machine holds (the retired and
-hand-set cargo target folders, retired app builds, the vanilla compile baseline, slice and ticket
-worktrees, the wave gate's receipts, and the local files of Claude Code, Codex and the MCP
-configuration). None of them is tracked, and the host needs none of them.
+hand-set cargo target folders, retired app builds, the vanilla compile baseline, the linked
+worktrees under `.worktrees/`, the machine-local `.workstation/`, and the local files of Claude Code
+and the MCP configuration). None of them is tracked, and the host needs none of them.
 
 ```text
-deploy website: asset probe ─▶ .env probe ─▶ rsync --delete ─▶ compose postgres ─▶ API build ─▶ host tools build
+deploy website: asset probe ─▶ settings file probe ─▶ rsync --delete ─▶ compose postgres ─▶ API build ─▶ host tools build
                 ─▶ app build ─▶ compose caddy, then its reload ─▶ checksum repair
                 ─▶ restart the unit ─▶ hints
 deploy staging: settings check ─▶ website API check ─▶ secret files ─▶ single-instance check
-                ─▶ retired host agent name check ─▶ .env probe ─▶ rsync --delete
+                ─▶ retired host agent name check ─▶ settings file probe ─▶ rsync --delete
                 ─▶ per instance: files and runtime smoke ─▶ units, restart
                 ─▶ boot verdict per instance ─▶ relay ─▶ host agents ─▶ log check per instance
 deploy staging --migrate-host-agent-name: settings check ─▶ the name migration over ssh, alone
@@ -63,7 +65,7 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
 - Does: reads `TBD_SSH_HOST` (required, with the deploy user) and `TBD_REMOTE_DIR` (default
   `/home/<user>/tbd/repo`), refuses a host, remote folder or `TBD_PROFILE_DIR` that contains
   `prairielearn` in any case, a host without a user, and a remote folder outside
-  `/home/<user>/tbd/` or holding `..`, then probes the server's map assets and its API `.env`,
+  `/home/<user>/tbd/` or holding `..`, then probes the server's map assets and its API settings file,
   rsyncs the checkout, and over ssh brings up the staging Postgres (`TBD_POSTGRES_HOST_PORT`,
   default 5432), builds the release `api-server` of `api_server`, the staging host tools `staging-fixtures` and `acknowledgement-dropping-relay` and
   the app, starts the staging Caddy and reloads its Caddyfile, repoints comments-only migration
@@ -73,7 +75,7 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
   restart only warns and prints the unit's install command. `--dry-run` prints the plan, with
   every rsync exclusion, and connects to nothing; it still needs a filled `deploy.env`.
 - Exit codes: 0 deployed, or the plan printed; 1 no `deploy.env`, a malformed one, a missing
-  required value, a refused path or host, a refused asset layout, or a host without its API `.env`
+  required value, a refused path or host, a refused asset layout, or a host without its API settings file
   (or one the probe could not read); 2 an unknown option; a
   failing rsync or ssh step's own code; 127 ssh, sshpass or rsync not installed.
 - Example: `cargo xtask deploy website --dry-run`
@@ -92,7 +94,7 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
   `acknowledgement-dropping-relay@N.service`. Each instance's boot is judged from its own log.
   The deploy refuses missing secret files, the retired single-server settings, the installed
   single-server units unless `--migrate-single-instance` retires them first, a host that still
-  carries a retired `fleet_host_agent` name, and a host without its API `.env`.
+  carries a retired `fleet_host_agent` name, and a host without its API settings file.
   `--migrate-host-agent-name` runs alone (with `--dry-run` at most, which prints the exact
   script): on the host it stops and disables every `fleet_host_agent@N.service`, moves
   `~/.local/bin/fleet_host_agent` and `~/.config/fleet_host_agent/` to their
@@ -105,7 +107,7 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
   `deploy.env`.
 - Exit codes: 0 deployed, migrated, rendered or judged healthy; 1 a missing, retired or refused
   setting, a missing or malformed secret file, the single-server units or a retired host agent
-  name still installed, a host without its API `.env`, a website API that does not answer, a
+  name still installed, a host without its API settings file, a website API that does not answer, a
   failed migration step, or a failed boot verdict or log check; 2 an unknown option, a flag
   without its value, or `--migrate-host-agent-name` beside another mode flag; 3 a migration
   refused because both names exist; a failing step's own code; 127 a tool that is not installed.
@@ -132,7 +134,7 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
   executed and never rsynced; both rsyncs exclude every development-machine-only path, no such
   path matches a tracked file, and each pattern is anchored at the checkout root
   (`no_tracked_file_matches_a_development_machine_only_path`); both rsyncs exclude every
-  host-owned path (`both_rsyncs_exclude_every_host_owned_path`) and run only after the `.env`
+  host-owned path (`both_rsyncs_exclude_every_host_owned_path`) and run only after the settings file
   probe answers 0 (`a_missing_file_refuses_before_the_rsync`); the website deploy refuses a remote
   folder outside the deploy user's `tbd` folder (`remote_prefix_rejects_escape_and_outside`); an
   unknown staging option stops before `--help`.

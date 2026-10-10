@@ -3,13 +3,15 @@
 //! **Role:** classifies grey and wet pixels on the road-subtracted orthophoto, accepts connected
 //! source components, and writes the mask, a preview and the source spike record.
 //! **Position:** child of `inland_water`; reads the orthophoto, the elevation model and the paks'
-//! `.topo` roads; writes under `.ai/artifacts/inland_water/`.
+//! `.topo` roads; writes under `documentation/tools/map_assets/decision_records/inland_water/`.
 //! **Signals & state:** none held; one run reads its inputs and writes its outputs.
 //! **Invariants:** an elevation model of the wrong size is refused.
 
 use super::*;
 
-use crate::decision_record_locations::{INLAND_WATER_ARTIFACTS_DIR, inland_water_artifacts_dir};
+use crate::decision_record_locations::{
+    INLAND_WATER_DECISION_RECORDS_DIR, inland_water_decision_records_dir,
+};
 use ::repository_layout::{terrain_dir, terrain_manifest_path};
 
 #[allow(clippy::too_many_lines)]
@@ -21,7 +23,7 @@ pub(crate) fn analyze_water_sources() -> Result<u8> {
     let manifest: Value = serde_json::from_str(&std::fs::read_to_string(
         terrain_manifest_path(&root, "everon"), // E2c-allow
     )?)?;
-    let artifacts = inland_water_artifacts_dir(&root);
+    let artifacts = inland_water_decision_records_dir(&root);
     let out_json = artifacts.join("source_spike.json");
     let prev_spike = artifacts.join("refine_spike.json");
     let out_mask = sap.join("water-inland-mask.png");
@@ -173,7 +175,9 @@ pub(crate) fn analyze_water_sources() -> Result<u8> {
     let flat_wide = dilate(&flat, d, FLAT_DILATE_R);
 
     // ── Exact ROAD corridors from the .topo network ──
-    let vfs = PakVfs::open_default()?;
+    let vfs = PakVfs::open_default(&repository_layout::enfusion_mcp_game_root(
+        &repository_root::find_repository_root()?,
+    ))?;
     let topo = decode_topo(&vfs, "everon")?; // E2c-allow (spike lane is Eden-only)
     let road_half_w = |ty: u8| -> Option<usize> {
         match ty {
@@ -394,7 +398,7 @@ pub(crate) fn analyze_water_sources() -> Result<u8> {
     let spike = json!({
         "lane": "inland-water source analysis",
         "parent": format!(
-            "the water source and refine spikes: {INLAND_WATER_ARTIFACTS_DIR}/water_source_spike.json and {INLAND_WATER_ARTIFACTS_DIR}/refine_spike.json (both unchanged by this run)"
+            "the water source and refine spikes: {INLAND_WATER_DECISION_RECORDS_DIR}/water_source_spike.json and {INLAND_WATER_DECISION_RECORDS_DIR}/refine_spike.json (both unchanged by this run)"
         ),
         "generatedAt": iso_from_system_time(std::time::SystemTime::now()),
         "decision": {

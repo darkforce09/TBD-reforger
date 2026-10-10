@@ -20,7 +20,7 @@ tools/xtask/
 
 `cargo xtask` is the alias `run --package xtask --` in `.cargo/config.toml`, so every call builds
 the crate if needed and runs `src/main.rs`. The binary parses the command line with clap
-(`src/cli/`), finds the checkout by walking up from the working directory to `.ai/ROOT`,
+(`src/cli/`), finds the checkout by walking up from the working directory to `.repository_root`,
 and hands the command to its group under `src/commands/`, which does the work or calls a library
 crate (the check crates under `tools/checks/`, the command crates under `tools/commands/`). The data folders beside `src/` are what the
 commands read: `dedicated_server_profiles/` for the local game servers and `fixtures/` for the MCP
@@ -62,10 +62,10 @@ crate alone.
 The crate has no features and reads no configuration file of its own. What it reads:
 
 - `CARGO_TARGET_DIR`: kept when set; otherwise the `mk` and `ci` children get the primary
-  checkout's `target/`, shared by every linked worktree
-  (`tools/commands/ci_task_catalog/src/cargo_target_pin.rs`), and `mk rust-api` builds into
-  `target/dev-api`.
-- `.ai/ROOT`: the marker that identifies the checkout root (`find_repository_root` in
+  checkout's build folder for the toolchain environment, `target/host/` or `target/container/`,
+  shared by every linked worktree (`tools/commands/ci_task_catalog/src/cargo_target_pin.rs`),
+  and `mk rust-api` builds into the `dev-api/` subfolder of the current checkout's one.
+- `.repository_root`: the marker that identifies the checkout root (`find_repository_root` in
   `crates/foundation/repository_root/src/root_marker_walk.rs`, which xtask reaches through
   `repository_layout::prelude`).
 - `deploy/deploy.env`: the deploy host (`TBD_SSH_HOST`, the one place the staging host is named),
@@ -109,6 +109,5 @@ The crate has no features and reads no configuration file of its own. What it re
   sequence.
 - [Website deployment](/documentation/runbooks/website_deployment.md) — the website deploy
   and the host setup.
-- [Factory waves](/documentation/runbooks/factory_waves/README.md) — the platform wave commands.
 - [Tooling architecture](/documentation/tools/tooling_architecture.md) — the router's place
   among the tooling crates, and the verification surface it runs.

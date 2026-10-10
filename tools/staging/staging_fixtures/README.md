@@ -34,8 +34,8 @@ cargo build --release -p staging_fixtures --bin staging-fixtures   # target/rele
 
 ## Configuration
 
-Every setting of a run comes from the tool's flags and from the API env file, `crates/api/api_server/.env` relative to the working directory unless `--api-env-file` names
-another, read without touching the process environment:
+Every setting of a run comes from the tool's flags and from the API's settings file,
+`deploy/api.env` relative to the working directory unless `--api-env-file` names another, read without touching the process environment:
 
 | Key | Default | Required | Read by |
 |---|---|---|---|
@@ -56,7 +56,7 @@ default API env file resolves; the staging procedures run it as
 
 - Synopsis: `staging-fixtures <subcommand> [flags] --confirm-database <name> [--apply]
   [--api-env-file <path>]`, and `staging-fixtures --help`, which lists the subcommands.
-- Does: reads the API env file (`crates/api/api_server/.env` relative to the working directory
+- Does: reads the API's settings file (`deploy/api.env` relative to the working directory
   unless `--api-env-file` names another) without touching the process environment, connects to
   its `DATABASE_URL`, refuses unless `current_database()` equals `--confirm-database`, prints the
   count of accounts in the reserved synthetic range (Discord ids 9100000000000000000 to
@@ -165,7 +165,7 @@ default API env file resolves; the staging procedures run it as
 ## Related documentation
 
 - [Staging tool crates](/tools/staging/README.md) — the staging crates side by side.
-- [Staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md) — the staging
+- [Staging design note](/documentation/crates/api/api_server/design_notes/staging.md) — the staging
   procedures and the cases the host tool's runs feed.
 - [Machine credentials and mission deployment](/documentation/runbooks/game_server_staging/machine_credentials_and_mission_deployment.md)
   — provisioning the fleet with `provision-fleet` and rotating credentials.

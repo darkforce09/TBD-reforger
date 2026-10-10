@@ -85,7 +85,7 @@ current version into an artifact, a review decides exactly that artifact, and a
 
 In code: `MissionArtifact` in `crates/api/api_missions/src/services/mission_artifacts/artifact_store.rs`; `mission_submission.rs` and `game_runtime_missions.rs` in `crates/api/api_missions/src/handlers/`.
 
-See: [Mission artifacts evidence](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md).
+See: [Mission artifacts evidence](/documentation/crates/api/api_server/design_notes/mission_artifacts.md).
 
 ### audit logs
 
@@ -119,18 +119,6 @@ solver solves every charge and recommends the one with the fewest rings that rea
 In code: `Charge` (`rings`, `init_speed_coef`, `is_default`) in `crates/ballistics/ballistics_model/src/catalog/shell.rs`; `charges` in `contracts/definitions/ballistics-catalog.schema.json`; the game's `SCR_MortarShellGadgetComponent` `m_aChargeRingConfig`.
 
 See: [probable error](/documentation/glossary/n_to_z.md#probable-error), [time fuze](/documentation/glossary/n_to_z.md#time-fuze), [Game ballistics engine](/documentation/crates/ballistics/game_ballistics_engine.md).
-
-### closing-fix batch
-
-A list of small, independent findings the orchestrator queues during a sub-agent program and hands
-to one agent near the close, named `G1`, `G2` and on; a single defect found late (by a final gate or
-the live walkthrough) gets a closing-fix agent of its own under the same numbering. It is not a
-follow-up agent (`<ID>b`), which takes one narrow slice as soon as its owner has reported.
-
-In code: none; the queued items live in the orchestrator's session scratchpad, and each batch is a
-row of the program's execution record and amendments table.
-
-See: [orchestrator](/documentation/glossary/n_to_z.md#orchestrator), [Sub-agent orchestration](/documentation/runbooks/sub_agent_orchestration.md#routing-a-finding).
 
 ### command center
 
@@ -263,15 +251,16 @@ See: [Event manager page](/documentation/crates/frontend/pages/administration_pa
 
 ### factory
 
-The platform's agent build process: an [orchestrator](/documentation/glossary/n_to_z.md#orchestrator)
+The agent build process for queued tickets: an [orchestrator](/documentation/glossary/n_to_z.md#orchestrator)
 session takes one [wave](/documentation/glossary/n_to_z.md#wave) of file-disjoint tickets at a
 time, gives each to a [slice](/documentation/glossary/n_to_z.md#slice) agent in its own git
 worktree, lands the slices whose [gate](/documentation/glossary/g_to_m.md#gate) passed on `main`
-and has one adversarial verifier attack the result. The mod program runs the same shape.
+and has one adversarial verifier attack the result. It runs only when the operator asks for it.
 
-In code: `cargo xtask platform wave` and `cargo xtask platform slice-worktree` in `tools/commands/platform_execution/src/`; `cargo xtask mod wave` in `tools/commands/mod_operations/src/wave_execution/`.
+In code: none in the repository; the central ticket manager's runner (`ttm`) drives it, documented
+in the ticket manager's own repository.
 
-See: [Factory waves](/documentation/runbooks/factory_waves/README.md), [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md).
+See: [Sub-agent orchestration](/documentation/runbooks/sub_agent_orchestration.md).
 
 ### feature doc
 

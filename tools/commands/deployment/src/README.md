@@ -1,14 +1,14 @@
 # Deployment source
 
 The website and staging deploy drivers, the clap subcommand and dispatch of the `deploy` group,
-the paths no deploy ships, the paths the host owns and the `.env` probe both deploys run before
-their rsync, the remote toolchain line, and the errors they report.
+the paths no deploy ships, the paths the host owns and the API settings file probe both deploys
+run before their rsync, the remote toolchain line, and the errors they report.
 
 ## Contents
 
 ```text
 tools/commands/deployment/src/
-├── api_environment_file_preflight.rs  the probe of the host's API `.env` both deploys run before their rsync
+├── api_environment_file_preflight.rs  the probe that moves and checks the host's API settings file before both rsyncs
 ├── deploy_command.rs                  the `DeployCmd` clap enum: `website`, `db` and `staging`
 ├── deploy_dispatch.rs                 `run`: routes each `DeployCmd` to its driver
 ├── development_machine_only_paths.rs  the rsync excludes both deploys share: build folders and local tool state
@@ -20,7 +20,7 @@ tools/commands/deployment/src/
 ├── remote_rust_toolchain.rs           the PATH line every remote step runs before it calls cargo or trunk
 ├── staging/                           the staging deploy: settings, render, payloads, pipeline and boot verdict
 ├── staging.rs                         `deploy staging`: `Paths`, the flag parser and the mode order
-├── tests/                             unit tests for the shared excludes, the host-owned paths, the `.env` probe and website
+├── tests/                             unit tests for the shared excludes, the host-owned paths, the settings file probe and website
 ├── website/                           the website deploy's pure steps: rsync argv, remote shells, probe, unit
 └── website.rs                         `deploy website`: deploy.env, the refusals and the step runner
 ```

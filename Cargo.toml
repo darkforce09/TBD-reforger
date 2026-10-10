@@ -466,10 +466,7 @@ repository_checks = { path = "tools/checks/repository_checks" }
 repository_laws = { path = "tools/foundation/repository_laws" }
 # The repository locations the tools share (`tools/foundation/repository_layout`).
 repository_layout = { path = "tools/foundation/repository_layout" }
-# Manifest-driven relocation of tracked paths and the retired-spelling verification
-# (`tools/commands/repository_relocation`).
-repository_relocation = { path = "tools/commands/repository_relocation" }
-# The one checkout-root finder: the walk up to the `.ai/ROOT` marker
+# The one checkout-root finder: the walk up to the `.repository_root` marker
 # (`crates/foundation/repository_root`).
 repository_root = { path = "crates/foundation/repository_root" }
 # Default features off keep the default TLS backend (the aws-lc-rs C build) out; a member that

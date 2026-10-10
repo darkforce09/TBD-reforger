@@ -41,7 +41,7 @@ acknowledgement_dropping_relay.rs ──▶ acknowledgement_dropping_relay::entr
 staging_load.rs ──▶ staging_load_generator::entrypoint
 ```
 
-Default paths such as `crates/frontend/shell/frontend_application/dist` and `.ai/artifacts/enf-index` are relative to the
+Default paths such as `crates/frontend/shell/frontend_application/dist` and `mod/reference_symbol_index` are relative to the
 working directory, so the commands run from the repository root.
 
 ## Commands

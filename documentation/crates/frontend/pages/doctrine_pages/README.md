@@ -55,7 +55,7 @@ and its feature doc, a line in Contents and a row in the table.
 - Depends on: the [feature doc template](/documentation/standards/templates/feature_doc.md) and
   the [documentation folder README template](/documentation/standards/templates/readme_documentation_folder.md);
   the [glossary](/documentation/glossary/README.md); the page code, the API handlers it calls and the
-  ticket registry in `.ai/tickets/`, which the feature docs are written from.
+  ticket manager (`ttm`), which the feature docs are written from.
 - Used by: the in-code READMEs of the `doctrine_pages` crate and of its page folders, which link
   the feature docs under Related documentation.
 - Rules: one folder per page folder of the code, spelled the same; a feature doc keeps its name,
@@ -64,6 +64,5 @@ and its feature doc, a line in Contents and a row in the table.
 
 ## Related documentation
 
-- [Archived platform design spec](/documentation/archive/go_and_react_era_design/platform_context_handoff.md)
-  — the design-phase specification of the wiki and the modpacks, which their feature docs compare
-  against.
+- [Frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md) — the
+  route table and the hub that links every page's feature doc.

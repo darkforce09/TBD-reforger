@@ -42,7 +42,7 @@ the screens; each screen folder holds its `<screen>_specification.md` feature do
 ## Boundaries
 
 - Depends on: the [feature doc template](/documentation/standards/templates/feature_doc.md)
-  for the screen specifications; the CRF and vanilla symbol indexes in `.ai/artifacts/enf-index/`.
+  for the screen specifications; the CRF and vanilla symbol indexes in `mod/reference_symbol_index/`.
 - Used by: `MOD_DESIGN` in `tools/foundation/repository_layout/src/documentation_locations.rs` (named by
   `cargo xtask verify no-crf-leak`); `CAPABILITY_VERDICTS` in
   `tools/enfusion/enfusion_script_index/src/script_index_layout.rs`; EnfScript comments that cite
@@ -55,5 +55,3 @@ the screens; each screen folder holds its `<screen>_specification.md` feature do
 
 - [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — how a mod slice is
   built and verified
-- [TBD Framework program](/documentation/tickets/specs/t181_event_mod_program.md) — the
-  program spec the design serves

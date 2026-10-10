@@ -76,6 +76,6 @@ No feature and no variable of its own.
 - [API administration source](/crates/api/api_administration/src/README.md) — the files, the
   routes and how the roster, the moderation and the audit stream work.
 - [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
-- [Administration and community content](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md)
+- [Administration and community content](/documentation/crates/api/api_server/design_notes/administration_and_content.md)
   — the roster paging, the audit stream's replay, reset and recovery semantics.
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.

@@ -80,7 +80,7 @@ command strip.
 
 - Depends on: the [feature entry schema](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/feds_schema.md)
   and the [feature doc template](/documentation/standards/templates/feature_doc.md); the
-  committed code under the folders above; the ticket registry in `.ai/tickets/` for Open work.
+  committed code under the folders above; the ticket manager (`ttm`) for Open work.
 - Used by: the Related documentation of the in-code READMEs under
   `crates/frontend/workspaces/mission_creator_workspace/src/`, of the mission editing crates in
   `crates/mission_editing/` and of the mission crates in `crates/mission/`; the

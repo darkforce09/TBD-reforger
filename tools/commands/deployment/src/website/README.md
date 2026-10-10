@@ -23,22 +23,22 @@ tools/commands/deployment/src/website/
   `packages/map-assets` tree does (exit 10), or neither (exit 11). The deploy continues on the
   first, continues with a warning on the third (a host that serves only the mission library), and
   stops on the second or on any other answer, printing the `mv` commands for the second.
-- The API `.env` probe (`tools/commands/deployment/src/api_environment_file_preflight.rs`) runs
-  next, still before the rsync: the deploy sends its `probe_script` as the same `bash -lc` word as
-  every step, continues only on exit 0 (a readable `crates/api/api_server/.env` in
-  `TBD_REMOTE_DIR`) and stops with exit 1 on exit 20 (missing or unreadable) or any other answer,
+- The API settings file probe (`tools/commands/deployment/src/api_environment_file_preflight.rs`)
+  runs next, still before the rsync: the deploy sends its `probe_script` as the same `bash -lc`
+  word as every step; the probe first moves a settings file still at
+  `crates/api/api_server/.env` to `deploy/api.env` (never over an existing one), continues only on
+  exit 0 (a readable `deploy/api.env` in `TBD_REMOTE_DIR`) and stops with exit 1 on exit 20 (missing or unreadable) or any other answer,
   naming the operator's step; `--dry-run` prints the probe before the rsync lines.
 - `rsync_argv`: `rsync -e <ssh> -avz --delete` of the checkout root with exclusions for `.git/`,
   build output (`target/`, which holds the gates' private folders too, `node_modules`), the
   server's `deploy.env`, the served terrain tree `assets/terrains/`, the scratch and equipment asset
   trees, `packages/`, the untracked reference trees under `mod/` and the local test profile,
   followed by the paths both deploys exclude: the host-owned paths of
-  `tools/commands/deployment/src/host_owned_paths.rs` (the API's `.env` and `.tools/`, and
+  `tools/commands/deployment/src/host_owned_paths.rs` (the API's settings file `deploy/api.env`, the API's `.tools/`, and
   `crates/frontend/shell/frontend_application/dist/`), then the patterns from
   `tools/commands/deployment/src/development_machine_only_paths.rs`: what only a
   development machine holds, such as the retired and hand-set cargo target folders beside
-  `target/`, worktrees and
-  the local files of its agents and tools. With no `--delete-excluded`, every exclusion is also a
+  `target/`, `.worktrees/`, `.workstation/` and the local files of its agents and tools. With no `--delete-excluded`, every exclusion is also a
   path rsync never deletes on the server; `assets/glyphs/` is tracked and travels with the
   rsync. `dry_run_lines` renders the transfer and one `[dry-run]   --exclude=` line per exclusion,
   in argv order, which is what `--dry-run` prints.
@@ -77,8 +77,8 @@ tools/commands/deployment/src/website/
 
 - Depends on: `repository_layout` (`DEPLOY_ENV`, `WEBSITE_API_UNIT`,
   `SYSTEMD_UNITS_DIR`); `crate::host_owned_paths` and `crate::development_machine_only_paths`
-  for the exclusions both deploys share; `crate::api_environment_file_preflight` for the `.env`
-  probe; the `[[bin]]` names of `crates/api/api_server/Cargo.toml` and
+  for the exclusions both deploys share; `crate::api_environment_file_preflight` for the settings
+  file probe; the `[[bin]]` names of `crates/api/api_server/Cargo.toml` and
   `tools/developer_tools/Cargo.toml` for the API server and the host tools; `tools/commands/deployment/src/website.rs` reads the
   settings through `deploy_settings`; on the host, the `postgres` and `caddy`
   services of `deploy/compose.staging.yml` and the Caddyfile the `caddy` service
@@ -93,7 +93,7 @@ tools/commands/deployment/src/website/
   step follows compose, not the app build;
   the host tools build after the API and skip with it, each is built and proven and is a `[[bin]]` of the
   package it names, the API server and the relay under the names their units run; the API build names `api_server` and
-  `api-server` and the app build runs in the app's folder; the `.env` probe reaches
+  `api-server` and the app build runs in the app's folder; the settings file probe reaches
   the host as one login-shell word and the unit loads
   the file it proves; the Caddyfile trusts only
   the tunnel's peer;
@@ -106,6 +106,6 @@ tools/commands/deployment/src/website/
   (`the_caddy_service_mounts_no_folder_holding_the_deploy_secrets`);
   the API unit keeps its runtime files in its own state folder
   (`the_unit_template_keeps_the_runtime_files_in_its_state_directory`); the
-  `crates/api/api_server/.env.example` the host's `.env` starts from sets none of the variables the
-  API unit pins, since a value in the `.env` overrides the unit's; the install command
+  `deploy/api.env.example` the host's `deploy/api.env` starts from sets none of the variables the
+  API unit pins, since a value in the settings file overrides the unit's; the install command
   renders the shipped template.

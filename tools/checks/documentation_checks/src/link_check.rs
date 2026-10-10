@@ -21,8 +21,8 @@
 //! checks last until the run prints.
 //!
 //! **Invariants:** a rule plugs in by implementing `DocumentRule` and joining the list in
-//! [`verify_link_check`], without touching the scan; the frozen records are judged only by rules
-//! whose `DocumentRule::judges` accepts them; a document that cannot be read, a target a rule
+//! [`verify_link_check`], without touching the scan; every rule judges every document; a document
+//! that cannot be read, a target a rule
 //! cannot read, and a batch that fails are each "did not run" (exit 2), never a pass; every break
 //! prints as `path:line: rule: message`.
 
@@ -181,9 +181,6 @@ struct RuleContext<'a> {
 
 /// A rule of the link check, judging one scanned document at a time.
 trait DocumentRule {
-    /// Whether the rule judges documents of `area`; frozen records take only the link rules.
-    fn judges(&self, area: DocumentArea) -> bool;
-
     /// Judge one document, recording its breaks.
     fn judge(
         &mut self,
@@ -273,7 +270,7 @@ fn judge(
     };
     let mut findings = RuleFindings::default();
     let mut unread: BTreeMap<&str, Verdict> = BTreeMap::new();
-    for (path, area) in &documents {
+    for (path, _) in &documents {
         match read_tracked(repo_root, path) {
             Err(cause) => {
                 let verdict =
@@ -286,7 +283,7 @@ fn judge(
                     path,
                     scan: &scanned,
                 };
-                for rule in rules.iter_mut().filter(|rule| rule.judges(*area)) {
+                for rule in rules.iter_mut() {
                     rule.judge(&document, &context, &mut findings);
                 }
             }
@@ -348,10 +345,6 @@ fn totals(
     rules: &[Box<dyn DocumentRule + '_>],
     break_listing: BreakListing,
 ) -> Vec<String> {
-    let frozen = documents
-        .iter()
-        .filter(|(_, area)| area.is_frozen())
-        .count();
     let area_of: BTreeMap<&str, DocumentArea> = documents.iter().copied().collect();
     let failing: BTreeMap<&str, DocumentArea> = breaks
         .iter()
@@ -359,8 +352,7 @@ fn totals(
         .map(|(path, area)| (*path, *area))
         .collect();
     let mut lines = vec![format!(
-        "  documents: {} judged ({frozen} frozen record(s)), {} with breaks, {unreadable} \
-         unreadable",
+        "  documents: {} judged, {} with breaks, {unreadable} unreadable",
         documents.len(),
         failing.len()
     )];

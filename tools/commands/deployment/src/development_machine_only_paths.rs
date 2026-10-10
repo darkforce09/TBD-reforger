@@ -22,25 +22,23 @@
 /// checkout root: a trailing `/` matches a folder only, and `*` stands for any run of characters
 /// within one path component.
 pub(crate) const DEVELOPMENT_MACHINE_ONLY_PATHS: &[&str] = &[
-    // Cargo target folders beside `target/`, tens of gigabytes together: the retired root-level
-    // ones (`target-dev-api/`, `target-ci/`, `target-gate-*/`) that `cargo xtask platform wave
-    // reclaim` deletes, and hand-set `CARGO_TARGET_DIR` folders such as `target-container/`. Every
-    // tool now writes under `target/`, which each rsync excludes itself.
+    // Cargo target folders beside `target/`, tens of gigabytes together: retired root-level ones
+    // (`target-dev-api/`, `target-ci/`, `target-gate-*/`) and hand-set `CARGO_TARGET_DIR` folders
+    // a machine may still hold. Every tool now writes under `target/`, which each rsync excludes
+    // itself.
     "/target-*/",
     // The same folders beside the app, where cargo puts them when trunk builds the app under a
     // relative `CARGO_TARGET_DIR`.
     "/crates/frontend/shell/frontend_application/target-*/",
-    // The retired root-level gate app builds (`dist-gate-frontend/`, deleted by the same reclaim)
-    // and a debug build of the app.
+    // The retired root-level gate app builds (`dist-gate-frontend/`) and a debug build of the app.
     "/dist-gate-*/",
     "/crates/frontend/shell/frontend_application/dist-debug/",
     // The vanilla script count `cargo xtask mod compile` calibrates once per machine.
     "/.compile-vanilla-baseline",
-    // Slice and ticket worktrees, each a whole checkout, and the wave gate's receipts.
-    "/.ai/artifacts/worktrees/T-*/",
-    "/.ai/artifacts/worktrees/TBD-*/",
-    "/.ai/artifacts/last-verified",
-    "/.ai/artifacts/verdicts/",
+    // The linked worktrees, each a whole checkout, and the machine-local state folder (logs, run
+    // records, tool roots, the host-bridge wrappers).
+    "/.worktrees/",
+    "/.workstation/",
     // Claude Code's per-machine files and its agents' worktrees. `.claude/settings.json` is
     // tracked and ships with the checkout.
     "/.claude/settings.local.json",
@@ -55,9 +53,7 @@ pub(crate) const DEVELOPMENT_MACHINE_ONLY_PATHS: &[&str] = &[
     "/.claude/agent-memory-local",
     "/.claude/first-run",
     "/.claude/assistant-daemon-state.json",
-    // Codex's configuration and hooks, and the MCP server configuration, which name this
-    // machine's own paths.
-    "/.codex/",
+    // The MCP server configuration, which names this machine's own paths.
     "/.mcp.json",
 ];
 

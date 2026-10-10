@@ -24,7 +24,7 @@ xtask ci map-water-everon` runs them in this order after restoring the pre-water
 ```text
 everon-sap-ortho.png + dem/everon-dem-16bit.png + roads from the .topo file
   ─▶ analyze_water_sources ─▶ water-inland-mask.png, water-spike-preview.png
-                           ─▶ .ai/artifacts/inland_water/source_spike.json
+                           ─▶ documentation/tools/map_assets/decision_records/inland_water/source_spike.json
 everon-sap-ortho.png + water-inland-mask.png + the elevation model
   ─▶ composite_water_ortho ─▶ everon-sap-ortho.png tinted in place
                            ─▶ everon-sap-ortho.pre-water.png (first run), waterComposite in the metadata
@@ -36,7 +36,7 @@ everon-sap-ortho.png + water-inland-mask.png + the elevation model
   them into connected components and accepts each by its area, colour, slope, flatness, road overlap
   and shape, with a narrower rule for river ribbons. It writes the accepted bodies as a full-size
   mask, a preview, and a decision record that compares them with the bodies of the committed
-  `.ai/artifacts/inland_water/refine_spike.json`.
+  `documentation/tools/map_assets/decision_records/inland_water/refine_spike.json`.
 - `composite_water_ortho` paints the ocean with a depth ramp from the elevation model and the inland
   mask in `INLAND_COLOR`, feathered inward, then records a `waterComposite` block in
   `TBD_SatExport_meta.json`. It copies the untinted image to `everon-sap-ortho.pre-water.png` once,

@@ -153,11 +153,11 @@ pins, refuses a client solution that disagrees, and stores the server's solution
 
 - [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes and the
   layers they share.
-- [Event eligibility and allocation](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/crates/api/api_server/design_notes/event_eligibility_allocation.md)
   — access, visibility, pools, promotion, re-evaluation and derived attendance.
-- [Event administration transactions](/documentation/crates/api/api_server/verification_evidence/event_administration.md)
+- [Event administration transactions](/documentation/crates/api/api_server/design_notes/event_administration.md)
   — the locks every event change takes.
-- [Live slot occupancy](/documentation/crates/api/api_server/verification_evidence/live_occupancy.md)
+- [Live slot occupancy](/documentation/crates/api/api_server/design_notes/live_occupancy.md)
   — player deployment authorization.
 - [Event schedule page](/documentation/crates/frontend/pages/operations_pages/schedule/event_schedule_page.md),
   [Event hub page](/documentation/crates/frontend/pages/operations_pages/event_detail/event_hub_page.md)

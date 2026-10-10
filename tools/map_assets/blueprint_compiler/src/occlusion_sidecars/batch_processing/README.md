@@ -32,8 +32,8 @@ The slug defaults to the prefab's file stem. Both documents are validated agains
 default only records whose layer preset stops a projectile reach a sidecar.
 
 `asset_sources_and_classification.rs` holds what the walks share. `open_sources` layers the game paks (`--paks`,
-else `~/.cache/enfusion-mcp-root/addons`) over a loose extract (`--extract`, else
-`~/ReforgerExtract/unpacked` when it exists) and fails when neither exists. `decode_asset` parses a
+else the `addons/` of `ENFUSION_GAME_PATH` or of `.workstation/enfusion_mcp_game_root`) over a loose
+extract (`--extract`, else `.workstation/reforger_extract/unpacked` when it exists) and fails when neither exists. `decode_asset` parses a
 model's COLL chunk and node table, gives each triangle a surface kind (an override, then its game
 material, then its record's layer preset, then opaque), applies the layer policy and emits the
 sidecar bytes. `classify_prefab` and `cover_for_prefab` name a placed mesh's kind (door leaf, tree,

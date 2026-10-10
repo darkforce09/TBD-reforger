@@ -41,7 +41,7 @@ and 2 when a check could not run, so a missing input never reads as a pass: the 
 verifications, the headless browser gates of the `gate` binary, the mod compile gate, and the
 [factory](/documentation/glossary/a_to_f.md#factory)'s cheap slice gate and full wave gate.
 
-In code: `Verdict` in `tools/foundation/verification_core/src/verdict.rs`; `cargo xtask verify` over the check crates in `tools/checks/`; `tools/developer_tools/src/bin/gate.rs`; `cargo xtask platform wave gate`; `cargo xtask mod compile`.
+In code: `Verdict` in `tools/foundation/verification_core/src/verdict.rs`; `cargo xtask verify` over the check crates in `tools/checks/`; `tools/developer_tools/src/bin/gate.rs`; `cargo xtask mod compile`; the slice and wave gates of the ticket manager's runner.
 
 See: [slice](/documentation/glossary/n_to_z.md#slice), [Testing and CI](/documentation/runbooks/testing_and_ci.md), [Editor gates](/documentation/runbooks/editor_gates.md).
 
@@ -93,7 +93,7 @@ administrator issues one (its secret shows once), lists them without secrets and
 
 In code: `MachineCredential` in `crates/api/api_server_infrastructure/src/models/machine_credential.rs`; `ExecutorKind` in `crates/contracts/fleet_wire_contract/src/executor_kind.rs`.
 
-See: [Machine credentials evidence](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md).
+See: [Machine credentials evidence](/documentation/crates/api/api_server/design_notes/machine_credentials.md).
 
 ### map engine
 

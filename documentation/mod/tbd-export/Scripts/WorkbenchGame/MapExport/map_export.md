@@ -194,29 +194,28 @@ beyond Workbench's own plugin dialogs.
 
 ## Open work
 
-- [T-1081 — Decide whether Workbench registry and map export plugins stay unregistered](/.ai/tickets/T-1081.toml)
-  (idea, no plan): either the plugin menu entries come back, or the headers, READMEs and the
-  export-terrain operator steps stop naming them; the subregion path and the nonexistent plugin
-  name in `copy-export-profile` get fixed either way.
-- [T-1100 — Fix map water export output unreadable by map water](/.ai/tickets/T-1100.toml) (idea,
-  no plan): the water layer's files and `map water`'s expected names and river fields agree.
-- [T-1101 — Fix map export road classes, spline transforms and DEM result](/.ai/tickets/T-1101.toml)
-  (idea, no plan): road classes stop overlapping, spline points follow entity rotation, and the
-  DEM export fails when its meta file fails.
-- [T-1102 — Rewrite stale map export comments and drop unused WORLD_PATH](/.ai/tickets/T-1102.toml)
-  (idea, no plan): the `dem_elevation.rs` row-0 comment and the water, vegetation and road comments
-  match the code.
-- [T-1117 — Stream map export-terrain world output while each step runs](/.ai/tickets/T-1117.toml)
-  (idea, no plan): `export-terrain` shows the world tool's output as it runs.
-- [T-1148 — Fix map export files overwriting each other and cell-edge duplicates](/.ai/tickets/T-1148.toml)
-  (idea, no plan): one run stops overwriting `vegetation_meta.json` and blueprint files, and the
-  AABB sweeps stop recording cell-crossing entities twice.
-- [T-1149 — Tidy tbd-export: hard-coded arsenal, no-op props, road component, unused code](/.ai/tickets/T-1149.toml)
-  (idea, no plan): the arsenal list, the props placeholder and the runtime road component's fixed
-  map name and world size are resolved.
-- [T-294 — Arland has a manifest and no object data](/.ai/tickets/T-294.toml) (ready,
-  [plan](/documentation/tickets/plans/t-294_plan.md)): Arland gets a full export and object
-  data through this pipeline.
+- Decide whether Workbench registry and map export plugins stay unregistered (ticket
+  `decide-whether-workbench-registry` in `ttm`): either the plugin menu entries come back, or the
+  headers, READMEs and the export-terrain operator steps stop naming them; the subregion path and
+  the nonexistent plugin name in `copy-export-profile` get fixed either way.
+- Fix map water export output unreadable by map water (ticket `fix-map-water-export` in `ttm`): the
+  water layer's files and `map water`'s expected names and river fields agree.
+- Fix map export road classes, spline transforms and DEM result (ticket `fix-map-export-road` in
+  `ttm`): road classes stop overlapping, spline points follow entity rotation, and the DEM export
+  fails when its meta file fails.
+- Rewrite stale map export comments and drop unused WORLD_PATH (ticket `rewrite-stale-map-export` in
+  `ttm`): the `dem_elevation.rs` row-0 comment and the water, vegetation and road comments match the
+  code.
+- Stream map export-terrain world output while each step runs (ticket `stream-map-export-terrain` in
+  `ttm`): `export-terrain` shows the world tool's output as it runs.
+- Fix map export files overwriting each other and cell-edge duplicates (ticket
+  `fix-map-export-files` in `ttm`): one run stops overwriting `vegetation_meta.json` and blueprint
+  files, and the AABB sweeps stop recording cell-crossing entities twice.
+- Tidy tbd-export: hard-coded arsenal, no-op props, road component, unused code (ticket
+  `tidy-tbd-export-hard` in `ttm`): the arsenal list, the props placeholder and the runtime road
+  component's fixed map name and world size are resolved.
+- Arland has a manifest and no object data (ticket `arland-has-manifest-no` in `ttm`): Arland gets a
+  full export and object data through this pipeline.
 
 ## Decisions
 

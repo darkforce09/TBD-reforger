@@ -39,7 +39,7 @@ A crate whose behaviour outgrows its README gets a document here and a Contents 
 
 - Depends on: the crates' code, the `enf` binary in `tools/developer_tools/src/bin/` and the xtask
   commands that call them, which every claim is checked against; the feature doc template; the
-  ticket registry in `.ai/tickets/` for open work.
+  ticket manager (`ttm`) for open work.
 - Used by: the crates' READMEs, which link these documents under Related documentation; the
   [tooling documentation](/documentation/tools/README.md) index.
 - Rules: a document describes the committed code, and a disagreement goes under Known
@@ -50,5 +50,3 @@ A crate whose behaviour outgrows its README gets a document here and a Contents 
 
 - [Developer tools documentation](/documentation/tools/developer_tools/README.md) — the
   executables, `enf` among them, that run these crates.
-- [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — the oracle gates in mod
-  work.

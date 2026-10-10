@@ -119,20 +119,19 @@ The status bar's "OPEN" button has no handler.
 
 ## Open work
 
-- [T-839 — Retire floating Select/Ruler/LoS bottom-centre pill](/documentation/tickets/specs/t839_retire_floating_pill.md)
-  (ready, [plan](/documentation/tickets/plans/t-839_plan.md)): the tool buttons leave the
-  floating pill.
-- [T-817 — Grid labels lag ~1.4s on stationary wheel zoom](/documentation/tickets/specs/t817_grid_label_zoom_lag.md)
-  (ready, [plan](/documentation/tickets/plans/t-817_plan.md)): the edge references follow the
-  camera at once.
-- [T-1033 — Fix the editor status bar OPEN button that does nothing](/.ai/tickets/T-1033.toml)
-  (idea, no plan): the button gets an action or goes.
-- [T-721 — Status bar under docks: blur, dead OPEN, Eden fix](/.ai/tickets/T-721.toml)
-  (deferred, no plan): the status bar's layering under the docks and the dead button.
-- [T-730 — LoS asymmetric clear, SnapReadout overlap, dead ViewshedState](/.ai/tickets/T-730.toml)
-  (deferred, no plan): clearing a line of sight behaves the same from both ends.
-- [T-1043 — Remove dead frontend code: toolbelt shim, refile branch, unused helpers](/.ai/tickets/T-1043.toml)
-  (idea, no plan): the toolbelt shim and the unused helpers go.
+- Retire floating Select/Ruler/LoS bottom-centre pill (ticket `retire-floating-select-ruler` in
+  `ttm`): the tool buttons leave the floating pill.
+- Grid labels lag ~1.4s on stationary wheel zoom (ticket `grid-labels-lag-1` in `ttm`): the edge
+  references follow the camera at once.
+- Fix the editor status bar OPEN button that does nothing (ticket `fix-editor-status-bar` in `ttm`):
+  the button gets an action or goes.
+- Status bar under docks: blur, dead OPEN, Eden fix (ticket `status-bar-under-docks` in `ttm`): the
+  status bar's layering under the docks and the dead button.
+- LoS asymmetric clear, SnapReadout overlap, dead ViewshedState (ticket
+  `los-asymmetric-clear-snapreadout` in `ttm`): clearing a line of sight behaves the same from both
+  ends.
+- Remove dead frontend code: toolbelt shim, refile branch, unused helpers (ticket
+  `remove-dead-frontend-code` in `ttm`): the toolbelt shim and the unused helpers go.
 
 ## Decisions
 

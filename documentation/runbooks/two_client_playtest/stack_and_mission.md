@@ -20,7 +20,7 @@ before the session; it takes about 30 minutes.
   ([Known limitations](/documentation/runbooks/two_client_playtest/known_limitations.md)).
 - A container runtime for Postgres and the Rust toolchain
   ([local development](/documentation/runbooks/local_development.md)).
-- `crates/api/api_server/.env`, copied from `.env.example`.
+- `deploy/api.env`, copied from `deploy/api.env.example`.
 - Two Arma Reforger clients on the same game version as the server, each able to load
   `tbd-framework`.
 
@@ -197,7 +197,7 @@ platform is ready to deploy the mission.
 |---|---|---|
 | `WORLD BOOT: FAIL` with a `=MISSING` roll-call entry | a component class on `TBD_GameMode.et` did not resolve | read `WORLD (E): Unknown class` in the printed log; fix before the session |
 | `WORLD BOOT: ENV FAIL — …` | no host bridge, no server binary or no dev profile | run on the host; install the server at the path above |
-| `/healthz` answers non-200 or the connection is refused | the API is down; it refuses to boot without `DATABASE_URL` and `JWT_SECRET` | read the `mk rust-api` terminal; check `crates/api/api_server/.env` |
+| `/healthz` answers non-200 or the connection is refused | the API is down; it refuses to boot without `DATABASE_URL` and `JWT_SECRET` | read the `mk rust-api` terminal; check `deploy/api.env` |
 | the artifact has no `loadout.gear` | the Arsenal edits were not saved into the submitted version | "Save Version", then submit again (step 11) |
 | the event binding answers `server_id does not name a known server` | `SID` is not a server row | take the id from `/admin/server` |
 

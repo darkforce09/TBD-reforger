@@ -109,14 +109,15 @@ is never a threshold.
 
 ## Open work
 
-- [T-1085 — Feed the pre-game screens live catalogs instead of mocks](/.ai/tickets/T-1085.toml)
-  (idea, no plan): the lobby and briefing read the server's roster, so claims, releases and the
+- Feed the pre-game screens live catalogs instead of mocks (ticket `feed-pre-game-screens` in
+  `ttm`, idea): the lobby and briefing read the server's roster, so claims, releases and the
   per-side briefing reach the server.
-- [T-1096 — Decide the dedicated server Steam app id xtask relies on](/.ai/tickets/T-1096.toml)
-  (idea, no plan): one server app for the workstation, CI and staging, and aligned install hints.
-- [T-181.16 — Two-client dedicated-server event loop E2E](/.ai/tickets/T-181.16.toml) (queued, no
-  plan) and [T-068.14 — Phase 2 E2E gate editor to player](/.ai/tickets/T-068.14.toml) (queued,
-  no plan): this playtest.
+- Decide the dedicated server Steam app id xtask relies on (ticket
+  `decide-dedicated-server-steam` in `ttm`, idea): one server app for the workstation, CI and
+  staging, and aligned install hints.
+- Two-client dedicated-server event loop E2E (ticket
+  `tbd-framework-arma-3.two-client-dedicated-server` in `ttm`, queued) and Phase 2 E2E gate editor
+  to player (ticket `virtual-arsenal.phase-2-e2e-gate` in `ttm`, queued): this playtest.
 
 ## Related
 
@@ -127,6 +128,7 @@ is never a threshold.
   — the Workshop copy, the client addon link and the publish.
 - [Radio](/mod/tbd-framework/Scripts/Game/TBD/Systems/Radio/README.md) — the tuner and its
   fallback channel table.
-- [Event mod program](/documentation/tickets/specs/t181_event_mod_program.md) — the frozen
-  specification that records the reconnect, id-recycling and controller-coexistence findings.
+- The event mod program's spec (ticket `tbd-framework-arma-3` in `ttm`,
+  `ttm --project reforger spec get tbd-framework-arma-3`) — the reconnect, id-recycling and
+  controller-coexistence findings.
 - [Two-client playtest](/documentation/runbooks/two_client_playtest/README.md) — the index.

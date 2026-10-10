@@ -124,11 +124,12 @@ The screen reads catalogs; the calls behind it travel through `TBD_BriefingContr
 
 ## Open work
 
-- [T-1085 — Feed the pre-game screens live catalogs instead of mocks](/.ai/tickets/T-1085.toml)
-  (idea, no plan): the pages read the per-side payload `TBD_BriefingClient` already receives, and
-  the players panel and ORBAT page read live rosters.
-- [T-181.16 — Two-client dedicated-server event loop E2E](/.ai/tickets/T-181.16.toml) (queued, no
-  plan): a human playtest of brief and deploy with two real clients.
+- Feed the pre-game screens live catalogs instead of mocks (ticket `feed-pre-game-screens` in
+  `ttm`): the pages read the per-side payload `TBD_BriefingClient` already receives, and the players
+  panel and ORBAT page read live rosters.
+- Two-client dedicated-server event loop E2E (ticket
+  `tbd-framework-arma-3.two-client-dedicated-server` in `ttm`): a human playtest of brief and deploy
+  with two real clients.
 
 ## Decisions
 

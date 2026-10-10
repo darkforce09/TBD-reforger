@@ -1,7 +1,0 @@
-# Stage S6 P3 — the satellite container reader's module root becomes its crate root and its test folder the crate's tests folder. Paths name the tree after s6_p3_terrain.tsv.
-kind	from	to	scope
-#
-path	crates/terrain/satellite_imagery/src/mod.rs	crates/terrain/satellite_imagery/src/lib.rs
-path	crates/terrain/satellite_imagery/src/t935_10/mod.rs	crates/terrain/satellite_imagery/src/tests/satellite_container_fixtures.rs
-path	crates/terrain/satellite_imagery/src/t935_10/cases_1.rs	crates/terrain/satellite_imagery/src/tests/satellite_container_tests.rs
-path	crates/terrain/satellite_imagery/src/t935_10/README.md	crates/terrain/satellite_imagery/src/tests/README.md

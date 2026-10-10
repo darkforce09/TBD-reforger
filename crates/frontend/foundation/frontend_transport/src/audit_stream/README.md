@@ -57,5 +57,5 @@ every callback.
 
 - [Audit logs page](/documentation/crates/frontend/pages/administration_pages/audit_logs/audit_logs_page.md)
   — what the page does with the stream.
-- [Audit replay and reset](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md#audit-replay-and-reset)
+- [Audit replay and reset](/documentation/crates/api/api_server/design_notes/administration_and_content.md#audit-replay-and-reset)
   — the server side of the protocol.

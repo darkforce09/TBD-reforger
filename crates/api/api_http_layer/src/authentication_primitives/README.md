@@ -61,5 +61,5 @@ link.
 
 ## Related documentation
 
-- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/design_notes/identity_transactions.md)
   — how access tokens, persisted sessions and refresh rotation fit together.

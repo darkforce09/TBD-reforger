@@ -99,15 +99,15 @@ The HUD makes no HTTP call. Its wire, on the modded `SCR_PlayerController` (the 
 
 ## Open work
 
-- [T-946.55 — Objective HUD replicates to every player at 1 Hz](/documentation/tickets/specs/t936_mission_logic.md)
-  (ready, [plan](/documentation/tickets/plans/t-946_55_plan.md)): sends a board only when it
-  changes; `TBD_ObjectiveHudPublisher.Replicate` already does, so the ticket's status is behind
-  the code.
-- [T-212 — Typed per-side objectives with attributes](/documentation/tickets/specs/t212_typed_objectives.md)
-  (ready, [plan](/documentation/tickets/plans/t-212_plan.md)): objectives become typed, placed,
-  per-side entities, which changes the titles and task texts each side's board carries.
-- [T-1089 — Remove or wire uncalled mod script methods and components](/.ai/tickets/T-1089.toml)
-  (idea, no plan): wires or removes `TBD_RequestObjectiveHud`, the uncalled pull.
+- Objective HUD replicates to every player at 1 Hz (ticket
+  `wave-close-child-tickets.objective-hud-replicates-player` in `ttm`): sends a board only when it
+  changes; `TBD_ObjectiveHudPublisher.Replicate` already does, so the ticket's status is behind the
+  code.
+- Typed per-side objectives with attributes (ticket `typed-side-objectives-attributes` in `ttm`):
+  objectives become typed, placed, per-side entities, which changes the titles and task texts each
+  side's board carries.
+- Remove or wire uncalled mod script methods and components (ticket `remove-wire-uncalled-mod` in
+  `ttm`): wires or removes `TBD_RequestObjectiveHud`, the uncalled pull.
 
 ## Decisions
 

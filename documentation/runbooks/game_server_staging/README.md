@@ -72,9 +72,9 @@ also retires the single server's kebab-case host agent names (`fleet-host-agent.
 `~/.config/fleet-host-agent/`) for the fleet's `game_server_host_agent@N.service`
 ([staging deploy](/documentation/runbooks/game_server_staging/staging_deploy.md) step 4). A host
 whose host agents still run as `fleet_host_agent@N.service` first takes
-`cargo xtask deploy staging --migrate-host-agent-name` (step 3), and a host whose API `.env` still
-sits outside `crates/api/api_server/` moves it there before any deploy
-([website deployment](/documentation/runbooks/website_deployment.md)). The
+`cargo xtask deploy staging --migrate-host-agent-name` (step 3), and a host whose API settings file
+still sits at `crates/api/api_server/.env` has it moved to `deploy/api.env` by the deploy's own
+probe ([website deployment](/documentation/runbooks/website_deployment.md) step 3). The
 [setup checklist](/documentation/runbooks/staging_verification/setup_checklist.md) runs this
 order as its steps 3 to 5.
 

@@ -93,7 +93,7 @@ checks that a built bundle mounts and renders in a headless browser.
 
 To sign in without Discord through the [dev login](/documentation/glossary/a_to_f.md#dev-login), open
 `/api/v1/auth/dev-login?role=admin` on the host `FRONTEND_URL` names (`http://localhost:3000` in
-`crates/api/api_server/.env.example`); the proxy hands the redirect to `/auth/callback` back
+`deploy/api.env.example`); the proxy hands the redirect to `/auth/callback` back
 unfollowed, so the session in its URL fragment reaches the app.
 
 ## Configuration

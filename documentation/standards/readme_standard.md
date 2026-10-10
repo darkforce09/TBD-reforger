@@ -196,7 +196,7 @@ Go down this list and take the first kind that fits.
 2. **area root**: the top of a code tree, or a folder that groups several products without being
    one (`crates/`, `mod/`, `tools/`, `contracts/`).
 3. **crate, package or addon root**: the folder that holds a `Cargo.toml`, a `package.json` or an
-   Enfusion `addon.gproj` (`crates/api/api_server/`, `tools/foundation/ticket_manager_client/`,
+   Enfusion `addon.gproj` (`crates/api/api_server/`, `tools/foundation/deploy_settings/`,
    `tools/enfusion_mcp_node_package/`, `mod/tbd-framework/`).
 4. **mod scripts**: a folder at or under an addon's `Scripts/`
    (`mod/tbd-framework/Scripts/Game/TBD/Systems/AI/`).
@@ -232,7 +232,7 @@ configures or runs by hand, such as a crate's `rustfmt.toml`, needs only its Con
   in `crates/frontend/shell/frontend_application/src/app_routes.rs` and `crates/api/api_<domain>/src/routes.rs`,
   commands in the xtask command tree (`tools/xtask/src/cli/` and
   `tools/xtask/src/commands/<group>/cli.rs`) and safe `--help` runs,
-  environment variables in `crates/api/api_server/.env.example` and the code that reads them, callers
+  environment variables in `deploy/api.env.example` and the code that reads them, callers
   with `git grep`. When a document and the code disagree, the code wins.
 - **Present tense.** A README says what the folder is and does. It holds no history (no dates, no
   "formerly", "previously", "legacy", "migrated" or "renamed from", no phase or wave story) and no
@@ -270,11 +270,6 @@ configures or runs by hand, such as a crate's `rustfmt.toml`, needs only its Con
   repeating them.
 - **Keep it truthful.** When a change alters a folder's surface, commands or boundaries, update its
   README; this is advice, not a commit gate.
-- **Frozen trees.** The README indexes inside `documentation/tickets/` and
-  `documentation/archive/` are live documents (`**Status:** live`, updated as files land),
-  although the trees they index are frozen. `link-check` judges everything under those two trees
-  as frozen, with no path or command check, so the writer checks an index's backticked paths and
-  commands by hand.
 - **Diagrams.** ASCII, in `text` blocks, placed in How it works or a kind section.
 - **Names.** Code identifiers go in backticks exactly as spelled; everything else is plain words.
 - **Hosts and paths.** No IP address of a host, and no personal absolute path. The deploy host is

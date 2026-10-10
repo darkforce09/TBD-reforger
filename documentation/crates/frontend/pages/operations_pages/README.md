@@ -69,7 +69,7 @@ and a row in the table.
 - Depends on: the [feature doc template](/documentation/standards/templates/feature_doc.md) and
   the [documentation folder README template](/documentation/standards/templates/readme_documentation_folder.md);
   the [glossary](/documentation/glossary/README.md); the page code, the API handlers it calls and the
-  ticket registry in `.ai/tickets/`, which the feature docs are written from.
+  ticket manager (`ttm`), which the feature docs are written from.
 - Used by: the in-code READMEs of the page folders, which link their feature docs under Related
   documentation; the operations domain READMEs; the glossary's event and service record entries;
   the feature doc template's worked sample; the event manager feature doc; the web app README's
@@ -82,8 +82,5 @@ and a row in the table.
 
 ## Related documentation
 
-- [Archived platform design spec](/documentation/archive/go_and_react_era_design/platform_context_handoff.md)
-  — the design-phase specification of the deployments and leaderboards pages, which the feature
-  docs compare against.
-- [Event eligibility and allocation](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
-  — the evidence behind access, pools, promotion and attendance.
+- [Event eligibility and allocation](/documentation/crates/api/api_server/design_notes/event_eligibility_allocation.md)
+  — the design behind access, pools, promotion and attendance.

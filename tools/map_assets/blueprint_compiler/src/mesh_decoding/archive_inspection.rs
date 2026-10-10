@@ -19,7 +19,7 @@ use crate::architectural_analysis::surface_classification::{
     game_material_stem, parse_kind_override,
 };
 use crate::mesh_decoding::mesh_format;
-use crate::occlusion_sidecars::batch_processing::{decode_asset, open_sources};
+use crate::occlusion_sidecars::batch_processing::{decode_asset, default_pak_dir, open_sources};
 use enfusion_pak::{AssetSource, PakSet};
 
 /// `map xob-inspect <file.xob | Assets/…/X.xob> [--paks <dir>] [--extract <dir>]
@@ -76,7 +76,7 @@ pub fn run_xob_inspection(_root: &std::path::Path, args: &[String]) -> Result<u8
         // `--find <substr>`: list matching in-pak paths with their entry facts.
         let dir = paks
             .clone()
-            .or_else(PakSet::default_dir)
+            .or_else(default_pak_dir)
             .context("--find needs a pak directory (--paks <dir> or the MCP symlink farm)")?;
         let set = PakSet::from_dir(&dir)?;
         let needle_lc = needle.to_ascii_lowercase();
@@ -302,7 +302,7 @@ pub fn run_pak_file_print(_root: &std::path::Path, args: &[String]) -> Result<u8
     let path = path.context("pak-cat: an in-pak path is required")?;
     let set = match paks {
         Some(d) => PakSet::from_dir(&d)?,
-        None => PakSet::from_dir(&PakSet::default_dir().context("no default pak dir")?)?,
+        None => PakSet::from_dir(&default_pak_dir().context("no default pak dir")?)?,
     };
     let bytes = set
         .read(&path)

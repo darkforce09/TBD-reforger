@@ -10,14 +10,16 @@ crates/api/api_configuration/src/configuration/
 ├── development_directories.rs  the four directory settings' development defaults, joined onto the checkout root
 ├── mod.rs                      `Config` and `ConfigError`: the settings `Config::load` reads, and their checks
 ├── proxy_network.rs            `ProxyNet`: one `TRUSTED_PROXIES` address or CIDR block, and peer matching
+├── settings_file.rs            the settings file's path (`TBD_API_ENV_FILE`, else `deploy/api.env` under the checkout root) and its loader
 └── tests/                      unit tests for the boot checks, the development directories and the proxy parser
 ```
 
 ## How it works
 
-`Config::load` loads the first `.env` found in the working directory or one of its parents, when
-there is one, then reads the process environment; a variable already exported wins over the
-file. It fills the defaults and hands the result to a validation step that fails boot with a
+`Config::load` first loads the settings file through `settings_file::load_settings_file`: the
+file `TBD_API_ENV_FILE` names, else `deploy/api.env` under the checkout root `repository_root`
+finds above the working directory, when it exists. It then reads the process environment; a
+variable already exported wins over the file. It fills the defaults and hands the result to a validation step that fails boot with a
 `ConfigError` naming the variable:
 `DATABASE_URL` or `JWT_SECRET` empty; outside development, a blank `DISCORD_CLIENT_ID`,
 `DISCORD_CLIENT_SECRET` or `DISCORD_REDIRECT_URL`, an `UPLOAD_DIR`, `MAP_ASSETS_DIR` or
@@ -53,7 +55,7 @@ resolution in `api_http_layer::middleware` is the only reader.
 
 ## Boundaries
 
-- Depends on: `dotenvy`, which loads `.env`; `api_identifiers` for the Discord client and guild
+- Depends on: `dotenvy`, which loads the settings file; `api_identifiers` for the Discord client and guild
   ids; `repository_root`, whose checkout-root walk anchors the development directories.
 - Used by:
   - `crates/api/api_server/src/bin/api_server.rs`, which calls `Config::load`;

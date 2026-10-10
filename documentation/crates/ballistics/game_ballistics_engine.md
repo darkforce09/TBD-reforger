@@ -81,7 +81,7 @@ coverage of every shell and charge); then every case against fixed tolerances of
 convention) and 0.1 s. A report with any failure refuses the catalog. The committed vanilla pair
 passes all 7,865 cases; forward samples between two native rows are counted as the engine's table
 interpolation and not judged. The criterion table and the evidence are in the
-[design note](/documentation/crates/api/api_server/verification_evidence/game_ballistics.md#calibration-criterion).
+[design note](/documentation/crates/api/api_server/design_notes/game_ballistics.md#calibration-criterion).
 
 ### Same bits everywhere
 
@@ -110,15 +110,13 @@ over a seeded lattice of cases (`agreement_cases.rs`) with `cargo xtask mk balli
 The model is engine-faithful rather than textbook: the integration scheme, the precision and the
 constants are the engine's, identified from 4,185 oracle simulations (largest point-of-fall
 difference 0.0078 m), and the game's tables are calibration fixtures, never lookup data. The
-[design note](/documentation/crates/api/api_server/verification_evidence/game_ballistics.md#flight-model)
+[design note](/documentation/crates/api/api_server/design_notes/game_ballistics.md#flight-model)
 holds the identification table and the settled model questions (native column 1, the wind-table
 values, the side air-drag scale, the unit of the speed variation).
 
 ## Open work
 
-- [T-940.10 — Mortar ballistics crate for API and offline frontend](/documentation/tickets/specs/t940_website_platform.md)
-  (ready, [plan](/documentation/tickets/plans/t-940_10_plan.md)): built by milestone B as this
-  module; the registry closes it with the milestone.
+None.
 
 ## Decisions
 

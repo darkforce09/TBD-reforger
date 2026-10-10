@@ -11,6 +11,7 @@ the platform ingests and one that lets the Enfusion MCP tools drive Workbench.
 ```text
 mod/
 ├── References/     the gitignored upstream reference lanes (CRF, vanilla, PlayableSelector) and their README
+├── reference_symbol_index/  the committed symbol tables of the reference lanes (names and coordinates, no bodies) that `enf` reads
 ├── tbd-emcp/       addon `TBD_EMCP`: the Workbench Net API handlers the MCP `wb_*` tools call
 ├── tbd-export/     addon `TBD_Export`: Workbench map, equipment, vehicle and registry export tooling
 └── tbd-framework/  addon `TBD_Framework`: the game mod dedicated servers run

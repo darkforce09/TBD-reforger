@@ -37,8 +37,9 @@ step runs a shell script. The runner prints each step's line before it runs (a n
 its own), stops at the first non-zero code and returns that code.
 
 `cargo_target_pin.rs` computes where every build writes: the shared cache `CARGO_TARGET_DIR`
-(the variable when set, else the primary checkout's `target/`), the development API's private
-`target/dev-api` under the current checkout, and the glibc stamp guard; the subfolder names are
+(the variable when set, else the primary checkout's `target/host/` or `target/container/`, by
+toolchain environment), the development API's private `dev-api/` under the current checkout's
+environment folder, and the glibc stamp guard; the subfolder names are
 `repository_layout::build_output`'s. `ci_scratch_reclaim.rs` holds the body of
 `cargo xtask mk reclaim-target-ci`.
 

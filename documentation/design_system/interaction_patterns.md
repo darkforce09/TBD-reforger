@@ -80,7 +80,7 @@ chrome: collapsible docks beside the map, its dialogs on the same modal stack.
 
 ## Open work
 
-None: no ticket in `.ai/tickets/` with status idea, queued, ready, running, review or deferred
+None: no ticket in the ticket manager (`ttm`) with status idea, queued, ready, running, review or deferred
 covers these patterns.
 
 ## Decisions

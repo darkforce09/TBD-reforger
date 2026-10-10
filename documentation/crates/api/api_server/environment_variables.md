@@ -4,21 +4,21 @@
 
 Every environment variable the website [API](/documentation/glossary/a_to_f.md#api) reads, as the
 code reads it: its default, when it is required, what an unusable value does, and the file that
-reads it. Developers filling `crates/api/api_server/.env` and operators setting up a host read it;
-where `crates/api/api_server/.env.example` and the code disagree, this reference follows the code.
+reads it. Developers filling `deploy/api.env` and operators setting up a host read it; where
+`deploy/api.env.example` and the code disagree, this reference follows the code.
 
 ## Where it lives
 
 - Code: [`crates/api/api_configuration/src/configuration/mod.rs`](/crates/api/api_configuration/src/configuration/mod.rs)
-  (`Config::load` and its validation), `proxy_network.rs` beside it (the `TRUSTED_PROXIES`
-  parser), [`crates/api/api_database/src/connection_pool.rs`](/crates/api/api_database/src/connection_pool.rs)
+  (`Config::load` and its validation), `settings_file.rs` beside it (where the settings file
+  lies and how it loads), `proxy_network.rs` (the `TRUSTED_PROXIES` parser), [`crates/api/api_database/src/connection_pool.rs`](/crates/api/api_database/src/connection_pool.rs)
   (the pool settings), three workers in
   [`crates/api/api_background_workers/src/`](/crates/api/api_background_workers/src/)
   (their intervals), and [`crates/api/api_server/src/bin/api_server.rs`](/crates/api/api_server/src/bin/api_server.rs)
   (`SKIP_MIGRATE`, `RUST_LOG`); `reqwest` reads the proxy variables when
   `composition::application_state` builds the outbound HTTP clients.
-- Entry: the template [`crates/api/api_server/.env.example`](/crates/api/api_server/.env.example),
-  copied to the gitignored `crates/api/api_server/.env`.
+- Entry: the template [`deploy/api.env.example`](/deploy/api.env.example), copied to the
+  gitignored `deploy/api.env`.
 - Related: the [configuration README](/crates/api/api_configuration/src/configuration/README.md), the
   crate README's [Configuration](/crates/api/api_server/README.md#configuration) table, the
   [local development runbook](/documentation/runbooks/local_development.md) and the
@@ -28,10 +28,12 @@ where `crates/api/api_server/.env.example` and the code disagree, this reference
 
 ### How values are read
 
-1. `Config::load` loads `.env` best-effort with `dotenvy`: the first `.env` found in the working
-   directory or above it. A variable already exported in the process environment wins over the
-   file. The `api-server` binary runs from `crates/api/api_server/`, so that folder's `.env` is the
-   one it reads; a fresh git worktree has none until it is copied in.
+1. Every API binary first loads the settings file best-effort with `dotenvy`
+   (`load_settings_file` in `settings_file.rs`): the file `TBD_API_ENV_FILE` names, else
+   `deploy/api.env` under the checkout root above the working directory. A variable already
+   exported in the process environment wins over the file, and a missing file is no error. A
+   fresh git worktree has no `deploy/api.env` until it is copied in or `TBD_API_ENV_FILE` names
+   the main checkout's.
 2. It reads each variable once, at boot. A string variable that is unset or empty takes its
    default; a number that does not parse takes its default.
 3. `Config::validate` then refuses the boot on the rules below, naming the variable.
@@ -77,7 +79,7 @@ behaves as production. Development:
 - drops `; Secure` from the `oauth_state` cookie, so Discord sign-in works over plain HTTP;
 - keeps blank Discord credentials legal and fills the `UPLOAD_DIR`, `EQUIPMENT_DATA_DIR`,
   `MAP_ASSETS_DIR` and `GLYPH_ASSETS_DIR` defaults, each a folder of the checkout joined onto the
-  checkout root that the walk up from the working directory to the `.ai/ROOT` marker
+  checkout root that the walk up from the working directory to the `.repository_root` marker
   finds (`crates/api/api_configuration/src/configuration/development_directories.rs`), so the
   same folders resolve from any working directory inside the checkout;
 - registers the equipment data viewer's anonymous `/api/v1/debug/equipment-data/*` reads, which
@@ -88,8 +90,8 @@ behaves as production. Development:
 
 ### Known discrepancies
 
-- `.env.example` says a blank `DISCORD_GUILD_ID` writes an `auth.role_sync_skipped` WARN audit
-  row (`crates/api/api_server/.env.example:146-147`) — the code writes none: with a blank guild,
+- `api.env.example` says a blank `DISCORD_GUILD_ID` writes an `auth.role_sync_skipped` WARN audit
+  row (`deploy/api.env.example:148-149`) — the code writes none: with a blank guild,
   sign-in takes no membership lease and reads no guild membership, so the member's stored role
   stays as it is (`claim_membership_refresh` in
   `crates/api/api_identity_and_access/src/services/discord_membership_cache.rs`, and
@@ -98,17 +100,17 @@ behaves as production. Development:
   `register_account` in
   `crates/api/api_identity_and_access/src/services/account_registration.rs`, which never
   writes the role).
-- `.env.example` ties the `/map-assets` mount to `SPA_DIST_DIR`
-  (`crates/api/api_server/.env.example:51-52`) — the router always mounts `/map-assets` and
+- `api.env.example` ties the `/map-assets` mount to `SPA_DIST_DIR`
+  (`deploy/api.env.example:53-54`) — the router always mounts `/map-assets` and
   `/map-assets/glyphs` (`crates/api/api_server/src/router.rs`); `SPA_DIST_DIR` adds only
   the built app and the cross-origin isolation headers.
-- `.env.example` omits five variables the code reads: `TRUSTED_PROXIES`,
+- `api.env.example` omits five variables the code reads: `TRUSTED_PROXIES`,
   `MISSION_VERSION_MAX_BODY_BYTES`, `SKIP_MIGRATE`, `RUST_LOG` and `TEST_DATABASE_URL`.
 
 ## Data
 
 A path in a default is relative to the checkout root, the folder that holds the
-`.ai/ROOT` marker, and applies in development only; outside development each directory
+`.repository_root` marker, and applies in development only; outside development each directory
 setting is the absolute path the operator sets. "Config" is `Config::load` in
 `crates/api/api_configuration/src/configuration/mod.rs`.
 
@@ -202,13 +204,14 @@ means the default, and the boot log states the interval each worker got.
 
 ### Where each deployment sets them
 
-- Development: `crates/api/api_server/.env`, copied from the template.
+- Development: `deploy/api.env`, copied from the template.
 - The deploy host: the systemd unit `deploy/systemd/tbd-website-api.service`
-  loads the server's own `crates/api/api_server/.env` (the deploy never copies one there) and sets
+  loads the server's own `deploy/api.env` through `EnvironmentFile=` (the deploy never copies one
+  there) and sets
   `MAP_ASSETS_DIR`, `GLYPH_ASSETS_DIR`, `UPLOAD_DIR` and `EQUIPMENT_DATA_DIR` itself, the last two
   under the unit's state directory: `%S/tbd-website-api/uploads` and
   `%S/tbd-website-api/equipment`, where `%S` is `~/.local/state` for a user unit. systemd lets a
-  value in the `.env` override the unit's own, so the `.env` leaves these four out, as the
+  value in `api.env` override the unit's own, so `api.env` leaves these four out, as the
   template does.
 - Staging: the `api` service of `deploy/compose.staging.yml` sets the variables in
   its `environment` block, `TRUSTED_PROXIES` defaulting to `127.0.0.1/32` and the asset and upload
@@ -227,15 +230,15 @@ doing nothing; the pool settings stay outside `Config` because the binary hands 
 
 ## Open work
 
-- [T-1007 — Fix missing TRUSTED_PROXIES entry in api_v2 .env.example](/.ai/tickets/T-1007.toml)
-  (idea, no plan): the template documents `TRUSTED_PROXIES`.
-- [T-1025 — Fix missing MISSION_VERSION_MAX_BODY_BYTES, SKIP_MIGRATE, RUST_LOG in api_v2 .env.example](/.ai/tickets/T-1025.toml)
-  (idea, no plan): the template documents the other three omitted variables.
-- [T-1027 — Rewrite stale comments in api_v2 core, workers, seeds and tests](/.ai/tickets/T-1027.toml)
-  (idea, no plan): the template and `Config` stop tying `/map-assets` to `SPA_DIST_DIR`.
-- [T-138 — One-command self-host setup via xtask](/documentation/tickets/specs/t131_north_star_backlog.md)
-  (ready, [plan](/documentation/tickets/plans/t-138_plan.md)): a new xtask setup command
-  writes the `.env` along with the database and seed steps, so no one copies the template by
+- Fix missing TRUSTED_PROXIES entry in the API settings template (ticket `fix-missing-trusted-proxies` in
+  `ttm`): the template documents `TRUSTED_PROXIES`.
+- Fix missing MISSION_VERSION_MAX_BODY_BYTES, SKIP_MIGRATE, RUST_LOG in the API settings template (ticket
+  `fix-missing-mission-version` in `ttm`): the template documents the other three omitted variables.
+- Rewrite stale comments in api_v2 core, workers, seeds and tests (ticket
+  `rewrite-stale-comments-api` in `ttm`): the template and `Config` stop tying `/map-assets` to
+  `SPA_DIST_DIR`.
+- One-command self-host setup via xtask (ticket `one-command-self-host` in `ttm`): a new xtask setup
+  command writes `deploy/api.env` along with the database and seed steps, so no one copies the template by
   hand.
 
 ## Decisions

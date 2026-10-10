@@ -1,6 +1,0 @@
-# Stage S3, agent F3: the byte-count formatter leaves the Mission Creator's session for the
-# foundation utilities, so the mission library's upload panel no longer imports a workspace.
-# The function itself moves by hand (it shares its file with the payload-size estimate); this
-# manifest rewrites its consumers.
-kind	from	to	scope
-rust_path	crate::workspaces::editor::session::mission_size::format_bytes::	crate::foundation::utils::byte_formatting::format_bytes::	apps/frontend

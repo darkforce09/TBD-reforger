@@ -1,6 +1,6 @@
-# The `cargo xtask debug` and `cargo xtask repro` commands and the `mod remote-logs` verdict: the
-# server-join probes of the staging host, the direct-join report, the remote console log verdict
-# and the mission-version upload reproduction. `thiserror` carries its errors.
+# The `cargo xtask debug` commands and the `mod remote-logs` verdict: the server-join probes of the
+# staging host, the direct-join report and the remote console log verdict. `thiserror` carries its
+# errors.
 [package]
 name = "remote_debugging"
 version = "0.1.0"
@@ -8,7 +8,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
-description = "Remote debugging: staging server-join probes, the remote log verdict and the mission upload reproduction"
+description = "Remote debugging: staging server-join probes and the remote log verdict"
 
 [package.metadata.layout]
 category = "tools/commands"
@@ -24,6 +24,8 @@ deployment = { workspace = true }
 newtype_ids = { workspace = true }
 process_runner = { workspace = true }
 regex = { workspace = true }
+# The machine-local logs folder the direct-join report is written to.
+repository_layout = { workspace = true }
 repository_root = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

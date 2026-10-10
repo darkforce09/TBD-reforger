@@ -19,7 +19,9 @@ pub(crate) fn stitch_supertexture_orthophoto(terrain: &str) -> Result<u8> {
     }
     let out_dir = supertexture_scratch_dir()?;
     let t0 = std::time::Instant::now();
-    let vfs = PakVfs::open_default()?;
+    let vfs = PakVfs::open_default(&repository_layout::enfusion_mcp_game_root(
+        &repository_root::find_repository_root()?,
+    ))?;
     let cells = enfusion_texture_decoder::list_eden_cells(&vfs);
     if cells.len() as u32 != enfusion_texture_decoder::CELL_COUNT {
         eprintln!(

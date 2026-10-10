@@ -117,26 +117,29 @@ from zoom 0 or 1 by road class; unit symbols cluster at zoom -4 and below
 ## Design
 
 - The basemap sits under the grid and the world overlays; labels and glyphs thin out by zoom.
-- Design target: the [UX specification](/documentation/crates/frontend/workspaces/mission_creator_workspace/ux_spec.md),
-  the [Eden gap analysis](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_gap_analysis.md)
-  and the [world-object interaction spec](/documentation/tickets/specs/t090_9_world_object_interaction.md). Differences: the basemap switch sits in a
-  dialog rather than on the map, and there is no legend, tooltip or inspect panel.
+- Design target: the [UX
+  specification](/documentation/crates/frontend/workspaces/mission_creator_workspace/ux_spec.md),
+  the [Eden gap
+  analysis](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_gap_analysis.md)
+  and the spec of the ticket `map-visualization-program.world-object-interaction` in `ttm`.
+  Differences: the basemap
+  switch sits in a dialog rather than on the map, and there is no legend, tooltip or inspect panel.
 
 ## Open work
 
-- [T-090.9 — World-object interaction (hover, inspect, filter, legend)](/documentation/tickets/specs/t090_9_world_object_interaction.md)
-  (ready, [plan](/documentation/tickets/plans/t-090_9_plan.md)): world objects gain a hover
-  tooltip, a read-only inspect panel, a type filter and search, a legend and the height-trust
-  badge.
-- [T-090.7 — Eden AI world object schema (exact field contract)](/documentation/tickets/specs/t090_eden_ai_world_object_schema.md)
-  (ready, [plan](/documentation/tickets/plans/t-090_7_plan.md)): the field contract an AI
-  question about a world object reads.
-- [T-090.5 — Map object render layer (Eden-like static world)](/documentation/tickets/specs/t090_5_map_object_render_layer.md)
-  (deferred, no plan): the static world render layer the interactions sit on.
-- [T-090.8 — Forest & vegetation regions (first-class areas)](/documentation/tickets/specs/t090_8_forest_vegetation_regions.md)
-  (deferred, no plan): forests become region objects.
-- [T-1058 — Fix map basemap switch back never restoring the satellite imagery](/.ai/tickets/T-1058.toml)
-  (idea, no plan): switching back to Satellite restores the image without a reload.
+- World-object interaction (hover, inspect, filter, legend) (ticket
+  `map-visualization-program.world-object-interaction` in `ttm`): world objects gain a hover
+  tooltip, a read-only inspect panel, a type filter and search, a legend and the height-trust badge.
+- Eden AI world object schema (exact field contract) (ticket
+  `map-visualization-program.eden-ai-world-object` in `ttm`): the field contract an AI question
+  about a world object reads.
+- Map object render layer (Eden-like static world) (ticket
+  `map-visualization-program.object-render-layer` in `ttm`): the static world render layer the
+  interactions sit on.
+- Forest & vegetation regions (first-class areas) (ticket
+  `map-visualization-program.forest-vegetation-regions` in `ttm`): forests become region objects.
+- Fix map basemap switch back never restoring the satellite imagery (ticket `fix-map-basemap-switch`
+  in `ttm`): switching back to Satellite restores the image without a reload.
 
 ## Decisions
 

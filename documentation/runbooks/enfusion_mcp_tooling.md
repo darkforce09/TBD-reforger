@@ -23,7 +23,7 @@ synopsis and exit codes are in the [MCP commands README](/tools/commands/enfusio
 
   | Variable | Default | Names |
   |---|---|---|
-  | `ENFUSION_GAME_PATH` | `~/.cache/enfusion-mcp-root` | the pak symlink farm that `cargo xtask setup mcp-game-root` builds |
+  | `ENFUSION_GAME_PATH` | `.workstation/enfusion_mcp_game_root/` in the checkout | the pak symlink farm that `cargo xtask setup mcp-game-root` builds |
   | `ENFUSION_WORKBENCH_PATH` | `~/.local/share/Steam/steamapps/common/Arma Reforger Tools` | the Workbench install |
   | `ENFUSION_PROJECT_PATH` | `~/Documents/Games/ArmaReforgerWorkbench/addons` | the Workbench addons folder |
 
@@ -181,5 +181,3 @@ The server command comes from the first tier that resolves
   self-test replays.
 - [Spawn determinism](/documentation/runbooks/spawn_determinism.md) — the Workbench gate that
   drives Play through `mcp call`.
-- [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — how mod work uses
-  Workbench and the gates.

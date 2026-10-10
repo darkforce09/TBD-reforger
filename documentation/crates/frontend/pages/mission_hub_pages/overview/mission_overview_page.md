@@ -120,12 +120,12 @@ each call with the DTO it reads or sends. Server-side:
 
 ## Open work
 
-- [T-1030 — Fix mission version save, set-current and armory skipping write lock](/.ai/tickets/T-1030.toml)
-  (idea, no plan): the armory save takes the mission's row lock like the other writes, so a
-  concurrent delete, demotion or change of author cannot race it.
-- [T-846 — role_notice query is written on editor denial but never read](/.ai/tickets/T-846.toml)
-  (deferred, no plan): a viewer the route guard sends here from a `mission_maker` route under
-  `/missions/:id/` learns why.
+- Fix mission version save, set-current and armory skipping write lock (ticket
+  `fix-mission-version-save` in `ttm`): the armory save takes the mission's row lock like the other
+  writes, so a concurrent delete, demotion or change of author cannot race it.
+- role_notice query is written on editor denial but never read (ticket `role-notice-query-written`
+  in `ttm`): a viewer the route guard sends here from a `mission_maker` route under `/missions/:id/`
+  learns why.
 
 ## Decisions
 

@@ -136,13 +136,9 @@ impl StagingSettings {
     }
 
     /// The API env file of the host checkout, the file the API unit loads
-    /// ([`repository_layout::workspace_folders::API_SERVER_ENVIRONMENT_FILE`] under the checkout).
+    /// ([`repository_layout::API_SETTINGS_FILE`] under the checkout).
     pub(crate) fn api_env_file(&self) -> String {
-        format!(
-            "{}/{}",
-            self.checkout,
-            repository_layout::workspace_folders::API_SERVER_ENVIRONMENT_FILE
-        )
+        format!("{}/{}", self.checkout, repository_layout::API_SETTINGS_FILE)
     }
 
     /// The address the fleet's servers register with: `TBD_PUBLIC_ADDRESS`, else the first IPv4

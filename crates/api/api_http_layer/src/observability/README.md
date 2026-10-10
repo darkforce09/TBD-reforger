@@ -69,7 +69,7 @@ each check's status, latency and error, the migration counts and the pool gauges
     Discord membership request into the application state's `Registry`;
   - the integration suite `crates/api/api_server/tests/http_infrastructure/observability.rs`;
   - over HTTP: the Caddy site in `deploy/caddy/Caddyfile` publishes
-    `/healthz`, and `cargo xtask platform preflight`, the `editor-api-boot` task of
+    `/healthz`, and the ticket manager's preflight, the `editor-api-boot` task of
     `cargo xtask ci` and the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)
     smoke gates in `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/` probe it
     without credentials.

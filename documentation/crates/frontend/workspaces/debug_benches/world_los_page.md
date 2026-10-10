@@ -74,14 +74,14 @@ calls no `/api/v1` route and writes nothing.
 
 ## Open work
 
-- [T-1039 — Fix world line-of-sight bench frame pump running after unmount](/.ai/tickets/T-1039.toml)
-  (idea, no plan): leaving the bench stops its render loop and removes its window listeners, as
-  the building viewer does.
-- [T-1042 — Rename ticket ids out of code names and UI strings](/.ai/tickets/T-1042.toml) (idea,
-  no plan): the panel title stops showing a ticket id.
-- [T-090.12.7 — Docs pass: LOS tool, world-los bench, map-assets, MCP](/documentation/tickets/specs/t090_091_map_terrain_program.md)
-  (ready, [plan](/documentation/tickets/plans/t-090_12_7_plan.md)): the documentation pass that
-  names this page, the frontend route table rows and the map-assets rows.
+- Fix world line-of-sight bench frame pump running after unmount (ticket `fix-world-line-sight` in
+  `ttm`): leaving the bench stops its render loop and removes its window listeners, as the building
+  viewer does.
+- Rename ticket ids out of code names and UI strings (ticket `rename-ticket-ids-out` in `ttm`): the
+  panel title stops showing a ticket id.
+- Docs pass: LOS tool, world-los bench, map-assets, MCP (ticket
+  `map-visualization-program.docs-pass-los-tool` in `ttm`): the documentation pass that names this
+  page, the frontend route table rows and the map-assets rows.
 
 ## Decisions
 

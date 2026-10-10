@@ -48,5 +48,5 @@ integer, workload first.
 
 - [Staging load procedure](/documentation/runbooks/staging_verification/load_procedure.md) — the
   runbook that seeds, records and cleans with these files.
-- [Staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md) — the
+- [Staging design note](/documentation/crates/api/api_server/design_notes/staging.md) — the
   load procedure and its ten cases.

@@ -49,7 +49,7 @@ publish.
    cargo xtask debug direct-join before-join --instance <N>
    ```
 
-   Expected: `Wrote debug log: <checkout>/.cursor/debug-8fc1e0.log`, then a `--- summary ---`
+   Expected: `Wrote debug log: <checkout>/.workstation/logs/direct_join_report.log`, then a `--- summary ---`
    with the Steam build ids of the client and dedicated server installed on this machine, the
    client addon link, the ping and A2S answers of the host's IPv4 address, and the host's unit
    state, UDP listeners and the last listen, A2S and client lines of the instance's newest log.
@@ -181,6 +181,4 @@ host of `TBD_SSH_HOST`, or says to set it when `deploy.env` names none.
   `debug direct-join` runs.
 - [Two-client playtest](/documentation/runbooks/two_client_playtest/README.md) — a joinable
   server on a development machine with `cargo xtask mod playtest`.
-- [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — the Workbench and gate
-  cycle before a deploy.
 - [Game server staging](/documentation/runbooks/game_server_staging/README.md) — the index.

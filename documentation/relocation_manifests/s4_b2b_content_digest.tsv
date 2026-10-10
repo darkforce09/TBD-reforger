@@ -1,7 +1,0 @@
-# Stage S4a, agent B2b — the content_digest crate. Paths name the tree before the moves.
-kind	from	to	scope
-#
-# developer_tools' SHA-384 helper and its tests become the crate's whole-input digest module
-path	tools/developer_tools/src/content_digest.rs	crates/foundation/content_digest/src/hex_digests.rs
-path	tools/developer_tools/src/tests/content_digest/tests.rs	crates/foundation/content_digest/src/tests/hex_digests.rs
-rust_path	developer_tools::content_digest::	content_digest::

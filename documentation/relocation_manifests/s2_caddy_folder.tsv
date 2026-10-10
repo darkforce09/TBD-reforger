@@ -1,6 +1,0 @@
-# Stage S2 — the Caddyfile folder. Paths name the tree before the move (after s2_crate_births.tsv).
-kind	from	to	scope
-#
-# the staging Caddy container mounts only this folder, so the deploy folder (and a host's
-# deploy.env in it) stays outside the container
-path	deploy/Caddyfile	deploy/caddy/Caddyfile

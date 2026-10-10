@@ -113,7 +113,7 @@ fn next_steps() -> Vec<String> {
         "  1. steamcmd +app_update 1890870 on server".into(),
         format!(
             "  2. Create {} on server (JWT_SECRET + OBSERVABILITY_TOKEN)",
-            repository_layout::workspace_folders::API_SERVER_ENVIRONMENT_FILE
+            repository_layout::API_SETTINGS_FILE
         ),
         "  3. sudo loginctl enable-linger \"$USER\"   (on the host, as the deploy user)".into(),
         "  4. Register one game server per fleet instance N in Server Control, issue each its".into(),

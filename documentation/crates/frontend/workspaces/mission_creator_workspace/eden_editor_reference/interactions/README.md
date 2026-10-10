@@ -30,7 +30,7 @@ the UI surface, the wiki anchor it was read from, the shortcut, trigger and proc
 Acceptance checks that show a feature behaves as Eden's does. Short entries carry only the fields
 their wiki section supports; the index tables of the last two files give an ID, a summary and the
 wiki page. Every fact comes from the Bohemia wiki's Eden pages, cited by URL; the 28 scraped pages
-are in `.ai/artifacts/eden-wiki/`, listed by the
+are in `documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_wiki_scrape/`, listed by the
 [scrape manifest](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_wiki_scrape_manifest.yaml).
 
 Eden edits in a 3D scene and on a 2D map. The Mission Creator's map view is top-down, drawn
@@ -74,7 +74,7 @@ domain gets a new topic file, a Contents line and a table row.
 ## Boundaries
 
 - Depends on: the Eden pages of the Bohemia wiki (`https://community.bistudio.com/wiki/`) and
-  their scrape in `.ai/artifacts/eden-wiki/`; the Eden reference format and ID patterns of the
+  their scrape in `documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_wiki_scrape/`; the Eden reference format and ID patterns of the
   [feature entry schema](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/feds_schema.md).
 - Used by: the [Eden gap analysis](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_gap_analysis.md),
   which gives each ID a parity row; the feature inventory's README and entry schema; the

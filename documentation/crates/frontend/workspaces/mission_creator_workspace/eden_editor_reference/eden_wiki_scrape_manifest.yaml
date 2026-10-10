@@ -1,8 +1,8 @@
 # Eden Editor wiki scrape manifest: every Bohemia wiki page the Eden catalogs cite, by category.
-# Each scraped page is cached as Markdown in .ai/artifacts/eden-wiki/, named after its slug with
+# Each scraped page is cached as Markdown in documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_wiki_scrape/, named after its slug with
 # ":" written "__". No tool reads this file; a page is scraped and its entry updated by hand.
 # status: pending | scraped | reviewed | failed
-# ticket: the registry ticket (.ai/tickets/T-<id>.toml) whose topic the page informs
+# ticket: the slug of the ticket in the ticket manager (ttm) whose topic the page informs
 
 version: 1
 mirrors:
@@ -14,102 +14,102 @@ categories:
     label: Eden_Editor:_Interface
     pages:
       - slug: Eden_Editor:_Asset_Browser
-        ticket: T-068
+        ticket: virtual-arsenal
         status: scraped
       - slug: Eden_Editor:_Menu_Bar
-        ticket: T-083
+        ticket: top-menu-bar
         status: scraped
       - slug: Eden_Editor:_Toolbar
-        ticket: T-068
+        ticket: virtual-arsenal
         status: scraped
       - slug: Eden_Editor:_Status_Bar
-        ticket: T-049
+        ticket: terrain-title-numeric-position
         status: scraped
 
   editing:
     label: Eden_Editor:_Editing
     pages:
       - slug: Eden_Editor:_Connecting
-        ticket: T-080
+        ticket: connection-sync-ui
         status: scraped
       - slug: Eden_Editor:_Entity_Placing
-        ticket: T-072
+        ticket: ctrl-multi-place
         status: scraped
       - slug: Eden_Editor:_Entity_Transforming
-        ticket: T-073
+        ticket: shift-map-rotation
         status: scraped
       - slug: Eden_Editor:_Transformation_Widget
-        ticket: T-081
+        ticket: transform-widget-snap-grid
         status: scraped
       - slug: Eden_Editor:_Entity_Attributes
-        ticket: T-082
+        ticket: attributes-modal-entity-type
         status: scraped
       - slug: Eden_Editor:_Setting_Attributes
-        ticket: T-049
+        ticket: terrain-title-numeric-position
         status: scraped
       - slug: Eden_Editor:_Transforming_Crew
-        ticket: T-076
+        ticket: vehicle-crew-authoring-ui
         status: scraped
       - slug: Eden_Editor:_Custom_Entity_Textures
-        ticket: T-078
+        ticket: custom-compositions
         status: scraped
 
   asset_types:
     label: Eden_Editor:_Asset_Types
     pages:
       - slug: Eden_Editor:_Object
-        ticket: T-068
+        ticket: virtual-arsenal
         status: scraped
       - slug: Eden_Editor:_Group
-        ticket: T-071
+        ticket: orbat-manager-modal
         status: scraped
       - slug: Eden_Editor:_Marker
-        ticket: T-069
+        ticket: markers-map-four-schema
         status: scraped
       - slug: Eden_Editor:_Trigger
-        ticket: T-079
+        ticket: triggers-editor-palette-area
         status: scraped
       - slug: Eden_Editor:_Waypoint
-        ticket: T-079
+        ticket: triggers-editor-palette-area
         status: scraped
       - slug: Eden_Editor:_System
-        ticket: T-079
+        ticket: triggers-editor-palette-area
         status: scraped
       - slug: Eden_Editor:_Custom_Composition
-        ticket: T-078
+        ticket: custom-compositions
         status: scraped
       - slug: Eden_Editor:_Composition
-        ticket: T-078
+        ticket: custom-compositions
         status: scraped
       - slug: Eden_Editor:_Layer
-        ticket: T-037
+        ticket: outliner-tree-ops
         status: scraped
       - slug: Eden_Editor:_Comment
-        ticket: T-078
+        ticket: custom-compositions
         status: scraped
 
   core:
     label: Eden_Editor
     pages:
       - slug: Eden_Editor:_Terminology
-        ticket: T-068
+        ticket: virtual-arsenal
         status: scraped
       - slug: Eden_Editor:_Actions
-        ticket: T-056
+        ticket: ctrl-c-v-copy
         status: scraped
       - slug: Eden_Editor:_Entity_Context_Menu
-        ticket: T-054
+        ticket: attributes-modal-entry-points
         status: scraped
       - slug: Eden_Editor:_Object_Categorization
-        ticket: T-074
+        ticket: faction-submode-catalog-filter
         status: scraped
       - slug: Eden_Editor:_Switching_from_2D_Editor
-        ticket: T-078
+        ticket: custom-compositions
         status: scraped
 
   scenario:
     label: Eden_Editor:_Scenario
     pages:
       - slug: Eden_Editor:_Scenario_Attributes
-        ticket: T-049
+        ticket: terrain-title-numeric-position
         status: scraped

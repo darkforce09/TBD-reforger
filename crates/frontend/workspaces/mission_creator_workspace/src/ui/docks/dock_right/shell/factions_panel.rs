@@ -96,7 +96,7 @@ pub(super) fn factions_panel(signals: FactionsPanelSignals) -> AnyView {
                     type="button"
                     disabled=true
                     aria-label=EDEN_CUSTOM_CHIP
-                    title="Custom groups arrive in T-078"
+                    title="Custom groups are not available yet"
                     class="flex h-5 shrink-0 items-center rounded-sm border border-outline-variant/60 px-1.5 text-[10px] font-semibold uppercase tracking-wide text-outline opacity-45"
                 >
                     {EDEN_CUSTOM_CHIP}

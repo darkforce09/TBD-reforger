@@ -102,7 +102,7 @@ once without an admin, and again with the id. Each start takes a few minutes.
    into the backend config.
 
    ```bash
-   curl -s -w '\n%{http_code}\n' -H "Authorization: Bearer $(sed -n 's/.*"machineCredential": *"\([^"]*\)".*/\1/p' "$HOME/tbd-playtest/profile/profile/TBD_BackendConfig.json")" "http://127.0.0.1:8080/api/v1/game-runtime/events/$EID/roster"
+   curl -s -w '\n%{http_code}\n' -H "Authorization: Bearer $(sed -n 's/.*"machineCredential": *"\([^"]*\)".*/\1/p' ".workstation/playtest_server/profile/profile/TBD_BackendConfig.json")" "http://127.0.0.1:8080/api/v1/game-runtime/events/$EID/roster"
    ```
 
    Expected: `{"version":2,"eventId":"…","missionId":"…","assignments":[…],"slots":[…]}` and `200`.
@@ -117,7 +117,7 @@ once without an admin, and again with the id. Each start takes a few minutes.
 [playtest server README](/tools/commands/mod_operations/src/playtest_server/README.md) holds its
 full order.
 
-- It stages `<run dir>` (default `$HOME/tbd-playtest`): the profile from
+- It stages `<run dir>` (default `.workstation/playtest_server/` in the checkout): the profile from
   `cargo xtask setup server-profile`, the backend config rewritten from
   `mod/tbd-framework/Data/backend.example.json` on every start (`backendUrl` and
   `machineCredential`; hand edits do not survive), `addons/tbd-framework` linking the checkout,

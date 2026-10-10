@@ -45,7 +45,7 @@ crates and the app are in the [crate boundary rules](/documentation/standards/cr
 |---|---|
 | a JSON Schema for a shape that crosses a network, process or language boundary | `contracts/definitions/`; `cargo xtask ci schema-codegen` generates the Rust types into `crates/contracts/contract_schema_types/src/generated/` |
 | a golden fixture shared across crates | `contracts/fixtures/<family>/` (`missions`, `map`, `registry`, `enfusion_samples`, `bridge_samples`) |
-| a test fixture one crate reads | that crate's `tests/fixtures/`, beside the test; never `.ai/artifacts/` |
+| a test fixture one crate reads | that crate's `tests/fixtures/`, beside the test |
 | a catalog exported from Workbench for the platform to ingest | `contracts/catalogs/` |
 | a terrain dataset | `assets/terrains/<terrain>/`; images and binary payloads go through Git LFS (`.gitattributes`); the tile pyramid under `tiles/` is local build output and gitignored |
 | terrain export scratch | `assets/scratch/<terrain>/`, gitignored and never served |
@@ -68,8 +68,11 @@ crates and the app are in the [crate boundary rules](/documentation/standards/cr
 | a heavy tool: the gate harness, asset pipelines, the Enfusion unpacker, the MCP broker | a binary of `tools/developer_tools/src/bin/` |
 | a browser smoke of the Mission Creator | the `gate` binary of `tools/developer_tools`, wired into `cargo xtask mk leptos-gates` |
 | a deploy template or systemd unit | `deploy/` |
+| a log, run record or machine-local tool root (the Enfusion MCP game root, the playtest server, extracted game files, the host-bridge wrappers) | `.workstation/`, gitignored; never `~`, `~/.cache` or `/tmp` |
+| a linked git worktree | `.worktrees/`, gitignored |
+| build output | `target/host/` (cargo on the host through `hcargo`) or `target/container/` (cargo inside the development container), each with its purpose subfolders |
 | a [ticket](/documentation/glossary/n_to_z.md#ticket), its run receipts and its place in a wave | the central ticket manager, written through `ttm --project reforger` commands, never a file in the repository |
-| a ticket's spec and plan | the ticket manager (`ttm --project reforger brief <ticket>`); the records already written stay in `documentation/tickets/specs/` and `documentation/tickets/plans/` (see [Ticket identifiers](/documentation/standards/ticket_identifiers.md)) |
+| a ticket's spec and plan | the ticket manager, beside the ticket (`ttm --project reforger spec get <ticket>`, `ttm --project reforger plan get <ticket>`) |
 | code that talks to the ticket manager | through `tools/foundation/ticket_manager_client/`, never a `ttm` call of its own |
 
 ## Documentation

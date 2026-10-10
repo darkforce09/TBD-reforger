@@ -3,26 +3,26 @@
 
 use crate::documentation::DOCUMENTATION_ROOT;
 use crate::{
-    ARTIFACTS_DIR, BUILD_OUTPUT_FOLDER, CRF_FRAMEWORK_REFERENCE, LAST_VERIFIED_MARKER,
-    LEGACY_TICKETS_DIR, REFERENCES_DIR, VANILLA_REFERENCE, VERDICTS_DIR, WORKTREES_DIR,
+    BUILD_OUTPUT_FOLDER, CRF_FRAMEWORK_REFERENCE, ENFUSION_MCP_GAME_ROOT, LAST_VERIFIED_MARKER,
+    PLAYTEST_SERVER_DIR, REFERENCES_DIR, REFORGER_EXTRACT_DIR, VANILLA_REFERENCE, VERDICTS_DIR,
+    WORKSTATION_DIR, WORKSTATION_LOGS_DIR, WORKTREES_DIR,
 };
 use repository_root::{ROOT_MARKER, find_repository_root};
 use std::path::Path;
 
-/// The agent folder that holds the checkout-root marker, the artifact tree and the legacy ticket
-/// data.
-const AGENT_FOLDER: &str = ".ai";
-
 #[test]
 fn every_shared_location_is_relative_and_lies_under_its_tree() {
-    let trees: [(&str, &[&str]); 3] = [
+    let trees: [(&str, &[&str]); 2] = [
         (
-            AGENT_FOLDER,
-            &[ROOT_MARKER, ARTIFACTS_DIR, LEGACY_TICKETS_DIR],
-        ),
-        (
-            ARTIFACTS_DIR,
-            &[WORKTREES_DIR, LAST_VERIFIED_MARKER, VERDICTS_DIR],
+            WORKSTATION_DIR,
+            &[
+                LAST_VERIFIED_MARKER,
+                VERDICTS_DIR,
+                WORKSTATION_LOGS_DIR,
+                ENFUSION_MCP_GAME_ROOT,
+                PLAYTEST_SERVER_DIR,
+                REFORGER_EXTRACT_DIR,
+            ],
         ),
         (
             REFERENCES_DIR,
@@ -41,7 +41,14 @@ fn every_shared_location_is_relative_and_lies_under_its_tree() {
             );
         }
     }
-    assert!(!BUILD_OUTPUT_FOLDER.contains('/'));
+    for top_level in [
+        WORKSTATION_DIR,
+        WORKTREES_DIR,
+        ROOT_MARKER,
+        BUILD_OUTPUT_FOLDER,
+    ] {
+        assert!(!top_level.contains('/'), "{top_level} is not top-level");
+    }
     assert!(Path::new(DOCUMENTATION_ROOT).is_relative() && !DOCUMENTATION_ROOT.ends_with('/'));
 }
 
@@ -49,7 +56,7 @@ fn every_shared_location_is_relative_and_lies_under_its_tree() {
 fn every_committed_shared_location_exists_in_this_checkout() {
     let root = find_repository_root().expect("repository root");
     let files = [ROOT_MARKER];
-    let folders = [ARTIFACTS_DIR, REFERENCES_DIR, DOCUMENTATION_ROOT];
+    let folders = [REFERENCES_DIR, DOCUMENTATION_ROOT];
     let missing: Vec<&str> = files
         .iter()
         .filter(|path| !root.join(path).is_file())

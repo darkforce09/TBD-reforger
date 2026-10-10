@@ -96,7 +96,7 @@ poll never remounts the page under it.
 
 - [Account pages](/documentation/crates/frontend/pages/account_pages/account_pages.md) — sign-in,
   the auth callback and settings.
-- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/design_notes/identity_transactions.md)
   — sessions, refresh rotation and replay revocation in the API, and the browser's generations.
 - [Frontend session](../README.md) — the crate: its targets, its public surface and how to test
   it.

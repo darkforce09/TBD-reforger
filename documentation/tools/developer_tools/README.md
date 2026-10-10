@@ -12,6 +12,7 @@ modules, the reasons and the open work.
 
 ```text
 documentation/tools/developer_tools/
+└── capture_camset_panic_finding.md  a recorded finding: the editor's camera debug call stops the headless map engine
 ```
 
 ## How it works
@@ -46,8 +47,8 @@ its [README](/tools/map_assets/blueprint_compiler/README.md) and
 ## Boundaries
 
 - Depends on: the crate's code, the xtask tasks that call it and the committed assets it writes,
-  which every claim is checked against; the feature doc template; the ticket registry in
-  `.ai/tickets/` for open work.
+  which every claim is checked against; the feature doc template; the ticket manager (`ttm`)
+  for open work.
 - Used by: the `tools/developer_tools/` README, which links these documents under Related
   documentation; the [tooling documentation](/documentation/tools/README.md) index; the
   [terrain export and map assets](/documentation/assets/terrain_export_and_map_assets.md)

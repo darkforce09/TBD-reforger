@@ -60,8 +60,7 @@ No file holds versions 0022, 0023 and 0024, and none may.
   - `cargo xtask db repair-migration-checksum`
     (`tools/commands/database_operations/src/local_database/repair_migration_checksum.rs`), which repoints a
     recorded checksum only after proving from git history that the statements are unchanged;
-  - the migration step of `cargo xtask platform wave gate`
-    (`tools/commands/platform_execution/src/wave_execution/migrate.rs`), which audits the recorded
+  - the migration step of the ticket manager's wave gate (`ttm`), which audits the recorded
     checksums and applies pending migrations to a database it never drops;
   - `GET /healthz`, which turns red when `_sqlx_migrations` records a failed migration.
 

@@ -58,5 +58,5 @@ this build does not know shows as the API spells it. Every request runs in the b
 
 - [Server control page](/documentation/crates/frontend/pages/administration_pages/server_control/server_control_page.md)
   — the sheet's behaviour and what the credential routes mean server-side.
-- [Machine credentials evidence](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md)
+- [Machine credentials design note](/documentation/crates/api/api_server/design_notes/machine_credentials.md)
   — how the API issues, verifies and revokes credentials.

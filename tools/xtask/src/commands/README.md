@@ -14,7 +14,6 @@ tools/xtask/src/commands/
 ├── fetch/          `fetch`: the command line of the vanilla source and Script API mirrors in `enfusion_script_index`
 ├── map/            `map`: terrain export classification, building blueprints, BVH and LOS parity
 ├── mod.rs          the module tree
-├── refactor/       `refactor`: the `relocate` command line over the repository_relocation crate
 ├── schema/         `schema`: contract codegen, contract and map-asset gates, mission-file tools
 └── verify/         `verify`: the command adapters of the repository verifications
 ```
@@ -32,11 +31,10 @@ which returns the process exit code as `Result<u8>`.
 Groups that wrap a library pass it the checkout root and keep its result: `map` calls
 `blueprint_compiler`, `map_asset_verification` and `world_export_pipeline` in `tools/map_assets/`
 for blueprint compilation, the line-of-sight probe, the terrain export driver (which runs the
-`world` binary of `developer_tools`) and the map tile index; `refactor` calls `repository_relocation` in `tools/commands/` for the relocation
-modes; `ballistics` and `gen` dispatch straight to `ballistics_oracle_tooling` and
+`world` binary of `developer_tools`) and the map tile index; `ballistics` and `gen` dispatch straight to `ballistics_oracle_tooling` and
 `schema_tooling` in `tools/commands/`, and `schema` calls `schema_tooling` for the codegen, the
 contract gates and the flattening; the `setup` command line dispatches straight to the `workstation_setup` crate in
-`tools/commands/`, the `ai` command line to the `agent_context_guards` crate there, the `debug` and `repro` command lines to the `remote_debugging` crate there,
+`tools/commands/`, the `ai` command line to the `agent_context_guards` crate there, the `debug` command line to the `remote_debugging` crate there,
 and the `mod` command line to the `mod_operations` crate there; `verify` calls
 the check crates under `tools/checks/` and the checks the command crates carry. Each group's own
 README gives its commands, flags and exit codes.

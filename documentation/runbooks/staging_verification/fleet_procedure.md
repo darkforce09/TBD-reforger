@@ -5,7 +5,7 @@
 How the orchestrator and the operator run `cargo xtask staging fleet --record`: the checks
 before it, the approval of its numbered waves, what to do at each `AWAIT` line of waves W1 to W8
 (every server at once) and W9 to W14 (one server each), and how to read the receipt. What each wave proves is in the
-[staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md#fleet-procedure-staging_fleet).
+[staging design note](/documentation/crates/api/api_server/design_notes/staging.md#fleet-procedure-staging_fleet).
 
 ## Prerequisites
 
@@ -141,5 +141,5 @@ the SHA-256 of an archived artifact in that folder.
 - [Recovery and cleanup](/documentation/runbooks/staging_verification/recovery_and_cleanup.md)
   — the fleet recovery list: relay disarm, stopped units, the Everon deployment, a credential
   rotation left midway.
-- [Staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md) — the
+- [Staging design note](/documentation/crates/api/api_server/design_notes/staging.md) — the
   witness rules and the receipt format.

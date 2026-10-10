@@ -79,5 +79,5 @@ read: `JWT_SECRET` and `JWT_ACCESS_TTL_MIN` (the token `Manager`), `ALLOWED_ORIG
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.
 - [API application source](/crates/api/api_server/src/README.md) — the router that mounts these layers.
 - [Application state](/crates/api/api_state/README.md) — the state that holds their services.
-- [Identity transactions](/documentation/crates/api/api_server/verification_evidence/identity_transactions.md)
+- [Identity transactions](/documentation/crates/api/api_server/design_notes/identity_transactions.md)
   — how access tokens, persisted sessions and refresh rotation fit together.

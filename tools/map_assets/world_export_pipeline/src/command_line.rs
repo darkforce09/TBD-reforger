@@ -184,7 +184,9 @@ fn run() -> Result<ExitCode> {
     let cli = Cli::parse();
     match cli.cmd {
         Cmd::TopoStats { terrain } => {
-            let vfs = PakVfs::open_default()?;
+            let vfs = PakVfs::open_default(&repository_layout::enfusion_mcp_game_root(
+                &repository_root::find_repository_root()?,
+            ))?;
             let t = topo::decode_topo(&vfs, &terrain)?;
             println!(
                 "[topo] {terrain}: {} sections × {} records, consumed {}/{} bytes",
@@ -302,7 +304,9 @@ fn run() -> Result<ExitCode> {
         )),
         Cmd::EddsCell { n } => {
             use std::io::Write as _;
-            let vfs = PakVfs::open_default()?;
+            let vfs = PakVfs::open_default(&repository_layout::enfusion_mcp_game_root(
+                &repository_root::find_repository_root()?,
+            ))?;
             let c = enfusion_texture_decoder::decode_cell_rgba(&vfs, n)?;
             eprintln!(
                 "{}",

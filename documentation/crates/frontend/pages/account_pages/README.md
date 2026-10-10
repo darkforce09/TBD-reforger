@@ -47,7 +47,7 @@ into one file per page, each with a line in Contents, once it passes 500 lines.
 - Depends on: the [feature doc template](/documentation/standards/templates/feature_doc.md) and
   the [documentation folder README template](/documentation/standards/templates/readme_documentation_folder.md);
   the [glossary](/documentation/glossary/README.md); the page code, the identity and access handlers
-  and the ticket registry in `.ai/tickets/`, which the feature doc is written from.
+  and the ticket manager (`ttm`), which the feature doc is written from.
 - Used by: the [frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md) route table
   and the [page crate documentation](/documentation/crates/frontend/pages/README.md) index; the in-code
   READMEs of the account pages and of the session code, which link the feature doc.

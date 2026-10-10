@@ -64,7 +64,7 @@ crates/api/api_community_content/src/handlers/vehicle_database/
 
 ## Related documentation
 
-- [Administration and community content design](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md)
+- [Administration and community content design](/documentation/crates/api/api_server/design_notes/administration_and_content.md)
   — the vehicle semantics these handlers implement.
 - [Vehicle database page](/documentation/crates/frontend/pages/doctrine_pages/vehicles/vehicle_database_page.md)
   — the page that reads and writes these routes.

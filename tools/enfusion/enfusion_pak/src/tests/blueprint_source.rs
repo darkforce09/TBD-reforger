@@ -1,6 +1,9 @@
 use super::*;
 use std::io::Write as _;
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 /// Parse an in-memory archive image under the blueprint policy.
 pub(crate) fn parse_pak_bytes(bytes: &[u8]) -> Result<Vec<PakEntry>> {
@@ -192,15 +195,16 @@ fn malformed_pak_images_are_rejected() {
 /// and 5372 for data004 — a lower count here means a truncated tree walk) and every
 /// holder of the farmhouse XOB with the first byte that differs from the extract.
 #[test]
-#[ignore = "needs ~/.cache/enfusion-mcp-root/addons"]
+#[ignore = "needs .workstation/enfusion_mcp_game_root/addons"]
 fn real_pak_census() {
-    let Some(dir) = PakSet::default_dir().filter(|d| d.is_dir()) else {
+    let dir = PakSet::game_addons_dir(&workstation_folder("enfusion_mcp_game_root"));
+    if !dir.is_dir() {
         return;
-    };
-    let home = std::env::var("HOME").unwrap();
-    let want = fs::read(PathBuf::from(home).join(
-        "ReforgerExtract/unpacked/Assets/Structures/Houses/Farm/FarmHouse_E_1L01/FarmHouse_E_1L01.xob",
-    ))
+    }
+    let want = fs::read(
+        workstation_folder("reforger_extract")
+            .join("unpacked/Assets/Structures/Houses/Farm/FarmHouse_E_1L01/FarmHouse_E_1L01.xob"),
+    )
     .unwrap_or_default();
     let mut paths: Vec<PathBuf> = fs::read_dir(&dir)
         .unwrap()
@@ -263,15 +267,14 @@ fn real_pak_census() {
 /// operator's hand-extracted copy. Needs the MCP symlink farm + the extract — skipped
 /// (not failed) elsewhere.
 #[test]
-#[ignore = "needs ~/.cache/enfusion-mcp-root/addons + ~/ReforgerExtract"]
+#[ignore = "needs .workstation/enfusion_mcp_game_root/addons + .workstation/reforger_extract"]
 fn real_pak_farmhouse_xob_matches_extract() {
-    let Some(dir) = PakSet::default_dir().filter(|d| d.is_dir()) else {
+    let dir = PakSet::game_addons_dir(&workstation_folder("enfusion_mcp_game_root"));
+    if !dir.is_dir() {
         return;
-    };
-    let home = std::env::var("HOME").unwrap();
-    let extract = PathBuf::from(home).join(
-        "ReforgerExtract/unpacked/Assets/Structures/Houses/Farm/FarmHouse_E_1L01/FarmHouse_E_1L01.xob",
-    );
+    }
+    let extract = workstation_folder("reforger_extract")
+        .join("unpacked/Assets/Structures/Houses/Farm/FarmHouse_E_1L01/FarmHouse_E_1L01.xob");
     let Ok(want) = fs::read(&extract) else {
         return;
     };
@@ -305,4 +308,12 @@ fn real_pak_farmhouse_xob_matches_extract() {
         got == want,
         "pak read differs from the extracted file ({holders:?})"
     );
+}
+
+/// A folder of this checkout's machine-local `.workstation/`, found from the crate's own folder
+/// (`tools/enfusion/enfusion_pak`), where the live tests' game files sit.
+fn workstation_folder(name: &str) -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../.workstation")
+        .join(name)
 }

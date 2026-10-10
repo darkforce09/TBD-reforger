@@ -35,13 +35,14 @@ import_item_registry.rs  ──▶ database::connect ─▶ database::migrate
 ## Commands
 
 Run `api-server` and `import-item-registry` from `crates/api/api_server/` as
-`cargo run -p api_server --bin <name> -- <arguments>`; both read `.env` there. `api-server` also
-runs from any other folder of the checkout, finding its development directories from the checkout
-root; the `.env` it reads is the first one found from the working directory upward.
+`cargo run -p api_server --bin <name> -- <arguments>`; both read the settings file
+`deploy/api.env` under the checkout root, or the file `TBD_API_ENV_FILE` names. `api-server` also
+runs from any other folder of the checkout, finding its settings file and its development
+directories from the checkout root.
 
 ### api-server
 
-- Synopsis: `api-server`, with no arguments; the environment and `.env` configure it.
+- Synopsis: `api-server`, with no arguments; the environment and `deploy/api.env` configure it.
 - Does: sets the log filter from `RUST_LOG` (`info` when unset), loads the configuration, connects
   to Postgres, applies the pending migrations unless `SKIP_MIGRATE` is set and logs
   `migrations applied`, arms the
@@ -56,7 +57,7 @@ root; the `.env` it reads is the first one found from the working directory upwa
   outside any checkout with a directory setting unset included), the database connection, a
   migration or the port bind fails.
 - Example: `cargo xtask mk rust-api`, which runs `cargo run --bin api-server` in `crates/api/api_server/`
-  with its own target directory, `target/dev-api` in the checkout.
+  with its own target directory, `target/<host|container>/dev-api` in the checkout.
 
 ### import-item-registry
 

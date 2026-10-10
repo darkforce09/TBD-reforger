@@ -22,8 +22,8 @@ developers changing either half, read this for the design and its limits.
   template and runs an agent for every instance, each with its own server's `host_agent`
   credential; the relay instance's agent (instance 5 on staging) polls the API through the
   acknowledgement-dropping relay on loopback.
-- Related features: the API's [fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
-  and [machine credentials](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md);
+- Related features: the API's [fleet command ledger](/documentation/crates/api/api_server/design_notes/fleet_command_ledger.md)
+  and [machine credentials](/documentation/crates/api/api_server/design_notes/machine_credentials.md);
   the [server control page](/documentation/crates/frontend/pages/administration_pages/server_control/server_control_page.md),
   where operators issue commands; the [game runtime](/documentation/glossary/g_to_m.md#game-runtime)'s own executor in
   [`mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/`](/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/README.md);
@@ -140,18 +140,18 @@ in the game runtime.
 
 ## Open work
 
-- [T-940.11 — RCON kick and change-map through the host agent](/documentation/tickets/specs/t940_website_platform.md)
-  (ready, [plan](/documentation/tickets/plans/t-940_11_plan.md)): the agent gains kick and
+- RCON kick and change-map through the host agent (ticket
+  `website-platform-events-telemetry.rcon-kick-change-map` in `ttm`): the agent gains kick and
   change-map actions with a strict argument grammar. Its plan names `admin.rs` and
-  `services/game_agent.rs`, which the API does not have, and `kick` runs in the game runtime
-  today, so the plan needs checking against the code before work starts.
-- [T-1146 — Decide one RCON password rule for staging and fleet agent](/.ai/tickets/T-1146.toml)
-  (idea, no plan): the deploy and the agent apply one password rule.
-- [T-1137 — Gate the verification core and fleet agent tests and clippy](/.ai/tickets/T-1137.toml)
-  (idea, no plan): CI runs the agent's tests and clippy.
-- [T-086 — Server Control + RCON API](/.ai/tickets/T-086.toml) (deferred, no plan): a live server
-  control panel wired to an RCON backend; a console line runs today as a `console_command` fleet
-  command, one line per command.
+  `services/game_agent.rs`, which the API does not have, and `kick` runs in the game runtime today,
+  so the plan needs checking against the code before work starts.
+- Decide one RCON password rule for staging and fleet agent (ticket `decide-one-rcon-password` in
+  `ttm`): the deploy and the agent apply one password rule.
+- Gate the verification core and fleet agent tests and clippy (ticket
+  `gate-ticket-engine-verification` in `ttm`): CI runs the agent's tests and clippy.
+- Server Control + RCON API (ticket `server-control-rcon-api` in `ttm`): a live server control panel
+  wired to an RCON backend; a console line runs today as a `console_command` fleet command, one line
+  per command.
 
 ## Decisions
 

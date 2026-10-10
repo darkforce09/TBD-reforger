@@ -4,7 +4,8 @@
 //! `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, and `DISCORD_REDIRECT_URL` are required too,
 //! so blank OAuth credentials cannot load and then surface at first use as
 //! `oauth_unconfigured` / `discord_unreachable` — a misconfiguration wearing the costume of an
-//! outage. A `.env` file is loaded when present, but is optional.
+//! outage. The settings file (`deploy/api.env`, or the file `TBD_API_ENV_FILE` names) is loaded
+//! when present, but is optional.
 //!
 //! `DISCORD_BOT_TOKEN` is optional: empty means "not configured". It is read only through
 //! [`Config::require_discord_bot_token`], which turns "unset" into a named error at the point of
@@ -23,6 +24,7 @@
 
 mod development_directories;
 pub mod proxy_network;
+pub mod settings_file;
 
 use api_identifiers::{DiscordClientId, DiscordGuildId};
 use std::env;
@@ -153,8 +155,8 @@ pub enum ConfigError {
 }
 
 impl Config {
-    /// Read configuration from the environment, applying dev defaults. Loads a
-    /// `.env` if present. Hard-fails if `DATABASE_URL` or `JWT_SECRET` is empty;
+    /// Read configuration from the environment, applying dev defaults. Loads the settings file
+    /// ([`settings_file::load_settings_file`]) if present. Hard-fails if `DATABASE_URL` or `JWT_SECRET` is empty;
     /// outside development also hard-fails on blank Discord client id/secret/redirect and on an
     /// unset or relative upload, map or glyph directory.
     ///
@@ -163,8 +165,8 @@ impl Config {
     /// A [`ConfigError`] naming the first variable that is missing or unusable, or the directory
     /// setting whose development default finds no checkout root above the working directory.
     pub fn load() -> Result<Self, ConfigError> {
-        // best-effort: .env is optional; real config comes from the environment.
-        let _ = dotenvy::dotenv();
+        // Best effort: the settings file is optional; the environment stays authoritative.
+        let _ = settings_file::load_settings_file();
 
         let frontend_url = get_env("FRONTEND_URL", "http://localhost:5173");
         let app_env = get_env("APP_ENV", "production");

@@ -124,20 +124,17 @@ lists each call with the DTO or body it reads or sends. Server-side, in
     hero image, a callout and a "Sync Status: Required" block with "Initiate Download". The page
     keeps only its list-beside-detail split, with the editor as the detail; it has no reading view,
     no unread markers and no pin control.
-- The archived platform spec's
-  [Content Manager section](/documentation/archive/go_and_react_era_design/platform_context_handoff.md#11-content-manager)
-  asks for tabs between announcements and the wiki and a rich-text editor; the page has neither.
+- The design-phase platform spec's content manager section asks for tabs between announcements and the wiki and a rich-text editor; the page has neither.
 
 ## Open work
 
-- [T-087 — CMS rich text editor](/.ai/tickets/T-087.toml) (deferred, no plan): the body becomes a
-  rich-text editor in place of Markdown text with a marker toolbar.
-- [T-1018 — Fix content manager Save Draft and Discord broadcast toast](/.ai/tickets/T-1018.toml)
-  (idea, no plan): "Save Draft" saves the post as a draft instead of only toasting "Draft saved",
-  and the publish toast claims a Discord broadcast only when the push succeeded.
-- [T-1028 — Fix re-publishing a pinned announcement unpinning it](/.ai/tickets/T-1028.toml)
-  (idea, no plan): publishing an existing post keeps its pin instead of sending
-  `is_pinned: false`.
+- CMS rich text editor (ticket `cms-rich-text-editor` in `ttm`): the body becomes a rich-text editor
+  in place of Markdown text with a marker toolbar.
+- Fix content manager Save Draft and Discord broadcast toast (ticket `fix-content-manager-save` in
+  `ttm`): "Save Draft" saves the post as a draft instead of only toasting "Draft saved", and the
+  publish toast claims a Discord broadcast only when the push succeeded.
+- Fix re-publishing a pinned announcement unpinning it (ticket `fix-re-publishing-pinned` in `ttm`):
+  publishing an existing post keeps its pin instead of sending `is_pinned: false`.
 
 ## Decisions
 

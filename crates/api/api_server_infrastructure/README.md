@@ -86,8 +86,8 @@ No feature and no variable of its own. The scheduled status publisher's interval
 - [API server infrastructure source](/crates/api/api_server_infrastructure/src/README.md) — the
   files, the routes and how the fleet is controlled.
 - [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
-- [Fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/crates/api/api_server/design_notes/fleet_command_ledger.md)
   — the ledger's commands, states, rules and executors.
-- [Machine credentials and runtime sessions](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md)
+- [Machine credentials and runtime sessions](/documentation/crates/api/api_server/design_notes/machine_credentials.md)
   — credentials, the session fence and their consumers.
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.

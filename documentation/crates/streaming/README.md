@@ -35,8 +35,8 @@ documentation/crates/streaming/
 
 - Depends on: the code of `crates/streaming/` and the Mission Creator code that calls it, which
   every claim is checked against; the
-  [feature doc template](/documentation/standards/templates/feature_doc.md); the ticket registry
-  in `.ai/tickets/` for open work.
+  [feature doc template](/documentation/standards/templates/feature_doc.md); the ticket manager
+  (`ttm`) for open work.
 - Used by: the streaming crates' code READMEs, which link the feature doc under Related
   documentation; the [library crate documentation](/documentation/crates/README.md) index; the
   [map rendering documentation](/documentation/crates/map_rendering/README.md).

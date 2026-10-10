@@ -12,7 +12,7 @@ where code, contracts, assets, documents and agent configuration live.
   `wasm32-unknown-unknown` target) and [`.cargo/config.toml`](/.cargo/config.toml), which makes
   `cargo xtask` run the `xtask` package.
 - Entry: the [root README](/README.md) for a first look, the
-  [directory atlas](/CLAUDE.md#2-monorepo-directory-atlas) for the folders one level deeper.
+  [repository map](/CLAUDE.md#3-repository-map) for the folders one level deeper.
 
 ## Top-level folders
 
@@ -30,11 +30,8 @@ TBD-reforger/
 │                    and the gitignored reference lanes (References/); no Rust crate
 ├── contracts/       JSON Schemas, rules, catalogs and fixtures of every shape that crosses a boundary
 ├── assets/          terrain datasets (Git LFS), the world-object glyph set, the storage specification
-├── documentation/   every document: feature docs, runbooks, standards, glossary, tickets, archive
-├── .ai/             the checkout-root marker (ROOT), legacy ticket files awaiting import into the
-│                    central ticket manager (tickets/) and agent artifacts of past waves
+├── documentation/   every document: feature docs, runbooks, standards, glossary, known bugs
 ├── .github/         the five GitHub Actions workflows
-├── .cursor/         the Cursor agent rules
 ├── .claude/         the Claude Code project settings
 └── .cargo/          the cargo alias for xtask
 ```
@@ -42,17 +39,26 @@ TBD-reforger/
 The root files are the workspace manifest and lockfile, the toolchain pin, `clippy.toml`, the
 build context of the API's release image (`.dockerignore`), the editor and checker settings (`.editorconfig`, `.editorconfig-checker.json`), the Git LFS patterns
 (`.gitattributes`), the ignore rules (`.gitignore`), the per-mission warning budget of the mod
-world-boot gate (`.world-boot-warning-baseline`), the root `README.md`, and `CLAUDE.md` with
-`AGENTS.md` as a symlink to it. Build output is never tracked: `target/` and every `target-*/`
-folder are ignored.
+world-boot gate (`.world-boot-warning-baseline`), the checkout-root marker `.repository_root` that
+every tool and test walks up to, the root `README.md`, and `CLAUDE.md` with `AGENTS.md` as a
+symlink to it.
+
+Three gitignored folders hold what is never tracked. `target/` holds all build output, one
+subfolder per toolchain environment, `target/host/` (cargo on the host through `hcargo`) and
+`target/container/` (cargo inside the development container), each with its purpose subfolders
+(`dev-api`, `ci`, the gate folders). `.workstation/` holds what belongs to one machine: logs, run
+records, the Enfusion MCP game root, the playtest server, extracted game files and the host-bridge
+wrappers `hcargo` and `hrustfmt`. `.worktrees/` holds every linked git worktree. Nothing
+project-related lives in the home folder, `~/.cache` or `/tmp`. Tickets live outside the
+repository in the central ticket manager (`ttm`).
 
 ## Workspace members
 
-One Cargo workspace (resolver 3) holds every Rust crate: 153 members, which are 115 crates under
+One Cargo workspace (resolver 3) holds every Rust crate: 152 members, which are 115 crates under
 `crates/` (111 library crates and four applications: the API server, the single-page app, the
-offline service worker and the game server host agent), 36 tool crates under `tools/<category>/`
+offline service worker and the game server host agent), 35 tool crates under `tools/<category>/`
 and the two tool binaries `tools/xtask` and `tools/developer_tools`. The crate-tier law judges the
-151 crates and leaves out only the two binaries; no member depends on one of the four
+150 crates and leaves out only the two binaries; no member depends on one of the four
 applications. Members inherit edition 2024 and
 rust-version 1.95 from `[workspace.package]`. The applications come first in the table.
 
@@ -69,7 +75,7 @@ rust-version 1.95 from `[workspace.package]`. The applications come first in the
 | [`crates/foundation/deterministic_random/`](/crates/foundation/deterministic_random/README.md) | `deterministic_random` | the seeded SplitMix64 generator |
 | [`crates/foundation/content_digest/`](/crates/foundation/content_digest/README.md) | `content_digest` | SHA-256 and SHA-384 hex digests and framed hashing |
 | [`crates/foundation/browser_platform/`](/crates/foundation/browser_platform/README.md) | `browser_platform` | browser console macros and fetch helpers (wasm32 only) |
-| [`crates/foundation/repository_root/`](/crates/foundation/repository_root/README.md) | `repository_root` | the one checkout-root finder: the walk up to the `.ai/ROOT` marker the tools and the tests share |
+| [`crates/foundation/repository_root/`](/crates/foundation/repository_root/README.md) | `repository_root` | the one checkout-root finder: the walk up to the `.repository_root` marker the tools and the tests share |
 | [`crates/foundation/orbat_slot_ids/`](/crates/foundation/orbat_slot_ids/README.md) | `orbat_slot_ids` | an ORBAT slot's two ids: `SlotUid`, the durable editor id, and `SlotId`, the derived wire id |
 | [`crates/geometry/geometry_primitives/`](/crates/geometry/geometry_primitives/README.md) | `geometry_primitives` | vector ops, segment geometry, rigid transforms, axis-aligned boxes |
 | [`crates/geometry/grid_rasterization/`](/crates/geometry/grid_rasterization/README.md) | `grid_rasterization` | half-up rounding, the uniform Catmull-Rom spline, polygon scanline spans and anti-aliased disc stamps over a sample grid |
@@ -181,7 +187,6 @@ rust-version 1.95 from `[workspace.package]`. The applications come first in the
 | [`tools/foundation/deploy_settings/`](/tools/foundation/deploy_settings/README.md) | `deploy_settings` | the one reader of `deploy/deploy.env` and its precedence rule over exported variables |
 | [`tools/foundation/tool_test_support/`](/tools/foundation/tool_test_support/README.md) | `tool_test_support` | the test locks (process variables, working directory) and the checkout root the tool crates' tests share (dev-only) |
 | [`tools/foundation/ticket_manager_client/`](/tools/foundation/ticket_manager_client/README.md) | `ticket_manager_client` | the typed client of the central ticket manager's `ttm` command line and its JSON documents |
-| [`tools/commands/repository_relocation/`](/tools/commands/repository_relocation/README.md) | `repository_relocation` | manifest-driven moves of tracked paths and the retired-spelling verification behind `cargo xtask refactor relocate` |
 | [`tools/commands/agent_context_guards/`](/tools/commands/agent_context_guards/README.md) | `agent_context_guards` | the AI agent tool-call guard behind `cargo xtask ai` (Bash and Read rules, the session read set) and the filtered command runner that never hides a failure |
 | [`tools/commands/schema_tooling/`](/tools/commands/schema_tooling/README.md) | `schema_tooling` | the contract codegen, the contract schema gates, the ORBAT slot flattening and the font-table generator behind `cargo xtask schema` and `cargo xtask gen` |
 | [`tools/commands/ballistics_oracle_tooling/`](/tools/commands/ballistics_oracle_tooling/README.md) | `ballistics_oracle_tooling` | the ballistics catalog and calibration fixtures behind `cargo xtask ballistics trim-export` |
@@ -189,7 +194,7 @@ rust-version 1.95 from `[workspace.package]`. The applications come first in the
 | [`tools/commands/workstation_setup/`](/tools/commands/workstation_setup/README.md) | `workstation_setup` | the `cargo xtask setup` commands and the staging host check of `cargo xtask mod bootstrap-staging` |
 | [`tools/commands/database_operations/`](/tools/commands/database_operations/README.md) | `database_operations` | the local database lane behind `cargo xtask db`, the database container layer and the verified backup, guarded restore and restore drill behind `cargo xtask deploy db`, the milestone announcement seed, and the seed and SQL-shape checks behind `cargo xtask verify` |
 | [`tools/commands/deployment/`](/tools/commands/deployment/README.md) | `deployment` | the website and staging fleet deploys behind `cargo xtask deploy website` and `cargo xtask deploy staging`, and the staging compose-path check behind `cargo xtask verify` |
-| [`tools/commands/remote_debugging/`](/tools/commands/remote_debugging/README.md) | `remote_debugging` | the staging server-join probes and the direct-join report behind `cargo xtask debug`, the remote console log verdict behind `cargo xtask mod remote-logs`, and the mission-version upload reproduction behind `cargo xtask repro` |
+| [`tools/commands/remote_debugging/`](/tools/commands/remote_debugging/README.md) | `remote_debugging` | the staging server-join probes and the direct-join report behind `cargo xtask debug` and the remote console log verdict behind `cargo xtask mod remote-logs` |
 | [`tools/commands/staging_procedures/`](/tools/commands/staging_procedures/README.md) | `staging_procedures` | the staging acceptance harness behind `cargo xtask staging`: the fleet, Discord and load procedures and their receipts, the confirmed host actions and the read-only commands around them |
 | [`tools/commands/ci_task_catalog/`](/tools/commands/ci_task_catalog/README.md) | `ci_task_catalog` | the CI task table and its runner behind `cargo xtask ci` and `cargo xtask help`, the build lane recipes behind `cargo xtask mk`, the shared cargo target pin and its checks, and the map asset checks |
 | [`tools/commands/platform_execution/`](/tools/commands/platform_execution/README.md) | `platform_execution` | the platform factory behind `cargo xtask platform`: the wave driver, slice runs and their receipts, the slice worktree lifecycle and the unattended-run preflight |
@@ -243,7 +248,7 @@ shapes ───────── contracts/definitions/     JSON Schemas, the 
 data ─────────── assets/terrains/           built-in islands, served at /map-assets (Git LFS)
                  assets/glyphs/             world-object glyph atlas and its SVG sources
 documents ────── documentation/<code path>/ feature docs mirroring the code
-                 documentation/runbooks/    procedures; standards/, glossary/, archive/ beside it
+                 documentation/runbooks/    procedures; standards/, glossary/, known_bugs/ beside it
 work tracking ── central ticket manager      tickets, run receipts and the wave plan, through ttm
 ```
 
@@ -268,9 +273,11 @@ work tracking ── central ticket manager      tickets, run receipts and the w
   release `Dockerfile` (its build context narrowed by the root `.dockerignore`), the development
   and staging compose files, the Caddy site in `deploy/caddy/` (the one folder the staging Caddy
   container mounts, so a host's `deploy.env` stays outside it), the `deploy.env.example` that
-  `cargo xtask deploy` reads, and the systemd units and timers in `deploy/systemd/`.
-- **Agent configuration.** `CLAUDE.md` holds the project laws, the atlas and the canonical
-  commands; `.cursor/rules/` the Cursor rules; `.claude/settings.json` the Claude Code settings.
+  `cargo xtask deploy` reads, the API's settings template `deploy/api.env.example` (the filled,
+  gitignored `deploy/api.env` beside it is what the API and its systemd unit read), and the
+  systemd units and timers in `deploy/systemd/`.
+- **Agent configuration.** `CLAUDE.md` holds the project laws, the repository map and the canonical
+  commands; `.claude/settings.json` the Claude Code settings.
 
 ## Related documentation
 

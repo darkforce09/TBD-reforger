@@ -208,10 +208,11 @@ specification lists.
 
 ## Open work
 
-- [T-1092 — Split EnfScript files over 500 lines and gate their length](/.ai/tickets/T-1092.toml)
-  (idea, no plan): `TBD_UITheme.c` (622 lines) splits into smaller files.
-- [T-1004 — Comment hygiene: design citations, ticket ids and history words](/.ai/tickets/T-1004.toml)
-  (idea, no plan): the ticket ids in the `TBD_UITheme.c` header leave the comments.
+- Split EnfScript files over 500 lines and gate their length (ticket `modularise-document-gate-mod`
+  in `ttm`, idea): `TBD_UITheme.c` (622 lines) splits into smaller files.
+- Comment hygiene: design citations, ticket ids and history words (ticket
+  `comment-hygiene-design-citations` in `ttm`, idea): the ticket ids in the `TBD_UITheme.c` header
+  leave the comments.
 
 ## Decisions
 

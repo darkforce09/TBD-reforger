@@ -27,7 +27,7 @@ line can reload it.
     where administrators publish the catalogs the page solves with;
   - the [offline core](/crates/frontend/foundation/frontend_offline/src/README.md) and the
     [offline mortar page runbook](/documentation/runbooks/offline_mortar_page.md);
-  - the [game ballistics design note](/documentation/crates/api/api_server/verification_evidence/game_ballistics.md),
+  - the [game ballistics design note](/documentation/crates/api/api_server/design_notes/game_ballistics.md),
     which records the model, the tolerances and the operator decisions.
 
 ## Behaviour
@@ -148,17 +148,9 @@ each call with its DTO. Server-side:
 
 ## Open work
 
-- [T-940.10 — Mortar ballistics crate for API and offline frontend](/documentation/tickets/specs/t940_website_platform.md)
-  (ready, [plan](/documentation/tickets/plans/t-940_10_plan.md)): built by milestone B as this
-  page's on-device solve and offline pack; the registry closes it with the milestone.
-- [T-1177 — Check event existence and access for fire mission save, list](/.ai/tickets/T-1177.toml)
-  (idea): built by milestone B (the event foreign key and the list's viewer access); closed with
-  the milestone.
-- [T-1245 — Share the mortar save DTO and decode refresh token_type](/.ai/tickets/T-1245.toml)
-  (idea): built by milestone B (`SavedFireMissionAnswer`, `token_type` "Bearer"); closed with the
-  milestone.
-- [T-1045 — Rewrite stale frontend doc comments naming missing code and behaviour](/.ai/tickets/T-1045.toml)
-  (idea): this page's comments are current; the ticket covers the rest of the frontend.
+- Rewrite stale frontend doc comments naming missing code and behaviour (ticket
+  `rewrite-stale-frontend-doc` in `ttm`): this page's comments are current; the ticket covers the
+  rest of the frontend.
 
 ## Decisions
 

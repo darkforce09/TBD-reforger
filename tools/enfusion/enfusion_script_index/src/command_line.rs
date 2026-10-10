@@ -6,9 +6,9 @@
 //! instead of a plausible-sounding invention:
 //!
 //! ```text
-//! enf index crf --root mod/References/crf_framework --out .ai/artifacts/enf-index
-//! enf lookup CRF_EGamemodeState --index .ai/artifacts/enf-index/crf_symbols.tsv
-//! enf dirs --index .ai/artifacts/enf-index/crf_symbols.tsv --depth 4
+//! enf index crf --root mod/References/crf_framework --out mod/reference_symbol_index
+//! enf lookup CRF_EGamemodeState --index mod/reference_symbol_index/crf_symbols.tsv
+//! enf dirs --index mod/reference_symbol_index/crf_symbols.tsv --depth 4
 //! ```
 //!
 //! **Position:** [`run_command_line`] is the whole body of the `enf` binary in `developer_tools`.
@@ -247,7 +247,7 @@ fn run(cli: Cli) -> crate::Result<ExitCode> {
             replace,
         } => {
             let out = checked_reference_output(&out)?;
-            let vfs = PakVfs::open_default()?;
+            let vfs = PakVfs::open_default(&default_game_root())?;
             let paths: Vec<String> = vfs
                 .all_file_paths()
                 .into_iter()
@@ -314,7 +314,7 @@ fn run(cli: Cli) -> crate::Result<ExitCode> {
             Ok(ExitCode::SUCCESS)
         }
         Cmd::DumpEntry { path, out } => {
-            let vfs = PakVfs::open_default()?;
+            let vfs = PakVfs::open_default(&default_game_root())?;
             let (raw, dlen) = vfs.read_raw(&path)?;
             std::fs::write(&out, &raw)?;
             println!(
@@ -394,4 +394,13 @@ fn run(cli: Cli) -> crate::Result<ExitCode> {
             Ok(ExitCode::SUCCESS)
         }
     }
+}
+
+/// The game folder `carve` and `source` read when `ENFUSION_GAME_PATH` is unset: this checkout's
+/// MCP game root, `.workstation/enfusion_mcp_game_root`.
+fn default_game_root() -> PathBuf {
+    repository_root::find_repository_root().map_or_else(
+        |_| PathBuf::from(repository_layout::ENFUSION_MCP_GAME_ROOT),
+        |root| repository_layout::enfusion_mcp_game_root(&root),
+    )
 }

@@ -127,7 +127,7 @@ lists each call with the fields it reads or sends. Server-side, the handlers are
   request.
 
 The save rules, the revision storage and the markup service are set out in
-[Administration and community content](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md#wiki-markup-and-revisions).
+[Administration and community content](/documentation/crates/api/api_server/design_notes/administration_and_content.md#wiki-markup-and-revisions).
 
 ## Design
 
@@ -136,9 +136,7 @@ The save rules, the revision storage and the markup service are set out in
   an 18rem column beside the manual on wide screens and under it on narrow ones.
 - Callouts are coloured boxes with the label on top; the manual's `icon` is stored and resent on
   save but not shown.
-- Design target: the archived platform spec's
-  [SOPs & Manuals section](/documentation/archive/go_and_react_era_design/platform_context_handoff.md#6-sops--manuals-the-wiki),
-  a design-phase specification; no visual reference set exists. The built page differs:
+- Design target: the design-phase platform spec's SOPs and manuals section; no visual reference set exists. The built page differs:
   - the index lists manuals grouped by their stored category, not a fixed list of topics, and the
     vehicle database is a page of its own;
   - the index is a fixed 17rem column rather than a quarter of the width;
@@ -146,12 +144,8 @@ The save rules, the revision storage and the markup service are set out in
 
 ## Open work
 
-- [T-940.9 — Wiki: headings, links, images, tables, checklists, revisions](/documentation/tickets/specs/t940_website_platform.md)
-  (ready, [plan](/documentation/tickets/plans/t-940_9_plan.md)): the rendering, the revision
-  history and the restore described above are its scope; the ticket's status is kept in the
-  registry.
-- [T-085 — Wiki markdown renderer](/.ai/tickets/T-085.toml) (deferred, no plan): Markdown
-  rendering at `/wiki`, which the server's parse and the block renderer above provide.
+- Wiki markdown renderer (ticket `wiki-markdown-renderer` in `ttm`): Markdown rendering at `/wiki`,
+  which the server's parse and the block renderer above provide.
 
 ## Decisions
 

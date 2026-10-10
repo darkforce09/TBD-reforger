@@ -52,7 +52,7 @@
         "icon_url": { "type": "string" },
         "kind": {
           "type": "string",
-          "description": "v3 item classification. The phase 1 kinds are all still valid. `gear_uniform` carries no rows — it is split into `gear_jacket`, `gear_pants` and `gear_boots` — but is still accepted. `other` is the escape hatch, and its count is reported in the export verify logs. The taxonomy mapping lives at `.ai/artifacts/ace_arsenal_taxonomy_map.md`.",
+          "description": "v3 item classification. The phase 1 kinds are all still valid. `gear_uniform` carries no rows — it is split into `gear_jacket`, `gear_pants` and `gear_boots` — but is still accepted. `other` is the escape hatch, and its count is reported in the export verify logs. The taxonomy mapping lives at `documentation/contracts/ace_arsenal_taxonomy_map.md`.",
           "enum": [
             "character",
             "gear_primary",

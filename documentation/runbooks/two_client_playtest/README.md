@@ -58,14 +58,14 @@ Facts every topic relies on:
   ``linker `cc` not found`` and host binaries with ``GLIBC_2.39 not found``
   (`tools/foundation/process_runner/src/host_execution.rs`); neither means anything is broken.
 - **The run folder.** `cargo xtask mod playtest` stages everything under `--run-dir`, default
-  `$HOME/tbd-playtest`: `addons/tbd-framework` (a link to the checkout), `server.json`,
-  `server.out`, `server.pid` and `profile/`, whose game data sits one level down in
+  `.workstation/playtest_server/` in the checkout: `addons/tbd-framework` (a link to the
+  checkout), `server.json`, `server.out`, `server.pid` and `profile/`, whose game data sits one level down in
   `profile/profile/` (`TBD_BackendConfig.json`, `TBD_MissionArtifactCache/`).
 - **The server log.** Each boot writes a new `profile/logs/logs_<time>/console.log`. The topics
   call the newest one `$LOG`:
 
   ```bash
-  LOG="$(ls -td "$HOME"/tbd-playtest/profile/logs/logs_* | head -1)/console.log"
+  LOG="$(ls -td .workstation/playtest_server/profile/logs/logs_* | head -1)/console.log"
   ```
 
 - **Read the log, never the exit code.** The server binary exits 0 even when script compilation

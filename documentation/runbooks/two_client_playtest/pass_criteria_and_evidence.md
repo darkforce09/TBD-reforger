@@ -22,7 +22,7 @@ render mock catalogs and no lobby click reaches the server
 ([Known limitations](/documentation/runbooks/two_client_playtest/known_limitations.md)), so
 the items marked "no" stay open until the screens read the server's roster.
 
-**The event loop (T-181.16)**
+**The event loop** (ticket `tbd-framework-arma-3.two-client-dedicated-server` in `ttm`)
 
 | # | Item | Evidence | Step | Reachable |
 |---|---|---|---|---|
@@ -39,7 +39,7 @@ the items marked "no" stay open until the screens read the server's roster.
 | 11 | an admin respawned them and they came back dressed | `back in the world, life restored`, `rematerialized body` and a screenshot | S13 | yes |
 | 12 | the round reached END | `[TBD][Stage] … -> END` | S15 | yes |
 
-**The Arsenal end-to-end gate (T-068.14)**
+**The Arsenal end-to-end gate** (ticket `virtual-arsenal.phase-2-e2e-gate` in `ttm`)
 
 | # | Item | Evidence | Step | Reachable |
 |---|---|---|---|---|
@@ -53,23 +53,11 @@ the items marked "no" stay open until the screens read the server's roster.
 | P8 | no `[TBD][Loadout][TestNPC]` line: P6 shows a player | `grep -c TestNPC "$LOG"` prints `0` | S10 | yes |
 | P9 | the no-garment degrade path ran and behaved as described | the `DEGRADED`, `SHORTFALL` and audit lines | S10 | yes, with `bridgehead-at-levie` |
 
-The sign-off form is the template in
-[the Arsenal gate's specification](/documentation/tickets/specs/t068_14_phase2_e2e_gate.md#sign-off-template).
-On a full PASS:
-
-```bash
-ttm --project reforger advance-slice T-068
-```
-
-```bash
-ttm --project reforger ship T-068
-```
-
-```bash
-ttm --project reforger ship T-181
-```
-
-Then `ttm --project reforger next` lists the running tickets and the next work.
+The sign-off form is the template in the Arsenal gate's spec
+(`ttm --project reforger spec get virtual-arsenal.phase-2-e2e-gate`, section "Sign-off
+template"). On a full PASS, ship the programs `virtual-arsenal` and `tbd-framework-arma-3` in
+the ticket manager (`ttm --project reforger ship <ticket>`); then
+`ttm --project reforger next` lists the running tickets and the next work.
 
 ## Capture the evidence
 
@@ -79,7 +67,7 @@ anything restarts, and capture once: a bug should never need reproducing.
 1. Make the evidence folder.
 
    ```bash
-   EVIDENCE="$HOME/tbd-playtest/evidence/$(date +%F-%H%M)" && mkdir -p "$EVIDENCE"
+   EVIDENCE=".workstation/logs/playtest_evidence/$(date +%F-%H%M)" && mkdir -p "$EVIDENCE"
    ```
 
    Expected: no output; the folder exists.
@@ -105,7 +93,7 @@ anything restarts, and capture once: a bug should never need reproducing.
 4. Copy the mission the server ran and its config.
 
    ```bash
-   cp "$HOME/tbd-playtest/profile/profile/TBD_MissionArtifactCache/document.json" "$HOME/tbd-playtest/server.json" "$EVIDENCE/"
+   cp ".workstation/playtest_server/profile/profile/TBD_MissionArtifactCache/document.json" ".workstation/playtest_server/server.json" "$EVIDENCE/"
    ```
 
    Expected: the verified artifact bytes and the rendered `server.json` in the folder.
@@ -114,8 +102,8 @@ anything restarts, and capture once: a bug should never need reproducing.
    `#tbd audit` output (it is chat, not a file).
 
 To file a finding, add a ticket with the evidence folder in its summary; `ttm add` creates it in the
-central ticket manager with status `idea`. Copy the folder under `.ai/artifacts/` when the ticket
-should cite it by repository path.
+central ticket manager with status `idea`. The evidence folder stays machine-local under
+`.workstation/logs/`; attach what the ticket needs to it.
 
 ```bash
 ttm --project reforger add --title "<what failed>" --summary "<evidence folder and the failing line>"
@@ -202,6 +190,6 @@ tail -f "$LOG" | grep --line-buffered -E '\[TBD\] roll-call|\[TBD\]\[Mission\]|\
   — the steps that produce the evidence.
 - [Known limitations](/documentation/runbooks/two_client_playtest/known_limitations.md) — why
   items 3 to 5 and P4 stay open.
-- [Event mod program](/documentation/tickets/specs/t181_event_mod_program.md) — the frozen
+- The event mod program's spec (`ttm --project reforger spec get tbd-framework-arma-3`) — the
   specification behind the event loop list.
 - [Two-client playtest](/documentation/runbooks/two_client_playtest/README.md) — the index.

@@ -36,13 +36,12 @@ resolved and the proof of what resolved it.
 
 ## Boundaries
 
-- Depends on: the known bug template, which fixes each entry's sections, and the ticket registry
-  in `.ai/tickets/` for Related tickets.
+- Depends on: the known bug template, which fixes each entry's sections, and the ticket manager
+  (`ttm`), which holds the tickets each entry's Related tickets names.
 - Used by: the [editor gates runbook](/documentation/runbooks/editor_gates.md), which cites
-  KB-002; the Cursor rule `.cursor/rules/acceptance-gates-reproducible.mdc`, which sends a recorded
-  gate defect here; comments in the gate's screen capture
+  KB-002; comments in the gate's screen capture
   (`tools/browser_testing/browser_gate_suites/src/screen_capture.rs`) that name KB-002; the ticket
-  registry, whose tickets cite the entries; and the known bug and documentation folder templates,
+  manager, whose tickets cite the entries; and the known bug and documentation folder templates,
   whose samples are written from these entries.
 - Rules: one bug per file; a number is never reused, so a dropped number stays unused; a resolved
   entry stays with its status set to resolved; an entry needs a reproduced defect.

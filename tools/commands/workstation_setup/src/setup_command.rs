@@ -28,7 +28,7 @@ pub enum SetupCmd {
     McpGameRoot {
         /// Game install with addons/ (default: $HOME/.local/share/Steam/steamapps/common/Arma Reforger)
         game: Option<PathBuf>,
-        /// Output symlink farm (default: $HOME/.cache/enfusion-mcp-root)
+        /// Output symlink farm (default: <checkout>/.workstation/enfusion_mcp_game_root)
         fake: Option<PathBuf>,
     },
     /// Local client addon staging symlink + Steam launch options.

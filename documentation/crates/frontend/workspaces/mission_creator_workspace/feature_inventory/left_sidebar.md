@@ -209,32 +209,30 @@ The chevron ("Collapse panel" / "Expand panel") or the E key collapses and expan
 
 ## Open work
 
-- [T-830 — Outliner rows cramped; density pass on layer tree](/documentation/tickets/specs/t830_outliner_density.md)
-  (ready, [plan](/documentation/tickets/plans/t-830_plan.md)): denser tree rows.
-- [T-838 — Map markers selectable; outliner lists; dblclick opens Attributes](/documentation/tickets/specs/t838_marker_select_outliner.md)
-  (ready, [plan](/documentation/tickets/plans/t-838_plan.md)): markers join the tree.
-- [T-822 — Outliner dblclick must not open asset picker under Attributes](/documentation/tickets/specs/t822_outliner_dblclick_bubble.md)
-  (ready, [plan](/documentation/tickets/plans/t-822_plan.md)): a row double-click stops at the
-  row.
-- [T-939.7 — Vehicles panel virtualization, memoized outliner flatten](/documentation/tickets/specs/t939_editor_usability.md)
-  (ready, [plan](/documentation/tickets/plans/t-939_7_plan.md)): the vehicle list is windowed
-  and the tree flatten is cached.
-- [T-939.8 — Ctrl+F focuses document search](/documentation/tickets/specs/t939_editor_usability.md)
-  (ready, [plan](/documentation/tickets/plans/t-939_8_plan.md)): Ctrl+F jumps to the search box.
-- [T-848 — Group to must use exclusive ORBAT membership](/documentation/tickets/specs/t848_group_to_exclusive_orbat.md)
-  (ready, [plan](/documentation/tickets/plans/t-848_plan.md)) and
-  [T-849 — Add ungroup leave-squad verb without deleting slot](/documentation/tickets/specs/t849_ungroup_verb.md)
-  (ready, [plan](/documentation/tickets/plans/t-849_plan.md)): squad membership edits in the
-  ORBAT.
-- [T-309 — FactionDoc squad level for Apply Template](/documentation/tickets/specs/t309_faction_doc_squads.md)
-  (ready, [plan](/documentation/tickets/plans/t-309_plan.md)): side templates carry squads.
-- [T-1032 — Fix multi-folder drop onto the dock header moving one folder](/.ai/tickets/T-1032.toml)
-  (idea, no plan): a multi-folder drop on the header moves every dragged folder.
-- [T-715 — Hidden-layer slots vanish from Outliner/ORBAT docks instead of dimming](/.ai/tickets/T-715.toml),
-  [T-720 — Layer-drag latch survives out-of-dock release; next + click silently reparents](/.ai/tickets/T-720.toml)
-  and [T-731 — ROW_ACTIVE border-t skews virtual tree by 1px](/.ai/tickets/T-731.toml)
-  (deferred, no plan): the layers tree already dims hidden rows and cancels a drag released
-  outside the dock, so T-715 and T-720 need a recheck against the code.
+- Outliner rows cramped; density pass on layer tree (ticket `outliner-rows-cramped-density` in
+  `ttm`): denser tree rows.
+- Map markers selectable; outliner lists; dblclick opens Attributes (ticket
+  `map-markers-selectable-outliner` in `ttm`): markers join the tree.
+- Outliner dblclick must not open asset picker under Attributes (ticket `outliner-dblclick-must-not`
+  in `ttm`): a row double-click stops at the row.
+- Vehicles panel virtualization, memoized outliner flatten (ticket
+  `editor-usability-selection-gizmo.vehicles-panel-virtualization-memoized` in `ttm`): the vehicle
+  list is windowed and the tree flatten is cached.
+- Ctrl+F focuses document search (ticket `editor-usability-selection-gizmo.ctrl-f-focuses-document`
+  in `ttm`): Ctrl+F jumps to the search box.
+- Group to must use exclusive ORBAT membership (ticket `group-must-use-exclusive` in `ttm`) and Add
+  ungroup leave-squad verb without deleting slot (ticket `add-ungroup-leave-squad` in `ttm`): squad
+  membership edits in the ORBAT.
+- FactionDoc squad level for Apply Template (ticket `factiondoc-squad-level-apply` in `ttm`): side
+  templates carry squads.
+- Fix multi-folder drop onto the dock header moving one folder (ticket `fix-multi-folder-drop` in
+  `ttm`): a multi-folder drop on the header moves every dragged folder.
+- Hidden-layer slots vanish from Outliner/ORBAT docks instead of dimming (ticket
+  `hidden-layer-slots-vanish` in `ttm`), Layer-drag latch survives out-of-dock release; next + click
+  silently reparents (ticket `layer-drag-latch-survives` in `ttm`) and ROW_ACTIVE border-t skews
+  virtual tree by 1px (ticket `row-active-border-t` in `ttm`): the layers tree already dims hidden
+  rows and cancels a drag released outside the dock, so `hidden-layer-slots-vanish` and
+  `layer-drag-latch-survives` need a recheck against the code.
 
 ## Decisions
 

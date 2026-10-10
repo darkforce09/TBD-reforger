@@ -35,7 +35,7 @@ and states.
 ## Boundaries
 
 - Depends on: the feature doc template; the page code, the operations handlers and reservation
-  services, and the ticket registry in `.ai/tickets/`, which the feature doc is written from.
+  services, and the ticket manager (`ttm`), which the feature doc is written from.
 - Used by: the page's in-code README and its registration access README, the operations pages
   README, the operations domain and handlers READMEs, which link the feature doc; the event
   schedule, ORBAT selection and event manager feature docs; the feature doc template's worked

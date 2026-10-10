@@ -27,7 +27,7 @@ Wiki: https://community.bistudio.com/wiki/Eden_Editor:_Toolbar
 ## ACTION appendix
 
 Eden names 90+ `do3DENAction` actions; the scraped page is
-`.ai/artifacts/eden-wiki/Eden_Editor__Actions.md`. The clipboard and transform actions:
+`documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_wiki_scrape/Eden_Editor__Actions.md`. The clipboard and transform actions:
 
 | ID | Action | Effect |
 |----|--------|--------|
@@ -45,7 +45,7 @@ Eden names 90+ `do3DENAction` actions; the scraped page is
 Also: `MissionSave`, `SelectObjectMode`, `SyncWith`, `GroupWith`, `OpenAttributes`, `SearchEdit`, …
 
 **Note:** the scraped entity context menu page,
-`.ai/artifacts/eden-wiki/Eden_Editor__Entity_Context_Menu.md`, is primarily **modding/config**
+`documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_wiki_scrape/Eden_Editor__Entity_Context_Menu.md`, is primarily **modding/config**
 (`class Cfg3DENContextMenu`); the end-user menu items are better sourced from the Switching from
 2D Editor and Connecting pages and the per-type pages the other topic files cite.
 

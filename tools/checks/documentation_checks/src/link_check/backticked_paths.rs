@@ -16,7 +16,7 @@
 //! **Signals & state:** the paths waiting for the ignore batch and the counts; both live for one
 //! run.
 //!
-//! **Invariants:** frozen records are never judged; a span is read as a repository path only when
+//! **Invariants:** a span is read as a repository path only when
 //! its first segment is a tracked top-level folder or a retired top-level folder
 //! ([`repository_layout::RETIRED_TOP_LEVEL_FOLDERS`]: `docs`, `apps`); a trailing
 //! `/` asks for a folder; a failed ignore batch is one "did not run" verdict for every waiting
@@ -27,7 +27,6 @@ use std::collections::BTreeSet;
 use verification_core::{Kind, Verdict};
 
 use super::git_ignore_rules::IgnoreRules;
-use super::judged_documents::DocumentArea;
 use super::markdown_scan::CodeSpan;
 use super::{BreakRule, DocumentRule, JudgedDocument, RuleContext, RuleFindings};
 use repository_layout::is_retired_top_level_folder;
@@ -265,10 +264,6 @@ impl<'s> BacktickedPaths<'s> {
 }
 
 impl DocumentRule for BacktickedPaths<'_> {
-    fn judges(&self, area: DocumentArea) -> bool {
-        !area.is_frozen()
-    }
-
     fn judge(
         &mut self,
         document: &JudgedDocument<'_>,

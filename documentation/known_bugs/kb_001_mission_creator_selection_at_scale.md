@@ -63,13 +63,13 @@ drawing defect that needs the browser. A new entry records it; this one stays re
 
 ## Related tickets
 
-- [T-059 — Bulk paste/delete at scale](/documentation/tickets/specs/t059_bulk_paste_operations.md)
-  (shipped): the bulk paste and delete, and the 500-id post-paste selection cap of the React code.
-- [T-065 — Cluster LOD at extreme zoom](/documentation/tickets/specs/t065_cluster_lod.md)
-  (shipped): the cluster mode below zoom -4.
-- [T-067 — Spatial chunks](/documentation/tickets/specs/t067_spatial_chunks.md) (shipped): the
+- Bulk paste/delete at scale (ticket `bulk-paste-delete-scale` in `ttm`, shipped): the bulk paste
+  and delete, and the 500-id post-paste selection cap of the React code.
+- Cluster LOD at extreme zoom (ticket `cluster-lod-extreme-zoom` in `ttm`, shipped): the cluster
+  mode below zoom -4.
+- Spatial chunks (ticket `spatial-chunks` in `ttm`, shipped): the
   chunk cull of the React map layers.
-- [T-145 — Rust/Wasm Doc Core (Yjs replacement)](/.ai/tickets/T-145.toml) (shipped): the document
+- Rust/Wasm Doc Core (Yjs replacement) (ticket `rust-wasm-doc-core` in `ttm`, shipped): the document
   core change whose gate exposed the defect.
-- [T-090 — Map visualization program](/documentation/tickets/specs/t090_091_map_terrain_program.md)
-  (ready): the map and scale program the gate ran under.
+- Map visualization program (ticket `map-visualization-program` in `ttm`, ready): the map and scale
+  program the gate ran under.

@@ -1,4 +1,4 @@
-# T-181.2.1 — TBD verdict for every CRF capability. HAND-AUTHORED; product judgement.
+# TBD verdict for every CRF capability. HAND-AUTHORED; product judgement.
 #
 # Reforger ships no lobby, briefing, slotting, respawn, spectator or admin tooling. CRF is a
 # working framework that covers that ground, so every CRF source file must carry an explicit
@@ -18,7 +18,7 @@ Scripts/Game/Systems/Core/Entities/CRF_Gamemode.c	Gamemode state machine	BUILD	L
 Scripts/Game/Systems/Core/Entities/Characters/CRF_SpectatorCharacter.c	Spectator	BUILD	mandatory under one-life
 Scripts/Game/Systems/Core/Entities/CRF_SpectatorCamera.c	Spectator	BUILD	free cam / follow
 Scripts/Game/Systems/UI/Menus/Spectator	Spectator	BUILD	unit list + labels
-Scripts/Game/Systems/UI/Menus/CRF_SlottingMenu.c	Lobby / slot picker UI	BUILD	macOS methodology + Aegis tokens; supersedes T-068.13
+Scripts/Game/Systems/UI/Menus/CRF_SlottingMenu.c	Lobby / slot picker UI	BUILD	macOS methodology + Aegis tokens; supersedes ticket virtual-arsenal.mod-lobby-production-slot
 Scripts/Game/Systems/UI/Menus/CRF_BriefingMenu.c	Briefing screen	BUILD	declares class CRF_PreviewMenu (not CRF_BriefingMenu)
 Scripts/Game/Systems/UI/Menus/CRF_RespawnMenu.c	Deploy / respawn UI	BUILD	one-life variant
 Scripts/Game/Systems/UI/Menus/CRF_AdminMenuUI.c	Admin menu	BUILD	respawn/reset gear/teleport/broadcast/heal/live settings
@@ -41,10 +41,10 @@ Scripts/Game/Systems/Core/Helpers	Helpers layer	BUILD	grow as needed; do not por
 Scripts/Game/Systems/Core/Entities	Core entities	BUILD	gamemode + character entities
 # ── loadouts: CRF .conf gearscript replaced by TBD mission JSON ──────────────────────────
 Scripts/Game/Systems/Core/Managers/Gamemode/Gearscript	Loadouts	REPLACE	CRF uses 520 .conf gearscripts; TBD drives from mission JSON
-Scripts/Game/Systems/UI/Menus/CRF_SupplyArsenal.c	Arsenal / supply	PARTIAL	T-068 covers registry + arsenal
-Scripts/Game/Systems/UI/Menus/CRF_SightArsenal.c	Arsenal / supply	PARTIAL	T-068
-Scripts/Game/Systems/UI/Menus/CRF_MiniArsenal.c	Arsenal / supply	PARTIAL	T-068
-Scripts/Game/Systems/Components/SightArsenal	Arsenal / supply	PARTIAL	T-068
+Scripts/Game/Systems/UI/Menus/CRF_SupplyArsenal.c	Arsenal / supply	PARTIAL	ticket virtual-arsenal covers registry + arsenal
+Scripts/Game/Systems/UI/Menus/CRF_SightArsenal.c	Arsenal / supply	PARTIAL	ticket virtual-arsenal
+Scripts/Game/Systems/UI/Menus/CRF_MiniArsenal.c	Arsenal / supply	PARTIAL	ticket virtual-arsenal
+Scripts/Game/Systems/Components/SightArsenal	Arsenal / supply	PARTIAL	ticket virtual-arsenal
 # ── wanted, not on the critical path ─────────────────────────────────────────────────────
 Scripts/Game/Systems/UI/MapMarkers	AO / play area / zones + markers	LATER	mission JSON zones[]; poly-zone + out-of-bounds effects
 Scripts/Game/Systems/Components/Map	Map staging	LATER	pre-mission staging area
@@ -89,12 +89,12 @@ Scripts/Game/Systems/VanillaOverrides/CRF_SCR_AIGroups.c	Faction / groups	BUILD	
 Scripts/Game/Systems/VanillaOverrides/CRF_SCR_AIGroupInfoComponent.c	Faction / groups	BUILD	group info/callsign
 Scripts/Game/Systems/UI/Menus/CRF_CharacterLoading.c	Deploy / respawn UI	BUILD	loading/among-the-dead screen
 Scripts/Game/Systems/UI/Menus/CRF_PauseMenuUI.c	UI framework (menu stack)	LATER	pause menu integration
-Scripts/Game/Systems/UI/Menus/CRF_MiniArsenalCategoryButton.c	Arsenal / supply	PARTIAL	T-068
-Scripts/Game/Systems/UI/Menus/CRF_MiniArsenalItemButton.c	Arsenal / supply	PARTIAL	T-068
-Scripts/Game/Systems/UI/Menus/CRF_SightArsenalItemButton.c	Arsenal / supply	PARTIAL	T-068
-Scripts/Game/Systems/UI/Menus/CRF_SupplyArsenalVehicle.c	Arsenal / supply	PARTIAL	T-068
+Scripts/Game/Systems/UI/Menus/CRF_MiniArsenalCategoryButton.c	Arsenal / supply	PARTIAL	ticket virtual-arsenal
+Scripts/Game/Systems/UI/Menus/CRF_MiniArsenalItemButton.c	Arsenal / supply	PARTIAL	ticket virtual-arsenal
+Scripts/Game/Systems/UI/Menus/CRF_SightArsenalItemButton.c	Arsenal / supply	PARTIAL	ticket virtual-arsenal
+Scripts/Game/Systems/UI/Menus/CRF_SupplyArsenalVehicle.c	Arsenal / supply	PARTIAL	ticket virtual-arsenal
 Scripts/Game/Systems/UI/Menus/CRF_SupplyNotification.c	HUD elements	LATER
-Scripts/Game/Systems/Components/LeadershipArsenal	Arsenal / supply	PARTIAL	T-068
+Scripts/Game/Systems/Components/LeadershipArsenal	Arsenal / supply	PARTIAL	ticket virtual-arsenal
 Scripts/Game/Systems/UI/Menus/CRF_SCR_MapLightUI.c	HUD elements	LATER	map light
 Scripts/Game/Systems/UI/Menus/CRF_EditorMenuUI.c	CRF editor tooling	SKIP	TBD authors missions on the website, not in-game
 Scripts/Game/CRF_Define.c	Enums / config containers	BUILD	compile-time defines

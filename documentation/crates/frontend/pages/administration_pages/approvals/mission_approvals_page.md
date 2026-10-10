@@ -28,7 +28,7 @@ into the live library, approve it with conditions, or reject it with a reason.
   workspace ([README](/crates/frontend/workspaces/mission_creator_workspace/src/review_workspace/README.md));
   the [API](/documentation/glossary/a_to_f.md#api)'s
   [missions domain](/crates/api/api_missions/src/README.md); the
-  [mission artifacts evidence](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md).
+  [mission artifacts design note](/documentation/crates/api/api_server/design_notes/mission_artifacts.md).
 
 ## Behaviour
 
@@ -127,8 +127,7 @@ lists each call with the DTO it reads or sends. Server-side:
 ```
 
 - Design target: the [mission approvals blueprint](/documentation/crates/frontend/pages/administration_pages/approvals/visual_references/mission_approvals_blueprint/README.md),
-  a design-phase reference, and the archived platform spec's
-  [Mission Approvals section](/documentation/archive/go_and_react_era_design/platform_context_handoff.md#9-mission-approvals).
+  a design-phase reference.
   The built page differs from the blueprint:
   - no heading or subtitle; the queue heading and the breadcrumb name the page;
   - queue rows show the version and artifact under review instead of author avatars;

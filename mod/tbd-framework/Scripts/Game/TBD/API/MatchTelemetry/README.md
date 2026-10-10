@@ -29,7 +29,7 @@ TBD_RuntimeStatusReadings (every online heartbeat)
 entry and keeps the next entry id, the drop total and the per-match results revision and event
 sequence counters in two alternating state slots. `Delivery/` posts the head entry and settles
 the answer: acknowledge, send the match's registration first, drop, or keep and back off. The
-[match telemetry design](/documentation/crates/api/api_server/verification_evidence/telemetry.md) is
+[match telemetry design](/documentation/crates/api/api_server/design_notes/telemetry.md) is
 the contract; each subfolder's README describes its part.
 
 ## Authority
@@ -59,7 +59,7 @@ the contract; each subfolder's README describes its part.
 
 ## Related documentation
 
-- [Match telemetry design](/documentation/crates/api/api_server/verification_evidence/telemetry.md) — match identity,
+- [Match telemetry design](/documentation/crates/api/api_server/design_notes/telemetry.md) — match identity,
   results revisions, detailed events and the queue's answer table
 - [Match telemetry domain](/crates/api/api_match_telemetry/src/README.md) — how the ingest routes take the
   reports in

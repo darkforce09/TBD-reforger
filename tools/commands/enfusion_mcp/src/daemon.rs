@@ -30,7 +30,9 @@ use std::time::Duration;
 
 use process_runner::Run;
 
-use repository_layout::build_output::{MCP_DAEMON_SUBFOLDER, build_output_subfolder};
+use repository_layout::build_output::{
+    MCP_DAEMON_SUBFOLDER, ToolchainEnvironment, build_output_subfolder,
+};
 use repository_root::find_repository_root;
 
 use crate::server_entrypoint;
@@ -103,7 +105,7 @@ pub fn start_at(sock: &str, quiet: bool) -> i32 {
     let root = find_repository_root().unwrap_or_else(|_| PathBuf::from("."));
     let entry = server_entrypoint::resolve(&root).entry_path;
     // The child inherits these; every one has a default so a bare shell can start the daemon.
-    let game = env::var("ENFUSION_GAME_PATH").unwrap_or_else(|_| default_game_path());
+    let game = env::var("ENFUSION_GAME_PATH").unwrap_or_else(|_| default_game_path(&root));
     let wb = env::var("ENFUSION_WORKBENCH_PATH").unwrap_or_else(|_| default_workbench_path());
     let project = env::var("ENFUSION_PROJECT_PATH").unwrap_or_else(|_| default_project_path());
 
@@ -268,9 +270,12 @@ fn rm_tbd_mcp_globs(dir: &Path) {
 }
 
 /// The folder `mcpd` builds into when `MCPD_CARGO_TARGET_DIR` is unset:
-/// `<checkout>/target/dev-mcpd`, private so a wave gate never rewrites the daemon's binary.
+/// `<checkout>/target/<environment>/dev-mcpd`, private so a gate never rewrites the daemon's
+/// binary.
 fn default_mcpd_target_dir(root: &Path) -> PathBuf {
-    build_output_subfolder(root, MCP_DAEMON_SUBFOLDER)
+    let environment =
+        ToolchainEnvironment::from_container_flag(process_runner::host_execution::in_container());
+    build_output_subfolder(root, environment, MCP_DAEMON_SUBFOLDER)
 }
 
 /// Build `mcpd` quietly into its own target directory, forwarding cargo's stderr.
@@ -303,9 +308,12 @@ fn is_executable(path: &Path) -> bool {
     }
 }
 
-fn default_game_path() -> String {
-    let home = env::var("HOME").unwrap_or_else(|_| ".".into());
-    format!("{home}/.cache/enfusion-mcp-root")
+/// The game root the MCP server reads when `ENFUSION_GAME_PATH` is unset:
+/// `<checkout>/.workstation/enfusion_mcp_game_root`.
+fn default_game_path(root: &Path) -> String {
+    root.join(repository_layout::ENFUSION_MCP_GAME_ROOT)
+        .display()
+        .to_string()
 }
 
 fn default_workbench_path() -> String {

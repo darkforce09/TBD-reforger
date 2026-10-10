@@ -1,13 +1,16 @@
 //! The build output folder and the purpose subfolders the tools build into.
 //!
 //! **Role:** the name of the one gitignored folder at a checkout root that holds all build
-//! output, the name of each tool's purpose subfolder inside it, the formula that joins them, and
-//! the root-level folder names no tool writes any more.
+//! output, the toolchain environment folder inside it (one per glibc a machine builds with), the
+//! name of each tool's purpose subfolder inside that, the formula that joins them, and the
+//! root-level folder names no tool writes any more.
 //! **Position:** `xtask` pins the shared cargo target folder and builds its `mk` recipes, its wave
 //! gate steps, its MCP daemon and its database selftest into these subfolders, and its reclaim
 //! sweeps delete the retired names; `developer_tools` writes its mesh dumps under the folder.
 //! **Signals & state:** none; constants and pure path joins.
-//! **Invariants:** all build output lives under one `target/` folder. Each purpose subfolder is its
+//! **Invariants:** all build output lives under one `target/` folder, split by
+//! [`ToolchainEnvironment`] so binaries linked against two glibcs never share a folder. Each
+//! purpose subfolder is its
 //! own `CARGO_TARGET_DIR` (or trunk dist folder, or compose project) and so holds its own cargo
 //! lock, and no subfolder name is an entry cargo writes inside a target directory (profile
 //! folders, `build`, `doc`, `package`, `tmp`, target triples, its bookkeeping files), so nesting
@@ -18,6 +21,43 @@ use std::path::{Path, PathBuf};
 /// The one gitignored folder, relative to a checkout root, that holds all build output. Under the
 /// primary checkout it is also the shared cargo cache every worktree builds into.
 pub const BUILD_OUTPUT_FOLDER: &str = "target";
+
+/// Where a build runs on a development machine: on the host, or inside the development container,
+/// whose older glibc must never share a cargo target folder with the host's.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ToolchainEnvironment {
+    /// Cargo run on the host (the `hcargo` wrapper from inside the container).
+    Host,
+    /// Cargo run inside the development container.
+    Container,
+}
+
+impl ToolchainEnvironment {
+    /// The environment of a process: [`Self::Container`] when `in_container`.
+    pub fn from_container_flag(in_container: bool) -> Self {
+        if in_container {
+            Self::Container
+        } else {
+            Self::Host
+        }
+    }
+
+    /// The environment's folder name under [`BUILD_OUTPUT_FOLDER`].
+    pub fn folder_name(self) -> &'static str {
+        match self {
+            Self::Host => "host",
+            Self::Container => "container",
+        }
+    }
+}
+
+/// `<checkout_root>/target/<environment>`: the shared cargo target folder of one toolchain
+/// environment, which every worktree builds into.
+pub fn toolchain_build_folder(checkout_root: &Path, environment: ToolchainEnvironment) -> PathBuf {
+    checkout_root
+        .join(BUILD_OUTPUT_FOLDER)
+        .join(environment.folder_name())
+}
 
 /// The development API's private `CARGO_TARGET_DIR` (`cargo xtask mk rust-api`), under the
 /// current checkout rather than the primary one.
@@ -69,9 +109,14 @@ pub const PURPOSE_SUBFOLDERS: &[&str] = &[
     DATABASE_SELFTEST_SUBFOLDER,
 ];
 
-/// `<checkout_root>/target/<subfolder>`: the one formula every tool names its build output with.
-pub fn build_output_subfolder(checkout_root: &Path, subfolder: &str) -> PathBuf {
-    checkout_root.join(BUILD_OUTPUT_FOLDER).join(subfolder)
+/// `<checkout_root>/target/<environment>/<subfolder>`: the one formula every tool names its build
+/// output with.
+pub fn build_output_subfolder(
+    checkout_root: &Path,
+    environment: ToolchainEnvironment,
+    subfolder: &str,
+) -> PathBuf {
+    toolchain_build_folder(checkout_root, environment).join(subfolder)
 }
 
 /// Root-level folder names beside [`BUILD_OUTPUT_FOLDER`] that no tool writes; a machine that ran

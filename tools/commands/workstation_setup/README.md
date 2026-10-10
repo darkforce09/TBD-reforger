@@ -30,7 +30,7 @@ key it assigns, the environment fills the rest, and an absent file leaves everyt
 environment); the three folders default to `/home/<user>/tbd/repo`, `…/profile` and
 `…/addons-staging` under the user of `TBD_SSH_HOST`. Over SSH it prints the host's disk, the
 listeners on 5432, 8080 and 2001 and the container runtime, creates the three remote directories,
-and prints the manual next steps (among them the API's `.env`, which needs `JWT_SECRET` and
+and prints the manual next steps (among them the API's settings file `deploy/api.env`, which needs `JWT_SECRET` and
 `OBSERVABILITY_TOKEN`, and `sudo loginctl enable-linger "$USER"` on the host). It exits 1 without
 a host, with a deploy file that does not load, with a folder it cannot resolve, or with a remote
 directory containing `prairielearn`, and 127 when `ssh` or `sshpass` is missing.
@@ -72,7 +72,7 @@ command prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
 
 - Synopsis: `setup mcp-game-root [GAME] [FAKE]`; `GAME` defaults to
   `$HOME/.local/share/Steam/steamapps/common/Arma Reforger` and `FAKE` to
-  `$HOME/.cache/enfusion-mcp-root`; with `HOME` unset, both must be given.
+  `<checkout>/.workstation/enfusion_mcp_game_root`; with `HOME` unset, both must be given.
 - Does: deletes `FAKE`, then links every `*.pak` found at any depth under `GAME/addons/` into
   `FAKE/addons/` under a flat name (each `/` of its path becomes `_`), because the enfusion-mcp
   file system reads only paks directly in `addons/`.

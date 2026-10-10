@@ -230,9 +230,8 @@ The page stores nothing in the browser.
 
 ## Open work
 
-- [T-137 — Discord platform rework](/documentation/tickets/specs/t131_north_star_backlog.md)
-  (deferred, no plan): Discord bot flows for slot confirmation and reminders, which would
-  confirm in Discord the seats taken on this page.
+- Discord platform rework (ticket `discord-platform-rework` in `ttm`): Discord bot flows for slot
+  confirmation and reminders, which would confirm in Discord the seats taken on this page.
 
 ## Decisions
 

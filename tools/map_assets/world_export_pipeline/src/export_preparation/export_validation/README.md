@@ -36,7 +36,7 @@ cross-terrain E2 checks: E2a, at least two terrains in the registry; E2b, `cargo
 export-terrain <terrain> --phase P1_buildings` exits 2 for a terrain with no staged export; E2c, no
 literal terrain id in seven pipeline source files, a line marked `E2c-allow` excepted.
 
-`verify_spike_ops_log` reads `.ai/artifacts/map_export_<terrain>.json` and
+`verify_spike_ops_log` reads `contracts/fixtures/map/export_records/map_export_<terrain>.json` and
 `assets/scratch/<terrain>/spike/raw-entities.jsonl`: the log needs its required keys, the
 `spike-subregion-export` slice, a finite four-number `subregionBBoxM` and a lowercase `pass` or
 `fail` for each of K1, K1b and K2 to K7, and every gate it marks `pass` must hold against the

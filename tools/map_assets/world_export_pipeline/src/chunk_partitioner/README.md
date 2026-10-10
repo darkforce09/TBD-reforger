@@ -30,7 +30,7 @@ terrains/<terrain>/objects/prefabs.json.gz, chunks/<cx>_<cy>.json.gz + .bin, chu
    ▼
 objects/density/<cx>_<cy>.bin, forest-regions.json.gz, type-inventory.json, and their .rkyv twins
    │  --patch-manifest: manifest.json `objects` block
-   │  --ops-log: .ai/artifacts/map_export_<terrain>.json
+   │  --ops-log: contracts/fixtures/map/export_records/map_export_<terrain>.json
 ```
 
 - A phase is cumulative: `phase_kinds` admits buildings for `P1_buildings`, adds trees and water

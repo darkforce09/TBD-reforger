@@ -75,7 +75,7 @@ No open ticket covers the feature.
 
 ## Open work
 
-None. Checked `.ai/tickets/` for open tickets on help tickets, player reports and the admin
+None. Checked `ttm` for open tickets on help tickets, player reports and the admin
 tickets module.
 
 ## Decisions

@@ -5,7 +5,7 @@
 The decisions that shape the website [API](/documentation/glossary/a_to_f.md#api) as a whole, one
 entry each in the [decisions entry](/documentation/standards/templates/decisions_entry.md)
 format, oldest first. A decision that concerns one domain alone lives in that domain's design
-note under [API design notes](/documentation/crates/api/api_server/verification_evidence/README.md).
+note under [API design notes](/documentation/crates/api/api_server/design_notes/README.md).
 
 ### 2026-07-31 — Configuration fails closed on values that cannot work
 
@@ -132,8 +132,8 @@ console route.
 server and executor kind, and a revoked credential ends its sessions. Commands expire, re-queue or
 settle as indeterminate in the fleet command reconciler, and a deployment is confirmed only by a
 runtime session that reports the artifact's exact SHA-256. The
-[fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
-and [mission artifacts](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
+[fleet command ledger](/documentation/crates/api/api_server/design_notes/fleet_command_ledger.md)
+and [mission artifacts](/documentation/crates/api/api_server/design_notes/mission_artifacts.md)
 notes record the full semantics.
 
 **Supersedes:** none.
@@ -225,7 +225,7 @@ depends on it, in any table.
 **Consequences:** `cargo xtask verify crate-tiers` judges it as any crate; its rule 7 keeps every
 other member off it. The deploy builds `cargo build --release -p api_server --bin api-server`,
 and the unit `deploy/systemd/tbd-website-api.service` runs `target/release/api-server` from
-`crates/api/api_server/`, whose gitignored `.env` it loads. The unit name, its state directory
+`crates/api/api_server/` with the gitignored `deploy/api.env` as its `EnvironmentFile`. The unit name, its state directory
 and the image tag keep their `tbd-website-api` names.
 
 **Supersedes:** the package and binary names of
@@ -241,7 +241,7 @@ directory, so a server started from another folder served nothing, and `UPLOAD_D
 **Decision:** In development, an unset `UPLOAD_DIR`, `EQUIPMENT_DATA_DIR`, `MAP_ASSETS_DIR` or
 `GLYPH_ASSETS_DIR` is a folder of the checkout (`assets/scratch/api/uploads`, `assets/equipment`,
 `assets/terrains`, `assets/glyphs`) joined onto the checkout root the walk up to the
-`.ai/ROOT` marker finds, and a development boot outside any checkout with one of them
+`.repository_root` marker finds, and a development boot outside any checkout with one of them
 unset is refused. Outside development, `UPLOAD_DIR`, `MAP_ASSETS_DIR` and `GLYPH_ASSETS_DIR` are
 required and absolute.
 

@@ -34,8 +34,8 @@ Every one of them refuses to run when this folder is missing, and the `enf` comm
 output folder outside it. `enf extract` and `enf carve` replace a previous output only when given
 `--replace`.
 
-A slice worktree (`cargo xtask platform slice-worktree -- new <slice id>`) links each lane in from
-the main checkout as a symlink, and refuses when any lane is missing. `TBD_PS_ORACLE`, when set and
+A slice worktree, made by the ticket manager's runner, links each lane in from the main checkout
+as a symlink, and refuses when any lane is missing. `TBD_PS_ORACLE`, when set and
 not empty, names another PlayableSelector checkout in place of `playable_selector/`, for the slice
 worktree and for the leak check alike.
 
@@ -57,7 +57,5 @@ worktree and for the leak check alike.
 
 ## Related documentation
 
-- [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md#oracle-lanes): the oracle
-  lanes, their licences and how a slice uses them.
 - [Enfusion script oracle](/documentation/tools/enfusion/enfusion_script_index.md): the
   `enf` indexes built from the lanes.

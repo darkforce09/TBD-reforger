@@ -30,7 +30,7 @@ recipe target runs, as `--dry-run` prints them.
 each step it:
 
 1. resolves the target directory: the step's own `CARGO_TARGET_DIR` (only `rust-api` sets one,
-   `target/dev-api` in the checkout) or the shared pin from `cargo_target_pin.rs` in the `ci`
+   `target/<host|container>/dev-api` in the checkout) or the shared pin from `cargo_target_pin.rs` in the `ci`
    group;
 2. for `cargo` and `trunk`, refuses with exit 1 when `abi_guard` finds that directory stamped by
    another glibc;

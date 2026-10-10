@@ -31,7 +31,7 @@ deploy(paths, cli)
   ├─ ssh bash -s < fleet_secret_files_check_payload    join password + two credentials per instance
   ├─ without --migrate-single-instance: refuse while tbd-reforger.service or fleet-host-agent.service is installed
   ├─ ssh bash -s < retired_names_absent_payload        refuse while a fleet_host_agent name is left
-  ├─ ssh bash -s < the API .env probe                   refuse unless <TBD_REMOTE_DIR>/crates/api/api_server/.env is readable
+  ├─ ssh bash -s < the API settings file probe          move a crates/api/api_server/.env to deploy/api.env, refuse unless <TBD_REMOTE_DIR>/deploy/api.env is readable
   ├─ rsync -avz --delete <checkout>/ <host>:<TBD_REMOTE_DIR>/   (exclusions below)
   ├─ with --migrate-single-instance: ssh bash -s < migration_payload (kebab-case single-instance names)
   ├─ per instance: scenario read, local render, ssh bash -s < instance_files_payload, < smoke_payload
@@ -55,8 +55,8 @@ fails; ssh's own failure keeps its code, 255. The ssh password, with `TBD_SSH_PA
 The rsync excludes `.git/`, `target/`, the
 untracked reference trees under `mod/` (the Coalition framework, the vanilla scripts, the
 playable selector), a `Tbd_framework` folder and the local test profile, the
-`mod/tbd-export/` and `mod/tbd-emcp/` addons, `node_modules`, the API's `.env` and
-`.tools/`, `deploy.env`, the `assets` terrain, scratch and equipment trees, and
+`mod/tbd-export/` and `mod/tbd-emcp/` addons, `node_modules`, the API's settings file `deploy/api.env` and
+its `.tools/`, `deploy.env`, the `assets` terrain, scratch and equipment trees, and
 `crates/frontend/shell/frontend_application/dist/`, the app the website deploy built in the same
 checkout (the three host-owned paths of `tools/commands/deployment/src/host_owned_paths.rs`, which
 the website deploy excludes too); after them

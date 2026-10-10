@@ -97,7 +97,8 @@ code as it stands, in the present tense.
 - No history: no "formerly", "rewritten from", "fixed in", "legacy", no dates and no comparison
   with a retired implementation. Commit history owns history.
 - No ticket identifiers and no delivery vocabulary (the wave, the slice or the run that produced
-  the code): a reader of the code has no registry to look them up in.
+  the code): tickets live in the ticket manager, outside the repository, and a comment stands on
+  its own.
 - No restating the signature: a doc comment adds what the name and types do not say.
 - A change that alters documented behaviour updates the comment in the same diff.
 
@@ -287,7 +288,8 @@ From `mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/SCR_PlayerController.c:33
 ### 8.1 Layout
 
 `documentation/` holds every document beside the code: feature docs, runbooks, standards,
-design references, known bugs, ticket specs and plans, and the archive. The
+design references and known bugs. Tickets, with their specs and plans, live in the central ticket
+manager (`ttm`, project `reforger`), never in the repository. The
 [entry README](/documentation/README.md) lists what the root holds now; the layout it grows
 into is:
 
@@ -302,11 +304,8 @@ documentation/
 ├── design_system/         tokens, typography, colour, symbology, token exports
 ├── runbooks/              every operator procedure
 ├── standards/             this document, the README standard, templates/, coding standards,
-│                          placement, the commit checklist, ticket identifiers, crate boundaries
-├── known_bugs/            the live bug registry
-├── relocation_manifests/  every relocation manifest run: the registry of retired path spellings
-├── tickets/               specs/ and plans/, flat and frozen once their ticket closes
-└── archive/<topic>/       frozen history
+│                          placement, the commit checklist, crate boundaries
+└── known_bugs/            the live bug registry
 ```
 
 - **READMEs.** Every folder of the documentation tree and of the code trees carries a README.md
@@ -331,9 +330,8 @@ documentation/
   The grain is chosen
   per case: one `pages/account/` folder covers login, the auth callback and settings, while
   administration has a folder per page.
-- **Mirror moves.** A [relocation manifest](/documentation/relocation_manifests/README.md) that
-  moves code also moves that code's documentation mirror, in a row of the same manifest, so the
-  documents never fall behind the code they mirror.
+- **Mirror moves.** A change that moves code also moves that code's documentation mirror, in the
+  same commit, so the documents never fall behind the code they mirror.
 - **Feature grouping.** Everything about one feature lives together: behaviour, interface design,
   the design target and its `visual_references/`, roadmap, research and evidence. All Mission
   Creator material sits under `documentation/crates/frontend/workspaces/mission_creator_workspace/`.
@@ -347,8 +345,9 @@ documentation/
   has only this) and `design_tokens.md` when the export carries tokens. It sits in the
   `visual_references/` folder of the feature it depicts; a mod screen's in-game captures sit in
   `reference_screenshots/` beside its sets. Design references are the only images.
-- **Evidence.** Verification evidence sits in a `verification_evidence/` folder of its feature
-  (`documentation/crates/api/api_server/verification_evidence/`); hyphenated evidence JSON names keep
+- **Design notes.** Notes that state what a feature's transactions, locks and refusals must do,
+  and name the tests that hold them, sit in a `design_notes/` folder of the feature
+  (`documentation/crates/api/api_server/design_notes/`); hyphenated evidence JSON names keep
   their spelling.
 
 ### 8.2 Placement
@@ -361,17 +360,17 @@ a `tests`, `generated`, `Generated` or dot-folder; the repository root keeps its
 
 ### 8.3 Names, status lines, size and links
 
-- **File names.** snake_case, except `README.md`, `t-<id>_plan.md` and the hyphenated evidence
-  JSON. Sources waiting under `documentation/pending_merge/<writer>/` keep their original names
-  until their writer merges and deletes them.
+- **File names.** snake_case, except `README.md` and the hyphenated evidence JSON. Sources
+  waiting under `documentation/pending_merge/<writer>/` keep their original names until their
+  writer merges and deletes them.
 - **Status line.** Every Markdown document under `documentation/` starts with one status line
-  and a blank line: `**Status:** live`, `**Status:** frozen record` or `**Status:** archived`, an
-  archived document adding `— see [its replacement](…)` when one exists. No other header block
+  and a blank line: `**Status:** live`, or `**Status:** frozen record` for a record kept as
+  captured, such as a census, that is never reworded. No other header block
   (audience, authority, updated date) follows it. Code READMEs carry no status line.
 - **Size.** A live document stays at or under 500 lines; a longer one splits by topic into a folder
-  with a README.md index. Frozen and archived documents are exempt.
+  with a README.md index. A frozen record is exempt.
 - **Links.** Links are repository-root (`[README standard](/documentation/standards/readme_standard.md)`,
-  `[API](/crates/api/api_server/README.md)`), never `../` climbs. A frozen or archived document's
+  `[API](/crates/api/api_server/README.md)`), never `../` climbs. A frozen record's
   link to code that no longer exists becomes a GitHub permalink with the full commit id,
   `https://github.com/darkforce09/TBD-reforger/blob/<commit>/<path>`.
 - **Paths and commands.** A path written in backticks is repository-relative
@@ -390,25 +389,23 @@ a `tests`, `generated`, `Generated` or dot-folder; the repository root keeps its
 
 ## 9. Document lifecycle
 
-- **Open work.** A feature doc lists its open work under `## Open work`, each gap linked to its
-  ticket's spec or to its legacy `/.ai/tickets/T-<id>.toml` record, the ticket itself living in
-  the central ticket manager (`ttm --project reforger show <ticket>`); a `deferred` ticket counts
-  as open. A
-  README never names a ticket.
+- **Open work.** A feature doc lists its open work under `## Open work`, each gap naming its
+  ticket by slug in plain text, for example ``(ticket `remove-map-nouns-graphics` in `ttm`)``;
+  the ticket, its status, spec and plan live in the central ticket manager
+  (`ttm --project reforger show <ticket>`), and a `deferred` ticket counts as open. A README
+  never names a ticket.
 - **Decisions.** A feature's decisions live in a `decisions.md` beside its feature docs, one entry
   per decision in the [decisions entry format](/documentation/standards/templates/decisions_entry.md):
   a `### YYYY-MM-DD — <decision>` heading, then Context, Decision, Consequences and Supersedes.
   There is no separate decision-record tree. A local choice is explained by a comment in the code
   it concerns; a cross-cutting rule goes into a document under `documentation/standards/`.
-- **Specs and plans.** A ticket's spec is `documentation/tickets/specs/t<id>_<topic>.md` and its
-  plan `documentation/tickets/plans/t-<id>_plan.md`; both folders are flat, and the central
-  ticket manager holds each ticket's spec and plan for `ttm --project reforger brief`. A spec is
-  live while its ticket is `idea`, `queued` or `ready`, and frozen once the ticket ships or is
-  cancelled, and the knowledge that outlasts the ticket then moves into the feature doc.
-- **Frozen and archived.** A frozen record (a closed ticket's spec or plan) and an archived
-  document (history under `documentation/archive/<topic>/`) are never reworded; only their
-  links change. `link-check` judges only the links in both trees, and the size guidance does not
-  apply to them; their README indexes stay live and list the files as they land.
+- **Specs and plans.** A ticket's spec and plan live with the ticket in the ticket manager
+  (`ttm --project reforger spec get <ticket>`, `ttm --project reforger plan get <ticket>`), never
+  as files in the repository. Once the ticket ships, the knowledge that outlasts it moves into the
+  feature doc.
+- **Frozen records.** A frozen record is never reworded; only its links change. The size
+  guidance does not apply to it. What came before lives in the commit history, not in a tree of
+  archived documents.
 - **Known bugs.** `documentation/known_bugs/` is the live registry, one file per bug in the
   [known bug format](/documentation/standards/templates/known_bug.md); a resolved bug stays
   with its status set to resolved.

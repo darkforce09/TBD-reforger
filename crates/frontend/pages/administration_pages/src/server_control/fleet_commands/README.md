@@ -86,5 +86,5 @@ Only a queued command offers "Cancel". Every request runs in the browser build o
 
 - [Server control page](/documentation/crates/frontend/pages/administration_pages/server_control/server_control_page.md)
   — the console's behaviour and what each command route means server-side.
-- [Fleet command ledger evidence](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger design note](/documentation/crates/api/api_server/design_notes/fleet_command_ledger.md)
   — the ledger's states, claims and expiry.

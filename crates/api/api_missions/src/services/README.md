@@ -88,6 +88,6 @@ in chunks of 10,000 rows; a re-run of the same envelope changes no row.
 
 ## Related documentation
 
-- [Mission artifacts, reviews and deployment](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
+- [Mission artifacts, reviews and deployment](/documentation/crates/api/api_server/design_notes/mission_artifacts.md)
   — the artifact, review and deployment design.
 - [Contract catalogs](/contracts/catalogs/README.md) — the registry exports the import reads.

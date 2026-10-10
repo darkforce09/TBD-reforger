@@ -14,7 +14,8 @@ crates/api/api_configuration/
 
 ## How it works
 
-`Config::load` loads a `.env` when one is found, reads every setting from the environment with
+`Config::load` loads the API's settings file when there is one (the file `TBD_API_ENV_FILE`
+names, else `deploy/api.env` under the checkout root), reads every setting from the environment with
 its development default, and checks the result: a required variable that is empty, or a value
 that is set but unusable (a relative upload, terrain or glyph folder outside development, a
 malformed trusted proxy entry), fails the boot with a `ConfigError` naming the variable, never at

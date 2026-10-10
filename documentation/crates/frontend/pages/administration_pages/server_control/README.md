@@ -41,7 +41,7 @@ documentation/crates/frontend/pages/administration_pages/server_control/
 
 ## Related documentation
 
-- [Fleet command ledger evidence](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger design note](/documentation/crates/api/api_server/design_notes/fleet_command_ledger.md)
   — the verification of the command ledger the console follows.
-- [Machine credentials evidence](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md)
+- [Machine credentials design note](/documentation/crates/api/api_server/design_notes/machine_credentials.md)
   — the verification of issuing, using and revoking credentials.

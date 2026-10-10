@@ -91,10 +91,10 @@ Terrain, environment and row fields never raise the prompt: only the authored ke
 
 ### Known discrepancies
 
-- An adopt is meant to replace the document, but it keeps the replaced document's connections:
-  the hydrate clears every authored map but `connections`
-  (`crates/mission/mission_document/src/rows/hydrate.rs:30-48`). The persist README states it
-  as behaviour; T-1050 files it as a bug.
+- An adopt is meant to replace the document, but it keeps the replaced document's connections: the
+  hydrate clears every authored map but `connections`
+  (`crates/mission/mission_document/src/rows/hydrate.rs:30-48`). The persist README states it as
+  behaviour; `fix-mission-re-hydrate` files it as a bug.
 
 ## Data
 
@@ -119,12 +119,12 @@ Terrain, environment and row fields never raise the prompt: only the authored ke
 
 ## Open work
 
-- [T-1050 — Fix mission re-hydrate keeping stale connections](/.ai/tickets/T-1050.toml) (idea, no
-  plan): the hydrate clears the connection map, so an adopt leaves no connection of the replaced
-  document behind.
-- [T-1051 — Check whether minted vehicle and object ids can collide](/.ai/tickets/T-1051.toml)
-  (idea, no plan): after a reopen, the host's id counter restarts at 0 while the adopted document
-  holds ids; a new vehicle or object either cannot overwrite one, or the mint checks every id map.
+- Fix mission re-hydrate keeping stale connections (ticket `fix-mission-re-hydrate` in `ttm`): the
+  hydrate clears the connection map, so an adopt leaves no connection of the replaced document
+  behind.
+- Check whether minted vehicle and object ids can collide (ticket `check-whether-minted-vehicle` in
+  `ttm`): after a reopen, the host's id counter restarts at 0 while the adopted document holds ids;
+  a new vehicle or object either cannot overwrite one, or the mint checks every id map.
 
 ## Decisions
 

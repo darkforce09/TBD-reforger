@@ -72,7 +72,13 @@ pub(super) fn report_permanent_build_output(main_root: &Path) {
         .iter()
         .filter(|name| !name.starts_with(GATE_SUBFOLDER_PREFIX))
     {
-        let folder = build_output_subfolder(main_root, subfolder);
+        let folder = build_output_subfolder(
+            main_root,
+            repository_layout::build_output::ToolchainEnvironment::from_container_flag(
+                process_runner::host_execution::in_container(),
+            ),
+            subfolder,
+        );
         if !folder.is_dir() {
             continue;
         }

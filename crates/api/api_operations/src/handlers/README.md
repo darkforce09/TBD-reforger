@@ -98,7 +98,7 @@ server.
 
 ## Related documentation
 
-- [Event eligibility and allocation](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/crates/api/api_server/design_notes/event_eligibility_allocation.md)
   — access, visibility, pools, promotion and re-evaluation.
 - [Event hub page](/documentation/crates/frontend/pages/operations_pages/event_detail/event_hub_page.md)
   and [Event manager page](/documentation/crates/frontend/pages/administration_pages/event_manager/event_manager_page.md)

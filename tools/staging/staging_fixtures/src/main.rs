@@ -10,7 +10,7 @@
 //! **Role:** the subcommand table and the guards every subcommand passes before it runs.
 //!
 //! **Position:** run on the staging host from the checkout root; reads the API env file
-//! (`crates/api/api_server/.env` unless `--api-env-file` names another), connects to the database
+//! (`deploy/api.env` unless `--api-env-file` names another), connects to the database
 //! its `DATABASE_URL` names, and hands a [`GuardedContext`] to the parsed subcommand.
 //!
 //! **Signals & state:** none of its own; the context owns the pool for the run.
@@ -44,8 +44,7 @@ use crate::reserved_accounts::count_reserved_accounts;
 use crate::tool_failure::ToolFailure;
 
 /// The API env file of a checkout, relative to its root: the file the API unit loads.
-const DEFAULT_API_ENV_FILE: &str =
-    repository_layout::workspace_folders::API_SERVER_ENVIRONMENT_FILE;
+const DEFAULT_API_ENV_FILE: &str = repository_layout::API_SETTINGS_FILE;
 
 /// One row of the subcommand table.
 struct SubcommandEntry {

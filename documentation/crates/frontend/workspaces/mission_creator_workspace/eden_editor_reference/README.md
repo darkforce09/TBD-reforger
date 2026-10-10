@@ -24,7 +24,7 @@ Three catalogs describe Eden, an external product, from the Bohemia wiki's Eden 
 cites its wiki URL. The 28 pages the
 [scrape manifest](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_wiki_scrape_manifest.yaml)
 lists by wiki category, each with a status of `pending`, `scraped`, `reviewed` or `failed`, all
-read `scraped` and sit in `.ai/artifacts/eden-wiki/`.
+read `scraped` and sit in `documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_wiki_scrape/`.
 
 | Document | What it holds | IDs |
 |---|---|---|
@@ -57,7 +57,7 @@ domain's pattern, and the gap analysis gets its row; a new wiki page gets a mani
 
 ## Boundaries
 
-- Depends on: the Eden pages of the Bohemia wiki and their scrape in `.ai/artifacts/eden-wiki/`;
+- Depends on: the Eden pages of the Bohemia wiki and their scrape in `documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_wiki_scrape/`;
   the [feature entry schema](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/feds_schema.md)
   for IDs and entry format; the Mission Creator code for the counterpart sections; the tickets in
   the central ticket manager (`ttm --project reforger show <id>`), which the gap analysis's

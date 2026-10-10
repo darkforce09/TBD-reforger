@@ -9,7 +9,7 @@
 
 use super::*;
 
-use crate::decision_record_locations::INLAND_WATER_ARTIFACTS_DIR;
+use crate::decision_record_locations::INLAND_WATER_DECISION_RECORDS_DIR;
 use ::repository_layout::{map_scratch_dir, terrain_dir, terrain_manifest_path};
 
 pub(super) fn supertexture_scratch_dir() -> Result<PathBuf> {
@@ -198,8 +198,8 @@ pub(crate) fn composite_water_ortho() -> Result<u8> {
         "lane": "inland-water composite",
         "oceanMaskSource": "dem-below-sea-level",
         "inlandMaskSource": "supertexture-water-appearance-dem-filtered + topo-road-subtraction (exact .topo road network guard; relaxed wet-channel stream class)",
-        "spikeArtifact": format!("{INLAND_WATER_ARTIFACTS_DIR}/water_source_spike.json"),
-        "refineSpikeArtifact": format!("{INLAND_WATER_ARTIFACTS_DIR}/source_spike.json"),
+        "spikeArtifact": format!("{INLAND_WATER_DECISION_RECORDS_DIR}/water_source_spike.json"),
+        "refineSpikeArtifact": format!("{INLAND_WATER_DECISION_RECORDS_DIR}/source_spike.json"),
         "palette": { "oceanBright": OCEAN_BRIGHT.map(js_num), "oceanDark": OCEAN_DARK.map(js_num), "inland": INLAND_COLOR.map(js_num) },
         "waterAlpha": WATER_ALPHA,
         "depthFullM": js_num(DEPTH_FULL_M),

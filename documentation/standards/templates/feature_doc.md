@@ -53,8 +53,8 @@ target. No screenshots of the built UI; the only images are the visual_reference
 
 ## Open work
 
-- [<ticket id> — <ticket title>](<its spec, or `/.ai/tickets/T-<id>.toml` when it has none>)
-  (<status>): <what changes for this feature when it ships>
+- <ticket title> (ticket `<ticket slug>` in `ttm`, <status>): <what changes for this feature
+  when it ships>
 
 ## Decisions
 
@@ -63,7 +63,7 @@ target. No screenshots of the built UI; the only images are the visual_reference
 ````
 
 Open work lists only tickets whose status is idea, queued, ready, running, review or deferred,
-each checked in `.ai/tickets/`; a shipped ticket's lasting knowledge moves into Behaviour, Data or
+each checked in the ticket manager (`ttm --project reforger show <ticket>`); a shipped ticket's lasting knowledge moves into Behaviour, Data or
 Decisions. Open work says "None." when nothing is open. A design-target gap no open ticket covers
 goes into Design as a difference and into the writer's report; Open work lists tickets only. The
 feature doc and the README of the page or app it covers split the facts: the README holds what the
@@ -75,7 +75,7 @@ lines and is split by topic into a folder with a README index when it grows past
 ## Worked sample
 
 Written from `crates/frontend/pages/operations_pages/src/schedule/`, the API's event handlers
-and the ticket registry. The sample sits in a fenced block, so no gate reads it; the page's own
+and the ticket manager. The sample sits in a fenced block, so no gate reads it; the page's own
 feature doc is written from the same code and may differ.
 
 ````markdown
@@ -139,10 +139,10 @@ lists each call with the DTO the page reads. Server-side:
 
 ## Open work
 
-- [T-940.3 — Reschedule cascades to event missions; delete hides schedule](/documentation/tickets/specs/t940_website_platform.md)
-  (ready, [plan](/documentation/tickets/plans/t-940_3_plan.md)): rescheduling an event shifts
-  every event mission's start time with it, and deleting a mission hides its schedule entries and
-  withdraws their registrations.
+- Reschedule cascades to event missions; delete hides schedule (ticket
+  `website-platform-events-telemetry.reschedule-cascades-event-missions` in `ttm`, ready):
+  rescheduling an event shifts every event mission's start time with it, and deleting a mission
+  hides its schedule entries and withdraws their registrations.
 
 ## Decisions
 

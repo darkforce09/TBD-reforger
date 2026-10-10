@@ -5,11 +5,10 @@
 //! [`restore`] and [`restore_drill`] are the verified dump, the guarded `pg_restore` and the
 //! restore-into-scratch proof; [`container_database`] is the one container runtime, container exec,
 //! scratch allow-list and dump verifier they share, with the `deploy db` verbs;
-//! [`database_checks`] holds the query source gate; [`milestone_announcement`] seeds the
-//! milestone announcement.
+//! [`database_checks`] holds the query source gate.
 //! **Position:** tier 4 of `tools/commands`, over `process_runner`, `repository_layout`,
-//! `verification_core` and `content_digest`. The xtask binary's `db`, `verify`, `ci`, `mk`
-//! and `mod` groups and the `deployment` crate's `deploy db` call it.
+//! `verification_core` and `content_digest`. The xtask binary's `db`, `verify`, `ci` and `mk`
+//! groups and the `deployment` crate's `deploy db` call it.
 //! **Signals & state:** none; each call reads the process environment and the checkout and runs
 //! its children afresh.
 //! **Invariants:** the live `tbd_reforger` database is never a restore or drop target without the
@@ -21,7 +20,6 @@ pub mod container_database;
 pub mod database_checks;
 mod error;
 pub mod local_database;
-pub mod milestone_announcement;
 pub mod prelude;
 pub mod restore;
 pub mod restore_drill;

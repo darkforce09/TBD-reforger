@@ -103,9 +103,6 @@ pub enum ModCmd {
     /// One-time staging-host discovery + mkdir
     #[command(name = "bootstrap-staging")]
     BootstrapStaging,
-    /// Insert the pinned Milestone #1 website announcement
-    #[command(name = "seed-announcement")]
-    SeedAnnouncement,
     /// The game-runtime API a server's mod calls, with its `mod_runtime` credential
     /// (`TBD_MACHINE_CREDENTIAL`; `TBD_API_BASE`).
     #[command(name = "test-game-runtime-api")]

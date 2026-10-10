@@ -3,7 +3,7 @@
 The `staging_discord` procedure: partner membership, the loss of the partner role, the outage with
 its cached grace and staleness warning, the administrator override, recovery, and the rate limit,
 observed against the real guilds. The steps and cases are in the
-[staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md#discord-procedure-staging_discord).
+[staging design note](/documentation/crates/api/api_server/design_notes/staging.md#discord-procedure-staging_discord).
 
 ## Contents
 

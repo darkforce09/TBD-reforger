@@ -10,6 +10,7 @@ cross lanes, the reasons and the open work.
 
 ```text
 documentation/tools/map_assets/
+├── decision_records/       the JSON records behind the aerial orthophoto, cartographic and inland water source choices
 └── map_raster_pipeline.md  `map`: satellite, Map view, labels, water archives, glyph atlas, export images
 ```
 

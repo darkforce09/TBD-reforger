@@ -14,7 +14,7 @@ crates/foundation/
 ├── http_url_guard/  `http_url_guard`: whether a string is an `http` or `https` URL a browser follows
 ├── newtype_ids/  `newtype_ids`: the `string_id!`, `integer_id!` and `uuid_id!` identifier macros
 ├── orbat_slot_ids/  `orbat_slot_ids`: `SlotUid`, a slot's durable editor id, and `SlotId`, its derived wire id
-├── repository_root/  `repository_root`: the one checkout-root finder, the walk up to the `.ai/ROOT` marker
+├── repository_root/  `repository_root`: the one checkout-root finder, the walk up to the `.repository_root` marker
 └── time_source/  `time_source`: the wall-clock trait and clocks, monotonic time, RFC 3339 UTC stamps
 ```
 

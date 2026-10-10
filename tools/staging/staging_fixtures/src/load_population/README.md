@@ -61,7 +61,7 @@ a `staging.load_population_cleaned` audit row; audit rows naming the accounts st
 
 ## Related documentation
 
-- [Staging acceptance](/documentation/crates/api/api_server/verification_evidence/staging.md) — the
+- [Staging acceptance](/documentation/crates/api/api_server/design_notes/staging.md) — the
   load procedure the population serves.
 - [Staging fixtures crate](/tools/staging/staging_fixtures/README.md#staging-fixtures) — the subcommands'
   flags and exit codes.

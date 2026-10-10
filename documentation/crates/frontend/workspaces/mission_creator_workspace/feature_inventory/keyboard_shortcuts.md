@@ -133,22 +133,19 @@ key handlers.
 
 ## Open work
 
-- [T-837 — Vehicles cannot be deleted — slots can, vehicles cannot](/documentation/tickets/specs/t837_vehicle_delete.md)
-  (ready, [plan](/documentation/tickets/plans/t-837_plan.md)): Delete removes selected
-  vehicles.
-- [T-939.8 — Ctrl+F focuses document search](/documentation/tickets/specs/t939_editor_usability.md)
-  (ready, [plan](/documentation/tickets/plans/t-939_8_plan.md)): Ctrl+F jumps to the layers
-  search.
-- [T-939.4 — Arrange tools in context menu with shortcuts](/documentation/tickets/specs/t939_editor_usability.md)
-  (ready, [plan](/documentation/tickets/plans/t-939_4_plan.md)): the arrange commands join
+- Vehicles cannot be deleted — slots can, vehicles cannot (ticket `vehicles-cannot-deleted-slots` in
+  `ttm`): Delete removes selected vehicles.
+- Ctrl+F focuses document search (ticket `editor-usability-selection-gizmo.ctrl-f-focuses-document`
+  in `ttm`): Ctrl+F jumps to the layers search.
+- Arrange tools in context menu with shortcuts (ticket
+  `editor-usability-selection-gizmo.arrange-tools-context-menu` in `ttm`): the arrange commands join
   the context menu; their Alt chords already exist.
-- [T-704 — Command palette over every editor command](/documentation/tickets/specs/t704_command_palette.md)
-  (ready, [plan](/documentation/tickets/plans/t-704_plan.md)): a searchable palette of every
-  command.
-- [T-716 — Context menu honesty: Go Here, multi-select, keydown field hijack](/.ai/tickets/T-716.toml)
-  (deferred, no plan): the context menu's keys stop reaching fields.
-- [T-719 — Debug HUD: invisible under DockRight; AltGr chords spuriously toggle it](/.ai/tickets/T-719.toml)
-  (deferred, no plan): AltGr no longer toggles the HUD.
+- Command palette over every editor command (ticket `command-palette-over-editor` in `ttm`): a
+  searchable palette of every command.
+- Context menu honesty: Go Here, multi-select, keydown field hijack (ticket
+  `context-menu-honesty-go` in `ttm`): the context menu's keys stop reaching fields.
+- Debug HUD: invisible under DockRight; AltGr chords spuriously toggle it (ticket
+  `debug-hud-invisible-under` in `ttm`): AltGr no longer toggles the HUD.
 
 ## Decisions
 

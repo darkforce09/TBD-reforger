@@ -154,20 +154,18 @@ progress.
 
 ## Open work
 
-- [T-938 — Engine and wasm performance](/documentation/tickets/specs/t938_engine_perf.md)
-  (queued, [plan](/documentation/tickets/plans/t-938_plan.md)): pooled lane buffers, GPU
+- Engine and wasm performance (ticket `engine-wasm-performance` in `ttm`): pooled lane buffers, GPU
   culling for every icon lane and a wasm memory guard.
-- [T-939.7 — Vehicles panel virtualization, memoized outliner flatten](/documentation/tickets/specs/t939_editor_usability.md)
-  (ready, [plan](/documentation/tickets/plans/t-939_7_plan.md)): windowed vehicle rows and a
-  cached tree flatten.
-- [T-140 — Mission client payload budget](/documentation/tickets/specs/t131_north_star_backlog.md)
-  (ready, [plan](/documentation/tickets/plans/t-140_plan.md)): a size budget the compile
-  reports against.
-- [T-734 — Validation panel: full-compile cost, wasm panic, seam pin](/.ai/tickets/T-734.toml),
-  [T-729 — Owner-line materialize per frame; zones mislabels triggers](/.ai/tickets/T-729.toml),
-  [T-731 — ROW_ACTIVE border-t skews virtual tree by 1px](/.ai/tickets/T-731.toml) and
-  [T-847 — push_drag_preview Class-R pins omit bind_squad_link_preview](/.ai/tickets/T-847.toml)
-  (deferred, no plan).
+- Vehicles panel virtualization, memoized outliner flatten (ticket
+  `editor-usability-selection-gizmo.vehicles-panel-virtualization-memoized` in `ttm`): windowed
+  vehicle rows and a cached tree flatten.
+- Mission client payload budget (ticket `mission-client-payload-budget` in `ttm`): a size budget the
+  compile reports against.
+- Validation panel: full-compile cost, wasm panic, seam pin (ticket `validation-panel-full-compile`
+  in `ttm`), Owner-line materialize per frame; zones mislabels triggers (ticket
+  `owner-line-materialize-frame` in `ttm`), ROW_ACTIVE border-t skews virtual tree by 1px (ticket
+  `row-active-border-t` in `ttm`) and push_drag_preview Class-R pins omit bind_squad_link_preview
+  (ticket `push-drag-preview-class` in `ttm`).
 
 No open ticket covers the per-pick index rebuild, the full slot rebind after every edit or a
 compile worker.

@@ -86,8 +86,8 @@ lock the scope ──▶ scope_snapshot ──▶ reservation_planning (no datab
 
 ## Related documentation
 
-- [Event eligibility and allocation](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/crates/api/api_server/design_notes/event_eligibility_allocation.md)
   — pools, allocations, promotion, re-evaluation and the lock order.
-- [Reservation transaction design](/documentation/crates/api/api_server/verification_evidence/reservation_transaction_design.md)
-  and [Reservation mutation authority and capacity](/documentation/crates/api/api_server/verification_evidence/reservation_mutation_guards.md)
+- [Reservation transaction design](/documentation/crates/api/api_server/design_notes/reservation_transaction_design.md)
+  and [Reservation mutation authority and capacity](/documentation/crates/api/api_server/design_notes/reservation_mutation_guards.md)
   — the transaction and authority design of the reservation writers.

@@ -45,7 +45,7 @@ translucent surface.
 - Depends on: the [feature doc template](/documentation/standards/templates/feature_doc.md) and
   the [documentation folder README template](/documentation/standards/templates/readme_documentation_folder.md);
   the [glossary](/documentation/glossary/README.md); the frame code, the identity and access and
-  administration handlers it calls, and the ticket registry in `.ai/tickets/`, which the feature
+  administration handlers it calls, and the ticket manager (`ttm`), which the feature
   doc is written from.
 - Used by: the [frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md) route table
   and page crate index; the frame's in-code README, which links the feature doc.

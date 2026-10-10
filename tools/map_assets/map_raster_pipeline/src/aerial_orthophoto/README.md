@@ -27,7 +27,7 @@ paks (ENFUSION_GAME_PATH) ─▶ stitch-sap-ortho ─▶ everon-sap-ortho.png + 
                                                    │
                   blend-sap-seams (bridge again) ◀─┤
                   verify-sap-seams               ◀─┤  seam gradients, steps, global contrast
-                  analyze-sap-seams              ◀─┤  ─▶ .ai/artifacts/aerial_orthophoto/seam_analysis.json
+                  analyze-sap-seams              ◀─┤  ─▶ documentation/tools/map_assets/decision_records/aerial_orthophoto/seam_analysis.json
                   verify-sap-ortho               ◀─┘  catalogue, metadata, size, orientation, tile 0/0/0
 ```
 

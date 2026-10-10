@@ -98,11 +98,10 @@ fn node_table_decodes_sockets_and_the_name_space_starts_at_the_first_material() 
 /// record 0's nine subranges resolve to the nine game materials in file order and cover
 /// all 1129 triangles, record 1 (`FireView`) resolves too. Needs the operator's extract.
 #[test]
-#[ignore = "needs ~/ReforgerExtract/unpacked/…/FarmHouse_E_1L01.xob"]
+#[ignore = "needs .workstation/reforger_extract/unpacked/…/FarmHouse_E_1L01.xob"]
 fn real_farmhouse_nodes_sockets_and_materials() {
-    let home = std::env::var("HOME").unwrap();
-    let path = std::path::PathBuf::from(home).join(
-        "ReforgerExtract/unpacked/Assets/Structures/Houses/Farm/FarmHouse_E_1L01/FarmHouse_E_1L01.xob",
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(
+        "../../../.workstation/reforger_extract/unpacked/Assets/Structures/Houses/Farm/FarmHouse_E_1L01/FarmHouse_E_1L01.xob",
     );
     let Ok(data) = std::fs::read(&path) else {
         return;

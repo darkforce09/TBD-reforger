@@ -58,8 +58,8 @@ Creator stays cross-origin isolated. The page downloads the Everon pack itself (
 
 ## Getting started
 
-Run these from the repository root, in the container with
-`CARGO_TARGET_DIR=target-container-api-v2`:
+Run these from the repository root; cargo builds into the toolchain environment's folder,
+`target/host/` or `target/container/`:
 
 ```bash
 cargo test -p offline_service_worker     # the byte-range arithmetic's unit tests, native

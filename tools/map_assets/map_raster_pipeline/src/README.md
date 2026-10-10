@@ -16,7 +16,7 @@ tools/map_assets/map_raster_pipeline/src/
 ├── cartographic_rendering/         land-cover masks, the cartographic render, tile pyramids, manifest patches
 ├── cartographic_rendering.rs       land-cover thresholds and tint colours; declares the rendering modules
 ├── command_line.rs                 the `map` clap command tree, its dispatch to every lane and the exit code
-├── decision_record_locations.rs    the lanes' decision-record folders under `.ai/artifacts/`
+├── decision_record_locations.rs    the lanes' decision-record folders under `documentation/tools/map_assets/decision_records/`
 ├── empty_write_refusal.rs          `refuse_empty_write`, the guard against empty overwrites
 ├── error.rs                        `Error` and `Result`, the context and refusal helpers
 ├── glyph_atlas.rs                  `build-glyph-atlas`: SVG glyphs to one WebP atlas and its mapping
@@ -51,8 +51,8 @@ README covers the steps and the file covers the numbers.
 
 | Lane | Subcommands | Reads | Writes |
 |---|---|---|---|
-| aerial orthophoto | `stitch-sap-ortho`, `blend-sap-seams`, `verify-sap-seams`, `analyze-sap-seams`, `verify-sap-ortho` | the game's paks | `assets/scratch/everon/sap/`, `.ai/artifacts/aerial_orthophoto/` |
-| inland water | `analyze-water`, `composite-water` | the stitched orthophoto, the elevation model, the roads | the scratch orthophoto in place, `.ai/artifacts/inland_water/` |
+| aerial orthophoto | `stitch-sap-ortho`, `blend-sap-seams`, `verify-sap-seams`, `analyze-sap-seams`, `verify-sap-ortho` | the game's paks | `assets/scratch/everon/sap/`, `documentation/tools/map_assets/decision_records/aerial_orthophoto/` |
+| inland water | `analyze-water`, `composite-water` | the stitched orthophoto, the elevation model, the roads | the scratch orthophoto in place, `documentation/tools/map_assets/decision_records/inland_water/` |
 | satellite archive | `build-unified`, `verify-unified`, `verify-pyramid` | a source PNG | `satellite/<terrain>-sat.tbd-sat` |
 | cartographic rendering | `build-landcover`, `build-cartographic`, `build-pyramid`, `reset-water-meta`, `patch-unified-bytes`, `patch-map-tiles-meta`, `verify-cartographic` | the orthophoto, the Workbench satellite export, the roads | `tiles/<view>/`, `manifest.json` |
 | map labels | `export-locations`, `export-height-labels`, `labels-rkyv` | the raw entity export, the elevation model | `locations.json`, `height-labels.json`, `locations/map_labels.rkyv` |

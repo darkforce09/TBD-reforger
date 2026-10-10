@@ -133,8 +133,9 @@ from its own files.
    `[dry-run] check on the host: ~/tbd/fleet/join-password and each instance's two credential files (mode 600, expected shape, never printed)`,
    `[dry-run] refuse while tbd-reforger.service or fleet-host-agent.service is installed`,
    `[dry-run] check on the host: no fleet_host_agent name is left (…); the deploy stops while one is, and --migrate-host-agent-name moves them`,
-   `[dry-run] the API's .env, refusing the rsync unless the host answers 0: <probe>`, where the
-   probe tests `<TBD_REMOTE_DIR>/crates/api/api_server/.env`,
+   `[dry-run] the API's settings file, refusing the rsync unless the host answers 0: <probe>`,
+   where the probe moves a settings file still at `<TBD_REMOTE_DIR>/crates/api/api_server/.env`
+   to `<TBD_REMOTE_DIR>/deploy/api.env` (never over an existing one) and tests the latter,
    `[dry-run] rsync -avz --delete ... <TBD_REMOTE_DIR>/`, `[dry-run] game.mods[] from: <source>`,
    two lines per instance, the first
    `[dry-run] instance <N>: "TBD Staging <N>" game <port> A2S <port> RCON 127.0.0.1:<port> (admin), visible <true|false>, folder ~/tbd/fleet/instance-<N>, agent polls <origin>`,
@@ -185,9 +186,7 @@ from its own files.
    single server's kebab-case `fleet-host-agent.service`, `~/.config/fleet-host-agent/` and
    `~/.local/bin/fleet-host-agent` to the fleet's `game_server_host_agent@N.service`,
    `~/.config/game_server_host_agent/instance-N/` and `~/.local/bin/game_server_host_agent`; the
-   deploy installs these names, and only step 3 moves the snake_case `fleet_host_agent` ones. A
-   host whose checkout is not yet in the layout of restructure stage S2 first takes the one-time
-   host step S1 of the [S2 operator steps](/documentation/archive/restructure_agent_briefs/s2_a2_to_a6.md#oc-deploy-operator-steps).
+   deploy installs these names, and only step 3 moves the snake_case `fleet_host_agent` ones.
 
    ```bash
    cargo xtask deploy staging --migrate-single-instance
@@ -217,8 +216,8 @@ The stages, in order:
 | secret files | checks `~/tbd/fleet/join-password` and each instance's `mod-runtime-credential` and `host-agent-credential`: a regular file with no group or other permission, holding the expected shape; one line per file (`  ok      <label>`, `  MISSING …`, `  INVALID …`), never a value |
 | single-instance units | without `--migrate-single-instance`: refuses while `tbd-reforger.service` or `fleet-host-agent.service` is installed |
 | retired host agent names | refuses with exit 1 while `~/.config/systemd/user/fleet_host_agent@.service`, `~/.config/fleet_host_agent/` or `~/.local/bin/fleet_host_agent` is on the host, naming each; prints `  no fleet_host_agent name is left on the host` otherwise |
-| the API's `.env` | asks the host whether `<TBD_REMOTE_DIR>/crates/api/api_server/.env` is a readable file; anything but yes stops the deploy with exit 1 before the rsync, since `--delete` would remove a `.env` left at another path; prints `    <path> present` otherwise |
-| rsync | the checkout to `TBD_REMOTE_DIR` with `--delete`, excluding `.git/`, `target/`, `node_modules/`, the reference mods, `mod/tbd-export/`, `mod/tbd-emcp/`, the terrain, scratch and equipment asset trees, `crates/api/api_server/.env`, the app the website deploy built (`crates/frontend/shell/frontend_application/dist/`), `deploy.env`, and what only the development machine holds, which the website deploy excludes too (the other cargo `target-*/` folders, worktrees, and the local files of Claude Code, Codex and `.mcp.json`); excluded paths on the host survive `--delete` |
+| the API's settings file | moves a file still at `<TBD_REMOTE_DIR>/crates/api/api_server/.env` to `<TBD_REMOTE_DIR>/deploy/api.env` when nothing is there yet, keeping its mode, then asks the host whether `<TBD_REMOTE_DIR>/deploy/api.env` is a readable file; anything but yes stops the deploy with exit 1 before the rsync, since `--delete` would remove a settings file left at another path; prints `    <path> present` otherwise |
+| rsync | the checkout to `TBD_REMOTE_DIR` with `--delete`, excluding `.git/`, `target/`, `node_modules/`, the reference mods, `mod/tbd-export/`, `mod/tbd-emcp/`, the terrain, scratch and equipment asset trees, `deploy/api.env`, the API's `.tools/` folder, the app the website deploy built (`crates/frontend/shell/frontend_application/dist/`), `deploy.env`, and what only the development machine holds, which the website deploy excludes too (the retired cargo `target-*/` folders, `.worktrees/`, `.workstation/`, and the local files of Claude Code and `.mcp.json`); excluded paths on the host survive `--delete` |
 | migration | with `--migrate-single-instance`: stops and disables the two single-instance units and moves their unit files, the whole `~/.config/fleet-host-agent/` folder, the `~/.local/bin/fleet-host-agent` binary, `TBD_PROFILE_DIR` and the `server.config.json` beside it into one new folder `~/tbd/retired/single-instance-<UTC time>/`, deleting nothing; refuses a `TBD_PROFILE_DIR` inside `~/tbd/fleet`, and ends by proving neither unit is loaded |
 | instance files, per instance | keeps the live config's `scenarioId` (`  keeping the deployed scenario … (TBD_SCENARIO seeds only a new instance)`), renders and checks the config; on the host, makes the folders mode 700, links `TBD_ADDONS_STAGING/tbd-framework` to the synced `mod/tbd-framework`, generates the RCON password once (32 lowercase hex digits, mode 600), runs `cargo xtask setup server-profile ~/tbd/fleet/instance-N/profile` with the instance's `mod_runtime` credential in its environment, sets `backendUrl`, fills both passwords into the config and moves it into place, mode 600 |
 | game-runtime smoke, per instance | with the instance's credential, V2: `GET /api/v1/game-runtime/deployment` answers 200, or 404 `NO_DEPLOYMENT`; V3: with a deployment, the artifact's bytes hash to `artifact_sha256`; V4: the read without a credential answers 401 |
@@ -252,7 +251,7 @@ which rewrites the config's `scenarioId` to that terrain's
 [game runtime](/documentation/glossary/g_to_m.md#game-runtime) runs `broadcast`, `kick` and
 `load_mission`. No action changes the map by name: a mission on another terrain reaches the
 instance through its mission deployment. The
-[fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md#commands)
+[fleet command ledger](/documentation/crates/api/api_server/design_notes/fleet_command_ledger.md#commands)
 and [fleet command execution](/documentation/crates/fleet/game_server_host_agent/fleet_command_execution.md#who-runs-what)
 hold the executor table. The install stage:
 
@@ -318,7 +317,7 @@ Expected: eleven `active` lines, then one UDP listener on `0.0.0.0` for each gam
 | `FAIL: the single-instance units are still installed: … rerun with --migrate-single-instance …` | the host still runs the single server, whose ports instance 1 takes | step 4 |
 | `FAIL: the host still carries the fleet_host_agent names: … Run cargo xtask deploy staging --migrate-host-agent-name first, then deploy.`, exit 1 | the host agents still run under their former name | step 3 |
 | `REFUSED: both ~/… and ~/… exist; keep the <binary or configuration folder> the running agents use, move the other out of the way.`, exit 3 | the host holds the binary or the configuration folder under both names; nothing was changed | keep the copy the running agents use, move the other out of `~/.local/bin/` or `~/.config/`, and rerun step 3 |
-| `ERROR: the API's .env is missing or unreadable on the host: <TBD_REMOTE_DIR>/crates/api/api_server/.env`, exit 1 | the host's `.env` is not at the API server's folder, as on a host whose checkout predates it, or the host is fresh and holds no `.env` yet | move the host's `.env` (and the API's .tools folder beside it) into `<TBD_REMOTE_DIR>/crates/api/api_server/`, keeping its mode; on a fresh host, copy the template from this checkout over ssh as the refusal prints it ([website deployment](/documentation/runbooks/website_deployment.md) step 3) and fill it in; then deploy again |
+| `ERROR: the API's settings file is missing or unreadable on the host: <TBD_REMOTE_DIR>/deploy/api.env`, exit 1 | the host holds no settings file at `deploy/api.env` nor at `crates/api/api_server/.env`, which the probe would have moved: the host is fresh | create it from the template as [website deployment](/documentation/runbooks/website_deployment.md) step 3 does, then fill it in |
 | `ERROR: could not determine whether the host holds <path> (probe exit <n>).`, exit 1 | ssh to the host failed before the rsync | check SSH, then deploy again |
 | `FAIL: TBD_PROFILE_DIR <path> is inside the fleet root …; refusing to archive it` | `TBD_PROFILE_DIR` points into `~/tbd/fleet` | unset it, or point it at the single server's profile |
 | `game.scenarioId … is rejected by the engine's schema` | the value is not a bracketed 16-hex GUID followed by a path; one that stops right after the GUID was cut by shell brace parsing before it reached the deploy | write the whole `{GUID}Missions/….conf` value in `deploy.env`, which the deploy parses without a shell |

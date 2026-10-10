@@ -97,8 +97,7 @@ lists each call with its DTO. Server-side:
 
 - A `GlassSplit` with an 18rem pack list and the dossier or the form as its detail.
 - Design target: the [modpacks blueprint](/documentation/crates/frontend/pages/doctrine_pages/modpacks/visual_references/modpacks_blueprint/README.md),
-  a design-phase reference, and the archived platform spec's
-  [Modpacks section](/documentation/archive/go_and_react_era_design/platform_context_handoff.md#7-modpacks).
+  a design-phase reference.
   The built page differs from the blueprint:
   - a searchable list of packs sits beside one pack's dossier, instead of one wide card;
   - no explanatory line under the heading;
@@ -110,12 +109,11 @@ lists each call with its DTO. Server-side:
 
 ## Open work
 
-- [T-1038 — Fix modpack editor drag handles that cannot reorder addons](/.ai/tickets/T-1038.toml)
-  (idea, no plan): the addon rows either reorder by drag or lose the handle.
-- [T-135 — Mission modset manager](/documentation/tickets/specs/t131_north_star_backlog.md)
-  (ready, [plan](/documentation/tickets/plans/t-135_plan.md)): the page edits per-mission
-  modset presets and shows how many missions use each, and export refuses a mission whose mods
-  its preset does not carry.
+- Fix modpack editor drag handles that cannot reorder addons (ticket `fix-modpack-editor-drag` in
+  `ttm`): the addon rows either reorder by drag or lose the handle.
+- Mission modset manager (ticket `mission-modset-manager` in `ttm`): the page edits per-mission
+  modset presets and shows how many missions use each, and export refuses a mission whose mods its
+  preset does not carry.
 
 ## Decisions
 

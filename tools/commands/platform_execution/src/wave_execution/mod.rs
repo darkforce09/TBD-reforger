@@ -364,9 +364,15 @@ impl Ctx {
 /// folder, each its own `CARGO_TARGET_DIR` (or trunk dist folder). The subfolder names live in
 /// [`repository_layout::build_output`].
 pub(crate) fn gate_folder(main_root: &Path, subfolder: &str) -> String {
-    build_output::build_output_subfolder(main_root, subfolder)
-        .display()
-        .to_string()
+    build_output::build_output_subfolder(
+        main_root,
+        build_output::ToolchainEnvironment::from_container_flag(
+            process_runner::host_execution::in_container(),
+        ),
+        subfolder,
+    )
+    .display()
+    .to_string()
 }
 
 /// The provenance file written beside a run binary. Contents are exactly `<sha> <path>`.

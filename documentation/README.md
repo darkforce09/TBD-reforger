@@ -3,8 +3,7 @@
 # Documentation
 
 The documentation of the TBD Reforger platform: feature docs, runbooks, standards, design
-references, known bugs, the product roadmap, ticket specs and plans, and the archive, laid out as a
-mirror of the code. Start here to find the document that covers a subject and to learn which source
+references, known bugs and the product roadmap, laid out as a mirror of the code. Start here to find the document that covers a subject and to learn which source
 wins when two disagree.
 
 The [workspace layout](/documentation/architecture/workspace_layout.md) describes the repository as
@@ -15,7 +14,6 @@ it stands.
 ```text
 documentation/
 ├── architecture/            the workspace as it stands: top-level folders, members, where everything lives
-├── archive/                 frozen history, one folder per topic
 ├── assets/                  documents on the terrain export and the map data in assets/
 ├── contracts/               documents on the contracts in contracts/
 ├── crates/                  documents on the crates in crates/: the API server, the app, the host agent, the libraries
@@ -24,10 +22,8 @@ documentation/
 ├── known_bugs/              the live registry of known bugs
 ├── mod/                     documents on the game mod in mod/
 ├── product_roadmap.md       the planned product items by area and the open product questions
-├── relocation_manifests/    every relocation manifest run: the registry of retired path spellings
 ├── runbooks/                operator procedures: development, deployment, gates, playtests
 ├── standards/               documentation and code standards, and the templates
-├── tickets/                 ticket specs and plans, flat, frozen once the ticket closes
 └── tools/                   documents on the developer tools in tools/
 ```
 
@@ -48,9 +44,9 @@ schedule page in `crates/frontend/pages/operations_pages/src/schedule/` is docum
 `src/`, and a document about them leaves out `Scripts/Game/TBD/` instead: the screens of
 `mod/tbd-framework/Scripts/Game/TBD/UI/` are documented in
 `documentation/mod/tbd-framework/UI/`. What spans the code has a top-level folder of its
-own: `architecture/`, `runbooks/`, `standards/`, `design_system/`, `known_bugs/`, `tickets/` and
-`archive/`, with the `glossary/` folder, `product_roadmap.md` and the relocation manifests'
-`relocation_manifests/` beside them. The
+own: `architecture/`, `runbooks/`, `standards/`, `design_system/` and `known_bugs/`, with the
+`glossary/` folder and `product_roadmap.md` beside them. Tickets, with their specs and plans, live
+in the central ticket manager (`ttm`, project `reforger`), never in the repository. The
 [documentation standards](/documentation/standards/documentation_standards.md) set the layout,
 names and lifecycle; the [README standard](/documentation/standards/readme_standard.md) shapes
 every README.
@@ -58,28 +54,26 @@ every README.
 ```text
 code folder README ──links──▶ documentation/<code path>/   feature docs, evidence, visual references
                                    │ first use of a term ──▶ glossary/
-                                   │ open work ────────────▶ ticket manager (ttm) ──spec, plan──▶ tickets/
-                                   └ history ──────────────▶ archive/<topic>/
+                                   │ open work ────────────▶ ticket manager (ttm): tickets, specs, plans
+                                   └ history ──────────────▶ the commit history
 ```
 
 Every document opens with its status line. A live document tracks the code and changes in the same
-commit as the code it describes. A frozen record (the spec or plan of a closed
-[ticket](/documentation/glossary/n_to_z.md#ticket)) and an archived document keep their words; only
-their links change.
+commit as the code it describes. A [ticket](/documentation/glossary/n_to_z.md#ticket)'s spec and
+plan live with the ticket in the ticket manager.
 
 ### Authority ladder
 
 When two sources disagree, the higher one wins and the lower one is corrected:
 
 1. The running code.
-2. [CLAUDE.md](/CLAUDE.md): the project laws, the directory atlas and the canonical commands.
+2. [CLAUDE.md](/CLAUDE.md): the project laws, the repository map and the canonical commands.
 3. This README: the map of the documentation.
 4. The [documentation standards](/documentation/standards/documentation_standards.md), the
    [README standard](/documentation/standards/readme_standard.md), the
    [templates](/documentation/standards/templates/README.md) and the other standards.
 5. Feature docs, runbooks, the product roadmap and the other live documents.
-6. Frozen specs and plans under `tickets/`.
-7. The archive, which records history and is never current.
+6. Ticket specs and plans in the ticket manager, which describe intent, not the code as it stands.
 
 ### Where to find what
 
@@ -89,7 +83,7 @@ When two sources disagree, the higher one wins and the lower one is corrected:
 | the top-level folders, the workspace members and where code, contracts, assets and documents live | the [workspace layout](/documentation/architecture/workspace_layout.md) |
 | a web page's behaviour, design, open work and decisions | `crates/frontend/pages/<area>_pages/<page>/`, indexed by the [frontend README](/documentation/crates/frontend/shell/frontend_application/README.md) |
 | the Mission Creator: features, roadmap, UX decisions, Eden reference | [crates/frontend/workspaces/mission_creator_workspace/](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md) |
-| the [API](/documentation/glossary/a_to_f.md#api)'s areas and its verification evidence | [crates/api/api_server/](/documentation/crates/api/api_server/README.md), starting at the [API overview](/documentation/crates/api/api_server/api_overview.md) |
+| the [API](/documentation/glossary/a_to_f.md#api)'s areas and its design notes | [crates/api/api_server/](/documentation/crates/api/api_server/README.md), starting at the [API overview](/documentation/crates/api/api_server/api_overview.md) |
 | the map's streaming, rendering and GPU crates, the paper doll and the editing layer | [crates/](/documentation/crates/README.md) |
 | the [mod](/documentation/glossary/g_to_m.md#mod)'s design, screens and export evidence | [mod/](/documentation/mod/README.md) |
 | how a terrain becomes the map data the platform serves | [assets/](/documentation/assets/README.md) |
@@ -102,8 +96,8 @@ When two sources disagree, the higher one wins and the lower one is corrected:
 | a known bug and its workaround | [known_bugs/](/documentation/known_bugs/README.md) |
 | what the product plans to build, and the open product questions | the [product roadmap](/documentation/product_roadmap.md) |
 | what to work on next | the central ticket manager: `ttm --project reforger next` |
-| a ticket's spec or plan | [tickets/](/documentation/tickets/README.md); the ticket itself is in the ticket manager (`ttm --project reforger show <ticket>`) |
-| why something was built the way it was, or what came before | [archive/](/documentation/archive/README.md) and the commit history |
+| a ticket, its spec or its plan | the ticket manager: `ttm --project reforger show <ticket>` |
+| why something was built the way it was, or what came before | the feature doc's Decisions section and the commit history |
 
 ## Code
 
@@ -125,9 +119,8 @@ When two sources disagree, the higher one wins and the lower one is corrected:
   here against the [Enfusion](/documentation/glossary/a_to_f.md#enfusion) symbol index.
 - Rules: every folder carries a README.md whose Contents block lists its tracked children;
   a live document stays within 500 lines; every link, backticked path and cited command resolves
-  (`cargo xtask verify link-check`); every document opens with its status line; frozen records
-  and archived documents are never reworded; file names are snake_case, apart from README.md,
-  `t-<id>_plan.md` and the hyphenated evidence JSON.
+  (`cargo xtask verify link-check`); every document opens with its status line; file names are
+  snake_case, apart from README.md and the hyphenated evidence JSON.
 
 ## Related documentation
 

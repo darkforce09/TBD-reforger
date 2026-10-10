@@ -135,28 +135,24 @@ note reads "Edits apply live." and it has no Revert.
 
 ## Open work
 
-- [T-926 — Vehicle Attributes Transform/Position tab](/documentation/tickets/specs/t926_vehicle_transform_tab.md)
-  (ready, [plan](/documentation/tickets/plans/t-926_plan.md)): vehicles gain a position tab.
-- [T-841 — Type picker popover translucent; make opaque panel](/documentation/tickets/specs/t841_type_picker_opaque.md)
-  (ready, [plan](/documentation/tickets/plans/t-841_plan.md)): the "Type" picker gets an
-  opaque panel.
-- [T-822 — Outliner dblclick must not open asset picker under Attributes](/documentation/tickets/specs/t822_outliner_dblclick_bubble.md)
-  (ready, [plan](/documentation/tickets/plans/t-822_plan.md)) and
-  [T-927 — Editor chrome dblclick leak to map](/documentation/tickets/specs/t927_chrome_dblclick_leak.md)
-  (ready, [plan](/documentation/tickets/plans/t-927_plan.md)): opening the dialog from the
-  chrome does not reach the map underneath.
-- [T-939.2 — Attributes: batch faction and squad reassign](/documentation/tickets/specs/t939_editor_usability.md)
-  (ready, [plan](/documentation/tickets/plans/t-939_2_plan.md)): the "Faction" and "Squad"
-  pickers already move a whole selection, so the ticket needs a recheck against the code.
-- [T-674 — T-216 follow-on: slot identity reaches the wire](/documentation/tickets/specs/t674_slot_identity_wire.md)
-  (queued, [plan](/documentation/tickets/plans/t-674_plan.md)): the Identity fields reach the
-  compiled mission.
-- [T-068.14 — Phase 2 E2E gate editor to player](/documentation/tickets/specs/t068_14_phase2_e2e_gate.md)
-  (queued, no plan): a loadout authored here is checked end to end in game.
-- [T-852 — Attributes modal paint should use modal_stack::z_class instead of hard-coded z-50](/.ai/tickets/T-852.toml)
-  (deferred, no plan): the dialog takes its layer from the modal stack.
-- [T-1035 — Fix arsenal paper-doll hotspots ignoring Enter and Space](/.ai/tickets/T-1035.toml)
-  (idea, no plan): the doll's hotspots answer the keyboard.
+- Vehicle Attributes Transform/Position tab (ticket `vehicle-attributes-transform-position` in
+  `ttm`): vehicles gain a position tab.
+- Type picker popover translucent; make opaque panel (ticket `type-picker-popover-translucent` in
+  `ttm`): the "Type" picker gets an opaque panel.
+- Outliner dblclick must not open asset picker under Attributes (ticket `outliner-dblclick-must-not`
+  in `ttm`) and Editor chrome dblclick leak to map (ticket `editor-chrome-dblclick-leak` in `ttm`):
+  opening the dialog from the chrome does not reach the map underneath.
+- Attributes: batch faction and squad reassign (ticket
+  `editor-usability-selection-gizmo.batch-faction-squad-reassign` in `ttm`): the "Faction" and
+  "Squad" pickers already move a whole selection, so the ticket needs a recheck against the code.
+- Slot identity reaches the wire (ticket
+  `slot-identity-reaches-wire` in `ttm`): the Identity fields reach the compiled mission.
+- Phase 2 E2E gate editor to player (ticket `virtual-arsenal.phase-2-e2e-gate` in `ttm`): a loadout
+  authored here is checked end to end in game.
+- Attributes modal paint should use modal_stack::z_class instead of hard-coded z-50 (ticket
+  `attributes-modal-paint-should` in `ttm`): the dialog takes its layer from the modal stack.
+- Fix arsenal paper-doll hotspots ignoring Enter and Space (ticket `fix-arsenal-paper-doll` in
+  `ttm`): the doll's hotspots answer the keyboard.
 
 ## Decisions
 

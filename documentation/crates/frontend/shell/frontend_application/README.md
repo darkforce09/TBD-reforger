@@ -28,8 +28,8 @@ route component (`event_schedule_page.md` for `EventSchedulePage`) and written f
 exists, a `visual_references/` folder. The in-code README of each page
 folder holds what the code declares (routes, calls with their DTOs, states with their exact text);
 the feature doc holds the flows, what each call means in the [API](/documentation/glossary/a_to_f.md#api),
-the design, the open work and the decisions. Open work lives only in the feature docs, as links to
-tickets in `.ai/tickets/`.
+the design, the open work and the decisions. Open work lives only in the feature docs, each gap
+naming its ticket in the central ticket manager (`ttm`).
 
 The app is a Leptos 0.8 client-side-rendered app compiled to WebAssembly, which Trunk serves on
 `127.0.0.1:3000` in development and proxies to the API; the crate README
@@ -201,8 +201,8 @@ its feature doc, and a row in the route table above.
   `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs` and the in-code READMEs,
   which this hub is written from.
 - Used by: the documentation root README; the READMEs of `crates/frontend/`, the app crate and
-  its `src/` tree; the API overview; the commit checklist and the ticket identifiers standard
-  in `documentation/standards/`; tickets in `.ai/tickets/` that name it.
+  its `src/` tree; the API overview; the commit checklist in `documentation/standards/`; tickets in
+  `ttm` that name it.
 - Rules: every route in `ROUTES` has exactly one row in the route table, and a route change
   updates the table in the same commit; a documentation folder mirrors a code folder and keeps its
   spelling; feature docs, not this hub, hold behaviour, design and open work; the hub and its
@@ -222,5 +222,3 @@ its feature doc, and a row in the route table above.
   app locally, the dev login included.
 - [Editor gates](/documentation/runbooks/editor_gates.md) — the headless browser gates that
   drive the built app.
-- [Archived frontend roadmap](/documentation/archive/go_and_react_era_design/frontend_roadmap.md)
-  — the planning view and shipped log this hub replaces.

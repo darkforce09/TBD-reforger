@@ -53,7 +53,7 @@ cargo xtask mcp wbcall <APIFunc> '<json>'
 `cargo xtask mod dev-bootstrap` prepares the workstation in this order:
 
 1. Builds the pak symlink farm the MCP server reads as its game root, the work of
-   `cargo xtask setup mcp-game-root` (default `~/.cache/enfusion-mcp-root`).
+   `cargo xtask setup mcp-game-root` (default `.workstation/enfusion_mcp_game_root/` in the checkout).
 2. Runs `npm ci` in `tools/enfusion_mcp_node_package/` when the pinned server is not installed;
    a failed install warns and falls back to npm's cache.
 3. Stops with exit 1 when `mod/tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Ping.c` is
@@ -97,9 +97,8 @@ brokers and servers.
 
 ### Native MCP tools in an editor session
 
-`mod/.mcp.json` registers the `enfusion-mcp` server for an agent session opened at
-`mod/`, and the repository root's `.cursor/mcp.json` registers it for a Cursor workspace
-opened at the checkout root. Each passes `ENFUSION_GAME_PATH`,
+No MCP configuration is committed: an agent session registers the server through a machine-local
+`.mcp.json` at the checkout root, which the repository ignores. It passes `ENFUSION_GAME_PATH`,
 `ENFUSION_WORKBENCH_PATH` and `ENFUSION_PROJECT_PATH`, which must name this machine's pak farm,
 Arma Reforger Tools install and Workbench addons folder; `mcp call` fills the same three with the
 usual Steam and Workbench folders when they are unset.
@@ -119,10 +118,6 @@ plugin's menu entry is commented out today, so the registry step has no entry po
 
 ### Known discrepancies
 
-- `mod/.mcp.json:4-5` starts `npx -y enfusion-mcp`, unpinned, and both committed MCP configs
-  carry one developer's absolute home and checkout paths (`mod/.mcp.json:7-9`,
-  `.cursor/mcp.json`) — every xtask caller starts the pinned `enfusion-mcp` 0.6.1 from
-  `tools/enfusion_mcp_node_package/` and derives the paths from the environment.
 - `development_bootstrap.rs:4-5,72` says the export addon loads the framework through a dependency
   — `mod/tbd-export/addon.gproj:5-8` depends on vanilla and `TBD_EMCP` only.
 - The dedicated server's Steam app id disagrees between commands: `cargo xtask debug direct-join`
@@ -159,16 +154,15 @@ visual design applies.
 
 ## Open work
 
-- [T-1095 — Pin the mod MCP configs and drop personal absolute paths](/.ai/tickets/T-1095.toml)
-  (idea, no plan): the two committed MCP configs start the pinned server with portable paths.
-- [T-1091 — Fix xtask mod texts saying tbd-export loads the framework](/.ai/tickets/T-1091.toml)
-  (idea, no plan): the bootstrap comments and messages state the real dependencies.
-- [T-1096 — Decide the dedicated server Steam app id xtask relies on](/.ai/tickets/T-1096.toml)
-  (idea, no plan): one server app id across the gates, the direct-join check and the docs.
-- [T-1108 — Fix mcp selftest reading a missing fixture as empty transcript](/.ai/tickets/T-1108.toml)
-  (idea, no plan): a missing transcript fails the self-test instead of passing as empty.
-- [T-1081 — Decide whether Workbench registry and map export plugins stay unregistered](/.ai/tickets/T-1081.toml)
-  (idea, no plan): whether the registry and map export plugins get their menu entries back.
+- Fix xtask mod texts saying tbd-export loads the framework (ticket `fix-xtask-mod-texts` in `ttm`):
+  the bootstrap comments and messages state the real dependencies.
+- Decide the dedicated server Steam app id xtask relies on (ticket `decide-dedicated-server-steam`
+  in `ttm`): one server app id across the gates, the direct-join check and the docs.
+- Fix mcp selftest reading a missing fixture as empty transcript (ticket `fix-mcp-selftest-reading`
+  in `ttm`): a missing transcript fails the self-test instead of passing as empty.
+- Decide whether Workbench registry and map export plugins stay unregistered (ticket
+  `decide-whether-workbench-registry` in `ttm`): whether the registry and map export plugins get
+  their menu entries back.
 
 ## Decisions
 

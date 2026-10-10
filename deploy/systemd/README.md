@@ -40,14 +40,14 @@ tbd-website-backup*.{service,timer} ── sed and cp by hand ──▶ timers r
 ## Configuration
 
 - `tbd-website-api.service`: `WorkingDirectory` is `crates/api/api_server` of the checkout;
-  `EnvironmentFile` is that folder's `.env`, the server's own secrets, which both deploys exclude
-  from their rsync and refuse to rsync without; `MAP_ASSETS_DIR` and `GLYPH_ASSETS_DIR` are pinned
+  `EnvironmentFile` is the checkout's `deploy/api.env`, the server's own secrets, which both
+  deploys exclude from their rsync and refuse to rsync without; `MAP_ASSETS_DIR` and `GLYPH_ASSETS_DIR` are pinned
   to the checkout's `assets/terrains` and `assets/glyphs`, because outside development the API
   requires both as absolute paths (only a development boot defaults them, to the checkout's
   folders) and a wrong root answers 404 without an error; `StateDirectory=tbd-website-api`, `UPLOAD_DIR=%S/tbd-website-api/uploads`
   and `EQUIPMENT_DATA_DIR=%S/tbd-website-api/equipment` keep uploads and the imported equipment
   data out of the rsynced checkout, the API creating `uploads/` at boot and `equipment/` on its
-  first import, so neither needs a `mkdir`; the `.env` leaves all four directories out, because
+  first import, so neither needs a `mkdir`; `deploy/api.env` leaves all four directories out, because
   systemd lets an `EnvironmentFile` value override an `Environment=` line for the same variable
   and, outside development, a relative `UPLOAD_DIR` or `EQUIPMENT_DATA_DIR` stops the boot;
   `ExecStart` is `target/release/api-server`; it restarts on failure after 5 s.
@@ -115,8 +115,8 @@ tbd-website-backup*.{service,timer} ── sed and cp by hand ──▶ timers r
   instance's `tbd-reforger@N.service` by name.
 - Rules: the repository placeholder keeps its leading slash, so the templates verify as they stand;
   the API unit's file name is the default unit `deploy website` restarts (`default_unit_name`);
-  the API unit's `.env` stays on the host and is never rsynced; the template it is copied from,
-  `crates/api/api_server/.env.example`, sets none of the variables the API unit pins
+  the API unit's settings file `deploy/api.env` stays on the host and is never rsynced; the
+  template it is copied from, `deploy/api.env.example`, sets none of the variables the API unit pins
   (`the_env_template_sets_none_of_the_variables_the_unit_pins` in
   `tools/commands/deployment/src/tests/website/tests.rs`).
 

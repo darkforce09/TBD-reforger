@@ -184,31 +184,26 @@ that belong to other accounts.
 
 ## Open work
 
-- [T-821 — Save version prefill static; second save 409s](/documentation/tickets/specs/t821_save_version_prefill.md)
-  (ready, [plan](/documentation/tickets/plans/t-821_plan.md)): the dialog proposes a free
-  version number after each save.
-- [T-295 — Realtime collaborative editing](/documentation/tickets/specs/t295_realtime_collab.md)
-  (ready, [plan](/documentation/tickets/plans/t-295_plan.md)) and
-  [T-132 — Multiplayer MC + visual git](/documentation/tickets/specs/t131_north_star_backlog.md)
-  (ready, [plan](/documentation/tickets/plans/t-132_plan.md)): several mission makers edit one
+- Save version prefill static; second save 409s (ticket `save-version-prefill-static` in `ttm`): the
+  dialog proposes a free version number after each save.
+- Realtime collaborative editing (ticket `realtime-collaborative-editing` in `ttm`) and Multiplayer
+  MC + visual git (ticket `multiplayer-mc-visual-git` in `ttm`): several mission makers edit one
   mission at once.
-- [T-937 — Editor data layer: id arrays, undo, persist](/documentation/tickets/specs/t937_editor_data_layer.md)
-  (queued, [plan](/documentation/tickets/plans/t-937_plan.md)): the document's id arrays,
-  undo and persistence are reworked.
-- [T-932 — Parked briefing markers survive server save/reload](/documentation/tickets/specs/t932_parked_markers_persist.md)
-  (queued, [plan](/documentation/tickets/plans/t-932_plan.md)): parked markers reach the saved
-  payload.
-- [T-140 — Mission client payload budget](/documentation/tickets/specs/t131_north_star_backlog.md)
-  (ready, [plan](/documentation/tickets/plans/t-140_plan.md)): a size budget for the payload
-  the client loads.
-- [T-1050 — Fix mission re-hydrate keeping stale connections](/.ai/tickets/T-1050.toml)
-  (idea, no plan): a re-hydrate clears connections first.
-- [T-946.79 — Conflict modal mixes relative and absolute times](/.ai/tickets/T-946.79.toml)
-  (idea, no plan): both sides show one time format.
-- [T-093 — Continuous autosave polish](/.ai/tickets/T-093.toml),
-  [T-840 — Draft chip saved just now on boot before edit](/.ai/tickets/T-840.toml) and
-  [T-717 — Continue-without-map before hydrate resurrects the boot overlay forever](/.ai/tickets/T-717.toml)
-  (deferred, no plan): draft-chip and boot polish.
+- Editor data layer: id arrays, undo, persist (ticket `editor-data-layer-id` in `ttm`): the
+  document's id arrays, undo and persistence are reworked.
+- Parked briefing markers survive server save/reload (ticket `parked-briefing-markers-survive` in
+  `ttm`): parked markers reach the saved payload.
+- Mission client payload budget (ticket `mission-client-payload-budget` in `ttm`): a size budget for
+  the payload the client loads.
+- Fix mission re-hydrate keeping stale connections (ticket `fix-mission-re-hydrate` in `ttm`): a
+  re-hydrate clears connections first.
+- Conflict modal mixes relative and absolute times (ticket
+  `wave-close-child-tickets.conflict-modal-mixes-relative` in `ttm`): both sides show one time
+  format.
+- Continuous autosave polish (ticket `continuous-autosave-polish` in `ttm`), Draft chip saved just
+  now on boot before edit (ticket `draft-chip-saved-just` in `ttm`) and Continue-without-map before
+  hydrate resurrects the boot overlay forever (ticket `continue-without-map-before` in `ttm`):
+  draft-chip and boot polish.
 
 ## Decisions
 

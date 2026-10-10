@@ -61,5 +61,5 @@ Registration status, capacity and opening times never hide an event.
 
 ## Related documentation
 
-- [Event eligibility and allocation](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/crates/api/api_server/design_notes/event_eligibility_allocation.md)
   — access policies, evidence standards and visibility.

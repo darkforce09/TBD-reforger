@@ -156,7 +156,7 @@ Expected: `200`, `etag` equal to the catalog sha256 the trim printed, and
   — the edit-mode half, its dialog and its output.
 - [Ballistics trim](/tools/commands/ballistics_oracle_tooling/src/README.md) — the trim command's rules
   and exit codes.
-- [Game ballistics design note](/documentation/crates/api/api_server/verification_evidence/game_ballistics.md)
+- [Game ballistics design note](/documentation/crates/api/api_server/design_notes/game_ballistics.md)
   — the fixture lifecycle, the calibration criterion and the operator decisions.
 - [Ballistics catalogs page](/documentation/crates/frontend/pages/administration_pages/ballistics_catalogs/ballistics_catalogs_page.md)
   — the upload screen of step 11.

@@ -10,6 +10,7 @@ semantic rules over them, and the map engine's native tests decode them.
 ```text
 contracts/fixtures/map/
 ├── density/                               the `TBDD` forest-density golden and its positions
+├── export_records/                        the operation log and type inventory of the export behind each terrain's committed map assets (`world validate-exports` reads them)
 ├── locations-everon-sample.json           settlements, peaks and cartographic labels
 ├── map-object-catalog-everon-sample.json  a catalogue bundle: prefabs, instances, regions, roads
 ├── map-object-chunk-sample.{bin,json}     one 512 m object chunk, as `TBDC` binary and as JSON

@@ -132,17 +132,16 @@ binary contract with the map crates' upload belts; changing one is a change to b
 
 ## Open work
 
-- [T-1070 — Remove map nouns from graphics engine names; widen rule 2](/.ai/tickets/T-1070.toml)
-  (idea, no plan): the map-named items get geometry names (instanced box, density raster,
-  textured quad, contrast mode) and rule 2 checks the wider noun list.
-- [T-1078 — Remove unused text parameters and fix stale graphics engine comments](/.ai/tickets/T-1078.toml)
-  (idea, no plan): the ignored `_tint` and `char_m`, the 28-entry UV comment and the
-  placeholder module headers go.
-- [T-938 — Engine and wasm performance](/documentation/tickets/specs/t938_engine_perf.md)
-  (queued, [plan](/documentation/tickets/plans/t-938_plan.md)): pooled lane buffers and GPU
-  culling for every icon lane.
-- [T-1039 — Fix world line-of-sight bench frame pump running after unmount](/.ai/tickets/T-1039.toml)
-  (idea, no plan): the debug bench sets the pump's disposed flag on unmount, so `RafPump` stops.
+- Remove map nouns from graphics engine names; widen rule 2 (ticket `remove-map-nouns-graphics` in
+  `ttm`): the map-named items get geometry names (instanced box, density raster, textured quad,
+  contrast mode) and rule 2 checks the wider noun list.
+- Remove unused text parameters and fix stale graphics engine comments (ticket
+  `remove-unused-text-parameters` in `ttm`): the ignored `_tint` and `char_m`, the 28-entry UV
+  comment and the placeholder module headers go.
+- Engine and wasm performance (ticket `engine-wasm-performance` in `ttm`): pooled lane buffers and
+  GPU culling for every icon lane.
+- Fix world line-of-sight bench frame pump running after unmount (ticket `fix-world-line-sight` in
+  `ttm`): the debug bench sets the pump's disposed flag on unmount, so `RafPump` stops.
 
 ## Decisions
 

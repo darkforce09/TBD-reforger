@@ -51,11 +51,10 @@ cargo xtask verify no-select-star # a gate built on the crate
 ## Configuration
 
 No feature, and the crate reads no environment variable. The lock settings belong to its callers:
-`cargo xtask platform wave` takes the lock path from `TBD_GATE_LOCK` (default:
-`GATE_LOCK_RELPATH` under the primary checkout), the heartbeat from `TBD_GATE_LOCK_POLL` (30 s)
-and the deadline from `TBD_GATE_LOCK_MAX` (3600 s), in
-`tools/commands/platform_execution/src/wave_execution/mod.rs`. The crate's own `DEFAULT_POLL` and
-`DEFAULT_MAX` constants hold the same values.
+a caller takes the lock path from `TBD_GATE_LOCK` (default: `GATE_LOCK_RELPATH` under the primary
+checkout), the heartbeat from `TBD_GATE_LOCK_POLL` (30 s) and the deadline from
+`TBD_GATE_LOCK_MAX` (3600 s). The crate's own `DEFAULT_POLL` and `DEFAULT_MAX` constants hold the
+same values.
 
 ## Public surface
 

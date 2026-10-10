@@ -53,7 +53,7 @@ documentation mirror.
 - Depends on: the code of `crates/frontend/workspaces/`; the
   [feature doc template](/documentation/standards/templates/feature_doc.md) and the
   [documentation folder README template](/documentation/standards/templates/readme_documentation_folder.md);
-  the [glossary](/documentation/glossary/README.md); the ticket registry in `.ai/tickets/`, which
+  the [glossary](/documentation/glossary/README.md); the ticket manager (`ttm`), which
   the planned workspaces' documents are written from.
 - Used by: the [frontend crate documentation](/documentation/crates/frontend/README.md) index; the
   workspace crates' READMEs, which link their feature docs; the

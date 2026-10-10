@@ -163,8 +163,8 @@ the canvas with the "over" rule and a 0.75 px feathered edge.
   `tiles/satellite/` and `tiles/map/` (gitignored), `locations.json`, `height-labels.json`,
   `locations/map_labels.rkyv`, `water/water_vectors.rkyv`, `water/bathymetry.tbd-bath`, and the
   manifest fields the patch commands set; plus `assets/glyphs/atlas/`.
-- Evidence: seam and water analyses under `.ai/artifacts/aerial_orthophoto/` and
-  `.ai/artifacts/inland_water/`.
+- Evidence: seam and water analyses under `documentation/tools/map_assets/decision_records/aerial_orthophoto/` and
+  `documentation/tools/map_assets/decision_records/inland_water/`.
 - The export images read a Workbench water or road export folder named on the command line, and
   write only into their image folder. Their colours live in the terrain crates: the depth ramps,
   sea contours and dark land colour in `water_bodies::bathymetry_palette`
@@ -184,23 +184,23 @@ Everon's, and a second terrain needs them derived from its manifest.
 
 ## Open work
 
-- [T-1072 — Fix map-water-everon CI task building tbd-sat v2 against v1 manifest](/.ai/tickets/T-1072.toml)
-  (idea, no plan): the task's container version and the manifest agree, so its own verifier
-  passes.
-- [T-1128 — Derive map raster pipeline inputs from the terrain, not Everon](/.ai/tickets/T-1128.toml)
-  (idea, no plan): the lanes take their terrain's own files and bounds, and `verify-cartographic`
-  stops requiring ticket-numbered logs.
-- [T-1100 — Fix map water export output unreadable by map water](/.ai/tickets/T-1100.toml) (idea,
-  no plan): the Workbench water export and `map water` agree on file names and fields.
-- [T-993 — Satellite boot still hardcodes container v1](/.ai/tickets/T-993.toml),
-  [T-996 — The v2 satellite verifier checks less than v1](/.ai/tickets/T-996.toml) and
-  [T-991 — TbdSatIndexV2 has no schema_version field](/.ai/tickets/T-991.toml) (idea, no plan):
-  the map engine boots a version 2 container, its verifier checks the world bounds and terrain
-  against the manifest, and its index declares a schema version.
-- [T-946.6 — Water vectors and the depth raster disagree](/.ai/tickets/T-946.6.toml) and
-  [T-946.9 — Water mask cannot detect bounds that disagree with the raster](/.ai/tickets/T-946.9.toml)
-  (idea, no plan): the water archives carry their world extent and are checked against each
-  other.
+- Fix map-water-everon CI task building tbd-sat v2 against v1 manifest (ticket
+  `fix-map-water-everon` in `ttm`, idea): the task's container version and the manifest agree, so
+  its own verifier passes.
+- Derive map raster pipeline inputs from the terrain, not Everon (ticket
+  `derive-map-raster-pipeline` in `ttm`, idea): the lanes take their terrain's own files and bounds,
+  and `verify-cartographic` stops requiring ticket-numbered logs.
+- Fix map water export output unreadable by map water (ticket `fix-map-water-export` in `ttm`,
+  idea): the Workbench water export and `map water` agree on file names and fields.
+- Satellite boot still hardcodes container v1 (ticket `satellite-boot-still-hardcodes` in `ttm`,
+  idea), The v2 satellite verifier checks less than v1 (ticket `v2-satellite-verifier-checks` in
+  `ttm`, idea) and TbdSatIndexV2 has no schema_version field (ticket `tbdsatindexv2-has-no-schema`
+  in `ttm`, idea): the map engine boots a version 2 container, its verifier checks the world bounds
+  and terrain against the manifest, and its index declares a schema version.
+- Water vectors and the depth raster disagree (ticket
+  `wave-close-child-tickets.water-vectors-depth-raster` in `ttm`, idea) and Water mask cannot detect
+  bounds that disagree with the raster (ticket `wave-close-child-tickets.water-mask-cannot-detect`
+  in `ttm`, idea): the water archives carry their world extent and are checked against each other.
 
 ## Decisions
 

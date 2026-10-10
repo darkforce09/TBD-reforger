@@ -186,21 +186,22 @@ the tab; the tab makes no call of its own.
 
 ## Open work
 
-- [T-068 — Virtual Arsenal (registry + loadout export)](/documentation/tickets/specs/t068_virtual_arsenal_program.md)
-  (deferred, no plan): the program closes once its last child, T-068.14, passes.
-- [T-068.14 — Phase 2 E2E gate editor to player](/documentation/tickets/specs/t068_14_phase2_e2e_gate.md)
-  (queued, no plan): a human sign-off that a loadout authored here dresses a player in game.
-- [T-309 — FactionDoc squad level for Apply Template](/documentation/tickets/specs/t309_faction_doc_squads.md)
-  (ready, [plan](/documentation/tickets/plans/t-309_plan.md)): a saved faction template,
-  which carries each role's loadout, keeps its squads when the ORBAT Manager applies it.
-- [T-1035 — Fix arsenal paper-doll hotspots ignoring Enter and Space](/.ai/tickets/T-1035.toml)
-  (idea, no plan): the SVG doll's hotspots answer the keyboard.
-- [T-1040 — Fix hand-copied cargo container table and diverged capacity caveat](/.ai/tickets/T-1040.toml)
-  (idea, no plan): export and Save share one container table and one caveat.
-- [T-1047 — Decide whether Mission Creator validation gets cargo and loadout policy](/.ai/tickets/T-1047.toml)
-  (idea, no plan): the validation panel checks cargo and loadouts, or those rules go.
-- [T-1064 — Add guards for map binary formats and doll shader layout](/.ai/tickets/T-1064.toml)
-  (idea, no plan): a test ties the 3D doll's regions to the rail's.
+- Virtual Arsenal (registry + loadout export) (ticket `virtual-arsenal` in `ttm`): the program
+  closes once its last child, `virtual-arsenal.phase-2-e2e-gate`, passes.
+- Phase 2 E2E gate editor to player (ticket `virtual-arsenal.phase-2-e2e-gate` in `ttm`): a human
+  sign-off that a loadout authored here dresses a player in game.
+- FactionDoc squad level for Apply Template (ticket `factiondoc-squad-level-apply` in `ttm`): a
+  saved faction template, which carries each role's loadout, keeps its squads when the ORBAT Manager
+  applies it.
+- Fix arsenal paper-doll hotspots ignoring Enter and Space (ticket `fix-arsenal-paper-doll` in
+  `ttm`): the SVG doll's hotspots answer the keyboard.
+- Fix hand-copied cargo container table and diverged capacity caveat (ticket `fix-hand-copied-cargo`
+  in `ttm`): export and Save share one container table and one caveat.
+- Decide whether Mission Creator validation gets cargo and loadout policy (ticket
+  `decide-whether-mission-creator` in `ttm`): the validation panel checks cargo and loadouts, or
+  those rules go.
+- Add guards for map binary formats and doll shader layout (ticket `add-guards-map-binary` in
+  `ttm`): a test ties the 3D doll's regions to the rail's.
 
 ## Decisions
 

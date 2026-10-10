@@ -44,8 +44,7 @@ scratch/everon/spike/TBD_SatExport_everon.tga (4096²)
   first drops the `waterComposite` block from the orthophoto metadata, the second writes the
   satellite container's byte size into the manifest. `patch_map_tiles_meta` sets the manifest's
   `tiles.map` source and encoding (`workbench-cartographic`, `webp-lossy`).
-- `verify_cartographic` requires ten slice verification logs under `.ai/artifacts/` to hold a pass
-  verdict, then runs `cargo xtask schema map-glyphs`, `world validate-exports`, `world verify-phase
+- `verify_cartographic` runs `cargo xtask schema map-glyphs`, `world validate-exports`, `world verify-phase
   --phase P5_props` and the `cargo xtask schema` locations, height-label, town-label and road-name
   checks for Everon, and fails if any of them fails.
 

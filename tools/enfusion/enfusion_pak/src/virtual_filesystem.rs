@@ -61,9 +61,10 @@ pub struct PakSet {
 }
 
 impl PakSet {
-    /// The `addons/` folder of the enfusion-mcp game cache under `$HOME`, when `HOME` is set.
-    pub fn default_dir() -> Option<PathBuf> {
-        std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".cache/enfusion-mcp-root/addons"))
+    /// The `addons/` folder of the game folder named by `ENFUSION_GAME_PATH`, else of
+    /// `default_game_root` (the caller's checkout-local MCP game root).
+    pub fn game_addons_dir(default_game_root: &Path) -> PathBuf {
+        crate::world_source::game_root(default_game_root).join("addons")
     }
 
     /// Open every `.pak` in `dir` under the blueprint policy.

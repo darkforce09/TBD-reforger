@@ -226,49 +226,39 @@ names the [API](/documentation/glossary/a_to_f.md#api) client it uses. Server-si
 
 ## Open work
 
-- [T-821 — Save version prefill static; second save 409s](/documentation/tickets/specs/t821_save_version_prefill.md)
-  (ready, [plan](/documentation/tickets/plans/t-821_plan.md)): the pre-fill bumps from the
-  current version.
-- [T-823 — OBJ readout must count vehicles or rename honestly](/documentation/tickets/specs/t823_obj_readout_vehicles.md)
-  (ready, [plan](/documentation/tickets/plans/t-823_plan.md)): "OBJ" counts vehicles or is
-  renamed.
-- [T-837 — Vehicles cannot be deleted](/documentation/tickets/specs/t837_vehicle_delete.md)
-  (ready, [plan](/documentation/tickets/plans/t-837_plan.md)): Delete removes vehicles too.
-- [T-838 — Map markers selectable; outliner lists; dblclick opens Attributes](/documentation/tickets/specs/t838_marker_select_outliner.md)
-  (ready, [plan](/documentation/tickets/plans/t-838_plan.md)): markers join selection and the
-  Attributes dialog.
-- [T-839 — Retire floating Select/Ruler/LoS bottom-centre pill](/documentation/tickets/specs/t839_retire_floating_pill.md)
-  (ready, [plan](/documentation/tickets/plans/t-839_plan.md)): the mode toolbar goes.
-- [T-845 — A selected vehicle looks identical to an unselected one](/documentation/tickets/specs/t845_selected_vehicle_treatment.md)
-  (ready, [plan](/documentation/tickets/plans/t-845_plan.md)): selected vehicles get a
-  highlight.
-- [T-822 — Outliner dblclick must not open asset picker under Attributes](/documentation/tickets/specs/t822_outliner_dblclick_bubble.md)
-  (ready, [plan](/documentation/tickets/plans/t-822_plan.md)) and
-  [T-927 — Editor chrome dblclick leak to map](/documentation/tickets/specs/t927_chrome_dblclick_leak.md)
-  (ready, [plan](/documentation/tickets/plans/t-927_plan.md)): a double-click on the chrome
-  stops reaching the map.
-- [T-816 — Armed composition hint open; one Esc clears both layers wrongly](/documentation/tickets/specs/t816_esc_hint_layer.md)
-  (ready, [plan](/documentation/tickets/plans/t-816_plan.md)): Escape closes one layer at a
-  time.
-- [T-939 — Editor usability: selection, gizmo, arrange, templates](/documentation/tickets/specs/t939_editor_usability.md)
-  (queued, [plan](/documentation/tickets/plans/t-939_plan.md)): batch faction and squad
-  reassign, Arrange in the context menu, squad templates, canvas error badges and connection
-  wires, a virtualized vehicles panel and Ctrl+F for the document search.
-- [T-704 — Command palette over every editor command](/documentation/tickets/specs/t704_command_palette.md)
-  (ready, [plan](/documentation/tickets/plans/t-704_plan.md)): one searchable list of every
-  command.
-- [T-158 — Editor shell UX consolidation](/documentation/tickets/specs/t158_editor_shell.md)
-  (ready, [plan](/documentation/tickets/plans/t-158_plan.md)) and
-  [T-142 — MC shell layout polish](/documentation/tickets/specs/t131_north_star_backlog.md)
-  (ready, [plan](/documentation/tickets/plans/t-142_plan.md)): one settings entry point, the
-  inert top-strip buttons wired, the toolbelt and Attributes layout polished.
-- [T-1033 — Fix the editor status bar OPEN button that does nothing](/.ai/tickets/T-1033.toml)
-  (idea, no plan) and [T-1034 — Fix top strip slot census and summary line never showing](/.ai/tickets/T-1034.toml)
-  (idea, no plan): the two dead or hidden status surfaces work.
-- [T-716 — Context menu honesty](/.ai/tickets/T-716.toml) (deferred, no plan),
-  [T-721 — Status bar under docks](/.ai/tickets/T-721.toml) (deferred, no plan) and
-  [T-093 — Continuous autosave polish](/.ai/tickets/T-093.toml) (deferred, no plan): the context
-  menu's rows, the status bar's reach and the autosave feedback.
+- Save version prefill static; second save 409s (ticket `save-version-prefill-static` in `ttm`): the
+  pre-fill bumps from the current version.
+- OBJ readout must count vehicles or rename honestly (ticket `obj-readout-must-count` in `ttm`):
+  "OBJ" counts vehicles or is renamed.
+- Vehicles cannot be deleted (ticket `vehicles-cannot-deleted-slots` in `ttm`): Delete removes
+  vehicles too.
+- Map markers selectable; outliner lists; dblclick opens Attributes (ticket
+  `map-markers-selectable-outliner` in `ttm`): markers join selection and the Attributes dialog.
+- Retire floating Select/Ruler/LoS bottom-centre pill (ticket `retire-floating-select-ruler` in
+  `ttm`): the mode toolbar goes.
+- A selected vehicle looks identical to an unselected one (ticket `selected-vehicle-looks-identical`
+  in `ttm`): selected vehicles get a highlight.
+- Outliner dblclick must not open asset picker under Attributes (ticket `outliner-dblclick-must-not`
+  in `ttm`) and Editor chrome dblclick leak to map (ticket `editor-chrome-dblclick-leak` in `ttm`):
+  a double-click on the chrome stops reaching the map.
+- Armed composition hint open; one Esc clears both layers wrongly (ticket
+  `armed-composition-hint-open` in `ttm`): Escape closes one layer at a time.
+- Editor usability: selection, gizmo, arrange, templates (ticket `editor-usability-selection-gizmo`
+  in `ttm`): batch faction and squad reassign, Arrange in the context menu, squad templates, canvas
+  error badges and connection wires, a virtualized vehicles panel and Ctrl+F for the document
+  search.
+- Command palette over every editor command (ticket `command-palette-over-editor` in `ttm`): one
+  searchable list of every command.
+- Editor shell UX consolidation (ticket `editor-shell-ux-consolidation` in `ttm`) and MC shell
+  layout polish (ticket `mc-shell-layout-polish` in `ttm`): one settings entry point, the inert
+  top-strip buttons wired, the toolbelt and Attributes layout polished.
+- Fix the editor status bar OPEN button that does nothing (ticket `fix-editor-status-bar` in `ttm`)
+  and Fix top strip slot census and summary line never showing (ticket `fix-top-strip-slot` in
+  `ttm`): the two dead or hidden status surfaces work.
+- Context menu honesty (ticket `context-menu-honesty-go` in `ttm`), Status bar under docks (ticket
+  `status-bar-under-docks` in `ttm`) and Continuous autosave polish (ticket
+  `continuous-autosave-polish` in `ttm`): the context menu's rows, the status bar's reach and the
+  autosave feedback.
 
 ## Decisions
 

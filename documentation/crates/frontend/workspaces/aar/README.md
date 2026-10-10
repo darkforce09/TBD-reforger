@@ -27,9 +27,7 @@ documentation/crates/frontend/workspaces/aar/
 ## Boundaries
 
 - Depends on: the [feature doc template](/documentation/standards/templates/feature_doc.md); the
-  design notes of the product blueprint, archived in
-  `documentation/archive/go_and_react_era_design/mission_creator_design.md`; the ticket registry
-  in `.ai/tickets/`.
+  ticket manager (`ttm`).
 - Used by: the [workspace crate documentation](/documentation/crates/frontend/workspaces/README.md),
   the [glossary](/documentation/glossary/README.md) and the
   [product roadmap](/documentation/product_roadmap.md), which link the feature doc.

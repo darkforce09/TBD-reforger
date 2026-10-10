@@ -10,9 +10,9 @@
 //! - Flatten naming is bash `${rel//\//_}` (every `/` → `_`), including preserving `.PAK` case
 //!   from `-iname "*.pak"`.
 //! - GAME defaults to the Steam library in the home folder,
-//!   `$HOME/.local/share/Steam/steamapps/common/Arma Reforger`, and FAKE to
-//!   `$HOME/.cache/enfusion-mcp-root`; with `HOME` unset, an argument left out is an error that
-//!   names GAME and FAKE, never a guessed home folder.
+//!   `$HOME/.local/share/Steam/steamapps/common/Arma Reforger`, and FAKE to the checkout's own
+//!   `.workstation/enfusion_mcp_game_root`; with `HOME` unset (or no checkout found), an argument
+//!   left out is an error that names GAME and FAKE, never a guessed folder.
 //! - Success line is exactly `Linked N pak files into <fake>/addons/` (trailing slash on addons).
 
 use std::fs;
@@ -24,36 +24,37 @@ use crate::error::{Error, Result, ResultExt};
 /// The Steam install of Arma Reforger, under the home folder: GAME's default.
 const GAME_UNDER_HOME: &str = ".local/share/Steam/steamapps/common/Arma Reforger";
 
-/// The flattened pak folder, under the home folder: FAKE's default.
-const FAKE_UNDER_HOME: &str = ".cache/enfusion-mcp-root";
-
 /// Entry for `xtask setup mcp-game-root [GAME] [FAKE]`.
 pub fn run(game: Option<&Path>, fake: Option<&Path>) -> Result<u8> {
     let home = std::env::var_os("HOME")
         .filter(|home| !home.is_empty())
         .map(PathBuf::from);
-    let (game, fake) = roots(game, fake, home.as_deref())?;
+    let checkout = repository_root::find_repository_root().ok();
+    let (game, fake) = roots(game, fake, home.as_deref(), checkout.as_deref())?;
     run_with_paths(&game, &fake)
 }
 
-/// GAME and FAKE: each argument when given, else its default under `home`.
+/// GAME and FAKE: each argument when given, else GAME's default under `home` and FAKE's under
+/// the checkout root.
 fn roots(
     game: Option<&Path>,
     fake: Option<&Path>,
     home: Option<&Path>,
+    checkout: Option<&Path>,
 ) -> Result<(PathBuf, PathBuf)> {
-    let or_under_home = |given: Option<&Path>, relative: &str| {
+    let or_under = |given: Option<&Path>, base: Option<&Path>, relative: &str| {
         given
             .map(Path::to_path_buf)
-            .or_else(|| home.map(|home| home.join(relative)))
+            .or_else(|| base.map(|base| base.join(relative)))
     };
     match (
-        or_under_home(game, GAME_UNDER_HOME),
-        or_under_home(fake, FAKE_UNDER_HOME),
+        or_under(game, home, GAME_UNDER_HOME),
+        or_under(fake, checkout, repository_layout::ENFUSION_MCP_GAME_ROOT),
     ) {
         (Some(game), Some(fake)) => Ok((game, fake)),
         _ => Err(Error::Refused(
-            "HOME is unset, so GAME and FAKE have no default: pass both, as \
+            "HOME is unset or no checkout was found, so GAME and FAKE have no default: pass \
+             both, as \
              `cargo xtask setup mcp-game-root <GAME> <FAKE>`"
                 .to_owned(),
         )),

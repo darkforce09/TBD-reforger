@@ -22,7 +22,7 @@ tools/map_assets/world_export_pipeline/src/export_preparation/
 here, the two in `export_validation/` included, with `#[path]`, and re-exports one function per
 `world` subcommand; `tools/map_assets/world_export_pipeline/src/command_line.rs` calls them. Each
 returns the process exit code: 0 done, 1 refused or failed. Paths below are under
-`assets/`, except the `.ai/artifacts/` census copy.
+`assets/`, except the `contracts/fixtures/map/export_records/` census copy.
 
 | Subcommand | Reads | Writes |
 |---|---|---|
@@ -30,7 +30,7 @@ returns the process exit code: 0 done, 1 refused or failed. Paths below are unde
 | `copy-export-profile` | `TBD_WorldExport_subregion.jsonl` and `TBD_WorldExport_meta.json` | `scratch/<terrain>/spike/raw-entities.jsonl`, `export-meta.json` |
 | `raw-u16-dem-png` | `--raster` (the plugin's `heightmap.txt` of decimal samples), `--meta` (`widthPx`, `heightPx`, height range) | the 16-bit greyscale PNG at `--out`, and `elevation.dem` beside it |
 | `sap-catalog` | the `worlds/Eden/Eden/.Data` supertexture cells in the game's archives | `scratch/everon/sap/cell-catalog.json` |
-| `census` | `terrains/<terrain>/objects/type-inventory.json` | `.ai/artifacts/type_inventory_<terrain>.json` when the census is not pending |
+| `census` | `terrains/<terrain>/objects/type-inventory.json` | `contracts/fixtures/map/export_records/type_inventory_<terrain>.json` when the census is not pending |
 | `spike-k1` | `scratch/<terrain>/spike/raw-entities.jsonl` | nothing |
 | `spike-census` | the same spike export | `scratch/<terrain>/spike/type-inventory-spike.json` |
 

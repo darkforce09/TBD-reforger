@@ -100,7 +100,7 @@ byte for byte the one match results carry. Each subfolder's README describes its
   sessions, machine credentials and the fleet command ledger on the API side
 - [Match telemetry domain](/crates/api/api_match_telemetry/src/README.md) — how heartbeats
   and match telemetry are taken in
-- [Match telemetry design](/documentation/crates/api/api_server/verification_evidence/telemetry.md) — match
+- [Match telemetry design](/documentation/crates/api/api_server/design_notes/telemetry.md) — match
   identity, results revisions, detailed events and the game-runtime queue
 - [Identity and access domain](/crates/api/api_identity_and_access/src/README.md) — the link
   code handshake the `#tbd link` command completes

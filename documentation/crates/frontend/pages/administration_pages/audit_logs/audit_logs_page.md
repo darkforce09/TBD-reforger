@@ -76,7 +76,7 @@ the DTOs it reads. Server-side:
   given cannot be replayed, then continues from the tail. It is woken by Postgres notifications,
   falling back to a 2-second poll, and ends with `event: authorization_expired` when the session
   or the role lapses; the page then refreshes the session and reconnects. The design note's
-  [audit replay and reset](/documentation/crates/api/api_server/verification_evidence/administration_and_content.md#audit-replay-and-reset)
+  [audit replay and reset](/documentation/crates/api/api_server/design_notes/administration_and_content.md#audit-replay-and-reset)
   gives the protocol.
 
 - `GET /api/v1/admin/audit-logs`, then `?before=<id>` for each further page (`list_audit_logs` in
@@ -116,8 +116,7 @@ the DTOs it reads. Server-side:
   badge. Colours and type come from the platform's
   [design tokens](/documentation/design_system/design_tokens.md).
 - Design target: the [audit logs blueprint](/documentation/crates/frontend/pages/administration_pages/audit_logs/visual_references/audit_logs_blueprint/README.md),
-  a design-phase reference, and the archived platform spec's
-  [Audit Logs section](/documentation/archive/go_and_react_era_design/platform_context_handoff.md#12-audit-logs).
+  a design-phase reference.
   The built page differs from the blueprint:
   - no page heading or subtitle: the breadcrumb names the page;
   - no "Export to CSV" button, although the API serves the export (see Open work);
@@ -128,15 +127,10 @@ the DTOs it reads. Server-side:
 
 ## Open work
 
-- [T-950 — Audit SSE stream has no client](/.ai/tickets/T-950.toml) (idea): the page now consumes
-  the stream; the ticket record still has to be closed.
-- [T-944 — Audit stream: id-order race and half-open socket](/documentation/tickets/specs/t944_audit_stream_race.md)
-  (queued, [plan](/documentation/tickets/plans/t-944_plan.md)): the stream delivers every
-  committed entry exactly once, even when a lower id commits late or the database connection
-  silently drops; the page reads the stream, so this bounds what the live trail can miss.
-- [T-1029 — Add CSV export to the audit logs page](/.ai/tickets/T-1029.toml) (idea, no plan): the
-  page gains a control that downloads `GET /api/v1/admin/audit-logs/export.csv`, which the API
-  already serves.
+- Audit SSE stream has no client (ticket `audit-sse-stream-has` in `ttm`): the page now consumes the
+  stream; the ticket record still has to be closed.
+- Add CSV export to the audit logs page (ticket `add-csv-export-audit` in `ttm`): the page gains a
+  control that downloads `GET /api/v1/admin/audit-logs/export.csv`, which the API already serves.
 
 ## Decisions
 

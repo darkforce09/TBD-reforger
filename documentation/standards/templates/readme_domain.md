@@ -141,6 +141,6 @@ game server reads the bytes from `/api/v1/game-runtime/artifacts/{artifactId}`.
 
 - [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes and the
   layers they share.
-- [Mission artifacts](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
+- [Mission artifacts](/documentation/crates/api/api_server/design_notes/mission_artifacts.md)
   — the design of artifacts, their reviews and deployments.
 ````

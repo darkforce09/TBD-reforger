@@ -20,9 +20,10 @@ parse them, so `TARGETS` in `recipes.rs` is the one list of names, and `mk` with
 it. A recipe is a list of `Step`s, each a working folder, recipe-level environment and an argv.
 The runner prints each step's line before running it and stops at the first failure. Every child
 `cargo` and `trunk` gets the shared `CARGO_TARGET_DIR` from
-`tools/commands/ci_task_catalog/src/cargo_target_pin.rs` (the primary checkout's `target/`, shared by
-every linked worktree, unless the caller exports another), except `rust-api`, which builds into
-`target/dev-api` in the current checkout so a running server never waits on the shared build lock.
+`tools/commands/ci_task_catalog/src/cargo_target_pin.rs` (the primary checkout's `target/host/` or
+`target/container/`, by toolchain environment, shared by every linked worktree, unless the caller
+exports another), except `rust-api`, which builds into `dev-api/` under the current checkout's
+environment folder so a running server never waits on the shared build lock.
 Before a `cargo` or `trunk` step, `abi_guard` refuses a target directory stamped by another glibc.
 
 ## Commands

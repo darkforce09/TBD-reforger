@@ -12,23 +12,37 @@ use std::path::Path;
 use crate::Result;
 use process_runner::Run;
 use repository_layout::build_output::{
-    BUILD_OUTPUT_FOLDER, CONTINUOUS_INTEGRATION_SUBFOLDER, build_output_subfolder,
+    BUILD_OUTPUT_FOLDER, CONTINUOUS_INTEGRATION_SUBFOLDER, ToolchainEnvironment,
+    build_output_subfolder,
 };
 
-/// Delete the continuous-integration scratch folder `root/target/ci`, and the retired root-level
-/// `root/target-ci` when the machine still holds it. Exit 0 when both are gone, 1 on a refusal.
+/// Delete the continuous-integration scratch folder of each toolchain environment
+/// (`root/target/host/ci`, `root/target/container/ci`), and the retired root-level `root/target-ci`
+/// when the machine still holds it. Exit 0 when both are gone, 1 on a refusal.
 ///
 /// `root` is a parameter so the destructive path is testable against a scratch tree, and no path
 /// is derived from anything but `root`, so a slice's own folder is unreachable by construction.
 /// Two refusals guard every deletion and run before any of them: the path never equals the shared
-/// cache `root/target`, and it ends in its own name (`/target/ci`, `/target-ci`). An empty `root`
+/// cache `root/target`, and it ends in its own name (`/target/<environment>/ci`, `/target-ci`). An empty `root`
 /// yields a relative path, which fails the second.
 pub(crate) fn reclaim_target_ci(root: &Path) -> Result<u8> {
     let warm = root.join(BUILD_OUTPUT_FOLDER).display().to_string();
     let folders = [
         (
-            build_output_subfolder(root, CONTINUOUS_INTEGRATION_SUBFOLDER),
-            "/target/ci",
+            build_output_subfolder(
+                root,
+                ToolchainEnvironment::Host,
+                CONTINUOUS_INTEGRATION_SUBFOLDER,
+            ),
+            "/target/host/ci",
+        ),
+        (
+            build_output_subfolder(
+                root,
+                ToolchainEnvironment::Container,
+                CONTINUOUS_INTEGRATION_SUBFOLDER,
+            ),
+            "/target/container/ci",
         ),
         (root.join("target-ci"), "/target-ci"),
     ];

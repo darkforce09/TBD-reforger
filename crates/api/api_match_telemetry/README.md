@@ -76,7 +76,7 @@ No feature and no variable of its own.
 
 - [API match telemetry source](/crates/api/api_match_telemetry/src/README.md) — the files, the
   routes and how each ingest is decided.
-- [Match telemetry, fleet status and derived statistics](/documentation/crates/api/api_server/verification_evidence/telemetry.md)
+- [Match telemetry, fleet status and derived statistics](/documentation/crates/api/api_server/design_notes/telemetry.md)
   — registration, revisions, detailed events, the lock order and the game runtime's queue.
 - [API overview](/documentation/crates/api/api_server/api_overview.md) — every domain's routes.
 - [API crates](/crates/api/README.md) — the category this crate belongs to and its rules.

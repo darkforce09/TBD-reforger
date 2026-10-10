@@ -1,9 +1,0 @@
-# Stage S7 X7b — the editing layer and draft persistence feature docs leave the map engine's documentation for the mirror home of the mission editing crates they describe: the editing layer doc at the category level (it spans the session, the commands and the tools), the draft persistence doc beside mission_persistence. Paths name the tree before the move.
-kind	from	to	scope
-#
-# the editing layer doc spans mission_editing_session, mission_editing_commands and
-# map_editing_tools, so it sits at the category level
-path	documentation/legacy/map_engine/editing_layer.md	documentation/crates/mission_editing/editing_layer.md
-#
-# the draft persistence doc describes mission_persistence alone, so it sits at that crate's mirror
-path	documentation/legacy/map_engine/draft_persistence.md	documentation/crates/mission_editing/mission_persistence/draft_persistence.md

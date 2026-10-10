@@ -77,7 +77,7 @@ so the warning must come early and repeat. The warning is private chat; the [mod
 
 ## Open work
 
-None. Checked `.ai/tickets/` for open tickets on the play area, its boundary and its warning.
+None. Checked `ttm` for open tickets on the play area, its boundary and its warning.
 
 ## Decisions
 

@@ -39,8 +39,8 @@ pub(super) fn env_fail(msg: &str, hint: &str) -> u8 {
 /// carried forward rather than ignored. `--admin=` therefore fails admin validation with
 /// `--admin='' is neither an identityId nor a SteamID` (baseline `a15`) rather than being skipped,
 /// and `--mission=` fails the required check.
-pub(super) fn parse(args: &[String], home: &str) -> Parsed {
-    let mut o = Opts::defaults(home);
+pub(super) fn parse(args: &[String], checkout_root: &str) -> Parsed {
+    let mut o = Opts::defaults(checkout_root);
     // bash `${arg#*=}` — strip through the FIRST `=`. A value may itself contain `=`.
     fn val(a: &str) -> String {
         a.split_once('=').map(|x| x.1).unwrap_or("").to_string()
@@ -142,7 +142,15 @@ pub(super) fn read_scenario(dev_text: &str) -> String {
 /// CLI entry: `cargo xtask mod playtest -- <args>`.
 pub(crate) fn run(args: &[String]) -> Result<u8> {
     let home = std::env::var("HOME").unwrap_or_default();
-    let opts = match parse(args, &home) {
+    // ROOT: the upward walk from the cwd for the checkout-root marker, the way every command in
+    // this binary finds it, so it lands on the checkout the operator is standing in. A help or
+    // usage error answers without one.
+    let root = find_repository_root();
+    let root_text = root
+        .as_ref()
+        .map(|root| root.display().to_string())
+        .unwrap_or_default();
+    let opts = match parse(args, &root_text) {
         Parsed::Help => {
             print!("{HELP}");
             return Ok(0);
@@ -151,9 +159,7 @@ pub(crate) fn run(args: &[String]) -> Result<u8> {
         Parsed::Opts(o) => *o,
     };
 
-    // ROOT: the upward walk from the cwd for the ticket-registry root marker, the way every
-    // command in this binary finds it, so it lands on the checkout the operator is standing in.
-    let root = find_repository_root()?;
+    let root = root?;
     let host = Host::detect();
     Ok(main_with(&root, &home, &host, opts))
 }

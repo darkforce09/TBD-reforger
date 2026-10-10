@@ -3,9 +3,8 @@
 # Testing and CI
 
 Runs the repository's gates on a developer machine before a push to `main`, and shows where each
-gate runs besides: the local replay `cargo xtask ci ci-local`, the GitHub workflows, the platform
-[wave](/documentation/glossary/n_to_z.md#wave) gate and the documentation link check. `ci-local` takes 15 to
-40 minutes; a single gate takes seconds to a few minutes. What each `cargo xtask ci` task runs,
+gate runs besides: the local replay `cargo xtask ci ci-local`, the GitHub workflows and the documentation link
+check. `ci-local` takes 15 to 40 minutes; a single gate takes seconds to a few minutes. What each `cargo xtask ci` task runs,
 step by step, is in the [CI task commands README](/tools/commands/ci_task_catalog/src/README.md); this
 runbook does not repeat it.
 
@@ -125,55 +124,37 @@ Run every command from the repository root.
    folders only. No CI job and no `ci-local` step runs it; run it with `--with-untracked` before
    committing documentation so the new files are judged too.
 
-### Gate a wave
-
-9. On merged `main`, before a wave closes, run the wave gate over the wave's range.
-
-   ```bash
-   cargo xtask platform wave gate
-   ```
-
-   Expected: one `PASS` or `FAIL` line per step (every step runs; a failure shows its last 15
-   lines), then `GATE: PASS` and exit 0. The base defaults to the last `wave N CLOSED` commit;
-   `--slice <id>` runs the cheap slice gate in a slice worktree instead. The step lists of both
-   are in the [wave gate README](/tools/commands/platform_execution/src/wave_execution/gate/README.md),
-   and the whole wave procedure in [Factory waves](/documentation/runbooks/factory_waves/README.md).
-
 ## Gate matrix
 
 Where each gate runs. "ci-local" means a step of `cargo xtask ci ci-local`; the job names are those
-of `.github/workflows/ci.yml` unless the row names another workflow. In the last column "wave" is
-the wave gate, "slice" the slice gate (a workspace `cargo check`, formatting of the changed files
-and the tests of the changed frontend crates) and "both" the two. Rule ids (FMT-2, LANG-1, TEST-1
+of `.github/workflows/ci.yml` unless the row names another workflow. Rule ids (FMT-2, LANG-1, TEST-1
 and the rest) are those of the [coding standards](/documentation/standards/coding_standards/README.md).
 
-| Gate | Command | ci-local | GitHub | Wave gate |
-|---|---|---|---|---|
-| whitespace (FMT-2) | `cargo xtask ci verify-editorconfig` | no | `editorconfig` | no |
-| no Python (LANG-2, LANG-3) | `cargo xtask verify no-python` | in `verify-language-bans` | `language-gates` | wave |
-| no Node scripts | `cargo xtask verify no-node` | in `verify-language-bans` | `language-gates` | wave |
-| no shell or Make (LANG-1) | `cargo xtask verify no-shell` | in `verify-language-bans` | `language-gates` | wave |
-| workspace laws (WS-1, WS-2, WS-5): crate tiers with the firewalls, crate anatomy, Tailwind sources | `cargo xtask ci verify-workspace-laws` | yes | `language-gates`, one step per law | wave |
-| test-file reachability, frontend layering (WS-3, WS-4) | `cargo xtask verify test-file-reachability`, `cargo xtask verify frontend-layering` | no | no | no |
-| file length advice (SIZE-3; warns, never fails) | `cargo xtask verify file-length` | in `verify-file-length` | `language-gates` | wave |
-| no `SELECT *` | `cargo xtask verify no-select-star` | no | no | no |
-| Rust formatting | `cargo xtask mk rust-fmt` | in `rust-ci` | `api` | changed files (both) |
-| API clippy, `-D warnings` (`api_server` and every other `crates/api` package) | `cargo xtask mk rust-clippy` | in `rust-ci` | `api` | wave |
-| workspace compile check | `cargo check --workspace` | no | no | slice |
-| wasm32 clippy `-D warnings` of every crate declaring `targets = "wasm32"` outside `crates/frontend` (derived from the workspace); the offline service worker is gated with the frontend family | `cargo xtask mk wasm-ci` | in `rust-ci` | `wasm-ci` | wave |
-| API tests with Postgres (TEST-1; `api_server` and every other `crates/api` package) | `cargo xtask ci rust-test-it`; `cargo xtask db test-it` | in `rust-ci` | `api` (`cargo xtask ci api-test`) | wave |
-| tests of every workspace member without a dedicated task (derived from `Cargo.toml`, so a new member is tested by default; the API crates run with the API tests; the binary-only `xtask` and `developer_tools` packages build there) | `cargo xtask ci workspace-member-tests` | yes | `workspace-members` | wave |
-| frontend family, the app `frontend_application` and the offline service worker among it: fmt, clippy `-D warnings` (wasm32 and native), tests, Trunk build (TEST-2) | `cargo xtask mk ci-local-leptos` | yes | `frontend` | wave: clippy and tests, Trunk when a crate the app compiles changed; slice: tests of the changed frontend crates |
-| generated contract types current | `cargo xtask ci verify-codegen-fresh` | in `ci-local-schema` | `schema` | wave |
-| schema validation (TEST-3, ENF-4) | `cargo xtask ci schema-validate` | in `ci-local-schema` | `schema` | wave |
-| map goldens: map-object golden, glyph atlas, height labels (need the LFS elevation raster) | `cargo xtask ci schema-map-goldens` | no | no | no |
-| registry aliases | `cargo xtask verify object-registry-aliases` | no | no | no |
-| tickets in the central ticket manager | `ttm --project reforger check --strict` | no | no | no; `cargo xtask platform preflight` runs `ttm check` |
-| mod boot verdict self-test | `cargo xtask mod world-boot --selftest` | no | no | no |
-| mod compile and world boot | `cargo xtask mod compile`, `cargo xtask mod world-boot` | no | `mod-gates.yml`, nightly on a self-hosted runner with the dedicated server | no |
-| editor smokes | `cargo xtask mk leptos-gates` | no | `editor-gates.yml`, nightly and on demand | no |
-| mortar calculator offline: pack download, service-worker reload, native solution | `cargo xtask mk mortar-offline-gate` | no | no; needs the local Everon tile index and the recorded catalog reads | no |
-| links, backticked paths and cited commands in the documentation | `cargo xtask verify link-check` | no | no | no |
+| Gate | Command | ci-local | GitHub |
+|---|---|---|---|
+| whitespace (FMT-2) | `cargo xtask ci verify-editorconfig` | no | `editorconfig` |
+| no Python (LANG-2, LANG-3) | `cargo xtask verify no-python` | in `verify-language-bans` | `language-gates` |
+| no Node scripts | `cargo xtask verify no-node` | in `verify-language-bans` | `language-gates` |
+| no shell or Make (LANG-1) | `cargo xtask verify no-shell` | in `verify-language-bans` | `language-gates` |
+| workspace laws (WS-1, WS-2, WS-5): crate tiers with the firewalls, crate anatomy, Tailwind sources | `cargo xtask ci verify-workspace-laws` | yes | `language-gates`, one step per law |
+| test-file reachability, frontend layering (WS-3, WS-4) | `cargo xtask verify test-file-reachability`, `cargo xtask verify frontend-layering` | no | no |
+| file length advice (SIZE-3; warns, never fails) | `cargo xtask verify file-length` | in `verify-file-length` | `language-gates` |
+| no `SELECT *` | `cargo xtask verify no-select-star` | no | no |
+| Rust formatting | `cargo xtask mk rust-fmt` | in `rust-ci` | `api` |
+| API clippy, `-D warnings` (`api_server` and every other `crates/api` package) | `cargo xtask mk rust-clippy` | in `rust-ci` | `api` |
+| wasm32 clippy `-D warnings` of every crate declaring `targets = "wasm32"` outside `crates/frontend` (derived from the workspace); the offline service worker is gated with the frontend family | `cargo xtask mk wasm-ci` | in `rust-ci` | `wasm-ci` |
+| API tests with Postgres (TEST-1; `api_server` and every other `crates/api` package) | `cargo xtask ci rust-test-it`; `cargo xtask db test-it` | in `rust-ci` | `api` (`cargo xtask ci api-test`) |
+| tests of every workspace member without a dedicated task (derived from `Cargo.toml`, so a new member is tested by default; the API crates run with the API tests; the binary-only `xtask` and `developer_tools` packages build there) | `cargo xtask ci workspace-member-tests` | yes | `workspace-members` |
+| frontend family, the app `frontend_application` and the offline service worker among it: fmt, clippy `-D warnings` (wasm32 and native), tests, Trunk build (TEST-2) | `cargo xtask mk ci-local-leptos` | yes | `frontend` |
+| generated contract types current | `cargo xtask ci verify-codegen-fresh` | in `ci-local-schema` | `schema` |
+| schema validation (TEST-3, ENF-4) | `cargo xtask ci schema-validate` | in `ci-local-schema` | `schema` |
+| map goldens: map-object golden, glyph atlas, height labels (need the LFS elevation raster) | `cargo xtask ci schema-map-goldens` | no | no |
+| registry aliases | `cargo xtask verify object-registry-aliases` | no | no |
+| mod boot verdict self-test | `cargo xtask mod world-boot --selftest` | no | no |
+| mod compile and world boot | `cargo xtask mod compile`, `cargo xtask mod world-boot` | no | `mod-gates.yml`, nightly on a self-hosted runner with the dedicated server |
+| editor smokes | `cargo xtask mk leptos-gates` | no | `editor-gates.yml`, nightly and on demand |
+| mortar calculator offline: pack download, service-worker reload, native solution | `cargo xtask mk mortar-offline-gate` | no | no; needs the local Everon tile index and the recorded catalog reads |
+| links, backticked paths and cited commands in the documentation | `cargo xtask verify link-check` | no | no |
 
 `ci.yml` runs on every push and pull request to `main` with no path filter; `editor-gates.yml`
 and `mod-gates.yml` run nightly and on manual dispatch. The walls between the crates, with the
@@ -194,8 +175,7 @@ passes step 7; a change to documentation passes step 8.
 
 GitHub's branch protection rule for `main` names its required status checks by the job names of
 `.github/workflows/ci.yml`: the API job is `api (Rust 1.95 + Postgres 18)` and the app's job
-`frontend (Leptos SPA)`; the one-time update of the rule to these names is step G1 of the
-[S2 operator steps](/documentation/archive/restructure_agent_briefs/s2_a2_to_a6.md#oc-deploy-operator-steps).
+`frontend (Leptos SPA)`.
 
 ## Troubleshooting
 
@@ -208,7 +188,6 @@ GitHub's branch protection rule for `main` names its required status checks by t
 | `cargo fmt` or clippy fails on files the change never touched | another session's uncommitted work in the same tree | judge the failure by path; gate a clean checkout of `main` |
 | `xtask ci: no such task: <name>` | the name is a `cargo xtask mk` or `cargo xtask verify` command, not a `ci` task | `cargo xtask help` lists the `ci` tasks and names the other lanes |
 | `link-check` exits 2 | `--path` named a file | pass the file's folder |
-| the wave gate prints `FAIL (TIMEOUT after <n>s)` | a step outran `TBD_GATE_TIMEOUT` (1200 s by default) | raise `TBD_GATE_TIMEOUT` or look for a hung step |
 
 ## Related
 
@@ -221,8 +200,6 @@ GitHub's branch protection rule for `main` names its required status checks by t
   run against.
 - [Database operations](/documentation/runbooks/database_operations.md) — the integration test
   database and its options.
-- [Factory waves](/documentation/runbooks/factory_waves/README.md) — the wave procedure the wave
-  gate belongs to.
 - [Coding standards](/documentation/standards/coding_standards/README.md) and
   [Crate boundary rules](/documentation/standards/crate_boundary_rules.md) — the rules the
   gates enforce.

@@ -26,7 +26,7 @@ main.rs ──▶ cli::dispatch::run ──▶ commands::<group>::dispatch::run 
 
 `main.rs` declares the modules, calls `cli::dispatch::run` and exits with the `u8` it returns, or
 prints `xtask: <error chain>` and exits 1 on an error. Every command finds the checkout from the
-working directory by walking up to `.ai/ROOT` (`find_repository_root` of the
+working directory by walking up to `.repository_root` (`find_repository_root` of the
 `repository_root` crate, which xtask reaches through `repository_layout::prelude`), so a command run inside a linked worktree reads that worktree's files,
 and the command crates join the repository paths they need from `repository_layout`'s constants. `commands/` holds the
 command groups that still live in the binary; `cargo xtask verify`, the `ci` task table of

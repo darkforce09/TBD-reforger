@@ -52,7 +52,7 @@ order as its steps 3 to 5.
    [RCON](/documentation/glossary/n_to_z.md#rcon) actions, and the
    [game runtime](/documentation/glossary/g_to_m.md#game-runtime) runs `broadcast`, `kick` and
    `load_mission` (the
-   [fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md#commands)
+   [fleet command ledger](/documentation/crates/api/api_server/design_notes/fleet_command_ledger.md#commands)
    lists every action and its executor).
 
 2. On the host, write the join password every instance requires.

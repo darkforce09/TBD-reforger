@@ -47,5 +47,3 @@ folders' READMEs list the files.
 
 - [Missions domain](/crates/api/api_missions/src/README.md) — the API side of the library,
   the lifecycle and the versions.
-- [Archived setup wizard page](/documentation/archive/go_and_react_era_design/mission_creator_setup_wizard_page.md)
-  — the standalone create page the dialog replaced.

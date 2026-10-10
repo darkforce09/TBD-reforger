@@ -33,7 +33,7 @@ direct_join::run(run_id)
   ├─ TBD_SSH_HOST from deploy.env, resolved once to its first IPv4 address
   ├─ remote probe:    ssh <TBD_SSH_HOST> bash -s   (the profile folder single-quoted)
   ├─ ping and probes::a2s_probe_json_for against that address, the server's game and A2S ports
-  ├─ probes::cmd_direct_join_log ─▶ .cursor/debug-8fc1e0.log in the checkout (rows H1 to H6)
+  ├─ probes::cmd_direct_join_log ─▶ .workstation/logs/direct_join_report.log in the checkout (rows H1 to H6)
   └─ print the summary
 ```
 
@@ -108,7 +108,7 @@ Each runs as `cargo xtask debug <command>`; a clap usage error exits 2.
 - Synopsis: `cargo xtask debug direct-join [<run-id>] [--instance <N>]`; the run id defaults to
   `user-repro`, and `--instance` picks fleet instance N.
 - Does: runs the probes above against the host of `TBD_SSH_HOST`, writes their six rows to
-  `debug-8fc1e0.log` in the checkout's `.cursor/`, and prints the build ids, the symlink, the ping,
+  `direct_join_report.log` in the checkout's `.workstation/logs/`, and prints the build ids, the symlink, the ping,
   the A2S answer and the remote section.
 - Exit codes: 0 written, also with no host configured (the host's probes then read `skipped`); 1
   the log cannot be written, or `--instance` names no instance of the fleet

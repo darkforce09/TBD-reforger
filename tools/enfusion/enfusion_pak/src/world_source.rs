@@ -32,14 +32,10 @@ impl PakVfs {
         })
     }
 
-    /// Open the game folder named by `ENFUSION_GAME_PATH`, else `$HOME/.cache/enfusion-mcp-root`.
-    pub fn open_default() -> Result<Self> {
-        let game = std::env::var("ENFUSION_GAME_PATH")
-            .map(PathBuf::from)
-            .unwrap_or_else(|_| {
-                PathBuf::from(std::env::var("HOME").unwrap_or_default())
-                    .join(".cache/enfusion-mcp-root")
-            });
+    /// Open the game folder named by `ENFUSION_GAME_PATH`, else `default_game_root` (the caller's
+    /// checkout-local MCP game root).
+    pub fn open_default(default_game_root: &Path) -> Result<Self> {
+        let game = game_root(default_game_root);
         Self::open(&game).map_err(|error| Error::NoPakVfs {
             reason: error.headline(),
         })
@@ -88,6 +84,13 @@ impl PakVfs {
     pub fn all_file_paths(&self) -> Vec<&str> {
         self.archives.all_file_paths()
     }
+}
+
+/// The game folder named by `ENFUSION_GAME_PATH` when set and non-empty, else `default_game_root`.
+pub(crate) fn game_root(default_game_root: &Path) -> PathBuf {
+    std::env::var_os("ENFUSION_GAME_PATH")
+        .filter(|value| !value.is_empty())
+        .map_or_else(|| default_game_root.to_path_buf(), PathBuf::from)
 }
 
 #[cfg(test)]

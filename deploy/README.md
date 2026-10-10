@@ -12,6 +12,7 @@ runtime's `compose -f` runs the two stacks.
 deploy/
 ├── caddy/               the Caddy site on :3080, the one folder the staging Caddy container mounts
 ├── compose.dev.yml      the local development stack: the API's Postgres on host port 5434
+├── api.env.example      the API's settings template, copied to the gitignored api.env beside it
 ├── compose.staging.yml  the home server's stack: Postgres, Caddy, and the API image under the `api` profile
 ├── deploy.env.example   the settings template, copied to the gitignored deploy.env beside it
 ├── Dockerfile           the API's release image, built from the repository root
@@ -111,6 +112,11 @@ covers the site, the mounts and the forwarded-address trust.
   `cargo xtask mod bootstrap-staging`, `cargo xtask mod remote-logs`,
   `cargo xtask debug direct-join`, `cargo xtask debug a2s-probe` (without `--host`) and
   `cargo xtask setup client-addons` (for its Direct Join hint).
+- `api.env.example`: copied to `api.env` beside it on a development machine
+  (`cp deploy/api.env.example deploy/api.env`) and on a deploy host, where it is filled in. The
+  API reads `api.env` (or the file `TBD_API_ENV_FILE` names) at boot, the API's systemd unit loads
+  it as its `EnvironmentFile`, and both deploys exclude it from their rsync and refuse to run
+  while the host holds none.
 - `caddy/`: rsynced with the checkout; every `cargo xtask deploy website` starts the `caddy`
   service and reloads its Caddyfile, as that folder's README describes.
 - `compose.staging.yml`: run on the home server from the checkout; `cargo xtask deploy website`

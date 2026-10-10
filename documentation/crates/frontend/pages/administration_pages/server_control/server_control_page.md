@@ -35,8 +35,8 @@ session reports.
   [missions domain](/crates/api/api_missions/src/README.md); the
   [game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) and its
   [README](/crates/fleet/game_server_host_agent/README.md); the
-  [fleet command ledger evidence](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
-  and [machine credentials evidence](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md).
+  [fleet command ledger design note](/documentation/crates/api/api_server/design_notes/fleet_command_ledger.md)
+  and [machine credentials design note](/documentation/crates/api/api_server/design_notes/machine_credentials.md).
 
 ## Behaviour
 
@@ -66,7 +66,7 @@ mention.
    above zero), "Oldest" (the age of the oldest waiting entry) and "Reported" (when the API stored
    the reading, in the viewer's zone). A server that reports no status shows zeros and dashes; a
    server that never reported a queue reading shows "No reading" in the queue column. The
-   [telemetry specification](/documentation/crates/api/api_server/verification_evidence/telemetry.md#game-runtime-telemetry-queue)
+   [telemetry specification](/documentation/crates/api/api_server/design_notes/telemetry.md#game-runtime-telemetry-queue)
    defines the reading.
 
 ### Registering and editing servers
@@ -308,10 +308,10 @@ REGISTRATION SHEET (side sheet: "Add a server", or "Server settings" from Edit)
 
 ## Open work
 
-- [T-086 — Server Control + RCON API](/.ai/tickets/T-086.toml) (deferred, no plan): a live server
-  control panel wired to an RCON backend. The page's console box sends one line at a time as a
-  `console_command` fleet command and shows the reply the host agent reports; it streams no live
-  console and calls no RCON route.
+- Server Control + RCON API (ticket `server-control-rcon-api` in `ttm`): a live server control panel
+  wired to an RCON backend. The page's console box sends one line at a time as a `console_command`
+  fleet command and shows the reply the host agent reports; it streams no live console and calls no
+  RCON route.
 
 ## Decisions
 

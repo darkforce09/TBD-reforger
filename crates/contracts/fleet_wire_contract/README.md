@@ -81,7 +81,7 @@ None: the crate reads no environment variable and declares no feature.
 
 ## Related documentation
 
-- [Fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md) —
+- [Fleet command ledger](/documentation/crates/api/api_server/design_notes/fleet_command_ledger.md) —
   the states, the claim and fencing rules, and the reports these shapes carry.
 - [Fleet command execution](/documentation/crates/fleet/game_server_host_agent/fleet_command_execution.md) —
   how the host agent claims, performs and reports a command.

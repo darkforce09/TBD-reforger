@@ -4,7 +4,7 @@
 
 The Arma 3 Eden editor's workspace, panel by panel, as the Bohemia wiki describes it: the reference
 design the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) is measured against.
-Each panel cites its wiki pages, scraped into `.ai/artifacts/eden-wiki/`; the panel names in
+Each panel cites its wiki pages, scraped into `documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_wiki_scrape/`; the panel names in
 backticks are the UI surfaces of the
 [feature entry schema](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/feds_schema.md#eden-reference-entries).
 The [interactions catalog](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/interactions/README.md)
@@ -75,7 +75,7 @@ Quick-access buttons at top of workspace (below or integrated with menu area).
 | Phase | Select scenario phase |
 | Tutorials | In-editor tutorial picker |
 
-**Evidence:** [Toolbar](https://community.bistudio.com/wiki/Eden_Editor:_Toolbar) — scraped `.ai/artifacts/eden-wiki/Eden_Editor__Toolbar.md`.
+**Evidence:** [Toolbar](https://community.bistudio.com/wiki/Eden_Editor:_Toolbar) — scraped `documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_wiki_scrape/Eden_Editor__Toolbar.md`.
 
 **Note:** `Space` cycles transformation widget variants when widget active ([Transformation Widget](https://community.bistudio.com/wiki/Eden_Editor:_Transformation_Widget#Variants)).
 

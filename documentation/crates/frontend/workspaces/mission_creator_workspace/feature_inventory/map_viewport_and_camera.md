@@ -144,16 +144,15 @@ The status legend is in the [inventory index](/documentation/crates/frontend/wor
 
 ## Open work
 
-- [T-294 — Arland has a manifest and no object data](/documentation/tickets/specs/t294_arland_objects.md)
-  (ready, [plan](/documentation/tickets/plans/t-294_plan.md)): an Arland mission gets its own
-  terrain data.
-- [T-1062 — Derive map grid, basemap, peaks and forest from terrain size](/.ai/tickets/T-1062.toml)
-  (idea, no plan): bounds, grid and basemap follow the terrain's size instead of 12800 m.
-- [T-817 — Grid labels lag ~1.4s on stationary wheel zoom](/documentation/tickets/specs/t817_grid_label_zoom_lag.md)
-  (ready, [plan](/documentation/tickets/plans/t-817_plan.md)): the edge grid references follow
-  a wheel zoom at once.
-- [T-725 — Zoom labels lag; northings under bar; hide Failed scale fallback](/.ai/tickets/T-725.toml)
-  (deferred, no plan): the same label lag, and northings kept clear of the status bar.
+- Arland has a manifest and no object data (ticket `arland-has-manifest-no` in `ttm`): an Arland
+  mission gets its own terrain data.
+- Derive map grid, basemap, peaks and forest from terrain size (ticket `derive-map-grid-basemap` in
+  `ttm`): bounds, grid and basemap follow the terrain's size instead of 12800 m.
+- Grid labels lag ~1.4s on stationary wheel zoom (ticket `grid-labels-lag-1` in `ttm`): the edge
+  grid references follow a wheel zoom at once.
+- Zoom labels lag; northings under bar; hide Failed scale fallback (ticket
+  `zoom-labels-lag-northings` in `ttm`): the same label lag, and northings kept clear of the status
+  bar.
 
 ## Decisions
 

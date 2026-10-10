@@ -157,8 +157,9 @@ character ("Every role needs a name and a character.").
 
 ### Known discrepancies
 
-- The disabled "Custom" chip's tooltip reads "Custom groups arrive in T-078"
-  (`shell/factions_panel.rs:96`) — interface text names a ticket, and T-078 is cancelled.
+- The disabled "Custom" chip's tooltip reads "Custom groups are not available yet"
+  (`shell/factions_panel.rs:99`) — interface text names a ticket by its legacy id, and that ticket,
+  `custom-compositions`, is cancelled.
 - An object leaf in a side's tree says "Drag onto the map to place this object"
   (`ui/docks/dock_right/palette/mod.rs:38`) — the side mode refuses to arm objects
   (`placement_is_armable` in `crates/mission/mission_operations/src/entity/arming.rs`),
@@ -187,25 +188,21 @@ character ("Every role needs a name and a character.").
 
 ## Open work
 
-- [T-146 — Asset Browser Data Wiring](/documentation/tickets/specs/t146_asset_browser_data_wiring.md)
-  (ready, [plan](/documentation/tickets/plans/t-146_plan.md)): the registry's vehicles and
-  crates in the asset browser.
-- [T-820 — Catalog failure generic cause; chips visible wrongly](/documentation/tickets/specs/t820_catalog_failure_cause.md)
-  (ready, [plan](/documentation/tickets/plans/t-820_plan.md)): the failure view names its
-  cause, and the chips hide when there is no catalog.
-- [T-838 — Map markers selectable; outliner lists; dblclick opens Attributes](/documentation/tickets/specs/t838_marker_select_outliner.md)
-  (ready, [plan](/documentation/tickets/plans/t-838_plan.md)) and
-  [T-932 — Parked briefing markers survive server save/reload](/documentation/tickets/specs/t932_parked_markers_persist.md)
-  (queued, [plan](/documentation/tickets/plans/t-932_plan.md)): markers.
-- [T-212 — Typed per-side objectives with attributes](/documentation/tickets/specs/t212_typed_objectives.md)
-  (ready, [plan](/documentation/tickets/plans/t-212_plan.md)): objectives as their own
-  entities.
-- [T-939.7 — Vehicles panel virtualization, memoized outliner flatten](/documentation/tickets/specs/t939_editor_usability.md)
-  (ready, [plan](/documentation/tickets/plans/t-939_7_plan.md)): a long vehicle list stays
-  fast.
-- [T-728 — Save-composition affordance reads a channel selection never bumps](/.ai/tickets/T-728.toml)
-  and [T-729 — Owner-line materialize per frame; zones mislabels triggers](/.ai/tickets/T-729.toml)
-  (deferred, no plan).
+- Asset Browser Data Wiring (ticket `asset-browser-data-wiring` in `ttm`): the registry's vehicles
+  and crates in the asset browser.
+- Catalog failure generic cause; chips visible wrongly (ticket `catalog-failure-generic-cause` in
+  `ttm`): the failure view names its cause, and the chips hide when there is no catalog.
+- Map markers selectable; outliner lists; dblclick opens Attributes (ticket
+  `map-markers-selectable-outliner` in `ttm`) and Parked briefing markers survive server save/reload
+  (ticket `parked-briefing-markers-survive` in `ttm`): markers.
+- Typed per-side objectives with attributes (ticket `typed-side-objectives-attributes` in `ttm`):
+  objectives as their own entities.
+- Vehicles panel virtualization, memoized outliner flatten (ticket
+  `editor-usability-selection-gizmo.vehicles-panel-virtualization-memoized` in `ttm`): a long
+  vehicle list stays fast.
+- Save-composition affordance reads a channel selection never bumps (ticket
+  `save-composition-affordance-reads` in `ttm`) and Owner-line materialize per frame; zones
+  mislabels triggers (ticket `owner-line-materialize-frame` in `ttm`).
 
 ## Decisions
 

@@ -45,5 +45,5 @@ compile findings. The code folder's README lists the page's files.
 
 ## Related documentation
 
-- [Mission artifacts evidence](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
+- [Mission artifacts design note](/documentation/crates/api/api_server/design_notes/mission_artifacts.md)
   — the verification of artifacts, reviews and deployments that the review drawer relies on.

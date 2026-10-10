@@ -88,7 +88,7 @@ before every deployment read, and in `reconcile_mission_deployments`; every outc
 
 ## Related documentation
 
-- [Mission artifacts, reviews and deployment](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
+- [Mission artifacts, reviews and deployment](/documentation/crates/api/api_server/design_notes/mission_artifacts.md)
   — the deployment design, its refusals and the game runtime's side.
-- [Live slot occupancy](/documentation/crates/api/api_server/verification_evidence/live_occupancy.md)
+- [Live slot occupancy](/documentation/crates/api/api_server/design_notes/live_occupancy.md)
   — how deployment authorization reads the slot bindings.

@@ -88,9 +88,9 @@ into it unchanged.
 
 ## Related documentation
 
-- [Fleet command ledger](/documentation/crates/api/api_server/verification_evidence/fleet_command_ledger.md)
+- [Fleet command ledger](/documentation/crates/api/api_server/design_notes/fleet_command_ledger.md)
   — the leases and expiries the fleet command reconciler enforces.
-- [Mission artifacts](/documentation/crates/api/api_server/verification_evidence/mission_artifacts.md)
+- [Mission artifacts](/documentation/crates/api/api_server/design_notes/mission_artifacts.md)
   — how a mission deployment settles.
-- [Event eligibility and allocation](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/crates/api/api_server/design_notes/event_eligibility_allocation.md)
   — the re-evaluation requests the reservation worker drains.

@@ -612,7 +612,6 @@ dependencies = [
  "chrono",
  "content_digest",
  "contract_schema_types",
- "dotenvy",
  "fire_mission_planning",
  "fleet_wire_contract",
  "futures",
@@ -1287,6 +1286,7 @@ dependencies = [
  "libc",
  "map_asset_verification",
  "process_runner",
+ "regex",
  "repository_checks",
  "repository_laws",
  "repository_layout",
@@ -1296,6 +1296,7 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.18",
  "verification_core",
+ "walkdir",
 ]
 
 [[package]]
@@ -4459,7 +4460,6 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "content_digest",
- "database_operations",
  "enfusion_mcp",
  "flate2",
  "fleet_wire_contract",
@@ -5625,6 +5625,7 @@ dependencies = [
  "newtype_ids",
  "process_runner",
  "regex",
+ "repository_layout",
  "repository_root",
  "serde_json",
  "thiserror 2.0.18",
@@ -5693,16 +5694,6 @@ name = "repository_layout"
 version = "0.1.0"
 dependencies = [
  "repository_root",
-]
-
-[[package]]
-name = "repository_relocation"
-version = "0.1.0"
-dependencies = [
- "aho-corasick",
- "process_runner",
- "repository_layout",
- "verification_core",
 ]
 
 [[package]]
@@ -8490,7 +8481,6 @@ dependencies = [
  "remote_debugging",
  "repository_checks",
  "repository_layout",
- "repository_relocation",
  "schema_tooling",
  "serde",
  "serde_json",

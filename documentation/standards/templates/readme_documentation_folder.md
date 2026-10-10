@@ -3,16 +3,14 @@
 # README template: documentation folder
 
 **When to use:** any folder under `documentation/`, the root included: a feature's folder in
-the code mirror, `documentation/runbooks/`, `documentation/known_bugs/`, a folder of
-tickets or an archive topic. The pending-merge area is exempt and needs no README. The
+the code mirror, `documentation/runbooks/` or `documentation/known_bugs/`. The pending-merge area is exempt and needs no README. The
 [README standard](/documentation/standards/readme_standard.md) defines every rule this template
 follows; the documentation folder kind adds Code.
 
 ## Skeleton
 
 Copy the block and replace every `<…>` placeholder; each one says what goes there. The status line
-`**Status:** live` comes first, as the standard sets for every README under `documentation/`,
-the index of a frozen or archived folder included.
+`**Status:** live` comes first, as the standard sets for every README under `documentation/`.
 
 A visual reference set, one folder under a feature's `visual_references/`, fills the skeleton this
 way. The purpose opens "Live design target for …" or "Design-phase reference for …", naming the
@@ -51,8 +49,8 @@ counted).>
 
 - Depends on: <the templates and standards the documents follow, and the sources they draw on>
 - Used by: <the documents, READMEs, rules and code comments that link here, found with git grep>
-- Rules: <the invariants a change must keep: naming, numbering, what stays and what moves to the
-  archive>
+- Rules: <the invariants a change must keep: naming, numbering, what stays and what is
+  deleted>
 
 ## Related documentation
 
@@ -101,10 +99,9 @@ status set to resolved.
 
 ## Boundaries
 
-- Depends on: the known bug template, which fixes each entry's sections, and the ticket registry
-  in `.ai/tickets/` for Related tickets.
-- Used by: the editor gate and editor capture runbooks, which cite KB-002; the Cursor rule
-  `.cursor/rules/acceptance-gates-reproducible.mdc`, which sends a recorded gate defect here; and
+- Depends on: the known bug template, which fixes each entry's sections, and the ticket manager
+  (`ttm`), which holds the tickets Related tickets names.
+- Used by: the editor gate and editor capture runbooks, which cite KB-002, and
   comments in the gate harness that name KB-002.
 - Rules: one bug per file; a number is never reused; a resolved entry stays with its status set to
   resolved.

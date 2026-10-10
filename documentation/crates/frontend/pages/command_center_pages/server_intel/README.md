@@ -34,7 +34,7 @@ the page's files, calls and states.
 ## Boundaries
 
 - Depends on: the feature doc template; the page code, the server infrastructure handlers and the
-  ticket registry in `.ai/tickets/`, which the feature doc is written from.
+  ticket manager (`ttm`), which the feature doc is written from.
 - Used by: the page's in-code README, the command center pages README and the frontend API client
   README in `crates/frontend/foundation/frontend_transport/src/`, which link the feature doc; the server
   control feature doc; the web app README's page table in `documentation/crates/frontend/shell/frontend_application/`.

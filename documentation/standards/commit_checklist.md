@@ -9,8 +9,7 @@ truthful when you change a folder's surface; that is advice, not a gate.
 ## Before you start
 
 **Authority.** Running code wins over every document, then `CLAUDE.md` (its laws), then the
-feature docs and roadmaps under `documentation/`, then the archive, which is history and never
-working context.
+feature docs and roadmaps under `documentation/`. The commit history holds what came before.
 
 | Work | Read first |
 |---|---|
@@ -21,7 +20,6 @@ working context.
 | where a new file goes | [Where does X go?](/documentation/standards/where_does_x_go.md) |
 | comments and cross-boundary tags | [Documentation standards](/documentation/standards/documentation_standards.md) |
 | code rules | [Coding standards](/documentation/standards/coding_standards/README.md) |
-| ticket references in commits and files | [Ticket identifiers](/documentation/standards/ticket_identifiers.md) |
 
 ## Related updates
 
@@ -44,8 +42,6 @@ working context.
 
 - The generated contract types under `crates/contracts/contract_schema_types/src/generated/`;
   regenerate them.
-- The frozen records: `documentation/tickets/` once a ticket ships or is cancelled, and
-  `documentation/archive/`. Only their links change.
 - The design exports in a `visual_references/` folder, which are references, not the source of
   the UI; the live UI is the Leptos code under `crates/frontend/shell/frontend_application/src/`.
 
@@ -80,20 +76,18 @@ integrity, destructive-operation guards); never source text, prose, CSS classes,
 ## Commit conventions
 
 - Commit directly to `main`; create no branch (CLAUDE.md law 2). The one exception is the
-  `slice/<ticket>` branches that `cargo xtask platform slice-worktree` and the
-  [wave](/documentation/glossary/n_to_z.md#wave) tooling create, merge and delete themselves.
+  `slice/<ticket>` branches the ticket manager's [wave](/documentation/glossary/n_to_z.md#wave)
+  runner creates, merges and deletes itself.
 - Subject: `type(scope): summary`, with the type one of `feat`, `fix`, `refactor`, `test`, `docs`
-  or `chore`. A commit that lands a ticket names it in the subject: the ticket manager links a
-  ticket to the commits whose subjects name it, as
-  [Ticket identifiers](/documentation/standards/ticket_identifiers.md#in-commit-subjects)
-  describes.
+  or `chore`. A commit that lands a ticket names it in the subject by slug (or, for an imported
+  ticket, its legacy `T-` number): the ticket manager links a ticket to the commits whose
+  subjects name it.
 - A commit written with an AI agent ends with a `Co-Authored-By:` trailer.
 - An agent commits only when asked. When the tree holds someone else's uncommitted work, stage
   only your own hunks.
 
 ## Related documentation
 
-- [Running a wave](/documentation/runbooks/factory_waves/running_a_wave.md) — the ticket
-  lifecycle around a landing commit: run, land, ship and close the wave.
-- [Ticket manager client](/tools/foundation/ticket_manager_client/README.md) — how the tools
-  reach the central ticket manager.
+- [Testing and CI](/documentation/runbooks/testing_and_ci.md) — the gates and where they run.
+- [Where does X go?](/documentation/standards/where_does_x_go.md) — the home of each kind of
+  file, tickets included.

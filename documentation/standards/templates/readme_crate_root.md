@@ -74,7 +74,6 @@ game servers and the game server host agent, applies the Postgres schema migrati
 
 ```text
 crates/api/api_server/
-├── .env.example  the template the gitignored `.env` is copied from, with development values
 ├── Cargo.toml    the `api_server` package: the library and its two binaries
 ├── src/          the application: the router, the composition root, the binaries, the layout rules
 └── tests/        integration suites against real Postgres, with their shared support
@@ -94,7 +93,7 @@ crates below them depend on no domain, and the background workers are their own 
 
 ## Getting started
 
-Copy `crates/api/api_server/.env.example` to `crates/api/api_server/.env`, then run these from
+Copy `deploy/api.env.example` to `deploy/api.env`, then run these from
 the repository root, in this order:
 
 ```bash

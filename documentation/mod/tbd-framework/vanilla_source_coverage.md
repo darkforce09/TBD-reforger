@@ -6,7 +6,7 @@ Where the vanilla Arma Reforger script source that the `enf` oracle indexes come
 what each one reaches, and which to use for a question. Read it before assuming a vanilla class is
 greppable. Every lane writes into `vanilla_reference`, a gitignored folder of the
 [reference lanes](/mod/References/README.md) in `mod/References/` (Bohemia's copyrighted
-source is never committed); only the derived `.ai/artifacts/enf-index/vanilla_*.tsv` indexes
+source is never committed); only the derived `mod/reference_symbol_index/vanilla_*.tsv` indexes
 are.
 
 ## The lanes
@@ -24,7 +24,7 @@ are.
 cargo run -q -p developer_tools --bin enf -- index vanilla --root mod/References/vanilla_reference
 ```
 
-The committed index (`.ai/artifacts/enf-index/vanilla_files.tsv`) holds 2,146 files, 98,475
+The committed index (`mod/reference_symbol_index/vanilla_files.tsv`) holds 2,146 files, 98,475
 lines and 1,775 class declarations: 610 carved fragments, 47 reconstructed source files and the
 extracted scripts.
 
@@ -85,7 +85,7 @@ keeps 127 files instead of 610.
 
 1. Behaviour of a vanilla class: its reconstructed source in the `Source/` folder of
    `vanilla_reference`; fetch its page first when it is missing.
-2. A signature or member list: `rg '^<Class>\t' .ai/artifacts/enf-index/vanilla_api_members.tsv`,
+2. A signature or member list: `rg '^<Class>\t' mod/reference_symbol_index/vanilla_api_members.tsv`,
    or `cargo xtask mcp call api_search '{"query":"<Class>"}'`.
 3. How a pipeline is driven in practice: CRF's usage, through `enf lookup <symbol>` on the CRF
    lane. `CRF_SCR_PossessSpawnHandlerComponent.c` is how the possess pipeline was found.

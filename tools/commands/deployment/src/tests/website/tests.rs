@@ -32,7 +32,7 @@ fn rsync_excludes_the_secrets_asset_and_scratch_trees() {
     for needed in [
         ".git/",
         "target/",
-        "crates/api/api_server/.env",
+        repository_layout::API_SETTINGS_FILE,
         repository_layout::DEPLOY_ENV,
         // The served terrain tree, and the 1.5 GB of gitignored export intermediates beside it.
         "assets/terrains/",

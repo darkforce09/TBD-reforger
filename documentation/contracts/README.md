@@ -10,8 +10,9 @@ the [contracts README](/contracts/README.md), which says what each folder of the
 
 ```text
 documentation/contracts/
-├── definitions/                the contracts of individual schemas in contracts/definitions/
-└── schema_evolution_policy.md  how a schema may change: additive rules, versions, breaking changes
+├── ace_arsenal_taxonomy_map.md  ACE arsenal categories mapped to registry kinds and Reforger signals
+├── definitions/                 the contracts of individual schemas in contracts/definitions/
+└── schema_evolution_policy.md   how a schema may change: additive rules, versions, breaking changes
 ```
 
 ## How it works
@@ -40,7 +41,7 @@ follows the [feature doc template](/documentation/standards/templates/feature_do
 - Depends on: the schemas and fixtures in `contracts/`, the codegen in
   `tools/commands/schema_tooling/src/generate/` and the schema gates in
   `tools/commands/schema_tooling/src/schema_checks/`, which every claim is checked against; the feature
-  doc template; the ticket registry in `.ai/tickets/` for open work.
+  doc template; the ticket manager (`ttm`) for open work.
 - Used by: the READMEs of `contracts/`, `contracts/definitions/` and
   `contracts/fixtures/bridge_samples/`, which link these documents; the [mod](/documentation/glossary/g_to_m.md#mod)'s radio hook class
   `TBD_RadioBridgeStub`, whose header cites the bridge contract.
@@ -50,7 +51,5 @@ follows the [feature doc template](/documentation/standards/templates/feature_do
 
 ## Related documentation
 
-- [Contract pipeline and evolution policy, archived](/documentation/archive/contracts_v2_relocation/architecture_plan.md)
-  — the frozen plan the live policy carries forward.
 - [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the framework's
   no-workshop-dependency rule behind the bridge hooks.

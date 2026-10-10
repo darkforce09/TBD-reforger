@@ -41,8 +41,7 @@ and a read the game server can make for the player who asks.
 
 ## Design
 
-The design is at the idea stage, drawn from the product blueprint (archived at
-`documentation/archive/go_and_react_era_design/mission_creator_design.md`, section 3) and the
+The design is at the idea stage, drawn from the product blueprint's planner section and the
 planner's first design draft. No visual reference set exists.
 
 ### Design notes
@@ -64,8 +63,8 @@ planner's first design draft. No visual reference set exists.
 
 ## Open work
 
-None: no ticket in `.ai/tickets/` covers the planner workspace. T-131, "Route planner tool"
-(ready), is a Mission Creator tool that snaps routes to roads, not this workspace.
+None: no ticket in `ttm` covers the planner workspace. `route-planner-tool`, "Route planner
+tool" (ready), is a Mission Creator tool that snaps routes to roads, not this workspace.
 
 ## Decisions
 

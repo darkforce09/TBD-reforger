@@ -40,8 +40,9 @@ archive to hold a path wins, and later archives never shadow it. `ReadPolicy` se
 | Malformed archive | the whole set fails to open | skipped with a message on stderr |
 
 `PakVfs::open` reads `<game>/addons/`; `PakVfs::open_default` takes the game folder from
-`ENFUSION_GAME_PATH`, or `$HOME/.cache/enfusion-mcp-root` when it is unset, and
-`PakSet::default_dir` is that cache's `addons/`. `PakVfs` also exposes the raw stored bytes, the
+`ENFUSION_GAME_PATH`, or the default game folder its caller passes (the checkout's
+`.workstation/enfusion_mcp_game_root`) when it is unset, and `PakSet::game_addons_dir` is that
+folder's `addons/`. `PakVfs` also exposes the raw stored bytes, the
 `DATA` offset, the method tag and every path, which the texture and topo decoders use for diagnosis.
 
 `DirSource` resolves a path exactly first, then case-insensitively one component at a time.

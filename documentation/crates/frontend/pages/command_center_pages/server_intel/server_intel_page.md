@@ -116,8 +116,7 @@ The page writes nothing and stores nothing in the browser.
   three-column telemetry grid (one column on narrow screens) and the intelligence strip. The
   backdrop and the theatre tile are fixed images hosted on `lh3.googleusercontent.com`.
 - Design target: the [server intel blueprint](/documentation/crates/frontend/pages/command_center_pages/server_intel/visual_references/server_intel_blueprint/README.md),
-  a design-phase reference, and the archived platform spec's
-  [Server Intel section](/documentation/archive/go_and_react_era_design/platform_context_handoff.md#1-server-intel).
+  a design-phase reference.
   The built page follows the blueprint closely and differs:
   - the theatre tile's second line is "Match <id>" or "No Active Mission" rather than an
     operation's name, and its image does not change with the terrain;
@@ -131,13 +130,13 @@ The page writes nothing and stores nothing in the browser.
 
 ## Open work
 
-- [T-088 — Multi-server picker](/.ai/tickets/T-088.toml) (deferred, no plan): the viewer chooses
-  which server the page reports on instead of always seeing the first active one.
+- Multi-server picker (ticket `multi-server-picker` in `ttm`): the viewer chooses which server the
+  page reports on instead of always seeing the first active one.
 
 ## Decisions
 
 - One server, chosen by rule: the page reports the first active server rather than asking the
-  viewer, and a picker waits for T-088.
+  viewer, and a picker waits for `multi-server-picker`.
 - The status stream is the only live connection in the command center: the list gives the first
   paint, and the stream keeps it current without polling.
 - No readout invents a value: a missing status shows "—" and a missing terrain shows no name;

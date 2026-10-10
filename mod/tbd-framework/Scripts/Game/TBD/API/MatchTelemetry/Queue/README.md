@@ -80,5 +80,5 @@ it.
 
 - [Match telemetry transport](/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/README.md) — how the
   queue, the reports and the delivery fit together
-- [Match telemetry design](/documentation/crates/api/api_server/verification_evidence/telemetry.md) — the
+- [Match telemetry design](/documentation/crates/api/api_server/design_notes/telemetry.md) — the
   game-runtime telemetry queue section

@@ -34,8 +34,8 @@ documentation/crates/graphics/
 - Depends on: the code of `crates/graphics/` and its callers in `crates/map_rendering/` and
   `crates/paper_doll/`,
   which every claim is checked against; the
-  [feature doc template](/documentation/standards/templates/feature_doc.md); the ticket registry
-  in `.ai/tickets/` for open work.
+  [feature doc template](/documentation/standards/templates/feature_doc.md); the ticket manager
+  (`ttm`) for open work.
 - Used by: the graphics crates' code READMEs, which link the overview under Related
   documentation; the [library crate documentation](/documentation/crates/README.md) index; the
   [crate boundary rules](/documentation/standards/crate_boundary_rules.md) and the

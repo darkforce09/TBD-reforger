@@ -41,8 +41,7 @@ cargo test -p enfusion_pak   # synthetic archives under both policies; the real-
 
 | Variable | Default | Effect |
 |---|---|---|
-| `ENFUSION_GAME_PATH` | `$HOME/.cache/enfusion-mcp-root` | the game folder `PakVfs::open_default` opens; its `addons/` holds the paks |
-| `HOME` | none | the base of the default game folder and of `PakSet::default_dir` |
+| `ENFUSION_GAME_PATH` | `<checkout>/.workstation/enfusion_mcp_game_root` | the game folder `PakVfs::open_default` opens; its `addons/` holds the paks |
 
 ## Boundaries
 

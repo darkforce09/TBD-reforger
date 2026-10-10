@@ -455,7 +455,10 @@ pub(crate) fn cmd_verified(ctx: &Ctx, sha: &str) -> u8 {
         wprintln!("not a sha: {sha}");
         return 1;
     }
-    let _ = std::fs::create_dir_all(ctx.root.join(repository_layout::ARTIFACTS_DIR));
+    let marker = ctx.root.join(repository_layout::LAST_VERIFIED_MARKER);
+    if let Some(folder) = marker.parent() {
+        let _ = std::fs::create_dir_all(folder);
+    }
     let full = git_stdout_lossy(&["rev-parse", sha]);
     // `git rev-parse "$sha" > file` writes the sha AND its trailing newline.
     let _ = std::fs::write(

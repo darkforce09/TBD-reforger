@@ -2,10 +2,8 @@
 //!
 //! WHY THIS EXISTS
 //! ---------------
-//! `.ai/artifacts/slot_materialization_handoff.md` calls getting vanilla sources greppable
-//! *"the highest-leverage tooling task available"*, and records one loading-screen hunt
-//! costing 4 Workbench restarts + 3 operator round-trips that a single `grep` would have
-//! answered. `api_search` returns signatures, never bodies.
+//! Greppable vanilla sources answer in one `grep` what a Workbench hunt answers in several
+//! Workbench restarts and operator round-trips. `api_search` returns signatures, never bodies.
 //!
 //! THE HANDOFF'S BLOCKING ASSUMPTION IS FALSE (measured 2026-07-25)
 //! It states there is "no vanilla `.c` source on disk". There is:
@@ -304,5 +302,5 @@ Regenerate with:
 Filenames are `Carved/<pak>/<seq>_<sha8>.c` because scripts are **not name-addressable** inside
 the pak FILE tree — there are no `.c` names to recover. `_MANIFEST.tsv` records the pak, byte
 offset and length each blob came from. Only the derived symbol index
-(`.ai/artifacts/enf-index/vanilla_*.tsv` — names and coordinates, no bodies) is committed.
+(`mod/reference_symbol_index/vanilla_*.tsv` — names and coordinates, no bodies) is committed.
 "#;

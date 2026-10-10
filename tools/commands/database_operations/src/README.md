@@ -16,7 +16,6 @@ tools/commands/database_operations/src/
 ├── lib.rs                     the crate root: module header, `mod` lines and the re-exports
 ├── local_database/            test-it, the checksum repair, the self-test, the recipe runner (compose, seeds, import)
 ├── local_database.rs          the `DbCmd` clap enum, `run`, the frozen recipe constants, the restore wrapper
-├── milestone_announcement.rs  `mod seed-announcement`: inserts the pinned milestone announcement once
 ├── prelude.rs                 `DbCmd`, `DeployDbCmd`, `Error` and `Result` for glob import
 ├── restore.rs                 `deploy db restore`: guard, verify, then `pg_restore --clean --if-exists`
 ├── restore_drill/             the drill: restore into a scratch database, then the table and boot audits

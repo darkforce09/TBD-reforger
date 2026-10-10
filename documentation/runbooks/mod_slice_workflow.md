@@ -271,13 +271,13 @@ is generated and `enf citations` gates prose citations.
 
 | Need | Command or path |
 |---|---|
-| Does a CRF or vanilla scripted symbol exist? | `cargo run -q -p developer_tools --bin enf -- lookup <Symbol>` (the CRF index by default); add `--index .ai/artifacts/enf-index/vanilla_symbols.tsv` for vanilla |
-| Is a class in the official Script API? | `rg '^<Class>\t' .ai/artifacts/enf-index/vanilla_api_classes.tsv` |
+| Does a CRF or vanilla scripted symbol exist? | `cargo run -q -p developer_tools --bin enf -- lookup <Symbol>` (the CRF index by default); add `--index mod/reference_symbol_index/vanilla_symbols.tsv` for vanilla |
+| Is a class in the official Script API? | `rg '^<Class>\t' mod/reference_symbol_index/vanilla_api_classes.tsv` |
 | What does vanilla actually do? | `rg <pattern>` over the `Source/` folder of the `vanilla_reference` lane in `mod/References/`: real source with method bodies |
 | More vanilla source | `cargo xtask fetch vanilla-source <ClassName>…`, then `enf source`; the site is one person's, so never `--all` |
 | How does a working framework do it? | `rg <pattern>` over the `crf_framework` lane in `mod/References/`: CRF, Arma Public License, reference only |
 | How is a lobby or slot picker shaped? | `rg <pattern>` over the `playable_selector` lane in `mod/References/`: no licence, design only ([Oracle lanes](#oracle-lanes)) |
-| Where does a subsystem live? | `enf dirs`, and `.ai/artifacts/enf-index/capability_matrix.tsv` |
+| Where does a subsystem live? | `enf dirs`, and `mod/reference_symbol_index/capability_matrix.tsv` |
 | Does my change compile? | `cargo xtask mod compile`: about 1.3 s on the native server, no Workbench |
 | Does an API exist, definitively? | `cargo xtask mod compile --probe=<dir>`: call it in a throwaway `.c` file in that dir; a clean compile means it exists |
 | Workbench, prefabs, resource names | the [Workbench MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md): look names up with its tools, never type a GUID by hand |

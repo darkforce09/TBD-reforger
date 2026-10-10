@@ -89,9 +89,9 @@ columns, and reads an event's missions with their guns.
 
 ## Related documentation
 
-- [Event eligibility and allocation](/documentation/crates/api/api_server/verification_evidence/event_eligibility_allocation.md)
+- [Event eligibility and allocation](/documentation/crates/api/api_server/design_notes/event_eligibility_allocation.md)
   — access, pools, promotion, re-evaluation and derived attendance.
-- [Live slot occupancy](/documentation/crates/api/api_server/verification_evidence/live_occupancy.md)
+- [Live slot occupancy](/documentation/crates/api/api_server/design_notes/live_occupancy.md)
   — deployment authorization and ended lives.
-- [Reservation and attendance separation](/documentation/crates/api/api_server/verification_evidence/reservation_attendance.md)
+- [Reservation and attendance separation](/documentation/crates/api/api_server/design_notes/reservation_attendance.md)
   — how a reservation and its attendance stay apart.

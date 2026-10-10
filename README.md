@@ -12,31 +12,35 @@ that controls those servers, the contracts and map data they share, and the deve
 
 ```text
 ./
-├── .ai/                         the checkout-root marker `ROOT`, the legacy ticket files awaiting `ttm import` (`tickets/`), agent run artifacts and the factory wave marker
 ├── .cargo/                      the `cargo xtask` alias
 ├── .claude/                     Claude Code project settings: the `xtask ai guard` hook
-├── .cursor/                     the Cursor agent rules (`rules/*.mdc`) and MCP server entry (`mcp.json`)
 ├── .dockerignore                the build context of the API release image: the workspace crates and the contracts they embed
 ├── .editorconfig                the editor formatting rules `cargo xtask ci verify-editorconfig` checks
 ├── .editorconfig-checker.json   the settings of that check
 ├── .gitattributes               the Git LFS patterns for the terrain datasets
 ├── .github/                     the GitHub Actions workflows: CI, contracts, editor gates, mod gates, schema
-├── .gitignore                   keeps the deploy settings, build output, export scratch and local reference copies out of git
+├── .gitignore                   keeps the settings files, build output, machine state, worktrees, export scratch and local reference copies out of git
+├── .repository_root             the checkout-root marker every tool's root walk looks for
 ├── .world-boot-warning-baseline the per-mission warning budget of `cargo xtask mod world-boot`
 ├── AGENTS.md                    a symlink to CLAUDE.md for agents that read AGENTS.md
 ├── assets/                      terrain datasets and the world-object glyph set, served at `/map-assets`
 ├── Cargo.lock                   the workspace lockfile
 ├── Cargo.toml                   the Cargo workspace: the product crates, the applications among them, and the tool crates
-├── CLAUDE.md                    the agent entry file: project laws, directory atlas, canonical commands
+├── CLAUDE.md                    the agent entry file: project laws, agent environment, repository map, canonical commands
 ├── clippy.toml                  the clippy settings every workspace crate reads: tests may call `unwrap()`
 ├── contracts/                   JSON Schemas, rules, catalogs and fixtures of every cross-boundary shape
 ├── crates/                      the tiered product crates by category: API server, single-page app, service worker, game server host agent and their libraries
-├── deploy/                      the release Dockerfile, compose files, Caddy site, deploy settings template, systemd units
-├── documentation/               all documentation: feature docs, runbooks, standards, glossary, archive
+├── deploy/                      the release Dockerfile, compose files, Caddy site, systemd units, and the deploy and API settings templates
+├── documentation/               all documentation: feature docs, runbooks, standards, glossary
 ├── mod/                         the Enfusion mod suite the game servers run; no Rust crate
 ├── rust-toolchain.toml          the pinned Rust toolchain with rustfmt, clippy and the wasm32 target
-└── tools/                       the developer tools: `xtask`, `developer_tools`, the tool foundations (the ticket manager client among them)
+└── tools/                       the developer tools: `xtask`, `developer_tools`, the tool foundations
 ```
+
+Three gitignored folders hold what is local to one machine: `target/` (build output, one subfolder per
+toolchain environment: `host/`, `container/`), `.workstation/` (logs, run records, tool roots, the
+host-bridge wrappers) and `.worktrees/` (linked git worktrees). Tickets live in the external ticket
+manager `ttm` (project `reforger`).
 
 ## How it works
 
@@ -70,7 +74,7 @@ tools/      cargo xtask: build, gates, deploy
 
 The [local development runbook](/documentation/runbooks/local_development.md) brings the database,
 the API and the single-page app up step by step; the canonical commands, in the order they run, are
-section 3 of [CLAUDE.md](/CLAUDE.md). `cargo xtask help` lists the build, CI and database tasks, and
+section 4 of [CLAUDE.md](/CLAUDE.md). `cargo xtask help` lists the build, CI and database tasks, and
 `cargo xtask --help` the full command tree.
 
 ## Boundaries
@@ -88,7 +92,7 @@ section 3 of [CLAUDE.md](/CLAUDE.md). `cargo xtask help` lists the build, CI and
 ## Related documentation
 
 - [Documentation](/documentation/README.md) — the map of every document and the authority ladder.
-- [CLAUDE.md](/CLAUDE.md) — project laws, directory atlas and canonical commands.
+- [CLAUDE.md](/CLAUDE.md) — project laws, agent environment, repository map and canonical commands.
 - [Glossary](/documentation/glossary/README.md) — the project's terms.
 - [Crates](/crates/README.md) — the product crates by category, the applications among them.
 - [Game mod](/mod/README.md) — the Enfusion mod suite in `mod/`.

@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "for X in \"${CARGO_TARGET_DIR:-}/debug/xtask\" \"$HOME/.cache/tbd-target/debug/xtask\" \"${CLAUDE_PROJECT_DIR:-.}/target/debug/xtask\"; do if [ -x \"$X\" ]; then exec \"$X\" ai guard; fi; done; exit 0",
+            "command": "for X in \"${CARGO_TARGET_DIR:-}/debug/xtask\" \"${CLAUDE_PROJECT_DIR:-.}/target/container/debug/xtask\"; do if [ -x \"$X\" ]; then exec \"$X\" ai guard; fi; done; exit 0",
             "timeout": 10
           }
         ]

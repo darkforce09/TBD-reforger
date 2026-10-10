@@ -41,8 +41,9 @@ rule names an automated check or is stated as unenforced.
 No gate of `cargo xtask ci ci-local` compiles EnfScript: the API's tests and the app build never
 compile a `.c` file. A mod change is checked by `cargo xtask mod compile` (the compile gate, which
 also probes whether an engine API exists) and a pass in Workbench or on a dedicated server for the
-MANUAL rules; the mod world boot runs nightly or on demand. The procedure is in
-[Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md).
+MANUAL rules; the mod world boot runs nightly or on demand. Workbench is driven as
+[Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) describes, and a dedicated
+server as the [two-client playtest](/documentation/runbooks/two_client_playtest/README.md) does.
 
 `cargo xtask verify file-length` warns about `.c` files of the pinned mod Scripts roots past the
 500-line guidance of CLAUDE.md law 7 (see

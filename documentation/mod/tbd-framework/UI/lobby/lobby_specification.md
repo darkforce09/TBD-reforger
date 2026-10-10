@@ -106,14 +106,16 @@ README's [roster wire](/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/README.
 
 ## Open work
 
-- [T-1085 — Feed the pre-game screens live catalogs instead of mocks](/.ai/tickets/T-1085.toml)
-  (idea, no plan): the catalog reads the server's roster through `TBD_LobbyClient`, so claims,
-  releases and deploys reach `TBD_SpawnManager`.
-- [T-946.58 — T-139 kit preview is empty on a dedicated server](/.ai/tickets/T-946.58.toml) (idea,
-  no plan): the kit preview on a client that is not also the server; its summary names an older
-  code path (`TBD_MissionLoader.GetSlotById`) that the screen no longer reads.
-- [T-181.16 — Two-client dedicated-server event loop E2E](/.ai/tickets/T-181.16.toml) (queued, no
-  plan): a human playtest of connect, slot, brief and deploy.
+- Feed the pre-game screens live catalogs instead of mocks (ticket `feed-pre-game-screens` in
+  `ttm`): the catalog reads the server's roster through `TBD_LobbyClient`, so claims, releases and
+  deploys reach `TBD_SpawnManager`.
+- The lobby kit preview is empty on a dedicated server (ticket
+  `wave-close-child-tickets.kit-preview-empty-dedicated` in `ttm`): the kit preview on a client that
+  is not also the server; its summary names an older code path (`TBD_MissionLoader.GetSlotById`)
+  that the screen no longer reads.
+- Two-client dedicated-server event loop E2E (ticket
+  `tbd-framework-arma-3.two-client-dedicated-server` in `ttm`): a human playtest of connect, slot,
+  brief and deploy.
 
 ## Decisions
 

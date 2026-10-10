@@ -3,9 +3,9 @@
 # Mod design
 
 What the TBD Framework [mod](/documentation/glossary/g_to_m.md#mod) is, the rules every slice of it
-keeps, and the [Enfusion](/documentation/glossary/a_to_f.md#enfusion) facts it stands on. When a slice
-conflicts with this document, this document wins. The program spec is
-[t181_event_mod_program.md](/documentation/tickets/specs/t181_event_mod_program.md).
+keeps, and the [Enfusion](/documentation/glossary/a_to_f.md#enfusion) facts it stands on. When a
+slice conflicts with this document, this document wins. The program's spec is held by the ticket
+`tbd-framework-arma-3` in the ticket manager (`ttm`).
 
 Every factual claim about CRF or vanilla carries an `@idx <lane>#<Symbol>` marker.
 `cargo run -q -p developer_tools --bin enf -- citations` resolves each one against the generated
@@ -128,7 +128,7 @@ waits on.
 
 **`[RplProp(onRplName:)]` fires automatically only on the proxy.** Authority must invoke its own
 handler. CRF documents this in its own header comment; its 119 replicated properties are catalogued
-in `.ai/artifacts/enf-index/crf_rplprops.tsv`.
+in `mod/reference_symbol_index/crf_rplprops.tsv`.
 
 **The join hook is `OnPlayerAuditSuccess`** @idx crf#OnPlayerAuditSuccess — *not* `OnPlayerConnected`.
 
@@ -194,7 +194,7 @@ TBD events are a known community, not a public server.
 
 ## 7. How to work here
 
-1. **Query before designing** — `enf lookup`, `enf dirs`, `.ai/artifacts/enf-index/capability_matrix.tsv`.
+1. **Query before designing** — `enf lookup`, `enf dirs`, `mod/reference_symbol_index/capability_matrix.tsv`.
    The [vanilla source coverage](/documentation/mod/tbd-framework/vanilla_source_coverage.md)
    says which lane answers which vanilla question.
 2. **Compile on the fast lane** — `cargo xtask mod compile` takes seconds and needs no Workbench.
@@ -206,24 +206,23 @@ TBD events are a known community, not a public server.
 
 ## Open work
 
-- [T-181 — TBD Framework, Arma-3-parity event mod](/documentation/tickets/specs/t181_event_mod_program.md)
-  (deferred, no plan): the program parent this document serves.
-- [T-181.16 — Two-client dedicated-server event loop E2E](/.ai/tickets/T-181.16.toml) (queued, no
-  plan): a human playtest proving connect, slot, brief, deploy, terminal death and admin respawn
-  on a dedicated server with two real clients.
-- [T-941 — Enfusion mod lifecycle](/documentation/tickets/specs/t941_mod_lifecycle.md) (queued,
-  [plan](/documentation/tickets/plans/t-941_plan.md)): safe start, lobby deploy, END and
-  DEBRIEF, the objective HUD and the spectator clamp; every child ticket has shipped.
-- [T-1085 — Feed the pre-game screens live catalogs instead of mocks](/.ai/tickets/T-1085.toml)
-  (idea, no plan): the Mission Selector, lobby, briefing and players panel read the server's data
-  instead of the mock catalogs.
-- [T-1086 — Close mission runtime gaps](/.ai/tickets/T-1086.toml) (idea, no plan): mission
-  parameters with no reader, group AI defaults, audio for late joiners.
-- [T-1092 — Modularise, document and gate the mod scripts](/.ai/tickets/T-1092.toml)
-  ([spec](/documentation/tickets/specs/t1092_mod_script_modularisation.md),
-  [plan](/documentation/tickets/plans/t-1092_plan.md)): this addon's scripts are split to Law 7
-  and documented to Law 8, and `mod/tbd-framework/Scripts` is pinned in
-  `cargo xtask verify file-length`, as is `mod/tbd-emcp/Scripts`; the export addon follows.
+- TBD Framework, Arma-3-parity event mod (ticket `tbd-framework-arma-3` in `ttm`): the program
+  parent this document serves.
+- Two-client dedicated-server event loop E2E (ticket
+  `tbd-framework-arma-3.two-client-dedicated-server` in `ttm`): a human playtest proving connect,
+  slot, brief, deploy, terminal death and admin respawn on a dedicated server with two real clients.
+- Enfusion mod lifecycle (ticket `enfusion-mod-lifecycle-safestart` in `ttm`): safe start, lobby
+  deploy, END and DEBRIEF, the objective HUD and the spectator clamp; every child ticket has
+  shipped.
+- Feed the pre-game screens live catalogs instead of mocks (ticket `feed-pre-game-screens` in
+  `ttm`): the Mission Selector, lobby, briefing and players panel read the server's data instead of
+  the mock catalogs.
+- Close mission runtime gaps (ticket `close-mission-runtime-gaps` in `ttm`): mission parameters with
+  no reader, group AI defaults, audio for late joiners.
+- Modularise, document and gate the mod scripts (ticket `modularise-document-gate-mod` in `ttm`):
+  this addon's scripts are split to Law 7 and documented to Law 8, and `mod/tbd-framework/Scripts`
+  is pinned in `cargo xtask verify file-length`, as is `mod/tbd-emcp/Scripts`; the export addon
+  follows.
 
 ## Related documentation
 

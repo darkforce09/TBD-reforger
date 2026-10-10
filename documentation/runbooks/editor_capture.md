@@ -21,9 +21,10 @@ binary of `tools/developer_tools`, described in the
   [Local development](/documentation/runbooks/local_development.md): `cargo xtask db up`,
   `cargo xtask mk rust-api`, then `cargo xtask mk leptos` (release) or `cargo xtask mk leptos-debug`
   (`trunk serve` without `--release`). Check: `http://localhost:3000/` answers.
-- `APP_ENV=development` in `crates/api/api_server/.env`, for the
+- `APP_ENV=development` in `deploy/api.env`, for the
   [dev login](/documentation/glossary/a_to_f.md#dev-login) the capture signs in with.
 - The id of a [mission](/documentation/glossary/g_to_m.md#mission) to open, from the mission library.
+- The gitignored folder the captures go to: `mkdir -p .workstation/captures`.
 
 ## Steps
 
@@ -34,23 +35,23 @@ with the host's toolchain.
    and the map canvas. Each URL is followed by the milliseconds to wait after navigating to it.
 
    ```bash
-   cargo run -q -p developer_tools --bin capture -- shot /tmp/editor.png "http://localhost:8080/api/v1/auth/dev-login?role=admin" 6000 "http://localhost:3000/missions/<mission-id>/edit" 25000 --canvas
+   cargo run -q -p developer_tools --bin capture -- shot .workstation/captures/editor.png "http://localhost:8080/api/v1/auth/dev-login?role=admin" 6000 "http://localhost:3000/missions/<mission-id>/edit" 25000 --canvas
    ```
 
    Expected on stderr: `→ <url> (wait <ms>ms)` for each step, the boot-overlay poll ending
    `overlay cleared after <n>s`, the page state and the last 40 console lines, then
-   `OK via <mode> → /tmp/editor.png`, `canvas toDataURL → <bytes> bytes` and
-   `wrote /tmp/editor_canvas.png`; exit 0. `--hide-overlay` removes a boot overlay that never
+   `OK via <mode> → .workstation/captures/editor.png`, `canvas toDataURL → <bytes> bytes` and
+   `wrote .workstation/captures/editor_canvas.png`; exit 0. `--hide-overlay` removes a boot overlay that never
    clears from the DOM before the shot.
 
 2. Cut a region out of a screenshot for close reading, here 400 × 300 pixels at the top left,
    doubled.
 
    ```bash
-   cargo run -q -p developer_tools --bin capture -- crop /tmp/editor.png 0 0 400 300 2 /tmp/editor_crop.png
+   cargo run -q -p developer_tools --bin capture -- crop .workstation/captures/editor.png 0 0 400 300 2 .workstation/captures/editor_crop.png
    ```
 
-   Expected: `/tmp/editor_crop.png  (800x600 = 480000px)` and a warning that the image passes
+   Expected: `.workstation/captures/editor_crop.png  (800x600 = 480000px)` and a warning that the image passes
    190 000 pixels. An image reader that downscales anything larger makes small text unreadable,
    so keep width × height × scale² under that.
 
@@ -61,7 +62,7 @@ below), so its images are black.
 ## Verify
 
 ```bash
-ls -l /tmp/editor.png /tmp/editor_canvas.png
+ls -l .workstation/captures/editor.png .workstation/captures/editor_canvas.png
 ```
 
 Expected: both files exist, and the canvas file is megabytes, not tens of kilobytes. A canvas PNG
@@ -74,7 +75,7 @@ A healthy Everon map is about 3.7 MB; a black canvas is about 45 KB.
 |---|---|---|
 | `canvas looks blank (too few bytes) — not written` | the map engine did not render: a wrong GPU mode, a panicked engine, or a wait too short for the boot | check the console lines for the engine error; raise the editor step's wait |
 | `overlay STILL PRESENT after 25s: …` | the editor did not finish booting; the overlay text names the stage | read the console lines; rule 2 when it sits at a fixed download percentage |
-| `/tmp/editor.png` shows a black map over a correct interface | expected: the compositor screenshot never contains the map (rule 3) | read `/tmp/editor_canvas.png` instead; pass `--canvas` |
+| `.workstation/captures/editor.png` shows a black map over a correct interface | expected: the compositor screenshot never contains the map (rule 3) | read `.workstation/captures/editor_canvas.png` instead; pass `--canvas` |
 | `capture shot: need at least one <url> <waitMs> step`, exit 2 | no URL and wait pair was given | pass at least one pair |
 | the shot shows the sign-in page | the dev login step failed: the API is not in development mode or not on port 8080 | check `APP_ENV=development` and the API |
 | Chromium aborts on its first text layout with `Could not find any font` | its fontconfig cache is unusable (rule 1) | clear the cache, or set `TBD_GATE_FONT_CACHE` to an empty directory |
@@ -116,7 +117,7 @@ read is a black rectangle of about 44 KB. In a real browser the call works and t
 at full frame rate, so this is an artifact of the headless Vulkan surface, not an engine defect.
 `capture zoomsweep` makes the call as it is and does not work around it. For a headless zoom that
 has to move the map, drive mouse wheel events instead. The measurement is in
-[camset_panic_finding.md](/.ai/artifacts/parity/camset_panic_finding.md).
+[camset_panic_finding.md](/documentation/tools/developer_tools/capture_camset_panic_finding.md).
 
 A debug build (`cargo xtask mk leptos-debug`) renders far below release frame rates; judge layout,
 spacing, flow and copy on it, and switch to `cargo xtask mk leptos` before judging map
@@ -130,5 +131,3 @@ performance.
   synopsis and exit codes.
 - [Editor gates](/documentation/runbooks/editor_gates.md) — the headless gates on SwiftShader,
   and the font-cache wedge.
-- [Editor UI program plan](/.ai/artifacts/editor_ui_program_plan.md) — the Mission Creator
-  interface work the capture serves.

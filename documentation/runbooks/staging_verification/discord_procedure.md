@@ -6,7 +6,7 @@ How the orchestrator and the operator run `cargo xtask staging discord --record`
 before it, the approval of its numbered actions, what to do at each `AWAIT` line of its eight
 procedure steps, what each case proves, and how to put everything back after a stopped run. The
 design of the procedure is in the
-[staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md#discord-procedure-staging_discord).
+[staging design note](/documentation/crates/api/api_server/design_notes/staging.md#discord-procedure-staging_discord).
 
 ## Prerequisites
 
@@ -116,7 +116,7 @@ The rest of the cleanup is in
 
 ## Related
 
-- [Staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md) — the
+- [Staging design note](/documentation/crates/api/api_server/design_notes/staging.md) — the
   procedures, the receipt format and the witness rules.
 - [Run day](/documentation/runbooks/staging_verification/run_day.md) — where the Discord run sits
   in the recording sequence.

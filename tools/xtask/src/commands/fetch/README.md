@@ -69,5 +69,3 @@ Clap's help is turned off on both, so every argument, `--help` included, reaches
 
 - [Vanilla source coverage](/documentation/mod/tbd-framework/vanilla_source_coverage.md) —
   which vanilla classes the mod relies on and how to fetch them.
-- [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — where the fetch fits in
-  mod work.

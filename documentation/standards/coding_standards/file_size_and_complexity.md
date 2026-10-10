@@ -48,9 +48,9 @@ Outside the walk:
 - The addon scripts of `mod/tbd-export`, until they are pinned.
   `MOD_SCRIPT_ROOTS` in
   [node_and_file_limits.rs](/tools/checks/repository_checks/src/language_bans/node_and_file_limits.rs)
-  names the three roots the gate may pin, and T-1092 pins them one addon at a time once its
-  scripts meet the ceilings: `mod/tbd-framework/Scripts` and `mod/tbd-emcp/Scripts`
-  are pinned, and `mod/tbd-export/Scripts` follows at P6-C. The gitignored
+  names the three roots the gate may pin, one addon at a time once its scripts meet the
+  ceilings: `mod/tbd-framework/Scripts` and `mod/tbd-emcp/Scripts` are pinned, and
+  `mod/tbd-export/Scripts` follows (ticket `modularise-document-gate-mod` in `ttm`). The gitignored
   reference lanes in `mod/References/` are never pinned; a compile-time assertion rejects
   any `mod` pin outside the three roots.
 - Rust files outside every member folder: none exist. The URL case table the API and the

@@ -1,7 +1,8 @@
-//! The remote check both deploys run before their `--delete` rsync: the host's API `.env`.
+//! The remote check both deploys run before their `--delete` rsync: the host's API settings file.
 //!
-//! **Role:** the probe ([`probe_script`]) that asks the host whether the checkout's
-//! [`API_ENVIRONMENT_FILE`] exists and is readable, its verdict ([`classify`]), the printed verdict
+//! **Role:** the probe ([`probe_script`]) that moves a settings file still at
+//! [`PREVIOUS_API_ENVIRONMENT_FILE`] to [`API_ENVIRONMENT_FILE`] and then asks the host whether the
+//! checkout's [`API_ENVIRONMENT_FILE`] exists and is readable, its verdict ([`classify`]), the printed verdict
 //! ([`report`]) and [`rsync_only_when_present`], which runs the rsync only after the file is proven
 //! present.
 //! **Position:** called by `cargo xtask deploy website` (`crate::website`), which sends the probe
@@ -11,16 +12,19 @@
 //! **Signals & state:** none; pure functions over the probe's exit code.
 //! **Invariants:** only exit 0 lets the rsync run; a missing or unreadable file, a missing
 //! checkout, an ssh failure, a missing ssh program or any other exit refuses before the rsync,
-//! with the operator's step printed.
+//! with the operator's step printed; the probe moves a file only when the current path holds
+//! nothing, so it never overwrites a settings file.
 //!
-//! The `.env` lives on the host alone: no checkout tracks it and both rsyncs exclude
+//! The settings file lives on the host alone: no checkout tracks it and both rsyncs exclude
 //! [`API_ENVIRONMENT_FILE`], so `--delete` leaves the host's copy alone only at that path. A host
-//! whose file still sits where an earlier folder layout kept it holds it at a path no exclusion
-//! names any more, and the rsync would delete it. Refusing while the file is absent at its current
-//! path makes the operator move it first, and the deploy never runs against a host whose API
-//! could not start for want of its secrets.
+//! whose file still sits at [`PREVIOUS_API_ENVIRONMENT_FILE`] holds it at a path no exclusion names
+//! any more, and the rsync would delete it; the probe moves it first, keeping its mode. Refusing
+//! while the file is absent at its current path means the deploy never runs against a host whose
+//! API could not start for want of its secrets.
 
-use crate::host_owned_paths::{API_ENVIRONMENT_FILE, API_SERVER_FOLDER};
+use crate::host_owned_paths::{
+    API_ENVIRONMENT_FILE, API_ENVIRONMENT_TEMPLATE, PREVIOUS_API_ENVIRONMENT_FILE,
+};
 
 /// The probe's exit code for "the file is missing or unreadable".
 const MISSING: i32 = 20;
@@ -43,10 +47,18 @@ pub(crate) fn remote_path(remote_dir: &str) -> String {
 }
 
 /// The remote shell that answers the question as an exit code: 0 when a readable regular file
-/// sits at [`remote_path`], [`MISSING`] otherwise.
+/// sits at [`remote_path`], [`MISSING`] otherwise. First, when nothing sits at [`remote_path`] and
+/// a regular file sits at [`PREVIOUS_API_ENVIRONMENT_FILE`], it moves that file there.
 pub(crate) fn probe_script(remote_dir: &str) -> String {
     let file = remote_path(remote_dir);
-    format!("if [ -f '{file}' ] && [ -r '{file}' ]; then exit 0; fi; exit {MISSING}")
+    let previous = format!("{remote_dir}/{PREVIOUS_API_ENVIRONMENT_FILE}");
+    let folder = file
+        .rsplit_once('/')
+        .map_or(remote_dir, |(folder, _)| folder);
+    format!(
+        "if [ ! -e '{file}' ] && [ -f '{previous}' ]; then mkdir -p '{folder}' && mv '{previous}' \
+         '{file}'; fi; if [ -f '{file}' ] && [ -r '{file}' ]; then exit 0; fi; exit {MISSING}"
+    )
 }
 
 /// The verdict of one probe exit code.
@@ -58,22 +70,20 @@ pub(crate) fn classify(code: i32) -> ApiEnvironmentFile {
     }
 }
 
-/// The operator step the refusal of a missing file prints, one that works on any host. A host
-/// whose `.env` still sits where the previous folder layout kept it moves that file (and the
-/// API's `.tools` folder beside it) into the API server's folder. A fresh host holds no checkout
-/// yet, so no template on the host either: the operator copies this checkout's
-/// `.env.example` there over ssh, the command of `documentation/runbooks/website_deployment.md`
-/// step 3, and fills it in.
+/// The operator step the refusal of a missing file prints, one that works on a fresh host, which
+/// holds no checkout yet and so no template either: the operator copies this checkout's template
+/// there over ssh, the command of `documentation/runbooks/website_deployment.md` step 3, and fills
+/// it in.
 pub(crate) fn missing_file_operator_step(remote_dir: &str) -> String {
-    let folder = format!("{remote_dir}/{API_SERVER_FOLDER}");
     let file = remote_path(remote_dir);
+    let folder = file
+        .rsplit_once('/')
+        .map_or(remote_dir, |(folder, _)| folder);
     format!(
-        "       Operator step: on a host that already holds the API's .env where the previous \
-         folder layout kept it, move that file (and the .tools folder beside it) into {folder}/, \
-         keeping the file's mode. On a fresh host, copy the template from this checkout, then \
-         fill it in (documentation/runbooks/website_deployment.md, step 3):\n\
+        "       Operator step: copy the template from this checkout to the host, then fill it in \
+         (documentation/runbooks/website_deployment.md, step 3):\n\
          \x20        ssh <TBD_SSH_HOST> 'mkdir -p {folder} && install -m 600 /dev/stdin {file}' \
-         < {API_SERVER_FOLDER}/.env.example\n\
+         < {API_ENVIRONMENT_TEMPLATE}\n\
          \x20      Then rerun the deploy."
     )
 }
@@ -87,7 +97,9 @@ pub(crate) fn report(verdict: ApiEnvironmentFile, remote_dir: &str) -> Result<()
             Ok(())
         }
         ApiEnvironmentFile::Missing => {
-            eprintln!("ERROR: the API's .env is missing or unreadable on the host: {file}");
+            eprintln!(
+                "ERROR: the API's settings file is missing or unreadable on the host: {file}"
+            );
             eprintln!(
                 "       The rsync runs with --delete and never carries this file, so the deploy \
                  stops before it."

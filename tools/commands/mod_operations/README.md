@@ -36,7 +36,7 @@ The commands themselves are described in the
 ## Boundaries
 
 - Depends on: `platform_execution` (the slice worktrees the mod wave driver prepares, lands and
-  reaps), `workstation_setup`, `enfusion_mcp`, `database_operations`, `remote_debugging`,
+  reaps), `workstation_setup`, `enfusion_mcp`, `remote_debugging`,
   `mod_script_checks`, `ticket_manager_client`, `process_runner`,
   `repository_layout` (the mod folder and the three addon folders, from its
   `enfusion_mod_folders`), `verification_core`, `content_digest`, `fleet_wire_contract`, `clap`,

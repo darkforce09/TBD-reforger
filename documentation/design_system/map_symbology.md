@@ -133,11 +133,11 @@ specification designs, is not built.
 
 ## Open work
 
-- [T-831 — Per-side marker authoring audit then explicit UI](/documentation/tickets/specs/t831_per_side_markers_audit.md)
-  (ready, [plan](/documentation/tickets/plans/t-831_plan.md)): the Mission Creator authors
-  markers per side explicitly, which changes the rows and tints each side's markers carry.
-- [T-1083 — Keep the marker client poll off dedicated servers](/.ai/tickets/T-1083.toml) (idea, no
-  plan): the in-game marker client starts only where a player sees the map.
+- Per-side marker authoring audit then explicit UI (ticket `side-marker-authoring-audit` in `ttm`,
+  ready): the Mission Creator authors markers per side explicitly, which changes the rows and tints
+  each side's markers carry.
+- Keep the marker client poll off dedicated servers (ticket `keep-marker-client-poll` in `ttm`,
+  idea): the in-game marker client starts only where a player sees the map.
 
 ## Decisions
 

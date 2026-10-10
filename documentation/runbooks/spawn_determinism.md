@@ -7,7 +7,7 @@ fresh [Workbench](/documentation/glossary/n_to_z.md#workbench) processes: every 
 plays the framework world, grades the log, and the normalised outcomes of all runs must be
 byte-identical. Run it after a change to the framework's spawn, [slot](/documentation/glossary/n_to_z.md#slot)
 or loadout code. It needs a live Workbench and has no headless or CI path: `cargo xtask ci
-ci-local` and `cargo xtask platform wave gate` never run it. Five runs take about 15 minutes. What
+ci-local` and the wave gates never run it. Five runs take about 15 minutes. What
 the spawn code does is in the [Spawning README](/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/README.md).
 
 ## Prerequisites
@@ -118,12 +118,9 @@ every run.
 
 ### Recorded results
 
-[spawn_determinism_verify_log.md](/.ai/artifacts/spawn_determinism_verify_log.md) records two
-Workbench runs of the gate: a 5-of-5 pass (digest `3e31fd8cf7c6`, 18 lines) for the spawn pipeline
-that preceded the possess-route deploy, and a run stopped after 2 of 5 (both digest
-`6abcbdd84e02`, 21 lines) for the possess-route deploy the framework uses. No five-run pass of the
-current spawn code is recorded; the gate prints its verdict only to the terminal, so a full run
-is added to that log by hand.
+No five-run pass of the current spawn code, the possess-route deploy the framework uses, is
+recorded: its last recorded run stopped after 2 of 5 (both digest `6abcbdd84e02`, 21 lines). The
+gate prints its verdict only to the terminal; keep a run's output under `.workstation/logs/`.
 
 ## Related
 
@@ -135,5 +132,3 @@ is added to that log by hand.
 - [Mod verification gates](/tools/checks/mod_script_checks/src/README.md) — the gate's
   code beside the other mod script checks.
 - [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the framework's spawn rules.
-- [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — where the gate sits in
-  mod work.

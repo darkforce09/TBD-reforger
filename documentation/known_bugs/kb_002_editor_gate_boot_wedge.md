@@ -71,10 +71,10 @@ headless screenshots.
 
 ## Related tickets
 
-- [T-177 — MC chrome UX + ORBAT dock cutover](/documentation/tickets/specs/t177_mc_chrome_orbat_cutover.md)
-  (shipped): the full Chromium build, `--headless=new` and the gate doctor's liveness probe.
-- [T-320 — Gate harness wedges on editor — CDP unverifiable](/.ai/tickets/T-320.toml) (shipped):
-  the gate-owned font cache for the browser-process abort.
-- [T-653 — Preserve the three headless editor-screenshot findings](/documentation/tickets/specs/t653_headless_screenshot.md)
-  (ready, [plan](/documentation/tickets/plans/t-653_plan.md)): the writable font cache, the
-  Vulkan-only ANGLE flag and the canvas capture, recorded in the runbooks with a cross-link here.
+- MC chrome UX + ORBAT dock cutover (ticket `mc-chrome-ux-orbat` in `ttm`, shipped): the full
+  Chromium build, `--headless=new` and the gate doctor's liveness probe.
+- Gate harness wedges on editor — CDP unverifiable (ticket `gate-harness-wedges-editor` in `ttm`,
+  shipped): the gate-owned font cache for the browser-process abort.
+- Preserve the three headless editor-screenshot findings (ticket `preserve-three-headless-editor` in
+  `ttm`, ready): the writable font cache, the Vulkan-only ANGLE flag and the canvas capture,
+  recorded in the runbooks with a cross-link here.

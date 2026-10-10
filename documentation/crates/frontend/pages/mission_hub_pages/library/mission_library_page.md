@@ -186,8 +186,7 @@ each call with the DTO it reads or sends. Server-side:
   with a cinematic header (artwork, status, title, "Authored by <name>", bookmark and close) and a
   sticky footer of two buttons.
 - Design target: the [mission library blueprint](/documentation/crates/frontend/pages/mission_hub_pages/library/visual_references/mission_library_blueprint/README.md),
-  a design-phase reference, and the archived platform spec's
-  [Mission Library section](/documentation/archive/go_and_react_era_design/platform_context_handoff.md#5-mission-library).
+  a design-phase reference.
   The built page differs from the blueprint:
   - a "New Mission" button joins the header, and the subtitle adds "across the theater";
   - the filters are three unlabelled selects ("All Terrains", "All Modes", "All Players") with no
@@ -203,21 +202,22 @@ each call with the DTO it reads or sends. Server-side:
 
 ## Open work
 
-- [T-1030 — Fix mission version save, set-current and armory skipping write lock](/.ai/tickets/T-1030.toml)
-  (idea, no plan): the version upload takes the mission's row lock like the other writes, so a
-  concurrent delete, demotion or change of author cannot race it.
-- [T-295 — Realtime collaborative editing](/documentation/tickets/specs/t295_realtime_collab.md)
-  (ready, [plan](/documentation/tickets/plans/t-295_plan.md)): a version post names the
-  version it was edited from, and the API answers 409 when another save came first.
-- [T-1053 — Decide whether mission upload and save share one duplicate-slot check](/.ai/tickets/T-1053.toml)
-  (idea, no plan): the upload's duplicate slot id check and the Mission Creator's save agree.
-- [T-1076 — Derive terrain checks and create dialog from the terrain registry](/.ai/tickets/T-1076.toml)
-  (idea, no plan): the New Mission dialog offers only terrains that have map data; today it offers
-  Arland, which has none.
-- [T-1005 — Refactor frontend so core and pages stop importing the Mission Creator workspace](/.ai/tickets/T-1005.toml)
-  (idea, no plan): the upload stops importing the Mission Creator's code directly.
-- [T-846 — role_notice query is written on editor denial but never read](/.ai/tickets/T-846.toml)
-  (deferred, no plan): a viewer the route guard sends here from a `mission_maker` route learns why.
+- Fix mission version save, set-current and armory skipping write lock (ticket
+  `fix-mission-version-save` in `ttm`): the version upload takes the mission's row lock like the
+  other writes, so a concurrent delete, demotion or change of author cannot race it.
+- Realtime collaborative editing (ticket `realtime-collaborative-editing` in `ttm`): a version post
+  names the version it was edited from, and the API answers 409 when another save came first.
+- Decide whether mission upload and save share one duplicate-slot check (ticket
+  `decide-whether-mission-upload` in `ttm`): the upload's duplicate slot id check and the Mission
+  Creator's save agree.
+- Derive terrain checks and create dialog from the terrain registry (ticket
+  `derive-terrain-checks-create` in `ttm`): the New Mission dialog offers only terrains that have
+  map data; today it offers Arland, which has none.
+- Refactor frontend so core and pages stop importing the Mission Creator workspace (ticket
+  `refactor-frontend-core-pages` in `ttm`): the upload stops importing the Mission Creator's code
+  directly.
+- role_notice query is written on editor denial but never read (ticket `role-notice-query-written`
+  in `ttm`): a viewer the route guard sends here from a `mission_maker` route learns why.
 
 ## Decisions
 
@@ -225,9 +225,7 @@ each call with the DTO it reads or sends. Server-side:
   to the same scroll position and filters; `/missions/:id` keeps the standalone overview for deep
   links.
 - Creation is a dialog over the library, not a route: a mission maker names the draft and its
-  environment in one step and lands in the Mission Creator, and `/missions/create` does not exist;
-  the [archived setup wizard page](/documentation/archive/go_and_react_era_design/mission_creator_setup_wizard_page.md)
-  records the page it replaced.
+  environment in one step and lands in the Mission Creator, and `/missions/create` does not exist.
 - The create controls read the signed-in, reactive role: a page that has not finished restoring
   its session never counts as a mission maker.
 - The upload refuses a large file before reading it: the browser build is 32-bit and a parsed
