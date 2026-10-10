@@ -26,7 +26,7 @@ check: ✓ for fine, ✗ BLOCK for a stop, ! WARN for a risk.
 | memory, swap | under 1024 MiB available | swap 70 % used or more |
 | working tree, branch, remote | dirty tree; not on `main` | commits not pushed |
 | worktrees | | stale worktrees; worktrees idle over `TBD_IDLE_WORKTREE_MIN` minutes |
-| ticket check, wave lock | `cargo xtask ticket check` or `cargo xtask wave check` fails | |
+| ticket manager, ticket check, wave plan | `ttm version` cannot run; `ttm check` reports errors; `ttm wave check` reports findings, or the plan's wave base differs from the newest wave-close marker in git | |
 | postgres :5434, API :8080 | | database down; `/healthz` not 200, or the API process older than the newest commit under `crates/api` |
 | trunk serve, chrome | | stray Chrome processes |
 
@@ -37,7 +37,8 @@ The run target and its stamp come from
 ## Boundaries
 
 - Depends on: `crate::wave_execution` (`RunStamp`, `read_run_stamp`,
-  `resolve_run_target_dir`), `ticket_wave_lock` (the wave lock), `git`, `df`, `pgrep`, `curl`, `ss`
+  `resolve_run_target_dir`, `base::newest_close_base`), `ticket_manager_client` (`ttm`),
+  `git`, `df`, `pgrep`, `curl`, `ss`
   and `/proc`.
 - Used by: `tools/commands/platform_execution/src/preflight.rs`, which re-exports `run` to the
   `platform` dispatch.

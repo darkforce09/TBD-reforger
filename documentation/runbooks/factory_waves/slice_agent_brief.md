@@ -11,10 +11,11 @@ and again at step 6.
 ## Prerequisites
 
 - The ticket's worktree exists (`cargo xtask platform slice-worktree -- new <ticket id>`).
-- The ticket record (`cargo xtask ticket show <ticket id>`): its summary, acceptance text and
+- The ticket record (`ttm --project reforger show <ticket>`): its summary, acceptance text and
   `owns` list are the handoff, written to be pasted verbatim. There is no earlier conversation
   for the agent to read.
-- The `owns` lists of every sibling ticket in the same wave, from `cargo xtask slice-collisions`.
+- The `owns` lists of every sibling ticket in the same wave, from
+  `ttm --project reforger wave collisions`.
 
 ## Assembling a brief
 
@@ -86,9 +87,10 @@ RULES
     change. Then run `cargo xtask verify link-check --with-untracked --path <folder>` for
     every folder whose documents you touched. A document outside YOUR FILES is edited all the
     same and listed in files_outside_owns.
-12. You do not ship: no push, no merge, no status changes, and no edits to the ticket files
-    (.ai/tickets/) or the ticket specs and plans (documentation/tickets/). You do not file
-    tickets: report findings with file:line and a repro.
+12. You do not ship: no push, no merge, no status changes, no `ttm` command that writes, and no
+    edits to the legacy ticket files (.ai/tickets/) or the ticket specs and plans
+    (documentation/tickets/). You do not file tickets: report findings with file:line and a
+    repro.
 13. Throwaway probes go in /tmp, never in the source tree. Commit no .py file.
 14. Read with offset and limit: whole-file reads over 400 lines and re-reads of a file you have
     read are refused by the `cargo xtask ai guard` hook. Run noisy builds through

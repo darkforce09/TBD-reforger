@@ -63,27 +63,21 @@ pub(crate) fn verdicts_dir(main_root: &Path) -> PathBuf {
 ///
 /// The id reaches this code from `gate --slice <arg>` — an argv string. `<slice>.json` interpolated
 /// into a path is a traversal if the id contains a separator, so the shape is checked rather than
-/// trusted: `T-` followed by digits, then optional `.`-separated numeric slice parts. Anything
-/// else is refused, never sanitised into something adjacent.
+/// trusted: a ticket slug (lowercase letters, digits, `-` and non-empty `.` segments) or a legacy
+/// `T-nnn[.n…]` number. Anything else is refused, never sanitised into something adjacent.
 pub(crate) fn path_for(main_root: &Path, slice: &str) -> Result<PathBuf> {
     if !is_ticket_id(slice) {
         return Err(Error::msg(format!(
-            "refusing a gate-verdict receipt for {slice:?}: not a ticket id (expected T-nnn[.n…])"
+            "refusing a gate-verdict receipt for {slice:?}: not a ticket reference (expected a slug or T-nnn[.n…])"
         )));
     }
     Ok(verdicts_dir(main_root).join(format!("{slice}.json")))
 }
 
-/// a bare id or a dotted child id — and nothing that could leave the receipts directory.
+/// A ticket reference — a slug or a legacy `T-nnn[.n…]` number — and nothing that could leave the
+/// receipts directory.
 fn is_ticket_id(s: &str) -> bool {
-    let Some(rest) = s.strip_prefix("T-") else {
-        return false;
-    };
-    if rest.is_empty() {
-        return false;
-    }
-    rest.split('.')
-        .all(|part| !part.is_empty() && part.chars().all(|c| c.is_ascii_digit()))
+    ticket_manager_client::is_ticket_reference(s)
 }
 
 /// Create the receipts directory and make it invisible to git — note 2 in the module header.
@@ -214,7 +208,7 @@ pub(crate) fn record_slice_gate(ctx: &super::Ctx, slice: &str, passed: bool) {
             // meet the consequence at `land` with no idea where it came from.
             crate::wave_execution::werr!(
                 "  gate verdict NOT recorded for {slice:?}: {}",
-                ticket_model::error_chain_text(&e)
+                crate::error::error_chain_text(&e)
             );
             crate::wave_execution::werr!(
                 "  (land will refuse this slice until a gate records one)"
@@ -257,11 +251,11 @@ pub(crate) fn land_refusal(main_root: &Path, slice: &str, landing_sha: &str) -> 
             // same place, so "re-gate" describes a loop with no exit. Branches of this shape do
             // exist here — `git branch --list 'slice/*'` carries hotfix-suffixed branches.
             return Some(format!(
-                "land: {slice} is not a ticket id (expected T-nnn[.n…]), so no gate verdict can \
+                "land: {slice} is not a ticket reference (expected a slug or T-nnn[.n…]), so no gate verdict can \
                  exist for it: {}\n      \
                  Re-gating CANNOT help — the gate refuses the same shape. Land it under its \
                  canonical id, or rename the branch to slice/<ticket id> and gate that.",
-                ticket_model::error_chain_text(&e)
+                crate::error::error_chain_text(&e)
             ));
         }
         Err(e) => {
@@ -269,7 +263,7 @@ pub(crate) fn land_refusal(main_root: &Path, slice: &str, landing_sha: &str) -> 
                 "land: the gate verdict for {slice} is unreadable: {}\n      \
                  an unreadable receipt is not a green one — re-gate:\n      \
                  {hint}",
-                ticket_model::error_chain_text(&e)
+                crate::error::error_chain_text(&e)
             ));
         }
     };

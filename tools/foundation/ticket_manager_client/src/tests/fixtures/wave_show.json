@@ -1,0 +1,25 @@
+{
+  "format": "ttm.wave/1",
+  "project": "reforger",
+  "version": 1,
+  "wave_base": 248,
+  "ledger_floor": 248,
+  "max_concurrent": 3,
+  "pack_last": [],
+  "waves": [
+    {"n": 249, "tickets": [
+      {"slug": "slot-identity.flatten-emit", "known": true, "legacy_id": "T-674.1", "title": "Flatten emit", "status": "shipped", "parent": "slot-identity", "executor": "claude-code", "owns": ["tools/commands/schema_tooling"], "receipt_count": 1, "latest_receipt_outcome": "landed", "landing_sha": "edb4e4e4d0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5"},
+      {"slug": "slot-identity.wire-ids", "known": true, "legacy_id": "T-674.2", "title": "Wire ids", "status": "ready", "parent": "slot-identity", "executor": "claude-code", "owns": [], "receipt_count": 0, "latest_receipt_outcome": null, "landing_sha": null}
+    ]},
+    {"n": 250, "tickets": [
+      {"slug": "retired-ticket", "known": false, "legacy_id": null, "title": "", "status": null, "parent": null, "executor": null, "owns": [], "receipt_count": 0, "latest_receipt_outcome": null, "landing_sha": null}
+    ]}
+  ],
+  "emptied": [
+    {"n": 248, "tickets": [
+      {"slug": "orbat-export", "known": true, "legacy_id": "T-640", "title": "ORBAT export", "status": "cancelled", "parent": null, "executor": "claude-code", "owns": [], "receipt_count": 2, "latest_receipt_outcome": "ran", "landing_sha": null}
+    ]}
+  ],
+  "parked": null,
+  "summary": "base 248; 2 open waves; 1 pending close"
+}

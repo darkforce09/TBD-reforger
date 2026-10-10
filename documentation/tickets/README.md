@@ -2,10 +2,10 @@
 
 # Ticket specs and plans
 
-The documents the [ticket](/documentation/glossary/n_to_z.md#ticket) registry cites: each ticket's
+The documents the [tickets](/documentation/glossary/n_to_z.md#ticket) cite: each ticket's
 spec, which says what to build and how it is accepted, and its plan, which says how the work
-runs. Agents read them before working a ticket, and the
-[ticketboard](/documentation/glossary/n_to_z.md#ticketboard) and the ticket commands read their paths.
+runs. Agents read them before working a ticket, and `ttm import` reads them into the central
+ticket manager beside the legacy ticket files.
 
 ## Contents
 
@@ -17,7 +17,7 @@ documentation/tickets/
 
 ## How it works
 
-A ticket file `.ai/tickets/T-<id>.toml` names its documents in two fields, each a
+A legacy ticket file `.ai/tickets/T-<id>.toml` names its documents in two fields, each a
 repository-relative path: `spec` names a file in `specs/` and `plan` names a file in `plans/`.
 Both folders are flat, and a file's name carries its ticket id:
 
@@ -37,45 +37,37 @@ Once a document is frozen, only a link to a moved document changes, and a link t
 longer exists becomes a GitHub permalink. Knowledge that outlasts the ticket then moves into the
 feature doc of the code it describes.
 
-`cargo xtask ticket mark-ready <id> <spec> [plan]` refuses to promote a ticket while its spec or
-plan file is missing, and defaults an unset `plan` to the id-derived path.
-`cargo xtask ticket check` reports every `spec` or `plan` that names no file, for every status but
-`idea` and `cancelled`.
+`ttm --project reforger mark-ready <ticket>` refuses to promote a ticket the project's readiness
+gate does not admit, and `ttm --project reforger check` reports the tickets that break it; the
+ticket manager holds each ticket's spec and plan once imported.
 
 ## Code
 
-- [Ticket crates](/tools/tickets/README.md) — `SPECS_DIR`, `PLANS_DIR` and `plan_path` in
-  `tools/tickets/ticket_model/src/repository.rs`; the existence and plan ready-gate checks in
-  `tools/tickets/ticket_registry/src/validation/`; `mark_ready` in
-  `tools/tickets/ticket_registry/src/ops/readiness.rs`.
-- [Ticketboard](/tools/tickets/ticketboard_desktop/) — shows each ticket's `spec` and `plan` in its detail panel
-  and opens a Markdown one in the in-app document viewer.
-- [Ticket commands](/tools/xtask/src/commands/ticket/) — `ticket mark-ready`, `ticket check`,
-  `ticket brief` (prints the spec and plan to read) and `ticket prompt` (reads a spec's
-  `## Claude Code prompt` block).
+- [Ticket manager client](/tools/foundation/ticket_manager_client/README.md) — `brief`, which
+  returns the spec and plan to read from `ttm --project reforger brief`, and `show`, which says
+  whether the ticket manager holds a ticket's spec.
+- [Platform slice runs](/tools/commands/platform_execution/src/slice_execution.rs) — refuses a
+  slice whose spec the ticket manager does not hold, and prompts the agent with its brief.
 
 ## Boundaries
 
-- Depends on: the ticket registry in `.ai/tickets/`, whose `spec` and `plan` fields name these
-  files; the templates `.ai/tickets/spec_template.md` and `.ai/tickets/plan_template.md`.
-- Used by: the ticket crates and the `cargo xtask ticket` commands above; the ticketboard; the
-  platform slice dispatch (`tools/xtask/src/commands/platform/slice_execution.rs`), which reads
-  a ticket's `spec`; `TICKET_DOCUMENTS_DIR` in `tools/xtask/src/core/repository_layout.rs`,
-  through which the documentation gates judge the tree as frozen records; feature docs and
-  runbooks that link a spec.
+- Depends on: the legacy ticket files in `.ai/tickets/`, whose `spec` and `plan` fields name
+  these files; the templates `.ai/tickets/spec_template.md` and `.ai/tickets/plan_template.md`.
+- Used by: `ttm import`, which reads them into the central ticket manager; `TICKET_DOCUMENTS_DIR`
+  in `tools/foundation/repository_layout/src/documentation_locations.rs`, through which the
+  documentation gates judge the tree as frozen records; feature docs and runbooks that link a
+  spec.
 - Rules: both folders stay flat, with no subfolders; a file keeps the name its ticket's field
-  cites (`cargo xtask ticket check`); a frozen record is never reworded; the tree is exempt from
-  the 500-line limit (`cargo xtask verify markdown-placement`) and judged only on its links
-  (`cargo xtask verify link-check`).
+  cites; a frozen record is never reworded; the tree is exempt from the 500-line limit and judged
+  only on its links (`cargo xtask verify link-check`).
 
 ## Related documentation
 
 - [Ticket identifiers](/documentation/standards/ticket_identifiers.md) — the id grammar and
   the spec and plan paths.
-- [Ticket run pipeline](/documentation/runbooks/ticket_run_pipeline.md) — writing a spec and a
-  plan and marking a ticket ready.
+- [Running a wave](/documentation/runbooks/factory_waves/running_a_wave.md) — the run, land and
+  close around a ticket's spec and plan.
 - [Documentation standards](/documentation/standards/documentation_standards.md) — the
   document lifecycle and status lines.
-- [Ticket registry](/.ai/tickets/README.md) — the ticket files that cite these documents.
-- [Ticketboard viewer](/documentation/tools/tickets/ticketboard_desktop/ticketboard_viewer.md) — the board's
-  behaviour, including the Mark ready form that sets a ticket's spec.
+- [Legacy ticket data](/.ai/tickets/README.md) — the ticket files, awaiting import, that cite
+  these documents.

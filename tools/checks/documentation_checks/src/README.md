@@ -56,10 +56,11 @@ scope selected nothing to judge.
 ### link-check
 
 The judged documents are every tracked Markdown file under the documentation root, every tracked
-README.md anywhere (the repository root's included), the project instructions (`PROJECT_INSTRUCTIONS`), the Markdown files directly in the
-ticket folder (`TICKETS_DIR`), and the Markdown and `.mdc` files under the Cursor rule folders
-(`CURSOR_RULE_DIRS`). Nothing in the agent artifact tree (`ARTIFACTS_DIR`: `.ai/artifacts`) is
-judged, its README.md included. The ticket records and the archive are frozen: only the link rules
+README.md anywhere (the repository root's included), the project instructions (`PROJECT_INSTRUCTIONS`),
+and the Markdown and `.mdc` files under the Cursor rule folders (`CURSOR_RULE_DIRS`). Nothing in
+the agent artifact tree (`ARTIFACTS_DIR`: `.ai/artifacts`) or the legacy ticket data folder
+(`LEGACY_TICKETS_DIR`: `.ai/tickets`, records awaiting import into the central ticket manager) is
+judged, their README.md files included. The ticket documents and the archive are frozen: only the link rules
 (1 to 7 below) judge them. Every other judged document is live, the pending-merge area included,
 and rules 8 and 9 judge the live documents alone.
 
@@ -141,7 +142,7 @@ as `path:line: rule: message`. Without `--report` the gate prints every failing 
 break count, the first 20 breaks in full, and the totals; with `--report` it prints every break.
 The totals count documents, links by kind, backticked paths by outcome, command citations by
 outcome, breaks by rule, and breaks by area: the documentation root's live documents and frozen
-records, the ticket folder, the Cursor rules, the project instructions, and the other READMEs. A
+records, the Cursor rules, the project instructions, and the other READMEs. A
 failed ignore batch is one "did not run" verdict for the paths it held, never a pass or a break.
 
 A rule is a `DocumentRule` in `link_check.rs`: it says which areas it judges, judges one scanned

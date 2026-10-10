@@ -1,9 +1,7 @@
 use super::{Cli, TopCmd};
 use crate::commands;
-use crate::commands::ticket::load_registry;
-use anyhow::{Result, bail};
+use anyhow::Result;
 use clap::Parser;
-use repository_layout::prelude::find_repository_root;
 
 pub(crate) fn run() -> Result<u8> {
     let args = enfusion_mcp::preprocess_cli_args(std::env::args_os().collect());
@@ -21,8 +19,6 @@ pub(crate) fn run() -> Result<u8> {
         TopCmd::Ballistics { cmd } => Ok(ballistics_oracle_tooling::run(cmd)?),
         TopCmd::Map { cmd } => commands::map::dispatch::run(cmd),
         TopCmd::Verify { cmd } => commands::verify::dispatch::run(cmd),
-        TopCmd::SliceCollisions { args } => commands::wave::collisions(&args),
-        TopCmd::Wave { cmd } => commands::wave::dispatch::run(cmd),
         TopCmd::Platform { cmd } => Ok(platform_execution::run(cmd)?),
         TopCmd::Ai { cmd } => commands::agent_context::dispatch::run(cmd),
         TopCmd::Mk { args } => Ok(ci_task_catalog::build_lane::recipes::run(&args)?),
@@ -34,17 +30,5 @@ pub(crate) fn run() -> Result<u8> {
         TopCmd::Gen { cmd } => Ok(schema_tooling::run_gen_command(cmd)?),
         TopCmd::Schema { cmd } => commands::schema::dispatch::run(cmd),
         TopCmd::Refactor { cmd } => commands::refactor::dispatch::run(cmd),
-        TopCmd::RegistryGet { field } => {
-            let root = find_repository_root()?;
-            let reg = load_registry(&root)?;
-            match reg.get(&field) {
-                Some(serde_json::Value::String(s)) => println!("{s}"),
-                Some(serde_json::Value::Number(n)) => println!("{n}"),
-                Some(other) => println!("{other}"),
-                None => bail!("unknown registry field: {field}"),
-            }
-            Ok(0)
-        }
-        TopCmd::Ticket { cmd } => commands::ticket::dispatch::run(cmd),
     }
 }

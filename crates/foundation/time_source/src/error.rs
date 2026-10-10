@@ -4,8 +4,8 @@
 //! **Position:** returned by [`crate::validate_rfc3339_utc`]; a caller that stores timestamps
 //! refuses the value and reports the message.
 //! **Signals & state:** none; plain data.
-//! **Invariants:** each variant names the offending field and value, and its message is the
-//! exact text the ticket registry's loader has always reported for that rejection.
+//! **Invariants:** each variant names the offending field and value, and its message is fixed
+//! per variant, so an operator reads the same text for the same rejection everywhere.
 
 /// Why a timestamp fails the canonical-UTC rule, naming the field and the value.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]

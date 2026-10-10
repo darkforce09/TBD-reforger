@@ -1,28 +1,31 @@
-//! The wave close ceremony: the marker commit, the lock repack and the refresh commit as one
-//! motion.
+//! The wave close ceremony: the marker commit and the close record as one motion.
 //!
-//! **Role:** `close_ceremony` writes the `wave <N> CLOSED` marker commit, repacks the wave lock and
-//! commits the refresh, or prints the would-be subject under `--dry-run`.
+//! **Role:** `close_ceremony` writes the `wave <N> CLOSED` marker commit, records the close in the
+//! central ticket manager (`ttm wave close <N> --sha <marker>`, which also repacks the plan), and
+//! proves the end state (`ttm wave check`, and the plan's wave base agreeing with the marker
+//! ledger), or prints the would-be subject under `--dry-run`.
 //!
 //! **Position:** called by `cmd_wave_close` in the sibling `wave_close.rs` only after every
-//! validation passed; tests drive it directly over fabricated repositories.
+//! validation passed.
 //!
-//! **Signals & state:** none held; commits into the repository at the root it is given.
+//! **Signals & state:** none held; commits into the repository at the context's root and records
+//! the close in the ticket manager.
 //!
 //! **Invariants:** the process working directory is the root (the marker oracles read relative to
 //! it), and every write names the root explicitly, so a misdirected caller can misread but never
 //! commit elsewhere; a wave number that does not parse refuses and writes no marker; the subject
-//! the ceremony writes passes the same anchored marker check the base derivation reads.
+//! the ceremony writes passes the same anchored marker check the base derivation reads; recording
+//! the close is idempotent for the same wave and sha, so a failed record is repaired by re-running
+//! it.
 
 use super::*;
 
-/// The marker commit, the repack and the lock-refresh commit, as ONE motion.
+/// The marker commit and the close record, as ONE motion.
 ///
-/// TESTABILITY CUT, stated plainly: `cmd_wave_close`'s validations (all-shipped, verifier
-/// recorded AND at HEAD, the full wave gate) need a live registry, a verifier marker file and a
-/// gateable tree — none of which a unit test can fabricate honestly. The ceremony is therefore
-/// this separate function, called by `cmd_wave_close` only after every validation has passed,
-/// and the fabricated-repo tests drive it directly.
+/// `cmd_wave_close`'s validations (all-shipped, verifier recorded AND at HEAD, the full wave gate)
+/// run first; the ceremony is this separate function, called only after every validation has
+/// passed. `vouched` says the operator named the members (`--tickets`), which the close record
+/// then stores instead of the plan's frozen set.
 ///
 /// CWD CONTRACT: the marker authority and oracle are cwd-bound by design ([`Ctx::enter`] chdirs
 /// to the root once, and the whole gate stack rides that), so the caller guarantees the process
@@ -30,12 +33,14 @@ use super::*;
 /// misdirected caller can misread, but it can never commit into a repo it was not handed — and
 /// the misread ends in refusal, because the candidate object cannot resolve outside `root`.
 pub(super) fn close_ceremony(
-    root: &Path,
+    ctx: &Ctx,
     w: &str,
     wave_ids: &[String],
+    vouched: bool,
     summary: Option<&str>,
     dry_run: bool,
 ) -> u8 {
+    let root: &Path = &ctx.root;
     // Fail-closed parse. The old print did `w.parse().unwrap_or(0)` — fine for prose, lethal for
     // a ledger: a marker claiming wave 0 must be impossible to write, not merely unlikely.
     let n: i64 = match w.parse() {
@@ -44,6 +49,12 @@ pub(super) fn close_ceremony(
             wprintln!("REFUSED: current wave '{w}' is not a number — no marker written.");
             return 1;
         }
+    };
+    let Ok(label) = u32::try_from(n) else {
+        wprintln!(
+            "REFUSED: wave {n} is not a wave label the ticket manager can record — no marker written."
+        );
+        return 1;
     };
     let subject = match close_subject(n, summary, wave_ids) {
         Ok(s) => s,
@@ -60,14 +71,14 @@ pub(super) fn close_ceremony(
         // NOTHING — not even to the object store — so it stops here.
         wprintln!("--dry-run: would commit wave-close marker subject:");
         wprintln!("  {subject}");
-        wprintln!("(nothing written; working tree, ledger and lock untouched)");
+        wprintln!("(nothing written; working tree, marker ledger and ticket manager untouched)");
         return 0;
     }
 
-    // DIRTY TREE = REFUSAL, before anything is created. The ceremony commits twice; starting it
-    // on top of unrelated changes either sweeps them into the lock commit or strands them behind
-    // a marker. Same LFS-neutral, fail-closed porcelain read as tree_state/git_porcelain_paths:
-    // a status that CANNOT run is never an empty status.
+    // DIRTY TREE = REFUSAL, before anything is created. The ceremony moves HEAD to a commit of
+    // HEAD's own tree; starting it on top of unrelated changes strands them behind a marker. Same
+    // LFS-neutral, fail-closed porcelain read as tree_state/git_porcelain_paths: a status that
+    // CANNOT run is never an empty status.
     let mut porcelain: Vec<&str> = ledger::LFS_NEUTRAL.to_vec();
     porcelain.extend_from_slice(&["status", "--porcelain"]);
     let dirty = match git_at(root, &porcelain) {
@@ -163,47 +174,96 @@ pub(super) fn close_ceremony(
     }
     wprintln!("marker committed: {} {subject}", short(&cand));
 
-    // REPACK — the include-HEAD derivation exists exactly for this moment: the fresh marker
-    // sits AT HEAD, so the recompiled base becomes {n} and open waves renumber {n}+1 onward.
-    if let Err(e) = ticket_wave_lock::repack_quiet(root) {
-        wprintln!(
-            "wave repack FAILED after the close marker: {}",
-            ticket_model::error_chain_text(&e)
-        );
-        wprintln!("  The marker IS committed. Fix the ticket tree, run `cargo xtask wave repack`,");
-        wprintln!("  commit the lock — the documented close → check-red → repack recovery loop.");
-        return 1;
+    // RECORD — the ticket manager stores the close against the exact marker sha and repacks the
+    // plan, so the recompiled base becomes {n} and open waves renumber {n}+1 onward. The marker is
+    // already committed, so every failure from here on says so and names the safe re-run.
+    let members: &[String] = if vouched { wave_ids } else { &[] };
+    let mut rerun = vec![label.to_string(), "--sha".to_string(), cand.clone()];
+    if vouched {
+        rerun.push("--members".to_string());
+        rerun.extend(wave_ids.iter().cloned());
     }
-
-    // The lock-refresh commit, in the shape repack_after_land uses: explicit path, never -A. A
-    // byte-identical lock skips the commit (not a reachable state right after a fresh marker —
-    // the base just changed — but the guard costs nothing and lies about nothing).
-    let lock_dirty = git_at(
-        root,
-        &["status", "--porcelain", "--", repository_layout::WAVE_LOCK],
-    )
-    .unwrap_or_default();
-    if !lock_dirty.trim().is_empty() {
-        let committed = git_at(root, &["add", "--", repository_layout::WAVE_LOCK]).is_ok()
-            && git_at(root, &["commit", "-m", "wave.lock: repack after close"]).is_ok();
-        if !committed {
-            wprintln!("could not commit the wave.lock refresh — commit it by hand before pushing");
+    let mut rerun_args = vec!["wave", "close"];
+    rerun_args.extend(rerun.iter().map(String::as_str));
+    let rerun_command = ctx.ticket_manager.display_command(&rerun_args);
+    let recorded = ctx.ticket_manager.wave_close(label, &cand, members);
+    ctx.forget_wave_plan();
+    match recorded {
+        Ok(close) => wprintln!(
+            "close recorded: wave {} at {} ({} member(s))",
+            close.n,
+            short(&cand),
+            close.members.len()
+        ),
+        Err(e) => {
+            wprintln!(
+                "recording the close FAILED: {}",
+                crate::error::error_chain_text(&e)
+            );
+            wprintln!(
+                "  The marker IS committed. Fix the cause, then re-run — it is idempotent for"
+            );
+            wprintln!("  this wave and sha, so running it again is safe:");
+            wprintln!("    {rerun_command}");
             return 1;
         }
-        wprintln!("wave.lock refreshed and committed (rides this close)");
     }
 
-    // END-STATE PROOF, not a hope: the promise is "tree ends check-green with no manual step",
-    // so run the check that would have been red and say so.
-    let errs = ticket_wave_lock::check_as_errors(root);
-    if !errs.is_empty() {
-        wprintln!("wave check is RED after the close ceremony — fix before pushing:");
-        for e in &errs {
-            wprintln!("  ERROR: {e}");
+    // END-STATE PROOF, not a hope: the promise is "the plan ends check-green with no manual
+    // step", so run the check that would have been red and say so.
+    match ctx.ticket_manager.wave_check() {
+        Ok(check) if check.ok => {}
+        Ok(check) => {
+            wprintln!("ttm wave check is RED after the close ceremony — fix before pushing:");
+            for finding in &check.findings {
+                wprintln!("  ERROR: {finding}");
+            }
+            wprintln!("  The marker IS committed and the close recorded; re-running");
+            wprintln!("    {rerun_command}");
+            wprintln!("  is safe once the tickets are fixed.");
+            return 1;
         }
-        return 1;
+        Err(e) => {
+            wprintln!(
+                "ttm wave check could not run after the close ceremony: {}",
+                crate::error::error_chain_text(&e)
+            );
+            wprintln!("  The marker IS committed; re-running `{rerun_command}` is safe.");
+            return 1;
+        }
     }
-    wprintln!("wave check green (ledger base is now {n})");
+
+    // LEDGER AGREEMENT: the ticket manager's wave base and the marker ledger in git must name the
+    // same newest close, or the next gate and the next repack disagree about where waves start.
+    let stored_base = match ctx.wave_plan() {
+        Ok(plan) => i64::from(plan.wave_base),
+        Err(e) => {
+            wprintln!(
+                "could not read the wave plan after the close: {}",
+                crate::error::error_chain_text(&e)
+            );
+            return 1;
+        }
+    };
+    match super::super::base::newest_close_base(root) {
+        Ok(Some(git_base)) if git_base == stored_base && git_base == n => {}
+        Ok(git_base) => {
+            wprintln!(
+                "LEDGERS DISAGREE after the close: the ticket manager's wave base is {stored_base},"
+            );
+            wprintln!(
+                "  the newest standing marker in git claims {}, and this close was wave {n}.",
+                git_base.map_or_else(|| "none".to_string(), |b| b.to_string())
+            );
+            wprintln!("  The marker IS committed; re-running `{rerun_command}` is safe.");
+            return 1;
+        }
+        Err(e) => {
+            wprintln!("could not read the marker ledger after the close: {e}");
+            return 1;
+        }
+    }
+    wprintln!("ttm wave check green (wave base is now {n} in both ledgers)");
 
     wprintln!();
     wprintln!("WAVE {n} CLOSED. Wave {} may be dispatched.", n + 1);

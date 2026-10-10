@@ -17,7 +17,6 @@ const THIS_REPOSITORY: &CrateTierConfiguration<'static> = &CrateTierConfiguratio
         "frontend_application",
         "offline_service_worker",
         "game_server_host_agent",
-        "ticketboard_desktop",
     ],
 };
 

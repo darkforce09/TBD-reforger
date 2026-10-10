@@ -22,37 +22,34 @@ a prefix, so they sort together.
 
 A ticket cites a spec in one of two ways, both as a repository-relative path:
 
-- its `spec` field in `.ai/tickets/T-<id>.toml`, the spec its work is accepted against;
+- its `spec` field in the legacy file `.ai/tickets/T-<id>.toml`, the spec its work is accepted
+  against, which `ttm import` reads into the central ticket manager;
 - a `Design: <path>.` line in its `citations` field, for a design document the ticket draws on.
 
 A new spec is written from `.ai/tickets/spec_template.md`, starts with `**Status:** live`, and
 stays live while its ticket is `idea`, `queued` or `ready`. When the ticket ships or is cancelled
 the spec becomes a frozen record: its status line reads `**Status:** frozen record` and its text is
 never reworded again, only its links to moved documents. A spec meant for
-`cargo xtask ticket prompt` holds a `## Claude Code prompt` heading followed by a fenced block,
+`ttm --project reforger prompt` holds a `## Claude Code prompt` heading followed by a fenced block,
 which the command prints.
 
 ## Code
 
-- [Ticket crates](/tools/tickets/README.md) — `SPECS_DIR` in
-  `tools/tickets/ticket_model/src/repository.rs` names this folder; the existence check in
-  `tools/tickets/ticket_registry/src/validation/references.rs` reports a `spec` that names no
-  file; `mark_ready` in `tools/tickets/ticket_registry/src/ops/readiness.rs` refuses a missing
-  spec; the prompt extractor is `tools/tickets/ticket_registry/src/verbs/prompt.rs`.
-- [Ticketboard](/tools/tickets/ticketboard_desktop/) — shows a ticket's `spec` and opens it in the in-app
-  document viewer.
+- [Ticket manager client](/tools/foundation/ticket_manager_client/README.md) — `show`, which
+  says whether the ticket manager holds a ticket's spec, and `brief`, which returns it.
+- [Platform slice runs](/tools/commands/platform_execution/src/slice_execution.rs) — refuses a
+  slice whose spec the ticket manager does not hold.
 
 ## Boundaries
 
-- Depends on: the `spec` and `citations` fields of the ticket files in `.ai/tickets/`; the spec
-  template `.ai/tickets/spec_template.md`.
-- Used by: `cargo xtask ticket check`, `ticket mark-ready`, `ticket brief` and `ticket prompt`; the
-  ticketboard; the platform slice dispatch
-  (`tools/xtask/src/commands/platform/slice_execution.rs`); runbooks and feature docs that link
+- Depends on: the `spec` and `citations` fields of the legacy ticket files in `.ai/tickets/`;
+  the spec template `.ai/tickets/spec_template.md`.
+- Used by: `ttm import`, which reads each spec into the central ticket manager;
+  `ttm --project reforger brief` and `prompt`; the platform slice run
+  (`tools/commands/platform_execution/src/slice_execution.rs`); runbooks and feature docs that link
   the spec of a program, such as the [mod slice workflow](/documentation/runbooks/mod_slice_workflow.md).
 - Rules: no subfolders and no document that is not a ticket spec; a spec keeps the path its
-  tickets cite, which `cargo xtask ticket check` verifies for every ticket not `idea` or
-  `cancelled`; a frozen spec is never reworded, and the gates judge it only on its links
+  tickets cite; a frozen spec is never reworded, and the gates judge it only on its links
   (`cargo xtask verify link-check`).
 
 ## Related documentation
@@ -60,5 +57,5 @@ which the command prints.
 - [Ticket specs and plans](/documentation/tickets/README.md) — the lifecycle both folders share.
 - [Ticket identifiers](/documentation/standards/ticket_identifiers.md) — the id grammar behind
   the file names.
-- [Ticket run pipeline](/documentation/runbooks/ticket_run_pipeline.md) — where the spec is
-  written in a ticket's life.
+- [Running a wave](/documentation/runbooks/factory_waves/running_a_wave.md) — where the spec is
+  read in a ticket's life.

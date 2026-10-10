@@ -2,8 +2,9 @@
 //!
 //! **Role:** the repository-relative paths of the pipeline output tree and the worktree base,
 //! verified-commit marker and verdict folder inside it.
-//! **Position:** the ticket crates write handoff documents there, `xtask` its wave records and
-//! `developer_tools` its export operation logs.
+//! **Position:** the platform wave driver keeps its slice worktrees, gate verdicts and
+//! verified-commit marker there, `xtask` its run records and `developer_tools` its export
+//! operation logs.
 //! **Signals & state:** none; constants.
 //! **Invariants:** every path lies under [`ARTIFACTS_DIR`]; nothing there is an input to a gate.
 

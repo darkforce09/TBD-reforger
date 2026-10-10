@@ -1,21 +1,22 @@
 //! Landing slices on main, and the bounded rollback and verifier record.
 //!
 //! **Role:** `cmd_land` merges every slice that is ready (gate receipt green at its HEAD, clean
-//! tree, work on its branch) to main, runs the full wave gate on the merged result, then drops the
-//! landed worktrees, repacks the wave lock, commits stamped receipts and pushes; `cmd_revert`
-//! reverts a wave back to its base; `cmd_verified` records the sha an adversarial verifier
-//! examined.
+//! tree, work on its branch) to main, records each landing in the central ticket manager (`ttm
+//! land`), runs the full wave gate on the merged result, then drops the landed worktrees, repacks
+//! the wave plan (`ttm wave repack`) and pushes; `cmd_revert` reverts a wave back to its base and
+//! names the landings to clear; `cmd_verified` records the sha an adversarial verifier examined.
 //!
 //! **Position:** re-exported by the parent `land` module; the slice worktrees are merged and
 //! dropped through `crate::slice_worktree::run_at`, the receipts read through `verdict`.
 //!
-//! **Signals & state:** none held; mutates main (merges, commits, the push) and the slice
-//! worktrees.
+//! **Signals & state:** none held; mutates main (merges, the push), the slice worktrees and the
+//! ticket manager's landing records and wave plan.
 //!
 //! **Invariants:** a slice without a green gate receipt at its current HEAD is refused with the
 //! exact re-gate command; landing has no wave barrier; a red gate after the merge keeps every
-//! worktree for inspection; a failed lock repack stops before the push, while a receipt-commit
-//! failure warns and continues; arguments are an allowlist (ticket ids and known flags only).
+//! worktree for inspection; a landing the ticket manager refuses to record stops before the gate,
+//! and a failed repack stops before the push; arguments are an allowlist (known flags, and
+//! tickets of the current wave named by slug or legacy number).
 
 use super::*;
 
@@ -46,11 +47,11 @@ pub(crate) fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
             bookkeeping = true;
         } else if a.is_empty() {
             // `'')` — an empty positional is dropped, not refused.
-        } else if is_ticket_glob(a) {
+        } else if ticket_manager_client::is_ticket_reference(a) {
             only.push(a.clone());
         } else {
             werr!(
-                "land: refusing unknown argument '{a}' (expected --wave, --bookkeeping and/or T-nnn ticket ids)"
+                "land: refusing unknown argument '{a}' (expected --wave, --bookkeeping and/or tickets of the current wave)"
             );
             return 2;
         }
@@ -63,17 +64,38 @@ pub(crate) fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
     }
 
     let wave_ids = lock_or_refuse!(ledger::wave_tickets(ctx, &w));
+    let plan = lock_or_refuse!(ledger::load_plan(ctx));
+
+    // A named ticket that is not in the current wave would otherwise land NOTHING and say
+    // "no slice is ready" — indistinguishable from "your slice is not finished". Each name is
+    // matched to its wave row by slug or legacy number, and the slug is what lands.
+    let mut named: Vec<String> = Vec::new();
+    let mut miss: Vec<&str> = Vec::new();
+    for want in &only {
+        match plan
+            .row(want)
+            .filter(|row| wave_ids.iter().any(|t| t == row.slug.as_str()))
+        {
+            Some(row) => named.push(row.slug.to_string()),
+            None => miss.push(want.as_str()),
+        }
+    }
+    if !miss.is_empty() {
+        werr!(
+            "land: {} not in wave {w} — nothing named was landed",
+            miss.join(" ")
+        );
+        return 2;
+    }
+
     let mut ready: Vec<String> = Vec::new();
     let mut blocked: Vec<String> = Vec::new();
     let mut skipped: Vec<String> = Vec::new();
     for t in &wave_ids {
-        if ctx
-            .registry_view
-            .is_shipped(&ticket_model::TicketId::new(t.as_str()))
-        {
+        if ledger::is_complete(ctx, t) {
             continue;
         }
-        if !only.is_empty() && !only.iter().any(|o| o == t) {
+        if !named.is_empty() && !named.iter().any(|o| o == t) {
             skipped.push(t.clone());
             continue;
         }
@@ -84,30 +106,16 @@ pub(crate) fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
         }
     }
 
-    // A named ticket that is not in the current wave would otherwise land NOTHING and say
-    // "no slice is ready" — indistinguishable from "your slice is not finished".
-    if !only.is_empty() {
-        let miss: Vec<&String> = only
-            .iter()
-            .filter(|want| !wave_ids.iter().any(|t| t == *want))
-            .collect();
-        if !miss.is_empty() {
-            let names: Vec<&str> = miss.iter().map(|s| s.as_str()).collect();
-            werr!(
-                "land: {} not in wave {w} — nothing named was landed",
-                names.join(" ")
-            );
-            return 2;
-        }
+    if !named.is_empty() {
         // "other unshipped", NOT "other ready" — these were filtered out before tree_state ran, so
         // their readiness is unknown and claiming it would be the same overclaim this script exists
         // to catch.
-        let tail = if skipped.first().map(|s| !s.is_empty()).unwrap_or(false) {
-            format!("  (holding {} other unshipped slice(s))", skipped.len())
-        } else {
+        let tail = if skipped.is_empty() {
             String::new()
+        } else {
+            format!("  (holding {} other unshipped slice(s))", skipped.len())
         };
-        wprintln!("landing ONLY: {}{tail}", only.join(" "));
+        wprintln!("landing ONLY: {}{tail}", named.join(" "));
     }
 
     if ready.is_empty() {
@@ -126,30 +134,31 @@ pub(crate) fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
         );
         return 0;
     }
-    // A factory land is STRICT about run receipts — every landing ticket must
-    // have a slice-run file under .ai/tickets/metrics/<id>/ or the land refuses before
-    // touching main. `--bookkeeping` waives the requirement for manual/command-center
-    // lands; land still never invents a receipt it does not have.
-    let ready_ids: Vec<ticket_model::TicketId> = ready
+    // A factory land is STRICT about run receipts — every landing ticket must have a slice-run
+    // receipt in the ticket manager or the land refuses before touching main. `--bookkeeping`
+    // waives the requirement for manual/command-center lands; land still never invents a receipt
+    // it does not have.
+    let missing: Vec<&str> = ready
         .iter()
-        .map(|t| ticket_model::TicketId::new(t.as_str()))
+        .filter(|t| plan.row(t).is_none_or(|row| row.receipt_count == 0))
+        .map(String::as_str)
         .collect();
-    if let Some(refusal) = ticket_metrics::land_receipt_refusal(&ctx.root, &ready_ids, bookkeeping)
-    {
-        werr!("{refusal}");
+    if !missing.is_empty() && !bookkeeping {
+        werr!(
+            "land: no slice-run receipt in the ticket manager for: {}\n      \
+             a factory land requires the harness receipt — produce one with \
+             `cargo xtask platform slice-run <id>`;\n      \
+             for command-center/manual bookkeeping lands pass --bookkeeping \
+             (waives the requirement; stamps nothing, invents nothing)",
+            missing.join(" ")
+        );
         return 2;
     }
-    if bookkeeping {
-        let missing: Vec<String> = ticket_metrics::missing_receipts(&ctx.root, &ready_ids)
-            .into_iter()
-            .map(String::from)
-            .collect();
-        if !missing.is_empty() {
-            wprintln!(
-                "--bookkeeping: landing WITHOUT run receipts for: {} (nothing will be stamped for these)",
-                missing.join(" ")
-            );
-        }
+    if bookkeeping && !missing.is_empty() {
+        wprintln!(
+            "--bookkeeping: landing WITHOUT run receipts for: {} (nothing will be stamped for these)",
+            missing.join(" ")
+        );
     }
 
     // NOTHING MECHANICAL USED TO STOP AN UNGATED SLICE LANDING.
@@ -210,7 +219,6 @@ pub(crate) fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
     wprintln!("revert target: {base}");
 
     let mut landed: Vec<String> = Vec::new();
-    let mut stamped: Vec<String> = Vec::new();
     for t in &ready {
         let title = ledger::ticket_title(ctx, t);
         wprintln!("── landing {t}: {title}");
@@ -226,45 +234,41 @@ pub(crate) fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
             .terminal()
             .map(|code| code == 0)
             .unwrap_or(false);
-        if ok {
-            // The merge succeeded — stamp the harness receipt NOW (outcome +
-            // land sha + finished), before repack_after_land. Land never invents token
-            // counts: a bookkeeping ticket without a receipt is skipped, and a receipt
-            // that exists but cannot be stamped is a hard stop, not a silent shrug.
-            let ticket_id = ticket_model::TicketId::new(t.as_str());
-            if ticket_metrics::has_receipt(&ctx.root, &ticket_id) {
-                let land_sha = git_stdout_lossy(&["rev-parse", "HEAD"]);
-                match ticket_metrics::stamp_land(&ctx.root, &ticket_id, &land_sha) {
-                    Ok(p) => {
-                        let rel = p
-                            .strip_prefix(&ctx.root)
-                            .unwrap_or(&p)
-                            .display()
-                            .to_string();
-                        wprintln!("  receipt stamped landed @ {}: {rel}", short(&land_sha));
-                        stamped.push(rel);
-                    }
-                    Err(e) => {
-                        werr!(
-                            "  receipt stamp FAILED for {t}: {}",
-                            ticket_model::error_chain_text(&e)
-                        );
-                        werr!("  (merge is on main; fix the receipt, stamp by hand, re-run land)");
-                        return 1;
-                    }
-                }
-            }
-            landed.push(t.clone());
-        } else {
+        if !ok {
             wprintln!("  MERGE FAILED — resolve by hand, then re-run land");
             wprintln!("  (nothing dropped; every worktree is intact)");
             return 1;
         }
+        // The merge succeeded — record the landing NOW, before the gate and the repack: the
+        // ticket manager stamps the newest receipt `landed` at this sha. Land never invents token
+        // counts: a bookkeeping land does not require a receipt, and a landing the ticket
+        // manager refuses to record is a hard stop, not a silent shrug.
+        let land_sha = git_stdout_lossy(&["rev-parse", "HEAD"]);
+        let require_receipt = !bookkeeping;
+        match ctx.ticket_manager.land(t, land_sha.trim(), require_receipt) {
+            Ok(recorded) => {
+                let stamp = match recorded.stamped_receipt {
+                    Some(_) => "receipt stamped landed",
+                    None => "no receipt to stamp",
+                };
+                wprintln!("  landing recorded @ {} ({stamp})", short(&land_sha));
+            }
+            Err(e) => {
+                werr!(
+                    "  landing record FAILED for {t}: {}",
+                    crate::error::error_chain_text(&e)
+                );
+                werr!(
+                    "  (the merge is on main; fix the cause, then `{}`, and re-run land)",
+                    ctx.ticket_manager
+                        .display_command(&["land", t, "--sha", land_sha.trim()])
+                );
+                return 1;
+            }
+        }
+        landed.push(t.clone());
     }
-
-    if !stamped.is_empty() {
-        commit_stamped_receipts(&stamped);
-    }
+    ctx.forget_wave_plan();
 
     wprintln!();
     wprintln!(
@@ -299,11 +303,9 @@ pub(crate) fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
         }
     }
 
-    // Lifecycle (a): `wave repack` is land's final mutation, BEFORE the push, so a lock
-    // refresh rides the land rather than sitting dirty behind it. Usually a no-op byte-wise —
-    // slice branches do not edit ticket files, and every status writer already runs the same
-    // writer — but a merged slice that DID move a ticket must not leave `wave check` red on the
-    // main this command just published.
+    // `ttm wave repack` is land's final mutation, BEFORE the push, so the plan the next agent
+    // reads already reflects this land. The plan lives in the ticket manager, so nothing is
+    // committed here.
     if repack_after_land(ctx) != 0 {
         return 1;
     }
@@ -319,77 +321,29 @@ pub(crate) fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
     0
 }
 
-/// Run the lock writer and commit the refresh when it changed anything — the land commit
-/// carries the lock (lifecycle "a"). Refusing to continue on a writer error is deliberate:
-/// pushing a main whose lock cannot be recompiled would hand the next agent a red `ticket
-/// check` with this command's name on it.
+/// Recompile the wave plan in the ticket manager after a land. Refusing to continue on a
+/// repack error is deliberate: pushing a main whose plan cannot be recompiled would hand the next
+/// agent a red `ttm wave check` with this command's name on it.
 pub(super) fn repack_after_land(ctx: &Ctx) -> u8 {
-    if let Err(e) = ticket_wave_lock::repack_quiet(&ctx.root) {
-        wprintln!(
-            "wave repack FAILED after land: {}",
-            ticket_model::error_chain_text(&e)
-        );
-        wprintln!("  fix the ticket tree, run `cargo xtask wave repack`, commit, then push.");
-        return 1;
+    let outcome = ctx.ticket_manager.wave_repack(&[]);
+    ctx.forget_wave_plan();
+    match outcome {
+        Ok(repacked) => {
+            wprintln!("wave plan repacked: {}", repacked.summary);
+            0
+        }
+        Err(e) => {
+            wprintln!(
+                "wave repack FAILED after land: {}",
+                crate::error::error_chain_text(&e)
+            );
+            wprintln!(
+                "  fix the tickets, run `{}`, then push.",
+                ctx.ticket_manager.display_command(&["wave", "repack"])
+            );
+            1
+        }
     }
-    let dirty = git_stdout_lossy(&["status", "--porcelain", "--", repository_layout::WAVE_LOCK]);
-    if dirty.trim().is_empty() {
-        return 0;
-    }
-    super::super::flush();
-    let ok = process_runner::Run::new("git")
-        .args(["add", "--", repository_layout::WAVE_LOCK])
-        .terminal()
-        .map(|code| code == 0)
-        .unwrap_or(false)
-        && process_runner::Run::new("git")
-            .args(["commit", "-m", "wave.lock: repack after land"])
-            .terminal()
-            .map(|code| code == 0)
-            .unwrap_or(false);
-    if !ok {
-        wprintln!("could not commit the wave.lock refresh — commit it by hand before pushing");
-        return 1;
-    }
-    wprintln!("wave.lock refreshed and committed (rides this land)");
-    0
-}
-
-/// Commit the land-stamped run receipts so they ride the land — one commit,
-/// EXPLICIT paths only (never `-A`), placed before the gate so a later `wave revert` of
-/// the merges rolls the stamps back with them.
-///
-/// Warn-and-continue on failure, deliberately unlike [`repack_after_land`]: a stale lock
-/// makes `ticket check` red for everyone, but an uncommitted stamp is still a valid
-/// on-disk receipt — blocking the land over its commit would hold real work hostage to
-/// bookkeeping.
-pub(super) fn commit_stamped_receipts(paths: &[String]) {
-    super::super::flush();
-    let add = process_runner::Run::new("git")
-        .args(["add", "--"])
-        .args(paths);
-    let ok = add.terminal().map(|code| code == 0).unwrap_or(false)
-        && process_runner::Run::new("git")
-            .args(["commit", "-m", "metrics: stamp land receipts"])
-            .terminal()
-            .map(|code| code == 0)
-            .unwrap_or(false);
-    if ok {
-        wprintln!("run receipt(s) committed (ride this land)");
-    } else {
-        wprintln!("could not commit the stamped receipt(s) — commit .ai/tickets/metrics/ by hand");
-    }
-}
-
-/// The bash `case` glob `T-[0-9]*` — literal `T-`, then a digit, then anything.
-pub(super) fn is_ticket_glob(a: &str) -> bool {
-    let Some(rest) = a.strip_prefix("T-") else {
-        return false;
-    };
-    rest.chars()
-        .next()
-        .map(|c| c.is_ascii_digit())
-        .unwrap_or(false)
 }
 
 /// Roll main back to a known-green commit, keeping the slice branches alive.
@@ -397,7 +351,7 @@ pub(super) fn is_ticket_glob(a: &str) -> bool {
 /// The bounded-rollback half of self-healing: when a wave cannot be fixed within its retry budget,
 /// main returns to green and the offending slices are quarantined rather than left broken. Uses
 /// `revert`, never `reset --hard` — main is pushed, so history must not be rewritten.
-pub(crate) fn cmd_revert(_ctx: &Ctx, base: &str) -> u8 {
+pub(crate) fn cmd_revert(ctx: &Ctx, base: &str) -> u8 {
     if base.is_empty() {
         wprintln!("usage: cargo xtask platform wave revert <known-green-sha>");
         return 1;
@@ -416,6 +370,11 @@ pub(crate) fn cmd_revert(_ctx: &Ctx, base: &str) -> u8 {
     }
     wprintln!("reverting {n} commit(s) back to {base}");
     let list = git_stdout_lossy(&["rev-list", &format!("{base}..HEAD")]);
+    let reverted: Vec<String> = list
+        .lines()
+        .filter(|l| !l.is_empty())
+        .map(str::to_string)
+        .collect();
     for c in list.lines().filter(|l| !l.is_empty()) {
         // `git rev-list --parents -n1 $c | wc -w` > 2 means "sha + two or more parents" = a merge.
         let parents = git_stdout_lossy(&["rev-list", "--parents", "-n1", c]);
@@ -444,7 +403,46 @@ pub(crate) fn cmd_revert(_ctx: &Ctx, base: &str) -> u8 {
         }
     }
     wprintln!("main is back at the {base} tree. Slice branches were NOT deleted.");
+    name_reverted_landings(ctx, &reverted);
     0
+}
+
+/// The tickets whose recorded landing commit is among `reverted`, with the `ttm unland` that
+/// clears each record. The ticket manager is told nothing here: clearing a landing is the
+/// operator's decision, made after reading which slices the revert took out.
+fn name_reverted_landings(ctx: &Ctx, reverted: &[String]) {
+    let tickets = match ctx.ticket_manager.list(None) {
+        Ok(listing) => listing.tickets,
+        Err(e) => {
+            werr!(
+                "could not list the tickets to find the reverted landings: {}",
+                crate::error::error_chain_text(&e)
+            );
+            return;
+        }
+    };
+    let landed: Vec<_> = tickets
+        .iter()
+        .filter(|ticket| {
+            ticket.landing_sha.as_deref().is_some_and(|sha| {
+                reverted
+                    .iter()
+                    .any(|c| c.starts_with(sha) || sha.starts_with(c.as_str()))
+            })
+        })
+        .collect();
+    if landed.is_empty() {
+        wprintln!("no recorded landing lies in the reverted range.");
+        return;
+    }
+    wprintln!("these tickets record a landing the revert took out; clear each record with:");
+    for ticket in landed {
+        wprintln!(
+            "  {}",
+            ctx.ticket_manager
+                .display_command(&["unland", ticket.slug.as_str()])
+        );
+    }
 }
 
 /// Record that an adversarial verifier examined `<sha>`.

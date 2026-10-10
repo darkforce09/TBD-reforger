@@ -19,7 +19,6 @@ targets = "any"
 aho-corasick = { workspace = true }
 process_runner = { workspace = true }
 repository_layout = { workspace = true }
-ticket_model = { workspace = true }
 verification_core = { workspace = true }
 
 [lints]

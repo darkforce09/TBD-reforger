@@ -1,9 +1,8 @@
 # Xtask repository commands
 
 The `xtask` crate: the `cargo xtask` command router of the repository. It runs the repository's
-operations (database, deploys, mod servers, map pipelines,
-[ticket](/documentation/glossary/n_to_z.md#ticket) and [wave](/documentation/glossary/n_to_z.md#wave)
-commands, the platform factory) and orchestrates its verifications and CI tasks. Developers, AI agents, the GitHub workflows and the host's systemd
+operations (database, deploys, mod servers, map pipelines, the platform factory and its
+[wave](/documentation/glossary/n_to_z.md#wave) driver) and orchestrates its verifications and CI tasks. Developers, AI agents, the GitHub workflows and the host's systemd
 timers all run it.
 
 ## Contents
@@ -21,7 +20,7 @@ tools/xtask/
 
 `cargo xtask` is the alias `run --package xtask --` in `.cargo/config.toml`, so every call builds
 the crate if needed and runs `src/main.rs`. The binary parses the command line with clap
-(`src/cli/`), finds the checkout by walking up from the working directory to `.ai/tickets/ROOT`,
+(`src/cli/`), finds the checkout by walking up from the working directory to `.ai/ROOT`,
 and hands the command to its group under `src/commands/`, which does the work or calls a library
 crate (the check crates under `tools/checks/`, the command crates under `tools/commands/`). The data folders beside `src/` are what the
 commands read: `dedicated_server_profiles/` for the local game servers and `fixtures/` for the MCP
@@ -29,8 +28,9 @@ selftest; the deploys read the repository root's `deploy/`. The `repository_layo
 (`tools/foundation/repository_layout`) names each of them once, and `deploy_settings`
 (`tools/foundation/deploy_settings`) reads `deploy/deploy.env`.
 
-The crate owns repository operations and the orchestration of checks. Ticket storage and the wave
-lock belong to the ticket crates in `tools/tickets/`, verdict primitives to `verification_core`, child processes, the
+The crate owns repository operations and the orchestration of checks. Tickets and the wave plan
+live in the central ticket manager, which the platform and mod wave drivers reach through
+`ticket_manager_client` (its `ttm` command line); verdict primitives belong to `verification_core`, child processes, the
 host bridge and the ssh transport to `process_runner`, the structural laws to `repository_laws`, and
 building blueprints to `blueprint_compiler`, the map asset gates to `map_asset_verification`, the
 terrain export driver and the map tile index to `world_export_pipeline`, and the world export
@@ -65,7 +65,7 @@ The crate has no features and reads no configuration file of its own. What it re
   checkout's `target/`, shared by every linked worktree
   (`tools/commands/ci_task_catalog/src/cargo_target_pin.rs`), and `mk rust-api` builds into
   `target/dev-api`.
-- `.ai/tickets/ROOT`: the marker that identifies the checkout root (`find_repository_root` in
+- `.ai/ROOT`: the marker that identifies the checkout root (`find_repository_root` in
   `crates/foundation/repository_root/src/root_marker_walk.rs`, which xtask reaches through
   `repository_layout::prelude`).
 - `deploy/deploy.env`: the deploy host (`TBD_SSH_HOST`, the one place the staging host is named),
@@ -83,8 +83,7 @@ The crate has no features and reads no configuration file of its own. What it re
 
 ## Boundaries
 
-- Depends on: the tool crates `tools/xtask/Cargo.toml` lists (the ticket crates, the check and
-  command crates, `blueprint_compiler`, `map_asset_verification`, `world_export_pipeline`,
+- Depends on: the tool crates `tools/xtask/Cargo.toml` lists (the check and command crates, `blueprint_compiler`, `map_asset_verification`, `world_export_pipeline`,
   `enfusion_script_index` and the
   `tools/foundation` crates), all by workspace path; anyhow, clap and serde; at run time cargo, trunk, podman, git and the other host tools each group names. No
   tokio, axum, reqwest, resvg or image enters its dependency closure (rule 6 of
@@ -93,15 +92,12 @@ The crate has no features and reads no configuration file of its own. What it re
   - people and AI agents, through the alias;
   - the workflows in `.github/workflows/` (`ci.yml`, `editor-gates.yml`, `mod-gates.yml`);
   - the backup and drill units in `deploy/systemd/`, which run `cargo run -q -p xtask --`;
-  - the PreToolUse hook in `.claude/settings.json`, which runs the built binary's `ai guard`;
-  - the ticketboard desktop viewer `tools/tickets/ticketboard_desktop/`, which runs
-    `cargo xtask ticket` commands.
+  - the PreToolUse hook in `.claude/settings.json`, which runs the built binary's `ai guard`.
 - Rules:
   - xtask and `developer_tools` are binary-only packages over tool crates alone (the checkout-root
     finder comes through `repository_layout`), neither depends on the other, and no member depends on either; a
-    `tools/foundation` crate depends only on lower `tools/foundation` crates and `repository_root`,
-    and a `tools/tickets` crate only on `tools/foundation` crates, four `crates/foundation` crates
-    and lower ticket crates;
+    `tools/foundation` crate depends only on lower `tools/foundation` crates, `repository_root`
+    and `newtype_ids`;
   - production files should stay under 500 lines (`cargo xtask verify file-length` warns), and
     tests live in separate files;
   - tests read fixtures from the checkout they run in: the blueprint fixtures in

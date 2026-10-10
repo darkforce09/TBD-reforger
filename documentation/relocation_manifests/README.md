@@ -235,9 +235,9 @@ and rows no order of moves can make (two folders that swap names).
 Frozen records change as little as their checks need: Markdown under the archive and the ticket
 documents gets only its link destinations rewritten, prose and backticks staying as history; a
 `README.md` there is a live index of its folder, so the tree part of its Contents block's lines (the
-root folder and each entry's name, not the roles) is rewritten and verified as a live file is; a
-ticket record whose status is shipped or cancelled gets only its `spec`, `plan` and `owns` entries
-rewritten. A file takes the treatment of the place it lands, so a file moved into the archive is
+root folder and each entry's name, not the roles) is rewritten and verified as a live file is. The
+legacy ticket data folder `.ai/tickets` (records awaiting import into the central ticket manager)
+is never edited or verified. A file takes the treatment of the place it lands, so a file moved into the archive is
 frozen from that move on.
 Binary files and Git LFS pointers move with their folders and are never edited. SQL migrations (a
 `.sql` file directly in a `migrations` folder, whose checksum `sqlx` pins once a database applies

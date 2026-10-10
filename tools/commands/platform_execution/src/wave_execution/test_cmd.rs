@@ -14,7 +14,8 @@
 //! **Invariants:** `cargo test` builds and then runs a binary, so a shared target folder can run
 //! another worktree's test binary — the private folder is the isolation, and the shared gate lock
 //! is not taken; the folder may be overridden (`TBD_ADHOC_TARGET_DIR`) only to that same default or
-//! a non-slice verifier path; `/tmp` and the true shared roots (`$HOME/.cache/tbd-target`, the main
+//! a non-slice verifier path (a folder name after `tbd-target-` that is no ticket reference, such as
+//! `tbd-target-verify_wave138`); `/tmp` and the true shared roots (`$HOME/.cache/tbd-target`, the main
 //! checkout's `target/`) are refused; an explicit `-p` / `--package` is required; a foreign slice's
 //! or a live worktree's folder is never deleted.
 
@@ -33,7 +34,7 @@ pub(crate) fn cmd_test(ctx: &Ctx, argv: &[String]) -> u8 {
             "--slice" => {
                 tid = argv.get(i + 1).cloned().unwrap_or_default();
                 if tid.is_empty() {
-                    werr!("test: REFUSING — --slice needs a ticket id (T-nnn)");
+                    werr!("test: REFUSING — --slice needs a ticket (slug or T-nnn)");
                     return 2;
                 }
                 i += 2;
@@ -56,26 +57,31 @@ pub(crate) fn cmd_test(ctx: &Ctx, argv: &[String]) -> u8 {
         }
     }
     if tid.is_empty() {
-        wprintln!("test: REFUSING — --slice T-nnn is required.");
+        wprintln!("test: REFUSING — --slice <ticket> is required.");
         wprintln!("        Bare `cargo test` against the shared CARGO_TARGET_DIR is the");
         wprintln!("        cross-worktree false-binary class. Sanctioned path:");
         wprintln!("          cargo xtask platform wave test --slice <id> -p frontend_application");
         return 2;
     }
-    // `case "$tid" in [Tt]-[0-9]*)`
-    let shaped = (tid.starts_with("T-") || tid.starts_with("t-"))
+    // A legacy `[Tt]-<digit>…` id has its prefix uppercased; a slug is taken as written. Anything
+    // else is refused: the id names a folder below.
+    let legacy = (tid.starts_with("T-") || tid.starts_with("t-"))
         && tid[2..]
             .chars()
             .next()
             .map(|c| c.is_ascii_digit())
             .unwrap_or(false);
-    if !shaped {
-        werr!("test: REFUSING — slice id '{tid}' (expected T-nnn)");
+    if !legacy && !ticket_manager_client::is_ticket_reference(&tid) {
+        werr!("test: REFUSING — slice id '{tid}' (expected a ticket slug or T-nnn)");
         return 2;
     }
-    // Uppercase the id prefix without touching digits. `${tid#*[Tt]-}` strips through the FIRST
-    // `T-`/`t-`.
-    let tid = format!("T-{}", strip_through_first_t_dash(&tid));
+    // Uppercase the legacy prefix without touching digits. `${tid#*[Tt]-}` strips through the
+    // FIRST `T-`/`t-`.
+    let tid = if legacy {
+        format!("T-{}", strip_through_first_t_dash(&tid))
+    } else {
+        tid
+    };
 
     if args.is_empty() {
         wprintln!("test: REFUSING — pass cargo test args (at least -p <crate>).");
@@ -141,8 +147,9 @@ pub(crate) fn cmd_test(ctx: &Ctx, argv: &[String]) -> u8 {
         return 2;
     }
 
-    // F2: TBD_ADHOC_TARGET_DIR must resolve to this slice's default OR a non-`T-*` verifier path
-    // (basename lacks `tbd-target-T-<digits>` — e.g. `tbd-target-wave138-verify`). A foreign-slice
+    // F2: TBD_ADHOC_TARGET_DIR must resolve to this slice's default OR a non-slice verifier path
+    // (the basename after `tbd-target-` names no ticket — e.g. `tbd-target-verify_wave138`). A
+    // foreign-slice
     // A dir named for ANOTHER slice is REFUSED — never print rm -rf for it.
     let base = Path::new(&priv_r)
         .file_name()
@@ -160,15 +167,15 @@ pub(crate) fn cmd_test(ctx: &Ctx, argv: &[String]) -> u8 {
             wprintln!("        Foreign-slice token '{tok}' != --slice '{tid}'.");
         }
         wprintln!(
-            "        Allowed overrides: $HOME/.cache/tbd-target-{tid}, or a non-T-* verifier"
+            "        Allowed overrides: $HOME/.cache/tbd-target-{tid}, or a verifier path whose"
         );
-        wprintln!("        path (e.g. $HOME/.cache/tbd-target-wave138-verify).");
+        wprintln!("        name names no ticket (e.g. $HOME/.cache/tbd-target-verify_wave138).");
         return 2;
     }
-    // token empty → non-T-* verifier path — allowed (documented above).
+    // token empty → non-slice verifier path — allowed (documented above).
 
     // Never advertise rm -rf for a path whose ticket token differs from --slice or is a live
-    // worktree's foreign cache. Default per-slice for THIS tid + non-T-* verifier OK.
+    // worktree's foreign cache. Default per-slice for THIS tid + non-slice verifier OK.
     //
     // PRESERVED AS WRITTEN: the bash sets `allow_rm=0` unconditionally inside the foreign-token
     // branch AND repeats the same test twice more afterwards ("defence in depth"), so the
@@ -225,21 +232,19 @@ fn strip_through_first_t_dash(s: &str) -> String {
     s.to_string()
 }
 
-/// `sed -n 's/^tbd-target-\([Tt]-[0-9][0-9]*\).*/\1/p'` then the same `T-` normalisation.
+/// The slice a private target folder name carries: `tbd-target-[Tt]-<digits>…` names the legacy
+/// ticket `T-<digits>` (the bash `sed -n 's/^tbd-target-\([Tt]-[0-9][0-9]*\).*/\1/p'`), and
+/// `tbd-target-<slug>` names that slug; any other name carries none.
 fn adhoc_token(base: &str) -> Option<String> {
     let rest = base.strip_prefix("tbd-target-")?;
     let head = rest.as_bytes();
-    if head.len() < 3 {
-        return None;
+    if head.len() >= 3 && (head[0] == b'T' || head[0] == b't') && head[1] == b'-' {
+        let digits: String = rest[2..].chars().take_while(char::is_ascii_digit).collect();
+        if !digits.is_empty() {
+            return Some(format!("T-{digits}"));
+        }
     }
-    if !(head[0] == b'T' || head[0] == b't') || head[1] != b'-' {
-        return None;
-    }
-    let digits: String = rest[2..].chars().take_while(char::is_ascii_digit).collect();
-    if digits.is_empty() {
-        return None;
-    }
-    Some(format!("T-{digits}"))
+    ticket_manager_client::is_ticket_reference(rest).then(|| rest.to_string())
 }
 
 /// `readlink -f -- "$p" 2>/dev/null || printf '%s' "$p"`.

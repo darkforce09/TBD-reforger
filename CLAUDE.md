@@ -17,7 +17,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 5. **Categorize Variants & Primitives (Avoid Flat Dumps)**:
    Avoid flat dumping of dozens of files or variant variations into a single folder. Related variants, numerical sets (e.g. column counts, rounded radius variants), and functional primitives should be grouped into dedicated, well-named subfolders to maintain clean directory comprehension.
 6. **Strict Boundary Layers**:
-   - Every product crate sits at `crates/<category>/<crate>` (the frontend's at `crates/frontend/<layer>/<crate>`) and every tool crate at `tools/<category>/<crate>`, declaring its `category`, `tier` and `targets`; the applications are crates like any other (`api_server`, `frontend_application`, `offline_service_worker`, `game_server_host_agent`, `ticketboard_desktop`), and no member depends on one of them. Tiers point down and the category matrix says which edges belong (guidance). `cargo xtask verify crate-tiers` enforces two things: no member depends on an application crate, and the external-crate firewalls hold. `cargo xtask verify crate-anatomy` enforces each crate's anatomy (small `lib.rs`, prelude, `error.rs`, layout metadata) and stays a hard gate. The only members outside the layout are the two tool binaries `tools/xtask` and `tools/developer_tools`; the game mod at `mod/` holds no crate, and the crate-tier law sweeps the whole checkout for manifests, so a `Cargo.toml` placed there is a finding. The [crate boundary rules](/documentation/standards/crate_boundary_rules.md) state every rule as the code enforces it.
+   - Every product crate sits at `crates/<category>/<crate>` (the frontend's at `crates/frontend/<layer>/<crate>`) and every tool crate at `tools/<category>/<crate>`, declaring its `category`, `tier` and `targets`; the applications are crates like any other (`api_server`, `frontend_application`, `offline_service_worker`, `game_server_host_agent`), and no member depends on one of them. Tiers point down and the category matrix says which edges belong (guidance). `cargo xtask verify crate-tiers` enforces two things: no member depends on an application crate, and the external-crate firewalls hold. `cargo xtask verify crate-anatomy` enforces each crate's anatomy (small `lib.rs`, prelude, `error.rs`, layout metadata) and stays a hard gate. The only members outside the layout are the two tool binaries `tools/xtask` and `tools/developer_tools`; the game mod at `mod/` holds no crate, and the crate-tier law sweeps the whole checkout for manifests, so a `Cargo.toml` placed there is a finding. The [crate boundary rules](/documentation/standards/crate_boundary_rules.md) state every rule as the code enforces it.
    - Foundation and contracts (`crates/foundation/`, `crates/contracts/`): Leaf crates and one-boundary contract crates. Foundation depends on foundation only; contracts on foundation and contracts.
    - Graphics crates (`crates/graphics/`: `render_primitives`, `gpu_device`, `gpu_frame`, `renderer_core`): Map-agnostic rendering — byte layouts, the GPU context, the frame vocabulary, pipelines, draw encoding, the renderer contracts. Knows **zero** map concepts (no map noun in a declared name); depends on foundation and graphics crates only.
    - Map engine crates (the engine categories `crates/geometry/`, `crates/world_formats/`, `crates/terrain/`, `crates/world_objects/`, `crates/line_of_sight/`, `crates/map_overlay/`, `crates/streaming/` over graphics, and the rendering categories `crates/map_rendering/` and `crates/paper_doll/` above them): spatial computation, world and terrain formats, streaming, the render engine and its typed GPU layers. Streaming crates never depend on rendering crates; `wgpu` lives only in `crates/map_rendering/` and the GPU packages. Zero UI/Leptos dependencies.
@@ -25,7 +25,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
    - Frontend (`crates/frontend/`): Presentation, navigation, and CAD workspaces as Leptos crates (leptos only here) in the layers foundation < features < pages and workspaces < shell; pages and workspaces are peers that never depend on each other. The shell layer `crates/frontend/shell/` holds the single-page app `frontend_application` and the `offline_service_worker`, two peers that never name each other. Consumes every crate but the api, fleet and tool crates.
    - API (`crates/api/`): Axum REST API and SSE realtime hub. The domain code lives in the api crates (infrastructure < kernel < domains < workers < the server), which depend on foundation, contracts, mission, ballistics and api crates; the server crate `crates/api/api_server` assembles them into the `api-server` binary. sqlx and axum live only in api crates, with axum also in the `tools/browser_testing` and `tools/staging` harness servers and sqlx also in `tools/staging/staging_fixtures`.
    - Fleet (`crates/fleet/`): The `game_server_host_agent` beside each game-server instance, which carries out the API's fleet commands; depends on foundation crates built for every target and contracts crates only.
-   - Tools (`tools/<category>/`): Depend on foundation, contracts, mission, ballistics and tool crates and on engine crates built for every target; never on a wasm-only or frontend crate, nor an api crate outside `staging_fixtures`. The ticketboard desktop viewer `ticketboard_desktop` is a `tools/tickets` crate. The binaries `tools/xtask` and `tools/developer_tools` depend on tool crates only, and the dependency closure of xtask holds no tokio, axum, reqwest, resvg or image.
+   - Tools (`tools/<category>/`): Depend on foundation, contracts, mission, ballistics and tool crates and on engine crates built for every target; never on a wasm-only or frontend crate, nor an api crate outside `staging_fixtures`. The binaries `tools/xtask` and `tools/developer_tools` depend on tool crates only, and the dependency closure of xtask holds no tokio, axum, reqwest, resvg or image.
 7. **File Size & Test Placement (Guidance)**:
    - Aim to keep production files **at or under 500 lines**; when a file grows past that, split it by responsibility into cohesive submodules rather than piling on.
    - `cargo xtask verify file-length` reports production files over 500 lines on the Rust source trees and the pinned mod Scripts roots (`mod/tbd-framework/Scripts`, `mod/tbd-emcp/Scripts`); it warns, it does not fail. Test files have no ceiling.
@@ -119,7 +119,7 @@ crates/                                  <-- Product crates grouped by category 
 │   ├── time_source/                     <-- Wall-clock and monotonic time sources, `wall_clock_ms()`, RFC 3339 UTC formatting and validation
 │   ├── deterministic_random/            <-- The seeded generators: SplitMix64, LinearCongruential64 (MMIX constants), LinearCongruential32 (C rand constants)
 │   ├── content_digest/                  <-- SHA-256 and SHA-384 hex digests, framed hashing
-│   ├── repository_root/                 <-- The one checkout-root finder: the walk up to the `.ai/tickets/ROOT` marker
+│   ├── repository_root/                 <-- The one checkout-root finder: the walk up to the `.ai/ROOT` marker
 │   └── browser_platform/                <-- Browser console macros and fetch helpers (wasm32 only)
 ├── contracts/                           <-- Crates that hold one boundary contract
 │   ├── offline_cache_policy/            <-- Offline cache names, request classes, offline pack and network fallback rules the service worker applies
@@ -270,14 +270,8 @@ tools/                                   <-- Every developer tool in the reposit
 │   ├── repository_laws/                 <-- Every repository law: crate tiers, anatomy, test-file reachability, frontend layering, Tailwind sources, file length
 │   ├── repository_layout/               <-- The paths every tool shares; its prelude re-exports repository_root's checkout-root finder
 │   ├── deploy_settings/                 <-- The one reader of deploy/deploy.env and its precedence over exported variables
+│   ├── ticket_manager_client/           <-- Typed client of the central ticket manager's `ttm` command line (tickets, receipts, waves) and its JSON documents
 │   └── tool_test_support/               <-- Test locks and the checkout root the tool crates' tests share (dev-only)
-├── tickets/                             <-- Ticket crates
-│   ├── ticket_model/                    <-- Typed ticket, its canonical TOML encoding, the corpus store
-│   ├── ticket_metrics/                  <-- Slice-run receipts and token estimates
-│   ├── ticket_wave_lock/                <-- Wave lock compiler, reader and checker
-│   ├── ticket_registry/                 <-- Ticket operations, validation, queue and roadmap sync, the `ticket` verbs
-│   ├── ticketboard_model/               <-- The ticketboard's headless half: models, events, egui-free application state
-│   └── ticketboard_desktop/             <-- Native egui/eframe desktop viewer for .ai/tickets over ticketboard_model
 ├── commands/                            <-- Command crates behind the xtask groups
 │   ├── agent_context_guards/            <-- AI agent tool-call guard (Bash and Read rules, the session read set) and the filtered command runner (`ai`)
 │   ├── ci_task_catalog/                 <-- CI task table and runner (`ci`, `help`), build lane recipes (`mk`), cargo target pin, map asset checks
@@ -323,7 +317,7 @@ tools/                                   <-- Every developer tool in the reposit
 │       ├── capture                      <-- Mission Creator screenshots, zoom sweeps, crops
 │       ├── acknowledgement-dropping-relay <-- Staging fault injection: withholds one fleet executor answer
 │       └── staging-load                 <-- Staging member load: a plan as JSON in, its report as JSON out
-├── xtask/                               <-- `cargo xtask` command line and dispatch, plus the `ai`, `fetch`, `map`, `refactor`, `schema`, `ticket`, `verify` and `wave` groups; no tokio, axum, reqwest, resvg or image in its dependency closure
+├── xtask/                               <-- `cargo xtask` command line and dispatch, plus the `ai`, `fetch`, `map`, `refactor`, `schema` and `verify` groups; no tokio, axum, reqwest, resvg or image in its dependency closure
 │   ├── dedicated_server_profiles/       <-- Dedicated-server profile the local mod servers start from
 │   ├── fixtures/mcp/                    <-- Recorded MCP transcripts `cargo xtask mcp selftest` replays
 │   └── staging/                         <-- Committed load workload and population of the staging load receipt
@@ -354,7 +348,7 @@ documentation/                           <-- All documentation; entry, map and a
 ├── tickets/                             <-- Ticket specs and plans (flat; frozen once the ticket closes)
 ├── archive/                             <-- Frozen history, one folder per topic (finished program records such as the workspace restructure, superseded layout plans, research, executed agent briefs)
 └── product_roadmap.md                   <-- Planned product items and open product questions
-.ai/tickets/                             <-- Ticket registry: one TOML per ticket, queue.json, ticket templates
+.ai/                                     <-- The `ROOT` checkout-root marker, agent artifacts, and `tickets/`: legacy ticket files kept as data until `ttm import`
 ```
 
 ---
@@ -386,10 +380,10 @@ cargo xtask mod compile        # Compile check Enfusion mod scripts
 cargo xtask mk leptos-gates    # Full headless Chrome CDP editor gates (runs gate doctor first)
 cargo xtask verify link-check  # Links, anchors, backticked paths and cited commands resolve (add --path <folder> to narrow)
 
-# Ticket Registry
-cargo xtask ticket check       # Validate ticket registry structure
-cargo xtask ticket next        # Show the active slice and the next five ready or queued tickets
-cargo xtask ticket sync        # Regenerate queue.json and the roadmap next-work block (the gap-analysis ticket column is kept by hand)
+# Tickets and waves (central ticket manager `ttm`; tickets keyed by slug, legacy T- ids resolve)
+ttm --project reforger check   # Validate the project's tickets
+ttm --project reforger next    # Show the active tickets and the next ones to take
+ttm --project reforger wave show  # The wave plan the platform and mod wave drivers read
 
 # Deployment (deploy/deploy.env)
 cargo xtask deploy website --dry-run  # Print the plan: asset preflight, rsync excludes, remote steps

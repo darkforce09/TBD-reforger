@@ -37,7 +37,7 @@ The commands themselves are described in the
 
 - Depends on: `platform_execution` (the slice worktrees the mod wave driver prepares, lands and
   reaps), `workstation_setup`, `enfusion_mcp`, `database_operations`, `remote_debugging`,
-  `mod_script_checks`, `ticket_model`, `ticket_registry`, `ticket_wave_lock`, `process_runner`,
+  `mod_script_checks`, `ticket_manager_client`, `process_runner`,
   `repository_layout` (the mod folder and the three addon folders, from its
   `enfusion_mod_folders`), `verification_core`, `content_digest`, `fleet_wire_contract`, `clap`,
   `flate2`, `heck`, `jsonschema`, `libc`, `regex`, `serde`, `serde_json`, `tar`, `thiserror`,

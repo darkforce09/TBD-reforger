@@ -196,7 +196,7 @@ Go down this list and take the first kind that fits.
 2. **area root**: the top of a code tree, or a folder that groups several products without being
    one (`crates/`, `mod/`, `tools/`, `contracts/`).
 3. **crate, package or addon root**: the folder that holds a `Cargo.toml`, a `package.json` or an
-   Enfusion `addon.gproj` (`crates/api/api_server/`, `tools/tickets/ticketboard_desktop/`,
+   Enfusion `addon.gproj` (`crates/api/api_server/`, `tools/foundation/ticket_manager_client/`,
    `tools/enfusion_mcp_node_package/`, `mod/tbd-framework/`).
 4. **mod scripts**: a folder at or under an addon's `Scripts/`
    (`mod/tbd-framework/Scripts/Game/TBD/Systems/AI/`).

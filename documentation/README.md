@@ -58,7 +58,7 @@ every README.
 ```text
 code folder README ──links──▶ documentation/<code path>/   feature docs, evidence, visual references
                                    │ first use of a term ──▶ glossary/
-                                   │ open work ────────────▶ .ai/tickets/ ──spec, plan──▶ tickets/
+                                   │ open work ────────────▶ ticket manager (ttm) ──spec, plan──▶ tickets/
                                    └ history ──────────────▶ archive/<topic>/
 ```
 
@@ -94,7 +94,6 @@ When two sources disagree, the higher one wins and the lower one is corrected:
 | the [mod](/documentation/glossary/g_to_m.md#mod)'s design, screens and export evidence | [mod/](/documentation/mod/README.md) |
 | how a terrain becomes the map data the platform serves | [assets/](/documentation/assets/README.md) |
 | how a game host carries out server commands | [crates/fleet/game_server_host_agent/](/documentation/crates/fleet/game_server_host_agent/README.md) |
-| the ticket viewer | [tools/tickets/ticketboard_desktop/](/documentation/tools/tickets/ticketboard_desktop/README.md) |
 | the developer tools and the contracts | [tools/](/documentation/tools/README.md) and [contracts/](/documentation/contracts/README.md) |
 | how to run, test, deploy or play-test anything | [runbooks/](/documentation/runbooks/README.md), starting at [local development](/documentation/runbooks/local_development.md) |
 | the rules for code, comments, documents and commits | [standards/](/documentation/standards/README.md) |
@@ -102,8 +101,8 @@ When two sources disagree, the higher one wins and the lower one is corrected:
 | design tokens, symbology and interaction patterns | [design_system/](/documentation/design_system/README.md) |
 | a known bug and its workaround | [known_bugs/](/documentation/known_bugs/README.md) |
 | what the product plans to build, and the open product questions | the [product roadmap](/documentation/product_roadmap.md) |
-| what to work on next | the ticket registry: `cargo xtask ticket next`, `.ai/tickets/queue.json` or [ticketboard](/documentation/glossary/n_to_z.md#ticketboard) |
-| a ticket's spec or plan | [tickets/](/documentation/tickets/README.md); the ticket itself is `.ai/tickets/T-<id>.toml` |
+| what to work on next | the central ticket manager: `ttm --project reforger next` |
+| a ticket's spec or plan | [tickets/](/documentation/tickets/README.md); the ticket itself is in the ticket manager (`ttm --project reforger show <ticket>`) |
 | why something was built the way it was, or what came before | [archive/](/documentation/archive/README.md) and the commit history |
 
 ## Code
@@ -111,8 +110,7 @@ When two sources disagree, the higher one wins and the lower one is corrected:
 - [Crates](/crates/README.md) — the API server, the single-page app, the service worker, the game
   server host agent and the library crates, documented under `documentation/crates/`.
 - [Game mod](/mod/README.md) — the Enfusion mod suite, documented under `documentation/mod/`.
-- [Developer tools](/tools/README.md) — the tool crates, the ticketboard desktop viewer among them,
-  documented under `documentation/tools/`.
+- [Developer tools](/tools/README.md) — the tool crates, documented under `documentation/tools/`.
 - [Contracts](/contracts/README.md) — documented under `documentation/contracts/`.
 - [Assets](/assets/README.md) — documented under `documentation/assets/`.
 
@@ -123,11 +121,8 @@ When two sources disagree, the higher one wins and the lower one is corrected:
   [documentation standards](/documentation/standards/documentation_standards.md) and the
   [templates](/documentation/standards/templates/README.md) that shape it.
 - Used by: the code READMEs, comments and `CLAUDE.md`, which link its documents;
-  `cargo xtask ticket sync` (`tools/tickets/ticket_registry/`), which updates the Mission Creator roadmap
-  between markers and runs its ticket-column writer over the Eden gap analysis, which finds no
-  table to rewrite there; ticketboard, which opens each ticket's spec and plan
-  from `tickets/`; `cargo run -q -p developer_tools --bin enf -- citations`, which checks every
-  `@idx` citation here against the [Enfusion](/documentation/glossary/a_to_f.md#enfusion) symbol index.
+  `cargo run -q -p developer_tools --bin enf -- citations`, which checks every `@idx` citation
+  here against the [Enfusion](/documentation/glossary/a_to_f.md#enfusion) symbol index.
 - Rules: every folder carries a README.md whose Contents block lists its tracked children;
   a live document stays within 500 lines; every link, backticked path and cited command resolves
   (`cargo xtask verify link-check`); every document opens with its status line; frozen records

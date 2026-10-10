@@ -19,7 +19,7 @@ documentation/runbooks/factory_waves/
 ├── known_traps.md                  the signature defect, the perturbation spot-check, and every trap
 ├── running_a_wave.md               one wave end to end: worktrees, gates, land, ship, close
 ├── slice_agent_brief.md            the slice brief, the report schema and the reject conditions
-└── wave_planning.md                the wave lock, `owns`, collisions, width and numbering
+└── wave_planning.md                the wave plan, `owns`, collisions, width and numbering
 ```
 
 ## How it works
@@ -30,19 +30,20 @@ main ──┬── slice/<A> worktree ─▶ slice agent A ─┐
        ├── slice/<C> worktree ─▶ slice agent C ─┘   gate --slice, report
        ├── land: merge each gate-green slice ─▶ wave gate on merged main ─▶ drop ─▶ repack ─▶ push
        ├── adversarial verifier on merged main ─▶ triage: fix BLOCKERs, defer the rest
-       └── ship + stamp ─▶ repack ─▶ verified ─▶ wave --close (marker commit) ─▶ next wave
+       └── ttm ship ─▶ ttm wave repack ─▶ verified ─▶ wave --close (marker commit) ─▶ next wave
 ```
 
 The orchestrator never implements. It plans, dispatches, integrates, verifies, sequences and owns
-every ticket status change; everything under `crates/`, `mod/`, `contracts/`, `assets/` and
-`tools/` is written by an agent in a worktree. That keeps the orchestrator's context clear and
+every ticket status change in the central ticket manager (`ttm --project reforger`); everything
+under `crates/`, `mod/`, `contracts/`, `assets/` and `tools/` is written by an agent in a
+worktree. That keeps the orchestrator's context clear and
 gives each ticket a whole context of its own. The rules every wave follows:
 
-1. **One worktree per ticket.** `slice-worktree new` creates it from `main`; a sub-slice (two
-   dots) shares its parent's worktree.
-2. **Concurrency is file-disjointness, computed, never guessed.** `cargo xtask slice-collisions`
-   packs tickets whose `owns` lists do not overlap, up to the wave's width
-   ([Wave planning](/documentation/runbooks/factory_waves/wave_planning.md)).
+1. **One worktree per ticket.** `slice-worktree new` creates it from `main`; a sub-slice of three
+   dot segments shares its two-segment parent's worktree.
+2. **Concurrency is file-disjointness, computed, never guessed.**
+   `ttm --project reforger wave collisions` packs tickets whose `owns` lists do not overlap, up
+   to the wave's width ([Wave planning](/documentation/runbooks/factory_waves/wave_planning.md)).
 3. **Light gates.** A slice runs check, fmt and the tests of the crates it changed in its
    worktree; the wave gate on merged `main` stays as small. Neither requires the browser gates,
    the documentation gates or a perturbation proof, and `cargo xtask ci ci-local` is not a wave
@@ -54,8 +55,8 @@ gives each ticket a whole context of its own. The rules every wave follows:
    are triaged by table: BLOCKERs are fixed in the wave, everything else is filed `deferred`.
 6. **Push after every landing.** `land` ends with `platform wave push`, so work is never trapped
    on one machine.
-7. **Agents never ship.** They implement, gate and report; the orchestrator ships (the ticket
-   `ship` and `stamp-sha` verbs are optional), repacks, records the verifier and closes the wave.
+7. **Agents never ship.** They implement, gate and report; the orchestrator ships
+   (`ttm --project reforger ship`), repacks, records the verifier and closes the wave.
 8. **Agents leave their tree clean** and put throwaway probes in `/tmp`, never in the source tree.
 9. **Every agent runs on the operator's chosen model tier**, never downgraded to get past a rate
    limit, an overload, latency or cost. The verifier runs on a different strong model from the
@@ -117,22 +118,20 @@ about to edit application code itself.
   — `new`, `list`, `merge`, `drop` and `reap` with their guards.
 - [Platform factory preflight checks](/tools/commands/platform_execution/src/preflight/README.md)
   — every preflight check.
-- [Wave lock command group](/tools/xtask/src/commands/wave/README.md) and
-  [Wave lock](/tools/tickets/ticket_wave_lock/src/README.md) — the plan and its compiler.
-- [Ticket command group](/tools/xtask/src/commands/ticket/README.md) — `ship`, `stamp-sha`,
-  `add` and `set-status`.
+- [Ticket manager client](/tools/foundation/ticket_manager_client/README.md) — how the drivers
+  reach `ttm`, which holds the tickets, the run receipts, the wave plan and the close records.
 
 ## Boundaries
 
 - Depends on: the [runbook template](/documentation/standards/templates/runbook.md); the xtask
-  `platform`, `wave`, `ticket`, `mk` and `db` command trees; the ticket files and
-  `.ai/tickets/wave.lock`; `CLAUDE.md` Law 2.
+  `platform`, `mk` and `db` command trees; the central ticket manager (`ttm --project
+  reforger`), its tickets and its wave plan; `CLAUDE.md` Law 2.
 - Used by: `cargo xtask platform wave`, whose help names this README
   (`PLATFORM_FACTORY_RUNBOOK` in `tools/foundation/repository_layout/src/documentation_locations.rs`); code comments in
   `tools/commands/platform_execution/src/`, `build/recipes/shell_word.rs` and
   `agent_context/guards.rs`; tickets that cite this README; the READMEs of the code folders
-  above, `tools/`, the ticketboard and the ticket crates; the glossary's wave entry; the
-  editor gates, testing and CI and mod slice workflow runbooks; `.cursor/rules/`.
+  above and `tools/`; the glossary's wave entry; the editor gates, testing and CI and mod slice
+  workflow runbooks; `.cursor/rules/`.
 - Rules: this README keeps its path, because the xtask layout pins it and tickets cite it; a
   topic file stays at or under 500 lines; every command in a topic file is checked against the
   xtask source; the runbooks name no agent product and say "orchestrator" for the orchestrating
@@ -145,7 +144,6 @@ about to edit application code itself.
 - [Editor gates](/documentation/runbooks/editor_gates.md) — the Mission Creator pre-close.
 - [Testing and CI](/documentation/runbooks/testing_and_ci.md) — every check, and which of them
   the slice and wave gates run.
-- [Ticket registry](/.ai/tickets/README.md) — the ticket files, their fields and statuses.
 - [Factory run archive](/documentation/archive/factory_runs/platform_factory_2026_08.md) — the
   dated handoffs, backlogs, costs and run logs these runbooks replace, frozen with their siblings
   in the same folder.

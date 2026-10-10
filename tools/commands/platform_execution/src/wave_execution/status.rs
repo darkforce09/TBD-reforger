@@ -5,25 +5,26 @@
 //! create its worktrees; `cmd_wave` prints the wave's plan.
 //!
 //! **Position:** reached through the wave command table; built on `ledger`, and `cmd_prep` runs
-//! `cargo xtask slice-collisions` through the host bridge.
+//! `ttm wave collisions` through the host bridge.
 //!
-//! **Signals & state:** none held; reads the ledger and git and spawns cargo.
+//! **Signals & state:** none held; reads the ledger and git and spawns `ttm`.
 //!
 //! **Invariants:** nothing here mutates the checkout; `status` exits 0 whether or not anything is
-//! ready; a missing lock is reported, never shown as an empty plan; the dispatch set never waits
+//! ready; a missing wave plan is reported, never shown as an empty plan; the dispatch set never waits
 //! for a wave barrier.
 
-use super::{COLLIDE, Ctx, host, ledger};
+use super::{Ctx, host, ledger};
 use crate::wave_execution::{werr, wprint, wprintln};
 
-/// A missing/unreadable lock is a refusal every command surfaces — never an empty plan.
-/// (The TSV-era `plan_rows` swallowed exactly this into `ALL WAVES COMPLETE`.)
+/// A missing wave plan, or a ticket manager that cannot answer, is a refusal every command
+/// surfaces — never an empty plan. (The TSV-era `plan_rows` swallowed exactly this into
+/// `ALL WAVES COMPLETE`.)
 macro_rules! lock_or_refuse {
     ($expr:expr) => {
         match $expr {
             Ok(v) => v,
             Err(e) => {
-                werr!("wave: {}", ticket_model::error_chain_text(&e));
+                werr!("wave: {}", $crate::error::error_chain_text(&e));
                 return 2;
             }
         }
@@ -65,10 +66,7 @@ pub(crate) fn cmd_status(ctx: &Ctx) -> u8 {
     let mut open = 0usize;
     for r in &counted {
         let t = r.split('\t').nth(1).unwrap_or("");
-        if !ctx
-            .registry_view
-            .is_shipped(&ticket_model::TicketId::new(t))
-        {
+        if !ledger::is_complete(ctx, t) {
             open += 1;
         }
     }
@@ -83,10 +81,7 @@ pub(crate) fn cmd_status(ctx: &Ctx) -> u8 {
 
     let mut ready = 0usize;
     for t in lock_or_refuse!(ledger::wave_tickets(ctx, &w)) {
-        if ctx
-            .registry_view
-            .is_shipped(&ticket_model::TicketId::new(t.as_str()))
-        {
+        if ledger::is_complete(ctx, t.as_str()) {
             wprintln!("  {:<9} SHIPPED", t);
             continue;
         }
@@ -112,19 +107,17 @@ pub(crate) fn cmd_status(ctx: &Ctx) -> u8 {
     if ready > 0 {
         wprintln!("→ {ready} slice(s) ready: cargo xtask platform wave land");
     }
-    wprintln!("→ dispatch set: {COLLIDE}");
+    wprintln!("→ dispatch set: {}", ctx.collide_command());
     0
 }
 
 /// `wave prep` — print the next disjoint dispatch set.
 ///
-/// cargo is a HOST binary inside the dev container, so this goes through the bridge — unlike the
-/// `python3` it replaced, which was present on both sides. `hostrun` degrades to a plain exec on
-/// the host, so the same line is correct from either shell.
+/// `ttm` is a HOST binary inside the dev container, so this goes through the bridge. `hostrun`
+/// degrades to a plain exec on the host, so the same line is correct from either shell.
 pub(crate) fn cmd_prep(ctx: &Ctx) -> u8 {
     wprintln!("next disjoint dispatch set:");
-    // `hostrun $COLLIDE`, UNQUOTED in the bash, so the shell word-splits it into argv.
-    let cmd: Vec<String> = COLLIDE.split_whitespace().map(str::to_string).collect();
+    let cmd = ctx.ticket_manager.text_command(&super::COLLIDE_ARGS);
     host::inherit(&ctx.host.hostrun_argv(&cmd));
     wprintln!();
     wprintln!(
@@ -156,10 +149,7 @@ pub(crate) fn cmd_wave(ctx: &Ctx) -> u8 {
     let mut open: Vec<String> = Vec::new();
     for t in lock_or_refuse!(ledger::wave_tickets(ctx, &w)) {
         total += 1;
-        if ctx
-            .registry_view
-            .is_shipped(&ticket_model::TicketId::new(t.as_str()))
-        {
+        if ledger::is_complete(ctx, t.as_str()) {
             shipped += 1;
         } else {
             open.push(t);

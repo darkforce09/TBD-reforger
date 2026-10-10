@@ -68,8 +68,9 @@ crates and the app are in the [crate boundary rules](/documentation/standards/cr
 | a heavy tool: the gate harness, asset pipelines, the Enfusion unpacker, the MCP broker | a binary of `tools/developer_tools/src/bin/` |
 | a browser smoke of the Mission Creator | the `gate` binary of `tools/developer_tools`, wired into `cargo xtask mk leptos-gates` |
 | a deploy template or systemd unit | `deploy/` |
-| a [ticket](/documentation/glossary/n_to_z.md#ticket) | `.ai/tickets/T-<id>.toml`, written through `cargo xtask ticket` commands; `cargo xtask ticket sync` writes the derived files, never a hand edit |
-| a ticket's spec and plan | `documentation/tickets/specs/t<id>_<subject>.md` and `documentation/tickets/plans/t-<id>_plan.md` (see [Ticket identifiers](/documentation/standards/ticket_identifiers.md)) |
+| a [ticket](/documentation/glossary/n_to_z.md#ticket), its run receipts and its place in a wave | the central ticket manager, written through `ttm --project reforger` commands, never a file in the repository |
+| a ticket's spec and plan | the ticket manager (`ttm --project reforger brief <ticket>`); the records already written stay in `documentation/tickets/specs/` and `documentation/tickets/plans/` (see [Ticket identifiers](/documentation/standards/ticket_identifiers.md)) |
+| code that talks to the ticket manager | through `tools/foundation/ticket_manager_client/`, never a `ttm` call of its own |
 
 ## Documentation
 

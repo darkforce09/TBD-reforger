@@ -212,9 +212,8 @@ The layout laws judge every member that declares `[package.metadata.layout]` plu
 under `crates/<category…>/<name>` or `tools/<category>/<name>` (`is_judged` in
 `tools/foundation/repository_laws/src/workspace_laws/crate_layout.rs`). The applications are
 crates like any other: the API server at `crates/api/api_server`, the single-page app and the
-offline service worker at `crates/frontend/shell/`, the game server host agent at
-`crates/fleet/game_server_host_agent` and the ticketboard desktop viewer at
-`tools/tickets/ticketboard_desktop`, each with its layout table. Outside the judged set stand
+offline service worker at `crates/frontend/shell/` and the game server host agent at
+`crates/fleet/game_server_host_agent`, each with its layout table. Outside the judged set stand
 only the two tool binaries of `TOOL_BINARY_PATHS`, `tools/xtask` and `tools/developer_tools`
 (`is_tool_binary`); the report names them in a note. Any other member outside the judged set,
 a crate under `mod/` included, is a rule 2 finding: a crate that carries no layout table and sits
@@ -249,8 +248,7 @@ intended layout and are guidance, not a CI gate:
    any table: normal, build, dev and target-specific, a renamed edge under its real package name,
    a crate's edge onto itself (a test-only feature) excepted. The application packages are
    `APPLICATION_PACKAGES` of `workspace_law_locations.rs`, by package name: `api_server`,
-   `frontend_application`, `offline_service_worker`, `game_server_host_agent` and
-   `ticketboard_desktop`. A listed package that is no member is a finding, never a pass.
+   `frontend_application`, `offline_service_worker` and `game_server_host_agent`. A listed package that is no member is a finding, never a pass.
    Dev-dependencies are otherwise outside the tier order and the matrix, because they never
    ship.
 
@@ -398,7 +396,7 @@ they hold every other crate's; no deny-list names them. Each wall between them i
 | The worker never links the server, in any table | rule 7 (and the frontend row of the matrix for shipped edges) |
 | The worker and the app never name each other, in any table | rule 7 and `SHELL_CRATE_ORDER` |
 | The worker links no GPU, rendering or streaming crate and no wgpu, in any table | the rendering-stack firewall |
-| Nothing links the game server host agent or the ticketboard desktop viewer | rule 7; no matrix row admits `crates/fleet` |
+| Nothing links the game server host agent | rule 7; no matrix row admits `crates/fleet` |
 
 Crate anatomy keeps the test-only features (`test_fixtures`, `failpoints`) out of every build
 that is not a test build: only a dev-dependency may enable one.
@@ -409,11 +407,9 @@ The tool crates keep a direction of their own:
   workspace crates only on tool crates at `tools/<category>/<name>`, never on each other, and no
   member depends on either; xtask reaches the checkout root through `repository_layout`'s
   prelude;
-- a `tools/foundation` crate depends only on `tools/foundation` crates of a lower declared tier
-  and on `crates/foundation/repository_root`, the workspace's one checkout-root finder;
-- a `tools/tickets` crate depends only on `tools/foundation` crates, on `time_source`,
-  `content_digest`, `newtype_ids` and `repository_root`, and on `tools/tickets` crates of a lower
-  declared tier.
+- a `tools/foundation` crate depends only on `tools/foundation` crates of a lower declared tier,
+  on `crates/foundation/repository_root`, the workspace's one checkout-root finder, and on the id
+  macros `crates/foundation/newtype_ids`.
 
 ### 5.10 Which law holds which wall
 

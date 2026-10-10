@@ -1,11 +1,10 @@
 # ==============================================================================
 # 1. Version Control & Worktrees
 # ==============================================================================
-# Ticket pipeline worktrees (git worktree add — not committed; see worktrees/README.md)
-.ai/artifacts/worktrees/TBD-*/
-# Slice worktrees (documentation/runbooks/mod_slice_workflow.md). Live checkouts;
+# Slice worktrees, one folder per ticket slug or legacy number (git worktree add — not committed;
+# see worktrees/README.md and documentation/runbooks/mod_slice_workflow.md). Live checkouts;
 # staging one causes git to treat it as an embedded repository.
-.ai/artifacts/worktrees/T-*/
+.ai/artifacts/worktrees/*/
 
 # ==============================================================================
 # 2. Environment & Secrets
@@ -95,8 +94,6 @@ assets/terrains/**/tiles/
 # ==============================================================================
 # 9. Tooling & Pipeline Artifacts (.ai/, tools/)
 # ==============================================================================
-# Ticket model trybuild test output
-/tools/tickets/ticket_model/wip/
 
 # T-159 gate run artifacts only (regenerable)
 /.ai/artifacts/t159_gates/v/

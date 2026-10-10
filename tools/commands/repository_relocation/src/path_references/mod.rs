@@ -15,7 +15,7 @@
 //! in Rust source only string literals and comments are edited, never code, and none in this
 //! tool's own test sources, whose literals and comments are fixture text; a frozen record receives
 //! edits inside link destinations only, a frozen area's README index inside its link destinations
-//! and the tree part of its Contents block's lines (never their roles), a closed ticket inside its `spec`, `plan` and `owns` values only; the verification judges exactly the spans [`allowed_spans`] opens, with the
+//! and the tree part of its Contents block's lines (never their roles); the verification judges exactly the spans [`allowed_spans`] opens, with the
 //! same occurrence classes ([`path_tokens::classify_occurrence`]), so a spelling it can see is one
 //! this pass rewrites or reports unresolved; the dry run's verification of the planned tree proves
 //! that for every run; a relative literal its spelling does not pin to one anchor is never
@@ -34,7 +34,7 @@ use anchor_resolution::{ReferenceOutcome, ResolutionContext, resolve_and_rewrite
 use relative_references::{ReferenceFileKind, relative_candidates};
 use root_spellings::root_spelling_edits;
 
-use super::file_treatment::{FileTreatment, checked_ticket_field_lines};
+use super::file_treatment::FileTreatment;
 use super::rust_lexer::{TokenKind, string_content, tokenize};
 use super::text_edits::{AllowedSpans, Edit, merge_edits};
 
@@ -155,7 +155,6 @@ pub(crate) fn allowed_spans(
             spans.extend(contents_block::contents_tree_lines(source));
             AllowedSpans::Only(spans)
         }
-        FileTreatment::ClosedTicket => AllowedSpans::Only(checked_ticket_field_lines(source)),
         FileTreatment::FixtureSource | FileTreatment::Excluded => AllowedSpans::Only(Vec::new()),
     };
     if kind == ReferenceFileKind::Rust {

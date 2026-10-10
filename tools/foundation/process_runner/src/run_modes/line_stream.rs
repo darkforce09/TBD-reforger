@@ -3,8 +3,8 @@
 //! **Role:** [`Run::stream_lines`] and its handle [`StreamingChild`]: each line of stdout and
 //! stderr arrives on a channel as the child writes it; the handle polls, waits on or kills the
 //! child.
-//! **Position:** a mode of `crate::run_modes`, re-exported at the crate root; the ticketboard's
-//! desktop application streams its strict check, `git status` and ticket commands through it.
+//! **Position:** a mode of `crate::run_modes`, re-exported at the crate root; the mod commands
+//! stream the dedicated server and the world boot through it.
 //! **Signals & state:** one reader thread per pipe sends into the channel and ends at its pipe's
 //! EOF or when the receiver is dropped; the [`StreamingChild`] owns the child.
 //! **Invariants:** the child leads its own process group, so [`StreamingChild::kill`] and a

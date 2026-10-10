@@ -7,8 +7,8 @@ To resume: read this file, then continue the roster of the
 [plan](/documentation/tickets/plans/t-1092_plan.md) from the first row that is not `done`.
 Statuses: `pending`, `running`, `done — awaiting commit`, `done`, `blocked`.
 Ids are the plan's slice ids, except that the plan's two-digit phase 3 slices are written
-"P3 slice 10" to "P3 slice 14" here: `cargo xtask ticket check --strict` rejects a phase digit,
-hyphen and two digits in live documentation, the spelling of the retired priority backlog ids.
+"P3 slice 10" to "P3 slice 14" here, which keeps a phase digit, hyphen and two digits, the
+spelling of the retired priority backlog ids, out of live documentation.
 
 ## Frozen class names
 

@@ -1,32 +1,34 @@
-//! `cargo xtask platform slice-run <id>`: run one ticket slice through the agent CLI and write its
-//! run receipt.
+//! `cargo xtask platform slice-run <id>`: run one ticket slice through the agent CLI and record
+//! its run receipt.
 //!
-//! **Role:** resolves a ticket or slice id against the ticket registry, launches the configured
-//! agent command with the slice prompt (or reads a recorded fixture), extracts `tokens_consumed`
-//! from the agent's final JSON and writes one run file under `.ai/tickets/metrics/<id>/` through
-//! [`ticket_metrics`].
+//! **Role:** resolves a ticket or slice reference through the central ticket manager (`ttm
+//! show`), launches the configured agent command with the ticket's execution brief (`ttm brief`)
+//! or reads a recorded fixture, extracts the token counts from the agent's final JSON
+//! ([`token_usage`]) and records one receipt with `ttm record-run`.
 //!
-//! **Position:** reached through `platform_dispatch`; `ticket run` delegates here for each ready
-//! slice (see [`ticket_registry::verbs`]). The token parsing is
-//! [`ticket_metrics::parse_tokens_from_cli_json`].
+//! **Position:** reached through `platform_dispatch`; the ticket manager is reached through
+//! [`ticket_manager_client::TicketManager`].
 //!
 //! **Signals & state:** none held; spawns the agent CLI through [`process_runner::Run`] in the
-//! slice's worktree (or the repository root when it has none) and writes one receipt file.
+//! slice's worktree (or the repository root when it has none) and `ttm` for the reads and the
+//! receipt.
 //!
 //! **Invariants:** the agent command is configuration — `TBD_SLICE_RUN_AGENT_CMD`
 //! (whitespace-split, the prompt appended last), default `claude --print --output-format json`; the
-//! receipt id is always the slice-level id; an agent that exits 0 but reports no usage object is a
-//! failed run: non-zero exit, no file written, never `tokens_consumed: 0`.
+//! receipt is recorded against the slice the reference resolves to (a programme's active slice,
+//! else the ticket itself); a ticket without a specification or for another executor is refused
+//! before anything runs; an agent that exits 0 but reports no usage object is a failed run:
+//! non-zero exit, no receipt recorded, never `tokens_consumed: 0`.
 
 use crate::{Error, Result};
 use process_runner::Run;
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 
-use ticket_metrics::{self as metrics, RunRecord};
-use ticket_registry::registry::{
-    Registry, opt_str, slice_executor, slice_spec, ticket_by_id, tickets,
-};
+use ticket_manager_client::ticket_documents::TicketDocument;
+use ticket_manager_client::{ReceiptName, RunRecord, TicketManager};
+
+pub mod token_usage;
 
 /// Environment override for the agent command line (program + leading args).
 pub const AGENT_CMD_ENV: &str = "TBD_SLICE_RUN_AGENT_CMD";
@@ -72,17 +74,28 @@ fn agent_name(cmd: &[String]) -> String {
         .unwrap_or_else(|| "unknown".to_string())
 }
 
-fn prompt_for(id: &str, spec: &str) -> String {
+/// The agent's prompt: the ticket manager's execution brief for the slice, followed by the
+/// factory's working rules.
+fn prompt_for(brief: &str) -> String {
     format!(
-        "Implement ticket {id} from spec {spec}. Read CLAUDE.md first, follow \
-         `cargo run -q -p xtask -- ticket brief {id}`, and commit on the slice branch only."
+        "{}\n\nRead CLAUDE.md first, follow the brief above, and commit on the slice branch only.",
+        brief.trim_end()
     )
 }
 
-/// Where the agent runs: the slice worktree when it exists, else the repo root.
-fn run_cwd(root: &Path, id: &str) -> PathBuf {
-    let wt = root.join(repository_layout::WORKTREES_DIR).join(id);
-    if wt.is_dir() { wt } else { root.to_path_buf() }
+/// Where the agent runs: the slice worktree (named by the slice's slug, or by its legacy number
+/// for a worktree created before the ticket manager) when it exists, else the repo root.
+fn run_cwd(root: &Path, slice: &TicketDocument) -> PathBuf {
+    let worktrees = root.join(repository_layout::WORKTREES_DIR);
+    [
+        Some(slice.slug.as_str()),
+        slice.legacy_id.as_ref().map(|n| n.as_str()),
+    ]
+    .into_iter()
+    .flatten()
+    .map(|name| worktrees.join(name))
+    .find(|folder| folder.is_dir())
+    .unwrap_or_else(|| root.to_path_buf())
 }
 
 fn git_head_sha(dir: &Path) -> Option<String> {
@@ -151,85 +164,40 @@ fn read_fixture(path: &Path) -> Result<Value> {
     })
 }
 
-/// What one requested id resolves to. `receipt_id` is ALWAYS the slice-level id — the
-/// same id `platform wave land` lands and stamps — so producer and stamper can never
-/// write under different directories for the same work.
-struct Resolved {
-    receipt_id: String,
-    spec: String,
-    executor: String,
-}
-
-/// Resolve a ticket OR slice id against the phase-2 tree, where child files are folded
-/// into the parent row's `slice_plan` and are not top-level registry rows themselves.
-/// A parent id resolves to its ACTIVE slice; a slice id resolves through whichever
-/// parent's plan carries it.
-fn resolve(registry: &Registry, id: &str) -> Result<Resolved> {
-    if let Some(t) = ticket_by_id(registry, &ticket_model::TicketId::new(id)) {
-        let receipt_id = opt_str(t, "active_slice")
-            .filter(|s| !s.is_empty())
-            .unwrap_or(id)
-            .to_string();
-        return Ok(Resolved {
-            receipt_id,
-            spec: slice_spec(t),
-            executor: slice_executor(t),
-        });
-    }
-    for row in tickets(registry) {
-        let entry = row
-            .get("slice_plan")
-            .and_then(|p| p.as_object())
-            .and_then(|p| p.get(id));
-        if let Some(entry) = entry {
-            let spec = entry
-                .get("spec")
-                .and_then(|s| s.as_str())
-                .unwrap_or("")
-                .to_string();
-            let executor = entry
-                .get("executor")
-                .and_then(|e| e.as_str())
-                .map(str::to_string)
-                .unwrap_or_else(|| {
-                    opt_str(row, "executor")
-                        .unwrap_or("claude-code")
-                        .to_string()
-                });
-            return Ok(Resolved {
-                receipt_id: id.to_string(),
-                spec,
-                executor,
-            });
+/// The slice a requested reference resolves to: a programme's active slice when it names one,
+/// else the ticket itself. The receipt is always recorded against this slice — the same ticket
+/// `platform wave land` lands — so producer and stamper can never disagree about the work.
+fn resolve(ticket_manager: &TicketManager, requested: &str) -> Result<TicketDocument> {
+    let ticket = ticket_manager.show(requested)?;
+    match &ticket.active_slice {
+        Some(active) if active.as_str() != ticket.slug.as_str() => {
+            Ok(ticket_manager.show(active.as_str())?)
         }
+        _ => Ok(ticket),
     }
-    Err(Error::msg(format!(
-        "unknown ticket {id} (no registry row, no parent slice_plan entry)"
-    )))
 }
 
-/// Run one slice through the agent CLI and write its run receipt.
-/// Returns `None` on `--dry-run`, else the receipt path.
+/// Run one slice through the agent CLI and record its run receipt.
+/// Returns `None` on `--dry-run`, else the recorded receipt's name.
 pub fn run_slice(
     root: &Path,
-    registry: &Registry,
+    ticket_manager: &TicketManager,
     requested: &str,
     opts: &SliceRunOpts,
-) -> Result<Option<PathBuf>> {
-    let Resolved {
-        receipt_id,
-        spec,
-        executor,
-    } = resolve(registry, requested)?;
-    let id = receipt_id.as_str();
-    if executor != "claude-code" {
+) -> Result<Option<ReceiptName>> {
+    let slice = resolve(ticket_manager, requested)?;
+    let id = slice.slug.as_str();
+    if slice.executor != "claude-code" {
         // The executor gate: workbench/human/ci slices are not agent-runnable.
         return Err(Error::msg(format!(
-            "[{id}] refusing slice-run: executor is {executor} (not claude-code)"
+            "[{id}] refusing slice-run: executor is {} (not claude-code)",
+            slice.executor
         )));
     }
-    if spec.is_empty() || !root.join(&spec).is_file() {
-        return Err(Error::msg(format!("[{id}] spec missing on disk: {spec}")));
+    if !slice.has_spec {
+        return Err(Error::msg(format!(
+            "[{id}] refusing slice-run: the ticket manager holds no specification for it"
+        )));
     }
     let started = match &opts.started {
         Some(s) => {
@@ -241,35 +209,34 @@ pub fn run_slice(
     };
     let cmd = agent_cmd(opts);
     let agent = agent_name(&cmd);
-    let cwd = run_cwd(root, id);
-    println!(
-        "[{id}] slice-run agent={agent} spec={spec} cwd={}",
-        cwd.display()
-    );
+    let cwd = run_cwd(root, &slice);
+    println!("[{id}] slice-run agent={agent} cwd={}", cwd.display());
     if opts.dry_run {
-        println!("[{id}] dry-run — invoking nothing, writing nothing");
+        println!("[{id}] dry-run — invoking nothing, recording nothing");
         return Ok(None);
     }
     let cli_json = match &opts.fixture {
         Some(path) => read_fixture(path)?,
-        None => invoke_agent(&cmd, &cwd, &prompt_for(id, &spec))?,
+        None => {
+            let brief = ticket_manager.brief(id)?;
+            invoke_agent(&cmd, &cwd, &prompt_for(&brief))?
+        }
     };
-    let tokens =
-        metrics::parse_tokens_from_cli_json(&cli_json).map_err(|source| Error::NoTokenUsage {
-            context: format!("[{id}] run FAILED — no metrics file written"),
+    let tokens = token_usage::parse_tokens_from_cli_json(&cli_json).map_err(|source| {
+        Error::NoTokenUsage {
+            context: format!("[{id}] run FAILED — no receipt recorded"),
             source,
-        })?;
-    let finished = time_source::now_utc_rfc3339();
-    let rec = RunRecord {
-        id: ticket_model::TicketId::new(id),
+        }
+    })?;
+    let run = RunRecord {
         agent,
+        tokens,
         started,
-        finished: Some(finished),
+        finished: Some(time_source::now_utc_rfc3339()),
         outcome: Some("ran".to_string()),
-        git_sha: git_head_sha(&cwd),
-        tokens_consumed: tokens,
+        sha: git_head_sha(&cwd),
     };
-    let path = metrics::write_run_file(root, &rec)?;
-    println!("[{id}] receipt {}", path.display());
-    Ok(Some(path))
+    let receipt = ticket_manager.record_run(id, &run)?;
+    println!("[{id}] receipt {}", receipt.receipt_id);
+    Ok(Some(receipt.receipt_id))
 }

@@ -1,8 +1,8 @@
 # The TBD Reforger workspace: the crates under `crates/` (the applications among them: the API
 # server, the single-page app, the offline service worker and the game server host agent; the API's
 # library crates, the mission domain, the Mission Creator's editing layer, the map streaming and
-# rendering crates and the GPU crates), the tool crates under `tools/` (the ticketboard desktop
-# viewer among them) and the two tool binaries `tools/xtask` and `tools/developer_tools`.
+# rendering crates and the GPU crates), the tool crates under `tools/` and the two tool binaries
+# `tools/xtask` and `tools/developer_tools`.
 [workspace]
 resolver = "3"
 members = [
@@ -34,7 +34,6 @@ members = [
     "tools/foundation/*",
     # The tool crates, one folder per category (`tools/<category>/<name>`): every manifest under
     # these folders is a member.
-    "tools/tickets/*",
     "tools/commands/*",
     "tools/checks/*",
     "tools/enfusion/*",
@@ -214,14 +213,6 @@ crc32fast = "1.5.0"
 dotenvy = "0.15.7"
 # Ear-clipping polygon triangulation behind `render_primitives`.
 earcutr = "0.5.0"
-# The native window, its wgpu painter and the preference store of the ticketboard; default features
-# keep the wgpu backend, the member adds `persistence` (and `glow` through its own feature).
-eframe = "0.36.1"
-# In-app Markdown rendering on the same egui as `eframe`; default features off drop the image
-# loaders, the member selects the parser backend.
-egui_commonmark = { version = "0.25.0", default-features = false }
-# Table layouts on the same egui as `eframe`; default features off drop the image-loader support.
-egui_extras = { version = "0.36.1", default-features = false }
 # The Enfusion MCP client: daemon control, tool calls, the selftest and the server command
 # (`tools/commands/enfusion_mcp`).
 enfusion_mcp = { path = "tools/commands/enfusion_mcp" }
@@ -308,8 +299,6 @@ jsonwebtoken = { version = "10.4.0", default-features = false }
 # Line of sight inside a building: compound traces, the shared sight-line evaluation and floor
 # washes (`crates/line_of_sight/interior_line_of_sight`).
 interior_line_of_sight = { path = "crates/line_of_sight/interior_line_of_sight" }
-# File-change notification (inotify on Linux; no async runtime), the ticketboard's registry watch.
-notify = "8"
 # Default features off drop the HTTP `$ref` resolver (reqwest and the aws-lc-rs C build): every
 # schema is local or embedded, so core draft 2020-12 validation is all a member needs.
 jsonschema = { version = "0.46.10", default-features = false }
@@ -480,7 +469,7 @@ repository_layout = { path = "tools/foundation/repository_layout" }
 # Manifest-driven relocation of tracked paths and the retired-spelling verification
 # (`tools/commands/repository_relocation`).
 repository_relocation = { path = "tools/commands/repository_relocation" }
-# The one checkout-root finder: the walk up to the `.ai/tickets/ROOT` marker
+# The one checkout-root finder: the walk up to the `.ai/ROOT` marker
 # (`crates/foundation/repository_root`).
 repository_root = { path = "crates/foundation/repository_root" }
 # Default features off keep the default TLS backend (the aws-lc-rs C build) out; a member that
@@ -488,8 +477,6 @@ repository_root = { path = "crates/foundation/repository_root" }
 reqwest = { version = "0.13.4", default-features = false }
 # SVG rasterisation; default features off drop the text and raster-image support no glyph uses.
 resvg = { version = "0.45", default-features = false }
-# The native folder picker of the ticketboard.
-rfd = "0.17.2"
 # A terrain's road network: segments, styling, road meshes, cartographic strips and the airfield
 # (`crates/terrain/road_network`).
 road_network = { path = "crates/terrain/road_network" }
@@ -541,20 +528,9 @@ terrain_relief = { path = "crates/terrain/terrain_relief" }
 # (`crates/line_of_sight/terrain_line_of_sight`).
 terrain_line_of_sight = { path = "crates/line_of_sight/terrain_line_of_sight" }
 thiserror = "2.0.18"
-# The run receipts, their check and summary, and the token estimates
-# (`tools/tickets/ticket_metrics`).
-ticket_metrics = { path = "tools/tickets/ticket_metrics" }
-# The typed ticket, its canonical TOML encoding, the corpus store and the ticket repository paths
-# (`tools/tickets/ticket_model`).
-ticket_model = { path = "tools/tickets/ticket_model" }
-# The registry projection, the typed operations, sync, the checks and the ticket command verbs
-# (`tools/tickets/ticket_registry`).
-ticket_registry = { path = "tools/tickets/ticket_registry" }
-# The wave lock compiler, reader and checker (`tools/tickets/ticket_wave_lock`).
-ticket_wave_lock = { path = "tools/tickets/ticket_wave_lock" }
-# The ticketboard's headless half: corpus, projections, filters, wave lanes, metrics, documents,
-# ticket commands and the application state (`tools/tickets/ticketboard_model`).
-ticketboard_model = { path = "tools/tickets/ticketboard_model" }
+# The typed client of the central ticket manager's `ttm` command line and its JSON contract
+# (`tools/foundation/ticket_manager_client`).
+ticket_manager_client = { path = "tools/foundation/ticket_manager_client" }
 time = "0.3"
 # Wall-clock and monotonic time and RFC 3339 UTC stamps (`crates/foundation/time_source`).
 time_source = { path = "crates/foundation/time_source" }

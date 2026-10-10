@@ -1,5 +1,5 @@
-//! Tests of the canonical-UTC rule: the ticket registry's accept and reject cases and the
-//! agreement with both formatters.
+//! Tests of the canonical-UTC rule: its accept and reject cases and the agreement with both
+//! formatters.
 
 use super::*;
 use crate::{rfc3339_utc_millis, rfc3339_utc_seconds};

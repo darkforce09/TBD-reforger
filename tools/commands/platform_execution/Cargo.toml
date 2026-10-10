@@ -1,6 +1,7 @@
 # `cargo xtask platform`: the platform factory. The wave driver (worktrees, tiered gates, per-slice
-# landing, the push), the slice runner that writes run receipts, the slice worktree lifecycle and
-# the preflight an unattended run must pass. `thiserror` carries its errors.
+# landing, the push), the slice runner that records run receipts, the slice worktree lifecycle and
+# the preflight an unattended run must pass; tickets and waves come from the central ticket
+# manager. `thiserror` carries its errors.
 [package]
 name = "platform_execution"
 version = "0.1.0"
@@ -28,10 +29,9 @@ repository_root = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
-ticket_metrics = { workspace = true }
-ticket_model = { workspace = true }
-ticket_registry = { workspace = true }
-ticket_wave_lock = { workspace = true }
+# The central ticket manager's `ttm` command line: tickets, run receipts, the wave plan and the
+# wave-close ledger.
+ticket_manager_client = { workspace = true }
 # The RFC 3339 UTC stamps of run receipts and gate verdicts.
 time_source = { workspace = true }
 verification_core = { workspace = true }

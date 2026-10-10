@@ -43,12 +43,12 @@ prompt blocks.
 
 ## Source of truth
 
-Build the prompt from the spec's `## Claude Code prompt` block (the heading
-`cargo xtask ticket prompt <id>` reads), the handoff `.ai/artifacts/<slug>_claude_code_handoff.md`
-when one exists (`cargo xtask ticket prompt <id> --header` prints its path), and
-`cargo xtask ticket brief <id>`. If `ticket prompt` fails because the spec has no prompt block,
-**still** output the full block built from the spec, the handoff and the brief — do not tell the
-operator to run the command instead of pasting.
+Build the prompt from the spec's `## Claude Code prompt` block (the block
+`ttm --project reforger prompt <id>` prints from the ticket manager), the handoff
+`.ai/artifacts/<slug>_claude_code_handoff.md` when one exists, and
+`ttm --project reforger brief <id>`. If the spec has no prompt block, **still** output the full
+block built from the spec, the handoff and the brief — do not tell the operator to run the
+command instead of pasting.
 
 ## Example shape (parallel)
 

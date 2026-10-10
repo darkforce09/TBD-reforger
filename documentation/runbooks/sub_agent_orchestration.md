@@ -19,7 +19,7 @@ explorers (parallel, read-only) ─▶ planning agent ─▶ operator question r
                follow-up agent <ID>b │ closing-fix batch G<n>
    ─▶ gate between waves ─▶ closing-fix batches
    ─▶ final sweep, live walkthrough
-   ─▶ records agent ─▶ commit when the operator asks ─▶ (optional) ship and stamp tickets
+   ─▶ records agent ─▶ commit when the operator asks ─▶ (optional) ship tickets
 ```
 
 ## When to use it
@@ -213,18 +213,15 @@ The roles:
     running, write the handoff into the record document, update the session memory, and tell the
     operator the session is safe to compact.
 
-21. Commit and push only when the operator asks. After the commit, ship each delivered ticket and
-    stamp its landing commit:
+21. Commit and push only when the operator asks. After the commit, ship each delivered ticket in
+    the central ticket manager with its landing commit:
 
     ```bash
-    cargo xtask ticket ship <ticket id>
+    ttm --project reforger ship <ticket> --sha <landing sha>
     ```
 
-    ```bash
-    cargo xtask ticket stamp-sha <ticket id> <landing sha>
-    ```
-
-    Expected: `cargo xtask ticket check` prints `check OK`.
+    Expected: `<ticket> shipped at <landing sha>`; then `ttm --project reforger check` prints
+    `reforger: 0 error(s), <n> warning(s)`.
 
 ## The shared brief
 
@@ -422,5 +419,5 @@ the repository in the operator's plan store as
 - [Testing and CI](/documentation/runbooks/testing_and_ci.md) — the gates of the final sweep.
 - [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) — driving Workbench at
   an operator checkpoint.
-- [Ticket run pipeline](/documentation/runbooks/ticket_run_pipeline.md) — shipping and stamping
-  tickets after the commit.
+- [Ticket manager client](/tools/foundation/ticket_manager_client/README.md) — the central
+  ticket manager, `ttm`, that ships tickets after the commit.

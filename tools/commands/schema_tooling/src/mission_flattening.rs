@@ -15,7 +15,18 @@ use std::{
     fs,
     path::{Path, PathBuf},
 };
-use ticket_registry::sync::refuse_empty_write;
+
+/// Refuses a write that would replace committed content with structurally empty output: a
+/// success path never overwrites a non-empty document with a vacuous one.
+fn refuse_empty_write(context: &str, empty: bool, detail: &str) -> Result<()> {
+    if empty {
+        return Err(crate::error::Error::EmptyWrite {
+            context: context.to_string(),
+            detail: detail.to_string(),
+        });
+    }
+    Ok(())
+}
 
 fn read_json(p: &Path) -> Result<Value> {
     let raw = fs::read_to_string(p).with_context(|| format!("read {}", p.display()))?;

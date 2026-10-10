@@ -15,10 +15,10 @@ alwaysApply: false
 
 **Default: DO NOT EDIT these files in a Cursor chat.**
 
-Application code for a ticket runs through the ticket tooling — `cargo xtask ticket run`, or
-`cargo xtask platform slice-run <id>` for one ticket — with any AI coding agent, on `main` (see
-[Taking a ticket from idea to shipped](/documentation/runbooks/ticket_run_pipeline.md)). The
-agent that writes the code keeps the documentation it affects truthful.
+Application code for a ticket runs through an AI coding agent briefed from the central ticket
+manager (`ttm`) — `cargo xtask platform slice-run <id>` for a Claude Code ticket — on `main`
+(see [Running a wave](/documentation/runbooks/factory_waves/running_a_wave.md)). The agent that
+writes the code keeps the documentation it affects truthful.
 
 ## Allowed without extra permission
 
@@ -37,11 +37,11 @@ agent that writes the code keeps the documentation it affects truthful.
    [`cursor-agent-workflow.mdc`](/.cursor/rules/cursor-agent-workflow.mdc)); write a handoff from
    [`handoff_template.md`](/.ai/tickets/handoff_template.md) only when the context does not fit in
    the spec.
-2. Tell the operator to run `cargo xtask ticket run`, or give them the prompt that
-   `cargo xtask ticket prompt <id>` prints, as one fenced block.
+2. Tell the operator to run `cargo xtask platform slice-run <id>`, or give them the prompt that
+   `ttm --project reforger prompt <id>` prints, as one fenced block.
 
 ## Documentation is not application code
 
-Documents under `documentation/`, README.md files and the ticket files are edited in mode B
-without this permission. When the operator does authorize code in the chat, keep that code's
-documentation truthful.
+Documents under `documentation/`, README.md files and the tickets in the ticket manager are
+edited in mode B without this permission. When the operator does authorize code in the chat, keep
+that code's documentation truthful.

@@ -9,7 +9,7 @@ the plan in one pass, and verifies the checkout again afterwards.
 
 ```text
 tools/commands/repository_relocation/src/
-├── file_treatment.rs     what a file may receive: live, frozen record or index, closed ticket, fixture, excluded
+├── file_treatment.rs     what a file may receive: live, frozen record or index, fixture, excluded
 ├── lib.rs                the crate root: module header, `mod` lines and the re-exported modes
 ├── manifest.rs           the manifest parser, refusing the whole manifest on any bad row
 ├── manifest_chronology.rs  the stage manifests in the order they entered the history, renames followed
@@ -63,9 +63,9 @@ the `.tsv` manifests of the manifests folder (their `from` columns name retired 
 the manifest being run and every SQL migration (a `.sql` file directly in a `migrations` folder,
 the files `sqlx` reads and pins by checksum once applied) take none; the rest of the manifests
 folder, its README included, is live, and so is every other `.sql` file (a seed, a file in a
-subfolder of a `migrations` folder) and every other file of a `migrations` folder. A ticket record whose `status` `ticket_model` calls shipped or cancelled takes rewrites on
-its `spec`, `plan` and `owns` values only (a multi-line `owns` array through its closing line), the
-fields the ticket crates resolve against the tree and the wave lock; an open ticket is live. A
+subfolder of a `migrations` folder) and every other file of a `migrations` folder. The legacy
+ticket data folder (`.ai/tickets`, records awaiting import into the central ticket manager) takes
+none. A
 file is treated by where it lies after the moves, with the areas moved where the manifest puts
 them, exactly as the verification treats it: a file a row moves into the archive is frozen (its
 prose keeps quoting its history), one a row moves out of it is live, and the areas are found
@@ -164,8 +164,9 @@ own row. `text` rows are not judged.
 
 - Depends on: `verification_core` (`Verdict`, `Report`, `NotRun`); `process_runner::Run` for git;
   `aho-corasick` for the verification's combined matcher;
-  `ticket_model::StatusName` for the closed ticket statuses; the frozen-area constants in
-  `tools/foundation/repository_layout/src/documentation_locations.rs`; `git` on the path.
+  the frozen-area constants in
+  `tools/foundation/repository_layout/src/documentation_locations.rs` and its legacy ticket data
+  folder; `git` on the path.
 - Used by: `tools/xtask/src/commands/refactor/dispatch.rs` only.
 - Rules: nothing is written before the whole plan is computed, free of unresolved items and its planned tree verifies
   clean; a SQL

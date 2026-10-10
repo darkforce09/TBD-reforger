@@ -167,7 +167,7 @@ pub(crate) fn build_plan(
                 continue;
             }
         };
-        let treatment = areas.treatment_of(&mapping.relocate(file), &original);
+        let treatment = areas.treatment_of(&mapping.relocate(file));
         if treatment == FileTreatment::Excluded {
             continue;
         }

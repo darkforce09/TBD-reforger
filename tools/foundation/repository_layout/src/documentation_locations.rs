@@ -5,8 +5,7 @@
 //! **Position:** read by the `xtask` command groups and verifications (deploy, setup, platform,
 //! mod, licensing and documentation checks, the relocation tool). Relocating
 //! the documentation tree rewrites this module, not the help texts and refusals that name a
-//! document. The tree root and the two documents `ticket sync` rewrites are in
-//! [`crate::documentation`].
+//! document. The tree root is [`crate::documentation::DOCUMENTATION_ROOT`].
 //! **Signals & state:** none; constants.
 //! **Invariants:** every item is classified as a location a checkout holds or as an exemption with
 //! its reason; the areas lie under
@@ -38,7 +37,7 @@ pub const SPAWN_DETERMINISM_RUNBOOK: &str = "documentation/runbooks/spawn_determ
 /// limit.
 pub const ARCHIVE_DIR: &str = "documentation/archive";
 
-/// Ticket specifications and plans, the records the ticket registry cites. Frozen, and exempt
+/// Ticket specifications and plans, the records the tickets cite. Frozen, and exempt
 /// from the size limit.
 pub const TICKET_DOCUMENTS_DIR: &str = "documentation/tickets";
 

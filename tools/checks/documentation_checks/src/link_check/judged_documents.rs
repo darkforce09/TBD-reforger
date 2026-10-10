@@ -1,10 +1,9 @@
 //! Which tracked files the link check judges, and the area each belongs to.
 //!
 //! **Role:** selects the judged documents — every Markdown file under the documentation root,
-//! every README.md anywhere, the project instructions, the Markdown
-//! files directly in the ticket folder, and the Markdown and `.mdc` files under the Cursor rule
-//! folders, none of them inside the agent artifact tree — and files each in one area for the
-//! totals, telling frozen records from live documents.
+//! every README.md anywhere, the project instructions, and the Markdown and `.mdc` files under the
+//! Cursor rule folders, none of them inside the agent artifact tree or the legacy ticket data
+//! folder — and files each in one area for the totals, telling frozen records from live documents.
 //!
 //! **Position:** called by the gate in [`crate::link_check`] for every tracked file; the
 //! locations come from [`repository_layout`].
@@ -12,13 +11,13 @@
 //! **Signals & state:** none; pure functions over repository-relative paths.
 //!
 //! **Invariants:** every judged file lands in exactly one area, the first that holds it in the
-//! order of [`DocumentArea::ALL`]; no file of the agent artifact tree is ever judged; the ticket
-//! records and the archive are the frozen areas.
+//! order of [`DocumentArea::ALL`]; no file of the agent artifact tree or of the legacy ticket data
+//! folder (records awaiting import into the central ticket manager) is ever judged; the ticket
+//! documents and the archive are the frozen areas.
 
-use crate::path_regions::{README, file_name, is_markdown, is_within, parent_folder};
-use repository_layout::TICKETS_DIR;
+use crate::path_regions::{README, file_name, is_markdown, is_within};
 use repository_layout::{
-    ARCHIVE_DIR, CURSOR_RULE_DIRS, PROJECT_INSTRUCTIONS, TICKET_DOCUMENTS_DIR,
+    ARCHIVE_DIR, CURSOR_RULE_DIRS, LEGACY_TICKETS_DIR, PROJECT_INSTRUCTIONS, TICKET_DOCUMENTS_DIR,
 };
 use repository_layout::{ARTIFACTS_DIR, documentation::DOCUMENTATION_ROOT};
 
@@ -32,8 +31,6 @@ pub(super) enum DocumentArea {
     LiveDocumentation,
     /// A ticket record or an archived document: frozen, only its links change.
     FrozenDocumentation,
-    /// A Markdown file directly in the ticket folder.
-    TicketFolder,
     /// A Cursor rule.
     CursorRules,
     /// The project instructions at the repository root.
@@ -45,10 +42,9 @@ pub(super) enum DocumentArea {
 
 impl DocumentArea {
     /// Every area, in the order a path is matched against them and the totals list them.
-    pub(super) const ALL: [DocumentArea; 6] = [
+    pub(super) const ALL: [DocumentArea; 5] = [
         DocumentArea::LiveDocumentation,
         DocumentArea::FrozenDocumentation,
-        DocumentArea::TicketFolder,
         DocumentArea::CursorRules,
         DocumentArea::ProjectInstructions,
         DocumentArea::Readmes,
@@ -59,7 +55,6 @@ impl DocumentArea {
         match self {
             DocumentArea::LiveDocumentation => format!("{DOCUMENTATION_ROOT} live documents"),
             DocumentArea::FrozenDocumentation => format!("{DOCUMENTATION_ROOT} frozen records"),
-            DocumentArea::TicketFolder => format!("{TICKETS_DIR} documents"),
             DocumentArea::CursorRules => "Cursor rules".to_string(),
             DocumentArea::ProjectInstructions => PROJECT_INSTRUCTIONS.to_string(),
             DocumentArea::Readmes => format!("{README} files elsewhere"),
@@ -74,7 +69,7 @@ impl DocumentArea {
 
 /// The area of a tracked file the link check judges, or `None` when it judges no such file.
 pub(super) fn judged_area(path: &str) -> Option<DocumentArea> {
-    if is_within(path, ARTIFACTS_DIR) {
+    if is_within(path, ARTIFACTS_DIR) || is_within(path, LEGACY_TICKETS_DIR) {
         return None;
     }
     if is_within(path, DOCUMENTATION_ROOT) {
@@ -87,9 +82,6 @@ pub(super) fn judged_area(path: &str) -> Option<DocumentArea> {
         } else {
             DocumentArea::LiveDocumentation
         });
-    }
-    if parent_folder(path) == TICKETS_DIR && is_markdown(path) {
-        return Some(DocumentArea::TicketFolder);
     }
     if CURSOR_RULE_DIRS
         .iter()

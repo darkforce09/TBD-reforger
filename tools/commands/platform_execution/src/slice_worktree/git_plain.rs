@@ -117,23 +117,11 @@ pub(super) fn count(out: &Output) -> u64 {
     }
 }
 
-/// A sub-slice belongs to its parent's tree: a two-dot id resolves to its one-dot parent, and a
-/// one-dot id stays put.
-///
-/// The bash is `sed -E 's/^(T-[0-9]+\.[0-9]+).*/\1/'`, whose oddities are the contract, not
-/// accidents to be tidied (`pins_the_sed_regex_oddities` covers each): `^`-anchored with a greedy
-/// `.*` tail and not global, so a trailing suffix is trimmed while a LEADING one leaves the id
-/// UNCHANGED; a bare id
-/// with no dot does not match and is returned unchanged, which is how the factory's flat
-/// ids survive (every live worktree in the real repo is that shape); and a trailing dot needs a digit
-/// after the dot, so it too is unchanged.
+/// A sub-slice belongs to its parent's tree: a reference of three or more dot segments
+/// (`programme.slice.part`, a slug or a legacy `T-181.7.1`) resolves to its first two, and one of
+/// one or two segments stays put — [`ticket_manager_client::parent_slice`].
 pub(super) fn parent_slice(s: &str) -> String {
-    // Per call: runs at most once per process on a ~10-byte string, so a `OnceLock` buys nothing.
-    let re = regex::Regex::new(r"^(T-[0-9]+\.[0-9]+).*").expect("static regex");
-    match re.captures(s) {
-        Some(c) => c[1].to_string(),
-        None => s.to_string(),
-    }
+    ticket_manager_client::parent_slice(s).to_string()
 }
 
 /// Repo root. `TBD_SLICE_WORKTREE_ROOT` overrides it, mirroring `TBD_PREFLIGHT_ROOT` in the

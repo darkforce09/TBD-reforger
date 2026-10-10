@@ -1,7 +1,8 @@
 # Platform wave driver
 
 The implementation of `cargo xtask platform wave`, the platform factory: it reads the
-[wave](/documentation/glossary/n_to_z.md#wave) plan, creates slice worktrees, runs the slice and wave
+[wave](/documentation/glossary/n_to_z.md#wave) plan from the central ticket manager (`ttm wave
+show`), creates slice worktrees, runs the slice and wave
 gates, lands slices on `main`, closes waves and pushes. It also keeps launched binaries and slice
 tests off the shared cargo cache.
 
@@ -9,9 +10,8 @@ tests off the shared cargo cache.
 
 ```text
 tools/commands/platform_execution/src/wave_execution/
-├── archived_wave_plans.rs  the ticket set a wave held at a past revision, from `ticket_wave_lock`
-├── base/                   base derivation for the wave gate: markers, oracles and confirmation
-├── base.rs                 wave gate base: the marker grammar and the re-exports of base/
+├── base/                   base derivation for the wave gate: the marker ledger, oracles and confirmation
+├── base.rs                 wave gate base: what each oracle proves, and the re-exports of base/
 ├── changed/                changed-file lists, rustfmt, the wasm scope and `include!` consumers
 ├── changed.rs              the default diff base and the frontend crate path; re-exports changed/
 ├── db.rs                   the gate's per-wave integration database and the API test step
@@ -21,11 +21,11 @@ tools/commands/platform_execution/src/wave_execution/
 ├── host.rs                 `hostrun` and `checkrun`: host-bridge argv, gate timeout and output capture
 ├── land/                   `land`, `revert`, `verified` and the `wave --close` ceremony
 ├── land.rs                 re-exports of land/ and the close-ceremony contract
-├── ledger.rs               wave lock, ticket registry and worktree readers; the current wave
+├── ledger.rs               wave plan, ticket completion and worktree readers; the current wave; verify debt
 ├── lock.rs                 the gate lock that serialises gates across worktrees
 ├── migrate/                the persistent database migration step
 ├── migrate.rs              the persist-database design; re-exports migrate/
-├── mod.rs                  `Ctx`, the help text, output macros, `RunStamp` and the module tree
+├── mod.rs                  `Ctx` (with the ticket manager and its wave plan snapshot), the help text, output macros, `RunStamp` and the module tree
 ├── push.rs                 `push`, with the guard that asks git which paths are LFS
 ├── reclaim/                the orphan build-cache sweep
 ├── reclaim.rs              the reclaim policy; re-exports reclaim/
@@ -44,14 +44,16 @@ tools/commands/platform_execution/src/wave_execution/
 poisons the cache it names. It then builds a `Ctx` once, and `Ctx::enter` does four things. It
 moves to the repository root. It finds the main checkout through `git rev-parse --git-common-dir`.
 It exports `CARGO_TARGET_DIR` as `<main checkout>/target` and `TBD_RUN_TARGET_DIR` (an inherited
-value, else `<main checkout>/target/run-main`). It detects the host bridge. It then dispatches on the first
-argument; the default is `status`.
+value, else `<main checkout>/target/run-main`). It detects the host bridge and binds the ticket
+manager client (`TBD_TTM_BIN`, `TBD_TTM_PROJECT`); the wave plan is read once on first use and
+read again after every land, repack and close. It then dispatches on the first argument; the
+default is `status`.
 
 ```text
 status ─ prep ─▶ (slice agents work in .ai/artifacts/worktrees/<id>)
                   gate --slice <id> ─▶ verdict receipt
-land ─▶ merge ready slices ─▶ gate (wave) ─▶ drop worktrees ─▶ repack lock ─▶ push
-verified <sha> ─▶ wave --close ─▶ marker commit ─▶ next wave
+land ─▶ merge ready slices + ttm land ─▶ gate (wave) ─▶ drop worktrees ─▶ ttm wave repack ─▶ push
+verified <sha> ─▶ wave --close ─▶ marker commit ─▶ ttm wave close ─▶ next wave
 ```
 
 - Tiered gates: a slice pays the cheap gate in its worktree; the full suite runs once on merged
@@ -91,14 +93,14 @@ verified <sha> ─▶ wave --close ─▶ marker commit ─▶ next wave
     `process_runner::host_execution` and `ci_task_catalog::cargo_target_pin` (the glibc
     guard);
   - `crate::slice_worktree` (`new`, `drop`);
-  - `ticket_wave_lock`, `ticket_registry` (`registry`), `ticket_metrics`, `ticket_model`
-    (`TicketId`, `error_chain_text`) and `verification_core` (`lock`, `proc`);
+  - `ticket_manager_client` (the wave plan, ticket statuses, landings, repacks, the close record
+    and the wave history oracle 2 reads) and `verification_core` (`lock`, `proc`);
   - `git`, `cargo`, `trunk`, `rustfmt`, `psql` through `podman exec tbd_reforger_db`,
-    `sha384sum`, and the `slice-collisions` command.
+    `sha384sum`, and `ttm` (through the client, and `ttm wave collisions` for `prep`).
 - Used by: `cargo xtask platform wave`; `tools/commands/platform_execution/src/preflight/`;
   `tools/commands/platform_execution/src/slice_worktree/`; `.github/workflows/ci.yml`, whose schema job runs the
   same `ci schema-validate` sub-gates as the gate's schema step.
-- Rules: an unreadable wave lock is a refusal, never an empty plan (`ledger`); `land` refuses a
+- Rules: a wave plan the ticket manager cannot give is a refusal, never an empty plan (`ledger`); `land` refuses a
   slice without a green verdict for its tip sha (`verdict`); a failing step never stops the gate
   early.
 

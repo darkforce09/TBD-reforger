@@ -1,8 +1,8 @@
 # Developer tooling
 
 Every developer tool in the repository: the `cargo xtask` command line, the tool crates its
-command groups dispatch onto (grouped by category), the heavy offline tools, the ticketboard
-desktop viewer, and the npm package that pins the Enfusion MCP server. Developers, AI agents, the
+command groups dispatch onto (grouped by category), the heavy offline tools, and the npm package
+that pins the Enfusion MCP server. Developers, AI agents, the
 CI workflows and the host's timers run them; the products they build, check and deploy are the
 crates under `crates/` and the game mod in `mod/`.
 
@@ -16,10 +16,9 @@ tools/
 ├── developer_tools/            the eight one-line tool binaries: enf, gate, mcpd, world, map, capture, the staging relay and load
 ├── enfusion/                   the Enfusion crates: the `.pak` reader, the script index, the MCP broker
 ├── enfusion_mcp_node_package/  the npm package that pins the `enfusion-mcp` server
-├── foundation/                 verdicts and the verification lock, child processes, the repository laws, the layout, the deploy settings, the test locks
+├── foundation/                 verdicts and the verification lock, child processes, the repository laws, the layout, the deploy settings, the ticket manager client, the test locks
 ├── map_assets/                 the map asset crates: the blueprint compiler, the world export, raster and verification pipelines
 ├── staging/                    the staging crates: the load plan, the load generator, the acknowledgement-dropping relay
-├── tickets/                    the ticket registry crates: model, metrics, wave lock, registry, the ticketboard's headless model and its desktop viewer
 └── xtask/                      the `cargo xtask` command line and dispatch, and the groups without a crate of their own
 ```
 
@@ -28,26 +27,20 @@ tools/
 `cargo xtask` is the alias `run --package xtask --` in `.cargo/config.toml`. The `xtask` binary
 parses the command line and dispatches every command group; the verifications, the CI tasks, the
 deploys and the platform's agent, worktree and wave orchestration live in the crates below, and
-xtask keeps only the `ai`, `fetch`, `map`, `refactor`, `schema`, `ticket`, `verify` and `wave`
-groups as modules of its own. It passes each crate the checkout root:
+xtask keeps only the `ai`, `fetch`, `map`, `refactor`, `schema` and `verify` groups as modules of
+its own. It passes each crate the checkout root:
 
-- The [ticket crates](/tools/tickets/README.md) own the
-  [ticket](/documentation/glossary/n_to_z.md#ticket) files: `ticket_model` the typed ticket, its
-  canonical TOML encoding and the corpus store; `ticket_metrics` the run receipts and estimates;
-  `ticket_wave_lock` the [wave](/documentation/glossary/n_to_z.md#wave) lock and its history; and
-  `ticket_registry` the typed operations, validation and the sync outputs (`queue.json`, the
-  roadmap markers and the gap-analysis ticket column). The `ticket` and `wave` command groups of
-  xtask delegate to them, and the [ticketboard](/documentation/glossary/n_to_z.md#ticketboard)
-  desktop viewer `ticketboard_desktop` reads the registry through `ticket_model` and paints the
-  models of `ticketboard_model`; process invocation and worktree cleanup stay with xtask.
 - The [foundation crates](/tools/foundation/README.md) hold what every tool builds on:
   `verification_core` the fail-closed primitives the gates share (verdicts and findings, pattern
   scans, the run report and the `flock` on the shared verification lock), `process_runner` child
   processes with process-group isolation and deadlines, the container-to-host bridge and the ssh
   transport, `repository_laws` the structural engineering laws as pure checks,
   `repository_layout` the shared locations, `deploy_settings` the
-  reader of `deploy/deploy.env`, and `tool_test_support` the locks and the checkout root the tool
-  tests share (a dev-dependency only).
+  reader of `deploy/deploy.env`, `ticket_manager_client` the typed client of the central ticket
+  manager's `ttm` command line, which holds the [tickets](/documentation/glossary/n_to_z.md#ticket),
+  run receipts and the [wave](/documentation/glossary/n_to_z.md#wave) plan, and
+  `tool_test_support` the locks and the checkout root the tool tests share (a dev-dependency
+  only).
 - The [command crates](/tools/commands/README.md) hold the work of xtask command groups:
   `workstation_setup` the `cargo xtask setup` commands; `enfusion_mcp` the Enfusion MCP client
   behind `cargo xtask mcp`;
@@ -118,11 +111,10 @@ xtask ──runs──▶ developer_tools (binaries only)
   │               ├── gate, capture ──▶ browser_gate_suites ──▶ chrome_devtools_protocol (tools/browser_testing)
   │               └── staging-load, acknowledgement-dropping-relay ──▶ staging_load_generator, acknowledgement_dropping_relay (tools/staging)
   ├────▶ staging_procedures (tools/commands), the staging group ──▶ staging_load_plan (tools/staging), the plan crate under staging_load_generator
-  ├────▶ ticket crates (tools/tickets) ◀── ticketboard_model (tools/tickets) ◀── ticketboard_desktop (tools/tickets)
   ├────▶ command crates (tools/commands); enfusion_mcp: mcp; schema_tooling ──▶ prefab_catalog (INSTANCE_KINDS)
   ├────▶ ci_task_catalog (tools/commands): ci, help, mk ──▶ check crates, command crates, map_asset_verification (map asset steps)
-  ├────▶ platform_execution (tools/commands): platform ──▶ ci_task_catalog, ticket crates
-  ├────▶ mod_operations (tools/commands): mod ──▶ platform_execution, command crates, mod_script_checks
+  ├────▶ platform_execution (tools/commands): platform ──▶ ci_task_catalog, ticket_manager_client (tools/foundation) ──runs──▶ ttm
+  ├────▶ mod_operations (tools/commands): mod ──▶ platform_execution, command crates, mod_script_checks, ticket_manager_client
   ├────▶ enfusion_script_index (tools/enfusion): cargo xtask fetch
   ├────▶ blueprint_compiler (tools/map_assets): map blueprint, BVH and model commands ──▶ enfusion_pak
   ├────▶ map_asset_verification (tools/map_assets): map world-los, the schema and verify map asset gates ──▶ world_export_pipeline
@@ -135,8 +127,8 @@ The repository paths more than one tool names live in `tools/foundation/reposito
 one walk that finds the checkout root is the foundation crate `crates/foundation/repository_root`. Each tool spells the paths only it uses in its own layout
 module: `tools/map_assets/map_raster_pipeline/src/decision_record_locations.rs`,
 `tools/map_assets/world_export_pipeline/src/export_locations.rs`,
-`tools/enfusion/enfusion_script_index/src/script_index_layout.rs`,
-`tools/browser_testing/browser_gate_suites/src/gate_layout.rs` and `tools/tickets/ticket_model/src/repository.rs`.
+`tools/enfusion/enfusion_script_index/src/script_index_layout.rs` and
+`tools/browser_testing/browser_gate_suites/src/gate_layout.rs`.
 
 ## Getting started
 
@@ -145,7 +137,7 @@ Run these from the repository root:
 ```bash
 cargo xtask --help                                 # every command group
 cargo test -p repository_checks -p mod_script_checks -p documentation_checks   # the check crates' tests
-cargo test -p ticket_model -p ticket_registry      # the ticket crates' tests
+cargo test -p ticket_manager_client               # the ticket manager client's tests
 cargo test -p verification_core -p process_runner -p repository_laws   # the foundation crates' tests
 cargo xtask mod dev-bootstrap                      # a mod workstation: npm ci for the MCP server, Workbench
 ```
@@ -155,9 +147,9 @@ Each crate's README lists its own commands and checks.
 ## Boundaries
 
 - Depends on: the library crates under `crates/` whose `targets` is `any`; the checkout's data
-  (`.ai/tickets/`, `contracts/`, `assets/`, `documentation/`); and the external tools
+  (`.ai/artifacts/`, `contracts/`, `assets/`, `documentation/`); and the external tools
   individual commands run: git, Docker or Podman, Postgres, Chromium, Trunk, npm and Node.js, ssh
-  and rsync, the Arma Reforger tools.
+  and rsync, the Arma Reforger tools, and the central ticket manager's `ttm`.
 - Used by: developers and AI agents at the command line; the GitHub workflows in `.github/`; the
   backup and backup-drill units in `deploy/systemd/`, which run
   `cargo xtask deploy db backup` and `cargo xtask deploy db drill`.
@@ -166,10 +158,7 @@ Each crate's README lists its own commands and checks.
   - `developer_tools` never depends on `xtask`, and `xtask` never depends on
     `developer_tools`;
   - a `tools/foundation` crate depends only on lower `tools/foundation` crates and on
-    `repository_root`; a `tools/tickets` crate depends only on `tools/foundation` crates, on
-    `time_source`, `content_digest`, `newtype_ids` and `repository_root`, and on ticket crates of
-    a lower tier; and ticket logic has one owner, the xtask `ticket` group delegating to
-    `ticket_registry` and the `wave` group to `ticket_wave_lock`;
+    `repository_root`; and only `ticket_manager_client` runs `ttm`;
   - in production source only a layout module — a file of the `repository_layout` crate, or a
     file whose first line declares it one (`//! The repository locations only …`) — spells a
     repository path literal, such as one under `.ai/` or `documentation/`; no tracked tooling

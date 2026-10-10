@@ -14,7 +14,6 @@ documentation/tools/
 ├── enfusion/                 the Enfusion script oracle behind `enf`
 ├── map_assets/               the map raster pipeline behind `map`
 ├── staging/                  the member load and the acknowledgement-dropping relay, end to end
-├── tickets/                  the token estimate factor behind the ticket registry's estimates, the ticketboard's documents
 └── tooling_architecture.md   the crates, their dependency direction, invariants and verification surface
 ```
 
@@ -27,17 +26,13 @@ hold those rules. The subfolders mirror the crate folders that have documents of
 | Tooling unit | Code README | Documents |
 |---|---|---|
 | `xtask`, the `cargo xtask` command router and every repository verification | [`tools/xtask/`](/tools/xtask/README.md), with the [command line](/tools/xtask/src/cli/README.md) and [verify group](/tools/xtask/src/commands/verify/README.md) READMEs | [Tooling architecture](/documentation/tools/tooling_architecture.md) |
-| `ticket_model`, `ticket_metrics`, `ticket_wave_lock`, `ticket_registry`, `ticketboard_model` and `ticketboard_desktop`, the ticket crates and the ticketboard | [`tools/tickets/`](/tools/tickets/README.md) | [`tickets/`](/documentation/tools/tickets/README.md) |
-| `verification_core`, `process_runner` and `repository_laws`, the foundation crates: verdicts and the lock, child processes, the repository laws | [`tools/foundation/`](/tools/foundation/README.md) | [Tooling architecture](/documentation/tools/tooling_architecture.md) |
+| `verification_core`, `process_runner`, `repository_laws` and `ticket_manager_client`, the foundation crates: verdicts and the lock, child processes, the repository laws, the client of the central ticket manager | [`tools/foundation/`](/tools/foundation/README.md), with the [ticket manager client](/tools/foundation/ticket_manager_client/README.md) README | [Tooling architecture](/documentation/tools/tooling_architecture.md) |
 | `enfusion_pak`, `enfusion_script_index` and `enfusion_mcp_broker`, the Enfusion crates: the pak reader, the script oracle, the MCP broker | [`tools/enfusion/`](/tools/enfusion/README.md) | [`enfusion/`](/documentation/tools/enfusion/README.md) |
 | `staging_load_plan`, `staging_load_generator` and `acknowledgement_dropping_relay`, the staging crates: the member load's plan and its generator, the fault-injecting relay | [`tools/staging/`](/tools/staging/README.md) | [`staging/`](/documentation/tools/staging/README.md) |
 | `map_raster_pipeline`, the map asset crate behind `map`: satellite, Map view, labels, water archives and the glyph atlas | [`tools/map_assets/`](/tools/map_assets/README.md) | [`map_assets/`](/documentation/tools/map_assets/README.md) |
 | `developer_tools`, the eight tool executables | [`tools/developer_tools/`](/tools/developer_tools/README.md) | [`developer_tools/`](/documentation/tools/developer_tools/README.md) |
 | `enfusion_mcp_node_package`, the pinned MCP server | [`tools/enfusion_mcp_node_package/`](/tools/enfusion_mcp_node_package/README.md) | [Enfusion MCP tooling runbook](/documentation/runbooks/enfusion_mcp_tooling.md) |
 
-The [ticketboard](/documentation/tools/tickets/ticketboard_desktop/README.md), the desktop viewer that links
-`ticket_model`, has its documents in `tickets/ticketboard_desktop/`, beside its code in
-`tools/tickets/ticketboard_desktop/`.
 Procedures that run the tooling are runbooks, not documents here: the
 [factory waves](/documentation/runbooks/factory_waves/README.md), the
 [editor gates](/documentation/runbooks/editor_gates.md) and
@@ -47,13 +42,12 @@ Procedures that run the tooling are runbooks, not documents here: the
 
 - [Developer tooling](/tools/) — the four crates and the npm package the architecture
   document describes.
-- [Ticket crates](/tools/tickets/) — covered in `tickets/`.
 - [Developer tools](/tools/developer_tools/) — covered in `developer_tools/`.
 
 ## Boundaries
 
 - Depends on: the code under `tools/`, which every claim is checked against; the feature doc
-  template; the ticket registry for open work.
+  template; the central ticket manager (`ttm --project reforger next`) for open work.
 - Used by: the READMEs of `tools/` and its four crates, which link these documents under
   Related documentation; the [documentation root](/documentation/README.md).
 - Rules: a subfolder mirrors a crate folder's spelling; a document describes the committed code

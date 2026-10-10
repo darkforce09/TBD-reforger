@@ -147,7 +147,7 @@ in the game runtime.
   today, so the plan needs checking against the code before work starts.
 - [T-1146 — Decide one RCON password rule for staging and fleet agent](/.ai/tickets/T-1146.toml)
   (idea, no plan): the deploy and the agent apply one password rule.
-- [T-1137 — Gate ticket_engine, verification_core, ticketboard and fleet agent tests and clippy](/.ai/tickets/T-1137.toml)
+- [T-1137 — Gate the verification core and fleet agent tests and clippy](/.ai/tickets/T-1137.toml)
   (idea, no plan): CI runs the agent's tests and clippy.
 - [T-086 — Server Control + RCON API](/.ai/tickets/T-086.toml) (deferred, no plan): a live server
   control panel wired to an RCON backend; a console line runs today as a `console_command` fleet

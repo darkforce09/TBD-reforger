@@ -1,5 +1,5 @@
 ---
-description: TBD Reforger monorepo — read CLAUDE.md first; documentation ships with the code it describes; tickets go through cargo xtask ticket
+description: TBD Reforger monorepo — read CLAUDE.md first; documentation ships with the code it describes; tickets live in the central ticket manager (ttm --project reforger)
 alwaysApply: true
 ---
 
@@ -17,8 +17,7 @@ alwaysApply: true
   over the other `crates/frontend/` crates, with the `offline_service_worker` beside it; the game
   server host agent `crates/fleet/game_server_host_agent/`; the map's streaming, rendering and GPU
   crates) · `deploy/` (Dockerfile, compose, Caddy, systemd units) · `mod/` (the Enfusion
-  addons) · `tools/` (tool crates by category under `tools/<category>/`, the ticketboard desktop
-  viewer `tools/tickets/ticketboard_desktop/` among them, the binaries `xtask` and
+  addons) · `tools/` (tool crates by category under `tools/<category>/`, the binaries `xtask` and
   `developer_tools`, the pinned enfusion-mcp npm package) · `contracts/` · `assets/`; the
   [workspace layout](/documentation/architecture/workspace_layout.md) describes the whole tree.
   Where a new file goes: [Where does X go?](/documentation/standards/where_does_x_go.md).
@@ -33,12 +32,13 @@ alwaysApply: true
   [commit checklist](/documentation/standards/commit_checklist.md). The code trees hold no
   Markdown but README.md files, so no application grows a documentation tree. Mission Creator documentation lives under
   [documentation/crates/frontend/workspaces/mission_creator_workspace/](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md).
-- **Tickets.** One `.ai/tickets/T-<id>.toml` file per ticket, parent and child alike, beside the
-  `.ai/tickets/ROOT` marker; the [ticket registry README](/.ai/tickets/README.md) lists the folder
-  and the commands. A ticket file is created only by `cargo xtask ticket add` (or `add-child`); a
-  hand edit keeps the canonical form `ticket_model` renders; then run `cargo xtask ticket check --strict`.
-  The whole lifecycle is
-  [Taking a ticket from idea to shipped](/documentation/runbooks/ticket_run_pipeline.md).
+- **Tickets.** Tickets, run receipts and the wave plan live in the central ticket manager, project
+  `reforger`: `ttm --project reforger add` (or `add-child`) files a ticket, `show`, `brief` and
+  `next` read them, and every command accepts a slug or a legacy `T-<n>` number; after a change
+  run `ttm --project reforger check --strict`. `.ai/tickets/` holds the legacy ticket files only
+  as data awaiting `ttm import`. The tools reach the ticket manager through
+  [`ticket_manager_client`](/tools/foundation/ticket_manager_client/README.md); the wave lifecycle
+  is [Running a wave](/documentation/runbooks/factory_waves/running_a_wave.md).
 - **Executor gate.** A ticket's `executor` says who may take it: `claude-code` means any AI coding
   agent run through the ticket tooling, whoever makes it; `documentation` a ticket, spec or
   documentation pass; `workbench`, `human` and `ci` mean stop and wait for that party.

@@ -24,14 +24,12 @@ group's `cli.rs`, and dispatch calls the group's `dispatch::run`. Handlers retur
 error exits 2 before any handler runs.
 
 `disable_help_subcommand` frees the name `help` for `cargo xtask help`, the task list; `--help`
-and `-h` work on every level that does not turn them off. Three commands take their arguments
+and `-h` work on every level that does not turn them off. Two commands take their arguments
 raw instead of as a clap tree: `mk` (the target list lives in
-`tools/commands/ci_task_catalog/src/build_lane/recipes.rs`), `ci` (one optional task name) and
-`slice-collisions`.
+`tools/commands/ci_task_catalog/src/build_lane/recipes.rs`) and `ci` (one optional task name).
 
 | Command | What it holds | Module in `tools/xtask/src/commands/` |
 |---|---|---|
-| `ticket` | the ticket registry commands | `ticket` |
 | `mcp` | the Enfusion MCP bridge: daemon, calls, selftest, Workbench logs | none: the `enfusion_mcp` crate (`tools/commands/enfusion_mcp/`) |
 | `debug` | server-join probes and their primitives | `debug` |
 | `repro` | mission upload reproduction helpers | `reproduction` |
@@ -41,12 +39,9 @@ raw instead of as a clap tree: `mk` (the target list lives in
 | `setup` | local and dedicated-server profile setup | `setup` |
 | `fetch` | vanilla source and API reference mirrors | `fetch` |
 | `map` | map-asset pipeline helpers | `map` |
-| `registry-get` | prints one top-level field of the ticket registry | inline in `dispatch.rs`, via `load_registry` |
 | `schema` | contract codegen, contract and map-asset gates, mission-file tools | `schema` |
 | `verify` | the repository verifications | `verify` |
 | `gen` | code generators | `generate` |
-| `slice-collisions` | the largest file-disjoint set of tickets | `wave` (`collisions`) |
-| `wave` | the wave lock: `repack` and `check` | `wave` |
 | `platform` | the platform factory: slice worktrees, slice runs, platform waves | `platform` |
 | `ai` | the agent tool-call guard and the filtered command runner | `agent_context` |
 | `mk` | build and development-server recipes | none: the `ci_task_catalog` crate (`tools/commands/ci_task_catalog/`, `build_lane`) |
@@ -63,8 +58,7 @@ link-check step builds the same vocabulary.
 
 - Depends on: clap's derive API; each group's `cli.rs` and `dispatch.rs` under
   `tools/xtask/src/commands/`; the recipe and task tables and the link check's
-  `CommandVocabulary` for `command_vocabulary.rs`; `find_repository_root` in `crates/foundation/repository_root/src/root_marker_walk.rs` (through `repository_layout::prelude`)
-  and `load_registry` for `registry-get`.
+  `CommandVocabulary` for `command_vocabulary.rs`.
 - Used by: `tools/xtask/src/main.rs`, the only caller of `dispatch::run`; people and the CI
   workflows run the binary through the `cargo xtask` alias in `.cargo/config.toml`, the backup
   units in `deploy/systemd/` through `cargo run -q -p xtask --`, and the agent

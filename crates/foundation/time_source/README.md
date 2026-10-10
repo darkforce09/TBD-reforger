@@ -49,7 +49,7 @@ value. Everything the formatters write passes it.
 | the API metrics registry's `SystemTime` start stamp | `PlatformClock.now_unix_ms() / 1000` | identical whole seconds |
 | map engine CRDT undo-group `RealClock`, `ManualClock`, injected wasm clock | `PlatformClock`, `ManualClock`, `BrowserClock` | the `yrs::sync::Clock` adapter keeps the old floor of 1 ms |
 | developer tools `iso_from_system_time` | `iso_from_system_time` | byte-identical |
-| ticket tools `now_utc_rfc3339`, `validate_rfc3339_utc` | the same names | byte-identical output; `Error` replaces `String`, with the same text |
+| the platform factory's `now_utc_rfc3339`, `validate_rfc3339_utc` | the same names | byte-identical output; `Error` replaces `String`, with the same text |
 
 ## Getting started
 
@@ -81,10 +81,10 @@ No features and no environment variables. The browser crates are dependencies on
 - Used by: the map renderer, the render diagnostics, the map editing tools, the mission CRDT and
   document crates, the streaming host and asset loader, the Mission Creator workspace crates
   (engine bridge, session, workspace, debug benches), the administration pages, `frontend_ui`,
-  the API HTTP layer, and the developer, ticket, staging and map asset tools. Every
+  the API HTTP layer, and the developer, platform factory, staging and map asset tools. Every
   `Date.now()`, `performance.now()` and `SystemTime::now()` reading of the library crates comes
   through it.
-- Rules: the ticket tools' accept and reject cases hold (`accepts_canonical_utc`,
+- Rules: the canonical-UTC accept and reject cases hold (`accepts_canonical_utc`,
   `rejects_malformed_and_non_utc`); the whole-second form matches the `time` crate's RFC 3339
   output (`the_whole_second_form_matches_the_time_crate`); the crate firewall admits browser
   crates here only from the `wasm32` target table (`cargo xtask verify crate-tiers`).

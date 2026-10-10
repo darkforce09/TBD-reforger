@@ -241,7 +241,7 @@ directory, so a server started from another folder served nothing, and `UPLOAD_D
 **Decision:** In development, an unset `UPLOAD_DIR`, `EQUIPMENT_DATA_DIR`, `MAP_ASSETS_DIR` or
 `GLYPH_ASSETS_DIR` is a folder of the checkout (`assets/scratch/api/uploads`, `assets/equipment`,
 `assets/terrains`, `assets/glyphs`) joined onto the checkout root the walk up to the
-`.ai/tickets/ROOT` marker finds, and a development boot outside any checkout with one of them
+`.ai/ROOT` marker finds, and a development boot outside any checkout with one of them
 unset is refused. Outside development, `UPLOAD_DIR`, `MAP_ASSETS_DIR` and `GLYPH_ASSETS_DIR` are
 required and absolute.
 

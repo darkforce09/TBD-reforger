@@ -28,7 +28,6 @@ documentation/runbooks/
 ├── staging_verification/       record the fleet, Discord and load receipts against the staging host
 ├── sub_agent_orchestration.md  run any multi-file task with sub-agents: plan, brief, prompts, routing, gates
 ├── testing_and_ci.md           run the repository's gates locally before a push
-├── ticket_run_pipeline.md      take one ticket from idea to shipped with `ticket run`
 ├── two_client_playtest/        the live mod playtest with one server and two clients
 └── website_deployment.md       deploy the API and the single-page app to the home server
 ```
@@ -57,7 +56,7 @@ Start from the task:
 | Rebuilding a terrain's object and road data | [terrain export runbook](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md) |
 | A new game build, or a change to the ballistics oracle | [ballistics oracle run](/documentation/runbooks/ballistics_oracle_run.md) |
 | The mortar calculator offline | [offline mortar page](/documentation/runbooks/offline_mortar_page.md) |
-| One ticket, one agent | [ticket run pipeline](/documentation/runbooks/ticket_run_pipeline.md) |
+| One ticket, one agent | [running a wave](/documentation/runbooks/factory_waves/running_a_wave.md) (`cargo xtask platform slice-run`); the [ticket manager client](/tools/foundation/ticket_manager_client/README.md) for the `ttm` side |
 | Any multi-file or multi-crate task run by an orchestrating session with sub-agents | [sub-agent orchestration](/documentation/runbooks/sub_agent_orchestration.md) |
 | A [wave](/documentation/glossary/n_to_z.md#wave) of tickets in parallel | [factory waves](/documentation/runbooks/factory_waves/README.md) for the platform, [mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) for the mod |
 
@@ -67,8 +66,8 @@ feature folder, rather than here; this index lists it so every procedure is foun
 ## Code
 
 - [xtask command groups](/tools/xtask/src/commands/) — every `cargo xtask` command the runbooks
-  run: `mk`, `ci`, `db`, `deploy`, `mod`, `mcp`, `map`, `ballistics`, `schema`, `platform`, `wave`,
-  `ticket` and `setup`.
+  run: `mk`, `ci`, `db`, `deploy`, `mod`, `mcp`, `map`, `ballistics`, `schema`, `platform` and
+  `setup`. Ticket work runs through the central ticket manager's CLI, `ttm --project reforger …`.
 - [Browser testing](/tools/browser_testing/browser_gate_suites/) — the gate, doctor and
   capture drivers behind the editor gates and editor capture.
 - [Deploy files](/deploy/) — the templates and systemd units the deployment

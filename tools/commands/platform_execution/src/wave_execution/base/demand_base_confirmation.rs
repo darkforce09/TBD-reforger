@@ -46,19 +46,16 @@ pub(super) fn demand_base_confirmation(ctx: &Ctx, bsha: &str, why: &str) -> u8 {
     );
     wprintln!("            TBD_GATE_BASE_CONFIRM={bsha} cargo xtask platform wave gate ...");
     wprintln!(
-        "        The better fix is to give the ledger something to say: add this wave's rows to"
+        "        The better fix is to give the ledger something to say: let {} record this",
+        ctx.registry
     );
     wprintln!(
-        "        {} BEFORE the wave closes — in the commit that files its tickets, the way",
-        ctx.plan
+        "        wave — ship its tickets, let the repack freeze them as a pending-close wave, and"
     );
     wprintln!(
-        "        2a8b41e2 filed wave 77's. Rows appended by the closing commit itself corroborate"
+        "        close it with `cargo xtask platform wave wave --close`, which writes the marker AND"
     );
-    wprintln!("        nothing: oracle 2 reads the plan at the boundary's PARENT precisely so a");
-    wprintln!(
-        "        commit cannot vouch for itself, so rows that arrive with the marker are not there."
-    );
+    wprintln!("        records the close, so oracle 2 can read the members and their statuses.");
     2
 }
 
@@ -126,7 +123,7 @@ pub(crate) fn gate_base_covers_wave(ctx: &Ctx, base: &str) -> u8 {
     }
     if lrc == 1 {
         let why = format!(
-            "the marker ledger accepts it (wave {} is the newest closed wave) but the ticket ledger has no rows for that wave that the boundary did not write itself, so only one family of evidence agrees",
+            "the marker ledger accepts it (wave {} is the newest closed wave) but the ticket ledger holds no complete record of that wave's members at the marker's time, so only one family of evidence agrees",
             wave_close_number(&psha)
                 .map(|n| n.to_string())
                 .unwrap_or_default()

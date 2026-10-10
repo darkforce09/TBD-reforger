@@ -76,9 +76,9 @@ Run::new(program).args(..).cwd(..).env(..).timeout(..).stdin(..)
 - Used by: the xtask command groups that run external programs (`build`, `ci`, `db`, `debug`,
   `deploy`, `fetch`, `map`, `mcp`, `platform`, `reproduction` under
   `tools/xtask/src/commands/`), the command crates under `tools/commands/` (`ci_task_catalog`,
-  `database_operations`, `enfusion_mcp` and `mod_operations` through the run modes too), `host_execution.rs` here,
-  the check crates under `tools/checks/`, and `tools/tickets/ticketboard_model` (the streamed and
-  the detached children of the ticketboard).
+  `database_operations`, `enfusion_mcp` and `mod_operations` through the run modes too, the last
+  streaming the lines of its dedicated server and world boot), `host_execution.rs` here, the check
+  crates under `tools/checks/`, and `tools/foundation/ticket_manager_client` (the `ttm` calls).
 - Rules: a signal death is `Signalled` and never an exit code, a timeout kills the process group,
   a full pipe never blocks the child, and `merged_output` keeps the child's interleaving; the
   tests in `tests/run_tests.rs` hold each of these, and `run_modes/tests/` holds the modes'. The bridge is never used outside a container

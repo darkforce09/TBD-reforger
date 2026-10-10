@@ -12,7 +12,7 @@ that controls those servers, the contracts and map data they share, and the deve
 
 ```text
 ./
-├── .ai/                         the ticket registry (`tickets/`), agent run artifacts and the factory wave marker
+├── .ai/                         the checkout-root marker `ROOT`, the legacy ticket files awaiting `ttm import` (`tickets/`), agent run artifacts and the factory wave marker
 ├── .cargo/                      the `cargo xtask` alias
 ├── .claude/                     Claude Code project settings: the `xtask ai guard` hook
 ├── .cursor/                     the Cursor agent rules (`rules/*.mdc`) and MCP server entry (`mcp.json`)
@@ -35,7 +35,7 @@ that controls those servers, the contracts and map data they share, and the deve
 ├── documentation/               all documentation: feature docs, runbooks, standards, glossary, archive
 ├── mod/                         the Enfusion mod suite the game servers run; no Rust crate
 ├── rust-toolchain.toml          the pinned Rust toolchain with rustfmt, clippy and the wasm32 target
-└── tools/                       the developer tools: `xtask`, the ticket crates and the ticketboard desktop viewer, `developer_tools`, the tool foundations
+└── tools/                       the developer tools: `xtask`, `developer_tools`, the tool foundations (the ticket manager client among them)
 ```
 
 ## How it works

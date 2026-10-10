@@ -30,7 +30,7 @@ application code.
 | Rule | Normally | In factory mode |
 |---|---|---|
 | [`application-code-forbidden.mdc`](/.cursor/rules/application-code-forbidden.mdc) | no application source edits in the chat | **slice agents edit** `crates/**`, `mod/**` and `contracts/**`, each inside its own slice worktree and scoped to its ticket's `owns` paths |
-| [`cursor-agent-workflow.mdc`](/.cursor/rules/cursor-agent-workflow.mdc) mode C | code runs through `cargo xtask ticket run` | **the orchestrator dispatches slice agents** and integrates their work |
+| [`cursor-agent-workflow.mdc`](/.cursor/rules/cursor-agent-workflow.mdc) mode C | code runs through `cargo xtask platform slice-run <id>` | **the orchestrator dispatches slice agents** and integrates their work |
 
 **Branches.** Factory mode stays inside `CLAUDE.md` law 2: commits land on `main`, and the one
 exception to "create no branch" is the `slice/<id>` branch that the xtask slice and wave tooling
@@ -40,9 +40,9 @@ the gate-green slices; `slice-worktree -- drop <id>` and `slice-worktree -- reap
 `cargo xtask mod wave` uses the same names for the mod program. No agent and no orchestrator
 creates a branch by hand, and there are no pull requests.
 
-**Executor gate, restated:** `executor = "claude-code"` in a ticket file means "an AI coding agent
-may take this", whichever product runs it. Do **not** mass-edit tickets to another executor.
-`workbench`, `human` and `ci` still mean **stop**.
+**Executor gate, restated:** a ticket's `executor` of `claude-code` in the ticket manager means "an
+AI coding agent may take this", whichever product runs it. Do **not** mass-edit tickets to another
+executor. `workbench`, `human` and `ci` still mean **stop**.
 
 ## What still binds — this is not a free hand
 
@@ -56,12 +56,12 @@ may take this", whichever product runs it. Do **not** mass-edit tickets to anoth
   **HARD, unchanged.** A gate that cannot run is a P0 infrastructure bug, never a silent skip.
 - **The orchestrator never implements.** It plans, dispatches, integrates, verifies and sequences.
   An orchestrator editing a `.rs` file in the main checkout has made a mistake: stop and dispatch a
-  slice agent. Its own edits are bookkeeping: ticket files through the `cargo xtask ticket` verbs,
-  `.ai/tickets/wave.lock` only through `cargo xtask wave repack` (never by hand), and
-  documentation.
+  slice agent. Its own edits are bookkeeping: tickets through the ticket manager's
+  `ttm --project reforger` verbs, the wave plan only through `ttm --project reforger wave repack`,
+  and documentation.
 - **Agents never ship.** Slice agents implement, run fmt, clippy and the touched crates' tests,
-  and report. The orchestrator owns every status change (the optional `cargo xtask ticket ship`
-  and `ticket stamp-sha`), every merge (`cargo xtask platform wave land`) and every push.
+  and report. The orchestrator owns every status change (the optional `ttm --project reforger ship`
+  and `ttm --project reforger stamp-sha`), every merge (`cargo xtask platform wave land`) and every push.
 
 ## Model routing in factory mode
 

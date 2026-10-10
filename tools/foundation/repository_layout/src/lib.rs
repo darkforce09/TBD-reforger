@@ -5,8 +5,7 @@
 //! every module's locations).
 //! **Position:** tier 1 of `tools/foundation`, over the checkout-root finder `repository_root`,
 //! whose names the [`prelude`] re-exports so the tool binaries reach the root through this crate.
-//! The ticket crates, the command crates, `xtask` and `ticketboard_desktop` spell these shared
-//! locations through it; a location only one tool names stays in that tool's own layout module.
+//! The command and check crates and `xtask` spell these shared locations through it; a location only one tool names stays in that tool's own layout module.
 //! **Signals & state:** none; constants and pure path joins.
 //! **Invariants:** every location is relative and uses `/` separators; the crate itself reads no
 //! file and walks no folder (the root walk is `repository_root`'s alone).
@@ -19,9 +18,9 @@ pub mod documentation;
 mod documentation_locations;
 mod enfusion_mcp_node_package;
 pub mod enfusion_mod_folders;
+mod legacy_ticket_data;
 mod map_assets;
 pub mod prelude;
-mod ticket_registry;
 pub mod tool_inputs;
 mod upstream_references;
 mod vanilla_reference_lanes;
@@ -34,10 +33,6 @@ mod shared_locations_tests;
 pub use self::deployment::{
     CADDYFILE, DEPLOY_DIR, DEPLOY_ENV, DEPLOY_ENV_EXAMPLE, DEVELOPMENT_COMPOSE_FILE,
     SYSTEMD_UNITS_DIR, WEBSITE_API_UNIT,
-};
-pub use self::ticket_registry::{
-    CORPUS_PINS, ESTIMATES_DIR, ESTIMATES_SCHEMA, METRICS_DIR, METRICS_SCHEMA, QUEUE_JSON, SCHEMA,
-    SCOPE_VOCAB, TICKETS_DIR, WAVE_LOCK,
 };
 pub use agent_artifacts::{ARTIFACTS_DIR, LAST_VERIFIED_MARKER, VERDICTS_DIR, WORKTREES_DIR};
 pub use browser_gate_environment::BROWSER_GATE_ENVIRONMENT;
@@ -60,6 +55,7 @@ pub use enfusion_mcp_node_package::{
     ENFUSION_MCP_ENTRYPOINT, ENFUSION_MCP_NODE_PACKAGE_DIR, enfusion_mcp_entrypoint,
     enfusion_mcp_node_package_dir,
 };
+pub use legacy_ticket_data::LEGACY_TICKETS_DIR;
 pub use map_assets::{
     GLYPH_ASSETS_DIR, MAP_SCRATCH_DIR, TERRAIN_ASSETS_DIR, glyph_assets_dir, glyph_manifest_path,
     map_scratch_dir, terrain_assets_dir, terrain_dir, terrain_manifest_path, terrain_registry_path,

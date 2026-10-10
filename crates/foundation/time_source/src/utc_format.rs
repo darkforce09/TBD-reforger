@@ -3,9 +3,9 @@
 //! **Role:** [`rfc3339_utc_millis`] and [`iso_from_system_time`] write
 //! `2026-07-04T23:43:38.437Z` (what JavaScript's `new Date(ms).toISOString()` writes);
 //! [`rfc3339_utc_seconds`] and [`now_utc_rfc3339`] write `2026-08-14T12:34:56Z`, the one stamp
-//! the ticket registry's writers store.
+//! the slice runs and the gate records store.
 //! **Position:** the emitted artifacts of the developer tools stamp the millisecond form; the
-//! ticket registry stamps the whole-second form; [`crate::validate_rfc3339_utc`] accepts both.
+//! slice runs' receipts and the gate verdicts and lock notes stamp the whole-second form; [`crate::validate_rfc3339_utc`] accepts both.
 //! [`now_utc_rfc3339`] reads [`crate::PlatformClock`].
 //! **Signals & state:** none; pure functions, except that [`now_utc_rfc3339`] reads the clock.
 //! **Invariants:** the date is the proleptic Gregorian calendar date of the instant (Howard

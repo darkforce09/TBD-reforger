@@ -2,101 +2,89 @@
 
 # Ticket identifiers
 
-How a [ticket](/documentation/glossary/n_to_z.md#ticket) id is formed, where tickets and their
-documents live, and how the tooling reads ids out of commit subjects and documents. Every planned
-piece of work, shipped or open, carries one `T-` id; the ticket files are the source of truth, and
-the commands that read and write them are in the
-[ticket command group README](/tools/xtask/src/commands/ticket/README.md).
+How a [ticket](/documentation/glossary/n_to_z.md#ticket) is named, where tickets and their
+documents live, and how tickets are cited in commit subjects and documents. Every planned piece of
+work, shipped or open, is a ticket in the central ticket manager under the project `reforger`;
+its database is the source of truth, and its `ttm` command line, written
+`ttm --project reforger <verb>`, reads and writes it. The workspace reaches it only through the
+[ticket manager client](/tools/foundation/ticket_manager_client/README.md).
 
-## The id
+## The reference
 
 | Form | Meaning | Example |
 |---|---|---|
-| `T-` and three or more digits | a parent ticket, a work item or a program | `T-068`, `T-1150` |
-| a parent id, then `.` and a number, repeated | a child slice, at any depth | `T-068.10`, `T-068.10.1` |
+| a slug: lowercase words joined by `-` | a parent ticket, a work item or a program | `slot-identity` |
+| a parent slug, then `.` and a child segment, repeated | a child slice, at any depth | `slot-identity.flatten-emit` |
+| `T-` and three or more digits, then `.` and a number, repeated | the legacy number of an imported ticket | `T-068`, `T-674.1` |
 
-The pattern is `^T-[0-9]{3,}(\.[0-9]+)*$` (`ticketId` in `.ai/tickets/schema.json`).
-`cargo xtask ticket add` mints the next parent id from the registry's `next_id`, and
-`cargo xtask ticket add-child <parent>` the next child; nobody picks an id by hand. An id is never
-reused: a shipped or cancelled ticket keeps its id, and new scope gets a new ticket. The ids that
-`.ai/tickets/corpus-pins.toml` lists are never minted.
+Tickets are keyed by their slugs. A ticket imported from the legacy files keeps its old number as
+its legacy id, and every command accepts either form, so `T-674.1` still resolves
+(`ttm --project reforger resolve <ref>` names the slug behind a reference). The ticket manager
+derives a new ticket's slug from its title (`ttm --project reforger add`,
+`ttm --project reforger add-child <parent>`), and a new ticket gets no `T-` number. A shipped or
+cancelled ticket keeps its slug, and new scope gets a new ticket. The tools accept a reference of
+lowercase letters, digits, `-` and `.` with no empty or dash-edged dot segment, or a legacy number
+(`is_ticket_reference` in the client).
 
-## The ticket file
+## Where tickets live
 
-One TOML file per ticket, parent and child alike: `.ai/tickets/T-<id>.toml`, beside the
-`.ai/tickets/ROOT` marker. The fields that classify a ticket:
+Each ticket is one record in the ticket manager, parent and child alike. The fields that classify
+a ticket:
 
-- `status`: `idea`, `queued`, `ready`, `running`, `review`, `shipped`, `deferred` or `cancelled`;
+- `status`: from `idea` through `queued`, `ready`, `running` and `review` to `shipped`, or
+  `deferred` or `cancelled`;
 - `kind`: `program` (a ticket with child slices) or `work`;
-- `class`: `bug`, `feature`, `chore`, `audit` or `docs`;
-- `executor`: `claude-code`, `documentation`, `workbench`, `human` or `ci`;
-- `scope.domain`: `website`, `mod`, `schema`, `engine` or `repo`.
+- `executor`: who runs it; a slice run takes only `claude-code`;
+- its scope: the domain and the files it owns, which the wave packer reads.
 
-`.ai/tickets/schema.json` defines every field, and `cargo xtask ticket check` validates each file
-against it. After a change, `cargo xtask ticket sync` writes `.ai/tickets/queue.json` and the
-next-work block between the `<!-- ticket-sync:next:start -->` and `<!-- ticket-sync:next:end -->`
-markers of the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) roadmap;
-those two are never edited by hand. The ticket column of the Eden gap analysis is kept by hand, as
-[In documents](#in-documents) explains.
+`ttm --project reforger show <ref>` prints one ticket, `ttm --project reforger check` validates
+the project, and `ttm --project reforger next` lists the next work. `.ai/tickets/` still holds
+the legacy TOML files as data awaiting `ttm import`; nothing in the workspace reads them, and
+they are not the live registry.
 
 ## Spec and plan files
 
+The ticket manager holds each ticket's spec and plan; a slice run refuses a ticket whose spec it
+does not hold, and `ttm --project reforger brief <ref>` hands the agent both. The records already
+written sit under `documentation/tickets/`, frozen once their ticket ships or is cancelled:
+
 | Document | Path |
 |---|---|
-| spec | `documentation/tickets/specs/t<id>_<subject>.md`, the id without its `T-` and with dots as underscores (`t062_1_1_batch_save.md`); the ticket's `spec` field names it |
-| plan | `documentation/tickets/plans/t-<id>_plan.md`, the id lowercased with dots as underscores (`t-067_1_plan.md`) |
+| spec | `documentation/tickets/specs/t<id>_<subject>.md`, the legacy id without its `T-` and with dots as underscores (`t062_1_1_batch_save.md`) |
+| plan | `documentation/tickets/plans/t-<id>_plan.md`, the legacy id lowercased with dots as underscores (`t-067_1_plan.md`) |
 
-The plan path is `plan_path` in `tools/tickets/ticket_model/src/repository.rs`.
-`cargo xtask ticket mark-ready <id> [SPEC] [PLAN]` defaults an unset `plan` field to that path and
-refuses while the file is absent. The ticket templates are `.ai/tickets/spec_template.md`,
-`.ai/tickets/plan_template.md` and `.ai/tickets/handoff_template.md`. A spec is live while its
-ticket is `idea`, `queued` or `ready` and frozen once the ticket ships or is cancelled; lasting
-knowledge then moves to the feature doc.
+`ttm --project reforger mark-ready <ref>` marks a ticket ready once its readiness gate holds. A
+spec is live while its ticket is `idea`, `queued` or `ready`; once the ticket ships or is
+cancelled, lasting knowledge moves to the feature doc.
 
 ## In commit subjects
 
-`cargo xtask ticket stamp-sha` and the token estimator find the commits that belong to a ticket by
-reading ids out of commit subjects (`subject_ids` in
-`tools/tickets/ticket_model/src/commit_subjects.rs`):
-
-- an id is `T-[0-9]+(\.[0-9]+)*`, taken to its last dotted number, so `T-068.10.1` counts as
-  itself and not as `T-068`;
-- it counts only when no ASCII letter or digit stands right before it, so a letter-prefixed token
-  is no claim on a ticket;
-- a subject that names an id twice counts it once.
-
-A commit that lands a ticket names its full id in the subject, for example
-`fix(gate): the T-180 place-path ban reads the tree that exists`.
+A commit that lands a ticket names it in the subject, by slug or, for an imported ticket, by its
+legacy number, for example `fix(gate): the T-180 place-path ban reads the tree that exists`. The
+ticket manager links a ticket to the commits whose subjects name it, and every command also
+accepts a commit sha prefix as a reference.
 
 ## In documents
 
-- **The Eden gap analysis.** Each row's ticket column is written by hand: a parent id, with `✅`
-  when the ticket shipped, or `—`. `cargo xtask ticket sync` has a column writer that fills the
-  cell from, in order, a checkmark followed by a parent id in the row's notes (`✅` then `T-` and
-  three or more digits; a dotted suffix is not captured), a ticket whose `implements` lists the
-  row's id, the gap implementations in `.ai/tickets/corpus-pins.toml`, else `—` (`CHECKMARK_TICKET`
-  and `lookup_ticket_for_gap` in `tools/tickets/ticket_registry/src/sync/gap_analysis.rs`); it rewrites
-  only a table whose header holds `priority |`, and the gap analysis heads that column `ticket`,
-  so the writer changes nothing there.
+- **The Eden gap analysis.** Each row's ticket column is written by hand: a parent ticket, with
+  `✅` when the ticket shipped, or `—`.
 - **Retired planning codes.** Planning codes from before the `T-` registry (priority tiers,
   separate frontend and backend backlog numbers, lettered tracks and lettered requirement codes)
-  are retired. `cargo xtask ticket check --strict` fails on any of them in `documentation/`,
-  `.ai/tickets/queue.json`, `CLAUDE.md` and the root `README.md`, outside the frozen records and
-  the design exports; the patterns are `STRICT_LEGACY` in
-  `tools/tickets/ticket_registry/src/validation/constants.rs`. Use the ticket id instead.
-- **Where no id goes.** READMEs never cite tickets; a feature doc links its open tickets under
-  `## Open work`. Code comments carry no ticket ids; review holds this.
+  are retired outside the frozen records and the design exports; review holds this. Cite the
+  ticket instead.
+- **Where no reference goes.** READMEs never cite tickets; a feature doc links its open tickets
+  under `## Open work`. Code comments carry no ticket references; review holds this.
 
 The repository also holds git tags named after ticket ids. No command creates them and no gate
-reads them; the ticket file's `shipped_at` sha, written by `ticket stamp-sha`, is the record of
-where a ticket landed.
+reads them; the landing sha the ticket manager records (`ttm --project reforger land <ref> --sha
+<sha>`, which the wave driver runs) is the record of where a ticket landed.
 
 ## Adding or changing a ticket
 
-1. Create it with `cargo xtask ticket add` or `add-child`, or change it with `set-status`,
-   `reorder`, `mark-ready` or `advance-slice`; each write refuses while `ticket check` is red and
-   refreshes the derived files after (`set-status` refreshes `queue.json` and repacks the wave
-   lock).
-2. Check the registry: `cargo xtask ticket check --strict`.
-3. Commit the ticket files with the derived files `ticket sync` wrote, and update the narrative
-   docs as the [commit checklist](/documentation/standards/commit_checklist.md) lists.
+1. Create it with `ttm --project reforger add` or `add-child`, or change it with `set-status`,
+   `reorder`, `mark-ready` or `advance-slice`; the ticket manager records every change in its
+   history (`ttm --project reforger history <ref>`).
+2. Check the project: `ttm --project reforger check --strict`, which also fails on warnings.
+3. Update the narrative docs in the commit that changes the code, as the
+   [commit checklist](/documentation/standards/commit_checklist.md) lists; a ticket change is no
+   file in the repository and needs no commit.

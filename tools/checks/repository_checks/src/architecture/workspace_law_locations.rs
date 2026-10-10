@@ -21,14 +21,13 @@ use repository_laws::workspace_laws::frontend_layering::{
 };
 
 /// The application packages: the binaries the platform deploys or runs — the API server, the
-/// single-page app and its offline service worker, the game server host agent and the ticketboard
-/// desktop viewer. No member depends on one, in any table (the crate-tier law).
+/// single-page app and its offline service worker, and the game server host agent. No member
+/// depends on one, in any table (the crate-tier law).
 pub(crate) const APPLICATION_PACKAGES: &[&str] = &[
     "api_server",
     "frontend_application",
     "offline_service_worker",
     "game_server_host_agent",
-    "ticketboard_desktop",
 ];
 
 /// What the crate-tier law reads: the application packages.

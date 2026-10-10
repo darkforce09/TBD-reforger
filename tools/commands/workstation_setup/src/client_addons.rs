@@ -113,7 +113,7 @@ pub fn run() -> Result<u8> {
 /// Split out so the `$HOME` test does not have to `set_current_dir` into a throwaway root to make
 /// `find_repository_root` land there: that chdir is process-wide, and every other test thread walking
 /// from the working directory at that instant would resolve the throwaway root, which carries a
-/// `.ai/tickets/ROOT` marker.
+/// `.ai/ROOT` marker.
 pub fn run_in(root: &Path) -> Result<u8> {
     let home = std::env::var("HOME").context("HOME is unset")?;
     let target = DirectJoinTarget::from_settings(&deploy_environment_path(root));

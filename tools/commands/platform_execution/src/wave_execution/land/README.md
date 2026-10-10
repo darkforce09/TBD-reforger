@@ -8,8 +8,8 @@ writes the [wave](/documentation/glossary/n_to_z.md#wave)-close marker commit.
 
 ```text
 tools/commands/platform_execution/src/wave_execution/land/
-├── close_ceremony.rs   the marker commit built unreachable, checked, then fast-forwarded; lock repack
-├── merge_execution.rs  `land`, `revert` and `verified`, with the receipt and lock commits after landing
+├── close_ceremony.rs   the marker commit built unreachable, checked, then fast-forwarded; the close record
+├── merge_execution.rs  `land`, `revert` and `verified`, with the landing records and the repack
 └── wave_close.rs       `wave --close` arguments, close target, validations and the marker subject
 ```
 
@@ -18,35 +18,40 @@ tools/commands/platform_execution/src/wave_execution/land/
 `tools/commands/platform_execution/src/wave_execution/land.rs` re-exports the four commands.
 
 ```text
-land [--wave] [--bookkeeping] [<ticket id>…]
-  ├─ unknown argument, or a named ticket not in the current wave ─────────── exit 2
+land [--wave] [--bookkeeping] [<ticket>…]
+  ├─ unknown argument, or a named ticket (slug or legacy number) not in the current wave ── exit 2
   ├─ ready = unshipped, worktree committed and clean, branch ahead of main
   │    (--wave holds every ready slice while any in the wave is unfinished)
-  ├─ refuse without slice-run receipts (ticket_metrics), unless --bookkeeping
+  ├─ refuse a slice with no run receipt in the ticket manager, unless --bookkeeping
   ├─ refuse any slice whose gate verdict is missing, red or for another sha
-  ├─ git merge --no-ff each; stamp its run receipt with the landing sha; stop at a conflict
-  ├─ commit the stamped receipts
+  ├─ git merge --no-ff each, then `ttm land <slice> --sha <HEAD> [--require-receipt]`
+  │    (stamps the newest receipt landed); stop at a conflict or a refused record
   ├─ full wave gate on merged main ── red: keep every worktree, print `revert <base>`, exit 1
   ├─ slice-worktree drop for each landed slice
-  ├─ `wave repack` and commit the refreshed .ai/tickets/wave.lock
+  ├─ `ttm wave repack` (the plan lives in the ticket manager; nothing is committed)
   └─ push
 ```
 
 - `revert <sha>` reverts every commit after the given green sha, parent 1 for merges, and leaves
-  the slice branches in place.
+  the slice branches in place; it then lists the tickets whose recorded landing commit was
+  reverted, each with the `ttm unland <slice>` that clears the record.
 - `verified <sha>` writes the full sha to `.ai/artifacts/last-verified`.
-- `wave --close [--summary <text>] [--tickets <ids>] [--dry-run]` targets the oldest pending
-  emptied entry of the lock. It refuses unless every ticket of that entry is shipped, a verifier is
+- `wave --close [--summary <text>] [--tickets <ids>] [--dry-run]` targets the oldest pending-close
+  wave of the ticket manager's plan. It refuses unless every ticket of that entry is shipped, a verifier is
   recorded at or after the last landing, and the full wave gate passes on `main`.
   `close_ceremony` then builds the marker commit as an unreachable object, runs the marker
   checks of `super::base` on it, and fast-forwards `main` to it only if they accept. It then
-  repacks the lock and commits the refresh. `--dry-run` prints the subject and writes nothing.
+  records the close with `ttm wave close <n> --sha <marker> [--members …]` (which repacks the
+  plan), runs `ttm wave check`, and checks that the plan's wave base and the newest marker in git
+  agree. When a step after the marker fails it says the marker is committed and that re-running
+  the printed `ttm wave close` is safe. `--dry-run` prints the subject and writes nothing.
 
 ## Boundaries
 
 - Depends on: `super::gate` (`cmd_gate`), `super::verdict` (`land_refusal`), `super::base`
   (marker checks), `super::ledger`, `super::push`, `crate::slice_worktree`
-  (`drop`), `ticket_metrics`, `ticket_wave_lock`, `ticket_model` (`TicketId`), and `git`.
+  (`drop`), `ticket_manager_client` (`land`, `list`, `wave repack`, `wave close`, `wave check`),
+  and `git`.
 - Used by: `tools/commands/platform_execution/src/wave_execution/flush.rs` (the `land`, `revert`,
   `verified` and `wave --close` dispatch).
 - Rules: every argument parser is an allowlist, since a filter that is ignored lands more than was

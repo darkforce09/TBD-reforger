@@ -79,15 +79,9 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     .filter(|s| !s.is_empty())
     .is_none()
     {
-        if base.starts_with("T-")
-            && base[2..]
-                .chars()
-                .next()
-                .map(|c| c.is_ascii_digit())
-                .unwrap_or(false)
-        {
+        if ticket_manager_client::is_ticket_reference(&base) {
             wprintln!(
-                "gate: '{base}' is a ticket id, not a git base — the per-slice gate is a different command."
+                "gate: '{base}' resolves to no commit and reads as a ticket — the per-slice gate is a different command."
             );
             wprintln!("        per-slice:  cargo xtask platform wave gate --slice {base}");
             wprintln!(

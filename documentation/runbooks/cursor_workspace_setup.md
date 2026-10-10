@@ -14,6 +14,9 @@ minutes plus the first builds.
 - Cursor, and a clone of the repository on `main`.
 - For the local stack: the Rust toolchain and a container runtime, as
   [Local development](/documentation/runbooks/local_development.md#prerequisites) lists.
+- For ticket work: the central ticket manager's command line, `ttm`, on `PATH` (or named by
+  `TBD_TTM_BIN`), as the [ticket manager client](/tools/foundation/ticket_manager_client/README.md)
+  describes.
 - For mod work only: Arma Reforger Tools with the Net API enabled, and Node.js with npm, as
   [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md#prerequisites) lists.
 
@@ -24,7 +27,7 @@ minutes plus the first builds.
 | `.cursor/rules/*.mdc` | yes | the project rules Cursor loads for the whole workspace |
 | `.cursor/mcp.json` | yes | the workspace's Enfusion MCP server entry: `node` on the pinned package, and the three `ENFUSION_*` paths |
 | `mod/.mcp.json` | yes | the same server for an agent started inside `mod/`, launched as `npx -y enfusion-mcp` |
-| `.ai/tickets/`, `.ai/artifacts/` | tickets yes, artifacts partly | the [ticket](/documentation/glossary/n_to_z.md#ticket) files and the agents' working files; Cursor loads no rule from `.ai/` |
+| `.ai/tickets/`, `.ai/artifacts/` | tickets yes, artifacts partly | the legacy [ticket](/documentation/glossary/n_to_z.md#ticket) files awaiting `ttm import` (the live tickets sit in the central ticket manager) and the agents' working files; Cursor loads no rule from `.ai/` |
 
 The repository holds one `.cursor/` folder, at its root. Both tracked MCP files hard-code one
 workstation's absolute paths, and `mod/.mcp.json` starts whatever `enfusion-mcp` release npm
@@ -38,7 +41,7 @@ Cursor applies each rule in `.cursor/rules/` to every chat (`alwaysApply: true`)
 
 | Rule | Applies | What it binds |
 |---|---|---|
-| `tbd-platform.mdc` | always | read `CLAUDE.md` first; the code layout; documentation ships with its code; the ticket files; the executor gate; `main` only; factory mode hands over to `platform-factory-mode.mdc` |
+| `tbd-platform.mdc` | always | read `CLAUDE.md` first; the code layout; documentation ships with its code; the tickets; the executor gate; `main` only; factory mode hands over to `platform-factory-mode.mdc` |
 | `cursor-agent-workflow.mdc` | always | who writes what, and the modes a chat infers from a message: plan review (read-only), ticket, spec and documentation pass, code (through the ticket tooling unless the operator says the chat writes it), platform factory |
 | `application-code-forbidden.mdc` | [API](/documentation/glossary/a_to_f.md#api), app and mod sources | no Cursor edit of application code without the operator's word, except by slice agents in factory mode; documentation is not application code |
 | `platform-factory-mode.mdc` | always | when the operator starts the factory, the chat orchestrates slice agents that edit code in `slice/<id>` worktrees and never implements itself |
@@ -144,13 +147,14 @@ Run every command from the repository root.
    `mod/tbd-export/addon.gproj`, `mod/tbd-emcp/addon.gproj`); `cargo xtask mod dev-bootstrap`
    (step 5) opens `mod/tbd-export/addon.gproj` itself.
 
-7. Check the ticket files.
+7. Check the tickets in the central ticket manager.
 
    ```bash
-   cargo xtask ticket check --strict
+   ttm --project reforger check --strict
    ```
 
-   Expected: the debt and token counters, then `check OK`.
+   Expected: `reforger: 0 error(s), 0 warning(s)` and exit 0. Until the operator runs `ttm import`,
+   the project holds no tickets yet.
 
 8. Check the contracts: generated types fresh, the golden missions valid and the contract
    citations resolved.
@@ -183,24 +187,24 @@ opening prompt once.
 You are in the Brainstorm chat for TBD Reforger: ideas and design for anything in the monorepo
 (Mission Creator, website, API, mod). Read CLAUDE.md first. Write no code and edit no file unless I
 ask. Decisions that should land go to the Tickets chat. For ticket context run
-`cargo xtask ticket next` or `cargo xtask ticket show <id>`.
+`ttm --project reforger next` or `ttm --project reforger show <id>`.
 ```
 
 **Tickets** turns decisions into tickets, specs and plans:
 
 ```text
-You are in the Tickets chat for TBD Reforger. You file and change tickets with `cargo xtask ticket`
-commands, write specs and plans under documentation/tickets/, and keep ticket files in the
-engine's canonical form. After a change run `cargo xtask ticket check --strict`. Never edit
-.ai/tickets/queue.json or other files `ticket sync` writes. Stop at a ticket whose executor is
-workbench, human or ci.
+You are in the Tickets chat for TBD Reforger. You file and change tickets with
+`ttm --project reforger` commands and write specs and plans under documentation/tickets/. After a
+change run `ttm --project reforger check --strict`. Never edit the legacy files under .ai/tickets/.
+Stop at a ticket whose executor is workbench, human or ci.
 ```
 
 Code for a ready ticket runs through the ticket tooling, whichever agent does it:
-[Taking a ticket from idea to shipped](/documentation/runbooks/ticket_run_pipeline.md) covers
-`cargo xtask ticket brief`, `ticket run` and the ship. When the operator starts the platform
-factory, Cursor orchestrates instead, as [Factory waves](/documentation/runbooks/factory_waves/README.md)
-describes.
+`ttm --project reforger brief <id>` prints the brief, `cargo xtask platform slice-run <id>` runs the
+agent and records its receipt, and `ttm --project reforger ship <id>` ships the ticket;
+[Running a wave](/documentation/runbooks/factory_waves/running_a_wave.md) covers the slice cycle.
+When the operator starts the platform factory, Cursor orchestrates instead, as
+[Factory waves](/documentation/runbooks/factory_waves/README.md) describes.
 
 For Mission Creator work, read in this order: the
 [editor documentation index](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md), the
@@ -212,11 +216,11 @@ and the [Eden gap analysis](/documentation/crates/frontend/workspaces/mission_cr
 ## Verify
 
 ```bash
-cargo xtask ticket check --strict
+ttm --project reforger check --strict
 ```
 
-Expected: `check OK`; with steps 3, 8 and 9 green and, for mod work, `enfusion-mcp` connected, the
-workspace is ready.
+Expected: `reforger: 0 error(s), 0 warning(s)`; with steps 3, 8 and 9 green and, for mod work,
+`enfusion-mcp` connected, the workspace is ready.
 
 ## Troubleshooting
 
@@ -235,8 +239,8 @@ workspace is ready.
 - [Local development](/documentation/runbooks/local_development.md) — the whole local stack.
 - [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) — the MCP server, the
   broker and the Workbench bridge.
-- [Taking a ticket from idea to shipped](/documentation/runbooks/ticket_run_pipeline.md) — the
-  ticket lifecycle and `ticket run`.
+- [Ticket manager client](/tools/foundation/ticket_manager_client/README.md) — how the tools
+  reach the central ticket manager, `ttm`.
 - [Factory waves](/documentation/runbooks/factory_waves/README.md) — what factory mode runs.
 - [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — the same cycle for mod
   tickets.

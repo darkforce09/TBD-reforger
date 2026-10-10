@@ -4,16 +4,18 @@
 //! **Role:** subcommands `status` | `gate` | `land` | `prep [N]` | `push`; this module holds the
 //! help text, the worktree state names and the routing; `wave_execution/execution.rs` holds the
 //! readers, `status`, `prep` and `gate`, `wave_execution/land.rs` holds `land` and `push`.
-//! **Position:** called by [`crate::mod_dispatch`]; reads the shared wave lock through
-//! `ticket_wave_lock` and drives slice worktrees through `platform_execution::slice_worktree`.
-//! **Signals & state:** none held; the wave lock, the ticket registry and the worktrees under the
-//! worktree base are its inputs.
+//! **Position:** called by [`crate::mod_dispatch`]; reads the shared wave plan from the central
+//! ticket manager through `ticket_manager_client` and drives slice worktrees through
+//! `platform_execution::slice_worktree`.
+//! **Signals & state:** the mod plan, read once per process; the ticket manager's wave plan and
+//! programme, and the worktrees under the worktree base, are its inputs.
 //! **Invariants:** an unknown subcommand prints the help on stdout and exits 2. The driver reads
-//! the wave lock filtered to its own programme's ids (the programme ticket is
-//! `game_mod_programme_ticket` in the corpus pins), and `shipped_slices` reads that programme's
-//! slice plan exclusively, so a lock wave holding none of its ids is another programme's business.
-//! A MISSING lock is a refusal (rc 2), never `ALL PLANNED WAVES SHIPPED`: a driver that shrugs at a
-//! missing plan reports green for work it never looked at. Deliberate asymmetries (do not "fix"):
+//! the wave plan filtered to its own programme's children (the programme ticket is
+//! `MOD_PROGRAMME`, `T-181`, resolved by the ticket manager), and a slice's shipped state comes
+//! from that programme's children exclusively, so a wave holding none of them is another
+//! programme's business. A plan or programme the ticket manager cannot give is a refusal (rc 2),
+//! never `ALL PLANNED WAVES SHIPPED`: a driver that shrugs at a missing plan reports green for
+//! work it never looked at. Deliberate asymmetries (do not "fix"):
 //! `land`'s dirty refusal uses the raw slice id under the worktree base while `tree_state` uses
 //! `parent_slice` (the sub-slice path mismatch is intended); a non-git directory under the worktree
 //! base that exists reads as `committed`; status ACTION lines name `cargo run -q -p xtask -- mod
@@ -22,11 +24,11 @@
 
 use std::io::{self, Write};
 use std::path::Path;
+use std::sync::OnceLock;
 
 use crate::Result;
 use process_runner::Run;
-use regex::Regex;
-use serde_json::Value;
+use ticket_manager_client::TicketManager;
 
 use repository_layout::WORKTREES_DIR;
 use repository_root::find_repository_root;
@@ -45,7 +47,7 @@ const UNKNOWN_HELP_BODY: &str = r###"#
 # WHY THIS EXISTS
 # ---------------
 # The wave cycle (dispatch 3 → merge → reap → verify → next 3) must not depend on any session
-# remembering where it was. This driver reads the wave lock and the live git and worktree state
+# remembering where it was. This driver reads the wave plan and the live git and worktree state
 # and derives the answer, so a fresh session — or one resuming after a context compaction — runs
 # `cargo run -q -p xtask -- mod wave status` and knows exactly what to do next.
 #
@@ -60,7 +62,7 @@ const UNKNOWN_HELP_BODY: &str = r###"#
 
 "###;
 
-// ── plan / registry ───────────────────────────────────────────────────────────
+// ── plan / worktree state ───────────────────────────────────────────────────────────
 
 #[derive(Debug, PartialEq, Eq)]
 enum TreeState {

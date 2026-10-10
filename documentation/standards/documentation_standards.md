@@ -369,14 +369,7 @@ a `tests`, `generated`, `Generated` or dot-folder; the repository root keeps its
   archived document adding `— see [its replacement](…)` when one exists. No other header block
   (audience, authority, updated date) follows it. Code READMEs carry no status line.
 - **Size.** A live document stays at or under 500 lines; a longer one splits by topic into a folder
-  with a README.md index. Frozen and archived documents are exempt, and so are the two documents
-  `cargo xtask ticket sync` targets (`SYNC_MANAGED_DOCUMENTS` in
-  `tools/checks/documentation_checks/src/path_regions.rs`):
-  `documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md`, whose next-work
-  block it rewrites between markers, and
-  `documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_gap_analysis.md`,
-  whose tables its ticket-column writer parses but leaves unchanged, since their header has no
-  `priority` column; that ticket column is kept by hand.
+  with a README.md index. Frozen and archived documents are exempt.
 - **Links.** Links are repository-root (`[README standard](/documentation/standards/readme_standard.md)`,
   `[API](/crates/api/api_server/README.md)`), never `../` climbs. A frozen or archived document's
   link to code that no longer exists becomes a GitHub permalink with the full commit id,
@@ -398,7 +391,9 @@ a `tests`, `generated`, `Generated` or dot-folder; the repository root keeps its
 ## 9. Document lifecycle
 
 - **Open work.** A feature doc lists its open work under `## Open work`, each gap linked to its
-  ticket's spec or to its `/.ai/tickets/T-<id>.toml`; a `deferred` ticket counts as open. A
+  ticket's spec or to its legacy `/.ai/tickets/T-<id>.toml` record, the ticket itself living in
+  the central ticket manager (`ttm --project reforger show <ticket>`); a `deferred` ticket counts
+  as open. A
   README never names a ticket.
 - **Decisions.** A feature's decisions live in a `decisions.md` beside its feature docs, one entry
   per decision in the [decisions entry format](/documentation/standards/templates/decisions_entry.md):
@@ -406,10 +401,10 @@ a `tests`, `generated`, `Generated` or dot-folder; the repository root keeps its
   There is no separate decision-record tree. A local choice is explained by a comment in the code
   it concerns; a cross-cutting rule goes into a document under `documentation/standards/`.
 - **Specs and plans.** A ticket's spec is `documentation/tickets/specs/t<id>_<topic>.md` and its
-  plan `documentation/tickets/plans/t-<id>_plan.md`; both folders are flat, and ticketboard
-  reads them. A spec is live while its ticket is `idea`, `queued` or `ready`, and frozen once the
-  ticket ships or is cancelled, and the knowledge that outlasts the ticket then moves into the
-  feature doc. The ticket templates live in `.ai/tickets/`.
+  plan `documentation/tickets/plans/t-<id>_plan.md`; both folders are flat, and the central
+  ticket manager holds each ticket's spec and plan for `ttm --project reforger brief`. A spec is
+  live while its ticket is `idea`, `queued` or `ready`, and frozen once the ticket ships or is
+  cancelled, and the knowledge that outlasts the ticket then moves into the feature doc.
 - **Frozen and archived.** A frozen record (a closed ticket's spec or plan) and an archived
   document (history under `documentation/archive/<topic>/`) are never reworded; only their
   links change. `link-check` judges only the links in both trees, and the size guidance does not

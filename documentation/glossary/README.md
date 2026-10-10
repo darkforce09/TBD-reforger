@@ -108,7 +108,6 @@ across the repository.
 - [Stitch visual reference](/documentation/glossary/n_to_z.md#stitch-visual-reference)
 - [synthetic load account](/documentation/glossary/n_to_z.md#synthetic-load-account)
 - [ticket](/documentation/glossary/n_to_z.md#ticket)
-- [ticketboard](/documentation/glossary/n_to_z.md#ticketboard)
 - [time fuze](/documentation/glossary/n_to_z.md#time-fuze)
 - [wave](/documentation/glossary/n_to_z.md#wave)
 - [Workbench](/documentation/glossary/n_to_z.md#workbench)
@@ -122,7 +121,8 @@ across the repository.
 - [Website API](/crates/api/api_server/README.md) — the API server crate and its binaries.
 - [Game server host agent](/crates/fleet/game_server_host_agent/README.md) — the game server host
   agent and RCON.
-- [Ticketboard](/tools/tickets/ticketboard_desktop/README.md) — the ticket viewer.
+- [Ticket manager client](/tools/foundation/ticket_manager_client/README.md) — the tools' way to
+  the central ticket manager's tickets and waves.
 
 ## Boundaries
 

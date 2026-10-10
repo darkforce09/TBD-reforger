@@ -168,7 +168,7 @@ and the rest) are those of the [coding standards](/documentation/standards/codin
 | schema validation (TEST-3, ENF-4) | `cargo xtask ci schema-validate` | in `ci-local-schema` | `schema` | wave |
 | map goldens: map-object golden, glyph atlas, height labels (need the LFS elevation raster) | `cargo xtask ci schema-map-goldens` | no | no | no |
 | registry aliases | `cargo xtask verify object-registry-aliases` | no | no | no |
-| ticket registry | `cargo xtask ticket check --strict` | no | no | no; `cargo xtask platform preflight` checks the registry |
+| tickets in the central ticket manager | `ttm --project reforger check --strict` | no | no | no; `cargo xtask platform preflight` runs `ttm check` |
 | mod boot verdict self-test | `cargo xtask mod world-boot --selftest` | no | no | no |
 | mod compile and world boot | `cargo xtask mod compile`, `cargo xtask mod world-boot` | no | `mod-gates.yml`, nightly on a self-hosted runner with the dedicated server | no |
 | editor smokes | `cargo xtask mk leptos-gates` | no | `editor-gates.yml`, nightly and on demand | no |

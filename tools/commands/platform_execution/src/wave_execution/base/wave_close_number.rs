@@ -1,21 +1,21 @@
 //! The wave-close marker readers and the three base oracles.
 //!
 //! **Role:** reads the wave number a marker commit claims and whether a later commit disavows it,
-//! finds the previous wave close, reads the wave's tickets and their shipped state at chosen
-//! revisions, and runs the oracles: the marker ledger (`wave_close_is_newest_wave`), the ticket
+//! finds the previous wave close, asks the ticket manager for the wave's membership and its
+//! members' statuses at the marker's commit time, and runs the oracles: the marker ledger (`wave_close_is_newest_wave`), the ticket
 //! ledger (`wave_close_ledger_says`) and the slice span (`slice_span_check`).
 //!
 //! **Position:** called by the sibling `demand_base_confirmation.rs` and by `gate::cmd_gate`
-//! through `prev_wave_close`; the marker pattern comes from [`ticket_wave_lock::history`].
+//! through `prev_wave_close`; the marker pattern comes from the sibling `marker_ledger.rs`.
 //!
-//! **Signals & state:** none held; reads git history and revision-addressed blobs.
+//! **Signals & state:** none held; reads git history and `ttm wave history`.
 //!
 //! **Invariants:** an oracle answers `0` (no objection) or `2` (contradicted), and the ticket
 //! ledger also `1` (cannot speak), which the caller escalates to a confirmation demand, never a
 //! pass; a boundary must claim a wave number one above the newest other marker reachable from HEAD,
-//! no lower and no higher; wave membership is read at the boundary's parent, which the commit under
-//! test cannot have written, and completion at the boundary is used only to contradict; one `git
-//! log` reads every subject in a range rather than one fork per commit.
+//! no lower and no higher; the ticket ledger is read from the ticket manager, which the commit under
+//! test cannot have written, and completion is used only to contradict; one `git log` reads every
+//! subject in a range rather than one fork per commit.
 
 use super::*;
 
@@ -101,78 +101,6 @@ pub(crate) fn prev_wave_close() -> Option<String> {
         return Some(sha.to_string());
     }
     None
-}
-
-/// Tickets the plan assigns to a wave AS OF A REVISION.
-///
-/// The plan at a revision is `.ai/tickets/wave.lock` — read as a blob and parsed as
-/// TOML. Every boundary BEFORE the cutover has no lock blob there, and refusing to read those
-/// revisions would demote every historical wave close from "corroborated" to "demand operator
-/// confirmation" — so an absent or unparseable lock blob falls back to the historical TSV
-/// readers in [`super::super::archived_wave_plans`], the one module allowed to name the dead files. History is
-/// immutable and TSV-shaped; a reader of history may name that shape.
-///
-/// Takes a rev because the checkout is not evidence. This has exactly one caller — oracle 2
-/// — and that caller must not be able to read a plan row the commit it is grading just wrote, so
-/// there is deliberately NO checkout-reading variant of this function to reach for by mistake.
-///
-/// A path `git show` cannot resolve yields no rows, which this check reports as silence and the
-/// caller escalates. Fail-closed.
-pub(super) fn wave_plan_tickets_at(ctx: &Ctx, rev: &str, n: i64) -> Vec<String> {
-    let blob = git_stdout(&["show", &format!("{rev}:{}", ctx.plan)]).unwrap_or_default();
-    if !blob.is_empty()
-        && let Ok(lock) = ticket_wave_lock::parse(&blob)
-    {
-        if let Ok(w) = u32::try_from(n) {
-            let open = lock.tickets_in_wave(w);
-            if !open.is_empty() {
-                return open.into_iter().map(String::from).collect();
-            }
-            // A CLOSED WAVE LIVES IN `[[emptied]]`, AND THAT IS STILL THE PLAN
-            // SPEAKING. The open-wave list is the only place this used to look, so a wave
-            // that emptied correctly — every ticket shipped, the repack freezing its set as a
-            // pending entry — had NO rows here and oracle 2 reported silence. Every gate then
-            // demanded `TBD_GATE_BASE_CONFIRM`, which is exactly the "give the ledger
-            // something to say" the refusal asks for, refused about a ledger that WAS saying
-            // it. Reading the pending entry can only ever strengthen the check: silence
-            // becomes a real ticket list, which the completion test below then contradicts or
-            // corroborates.
-            return lock
-                .emptied
-                .iter()
-                .find(|e| e.n == w)
-                .map(|e| e.tickets.iter().map(ToString::to_string).collect())
-                .unwrap_or_default();
-        }
-        return Vec::new();
-    }
-    super::super::archived_wave_plans::tickets_at(rev, n)
-}
-
-/// Of these tickets, which does the registry AS OF A REVISION not call shipped (or cancelled)?
-///
-/// `None` when the registry could not be read or parsed at that revision (the bash's rc 3).
-///
-/// One reader for the whole list rather than `is_shipped`'s one-per-ticket: the blob has to be
-/// materialised anyway, and a cannot-read must be distinguishable from a clean list here.
-/// `is_shipped` answers "not shipped" for a registry it cannot read, which is the right answer for
-/// a checkout and the wrong one for this caller — it would turn an unreadable blob into a
-/// CONTRADICTION and hard-refuse the gate over a file it never actually examined.
-pub(super) fn wave_ledger_unshipped_at(ctx: &Ctx, rev: &str, tickets: &[String]) -> Option<String> {
-    let _ = ctx;
-    let repo = std::path::Path::new(".");
-    let by = ticket_registry::registry::ticket_status_history::status_map_at_rev(repo, rev)?;
-    let open: Vec<&str> = tickets
-        .iter()
-        .filter(|t| {
-            !matches!(
-                by.get(t.as_str()).map(String::as_str),
-                Some("shipped") | Some("cancelled")
-            )
-        })
-        .map(String::as_str)
-        .collect();
-    Some(open.join(" "))
 }
 
 /// ORACLE 1. `0` = this marker claims the highest wave number reachable, by exactly one;
@@ -282,111 +210,107 @@ pub(crate) fn wave_close_is_newest_wave(sha: &str) -> u8 {
 /// ORACLE 2. `0` = ledger corroborates; `1` = ledger cannot speak; `2` = ledger contradicts.
 /// Prints its own verdict either way — a check nobody sees the result of is not a check.
 ///
-/// Read the block above for why. In one line: MEMBERSHIP comes from the
-/// boundary's PARENT, COMPLETION from the boundary, and only the former can corroborate.
+/// Read the block in `base.rs` for why. In one line: the ticket manager's record of wave `n` and
+/// each member's status at the marker's commit time, from its event log; completion is used to
+/// contradict, and anything unrecorded is silence.
 pub(crate) fn wave_close_ledger_says(ctx: &Ctx, sha: &str) -> u8 {
     let Some(n) = wave_close_number(sha) else {
         return 1;
     };
-    // No parent = no revision before this commit to ask, so there is nothing independent to ask it.
-    let Some(par) = git_stdout(&["rev-parse", "--verify", "--quiet", &format!("{sha}^1")])
-        .filter(|s| !s.is_empty())
-    else {
+    let Ok(label) = u32::try_from(n) else {
+        return 1;
+    };
+    // `%cI`: the committer date, strict ISO 8601 — the instant the marker entered history.
+    let Some(at) = git_stdout(&["log", "-1", "--format=%cI", sha]).filter(|s| !s.is_empty()) else {
         wprintln!(
-            "        ticket ledger: {} has no parent commit, so there is no",
+            "        ticket ledger: cannot read the commit time of {} — cannot corroborate.",
             short(sha)
-        );
-        wprintln!(
-            "                       revision preceding it to read {} from — cannot corroborate.",
-            ctx.plan
         );
         return 1;
     };
-    let tickets = wave_plan_tickets_at(ctx, &par, n);
-    // `known="$(printf '%s\n' $tickets | wc -l)"` — word-split then line count, so an empty list is
-    // 0 via the guard above it.
-    let known = tickets.len();
-
-    if known == 0 {
-        // THE MEMBERSHIP CASE, and it deserves its own message rather than a generic silence: the plan
-        // has rows for wave $n at the boundary but NOT at its parent, which means this very commit
-        // filed them. That is self-corroboration, and it is what the forged wave-78 marker did.
-        if !wave_plan_tickets_at(ctx, sha, n).is_empty() {
+    let history = match ctx.ticket_manager.wave_history(label, Some(&at)) {
+        Ok(history) => history,
+        Err(e) => {
             wprintln!(
-                "        ticket ledger: {} ADDED wave {n}'s own rows to {}",
-                short(sha),
-                ctx.plan
+                "        ticket ledger: {} could not answer for wave {n}: {}",
+                ctx.registry,
+                crate::error::error_chain_text(&e)
             );
             wprintln!(
-                "                       in the same commit that claims wave {n} CLOSED. A commit cannot"
+                "                       — cannot corroborate. (Cannot-read is cannot-speak: reporting a"
             );
             wprintln!(
-                "                       corroborate itself, so this is silence, not agreement — the rows"
+                "                       contradiction over a ledger nobody read is the defect this whole"
             );
-            wprintln!(
-                "                       are not there at its parent {}.",
-                short(&par)
-            );
+            wprintln!("                       page exists to stop.)");
             return 1;
         }
+    };
+    if history.members.is_empty() {
         wprintln!(
-            "        ticket ledger: {} has NO rows for wave {n} at {} —",
-            ctx.plan,
-            short(&par)
+            "        ticket ledger: {} records no members for wave {n} (state {}) —",
+            ctx.registry,
+            history.state
         );
         wprintln!(
-            "                       it cannot corroborate this boundary. (The plan is only maintained"
+            "                       it cannot corroborate this boundary. This is silence, not agreement."
         );
-        wprintln!("                       for some waves; this is silence, not agreement.)");
         return 1;
     }
-
-    // COMPLETION, read at the boundary, because that is the only place it is ever true:
-    // `wave --close` is what flips these tickets to shipped. Used to CONTRADICT only.
-    let Some(open) = wave_ledger_unshipped_at(ctx, sha, &tickets) else {
-        wprintln!(
-            "        ticket ledger: {} could not be read at {}",
-            ctx.registry,
-            short(sha)
-        );
-        wprintln!(
-            "                       — cannot corroborate. (Cannot-read is cannot-speak: reporting a"
-        );
-        wprintln!(
-            "                       contradiction over a file nobody parsed is the defect this whole"
-        );
-        wprintln!("                       page exists to stop.)");
-        return 1;
-    };
+    let open: Vec<String> = history
+        .members
+        .iter()
+        .filter_map(|member| match member.status_as_of.as_deref() {
+            Some(status) if !ticket_manager_client::is_complete_status(status) => {
+                Some(format!("{} ({status})", member.slug))
+            }
+            _ => None,
+        })
+        .collect();
     if !open.is_empty() {
         wprintln!(
             "gate: the derived wave base is CONTRADICTED by the ticket ledger — refusing to run."
         );
         wprintln!(
-            "        {} says wave {n} CLOSED, and {} at its parent",
+            "        {} says wave {n} CLOSED, and {} records wave {n} member(s)",
             short(sha),
-            ctx.plan
-        );
-        wprintln!(
-            "        {} assigns wave {n} ticket(s) that {} does not",
-            short(&par),
             ctx.registry
         );
-        wprintln!("        call shipped at that same commit: {open}");
+        wprintln!(
+            "        that were not shipped at that commit's time ({at}): {}",
+            open.join(" ")
+        );
         wprintln!(
             "        A wave with open tickets did not close, so this commit is not a wave boundary."
         );
         return 2;
     }
+    let unrecorded: Vec<&str> = history
+        .members
+        .iter()
+        .filter(|member| member.status_as_of.is_none())
+        .map(|member| member.slug.as_str())
+        .collect();
+    if !unrecorded.is_empty() {
+        wprintln!(
+            "        ticket ledger: wave {n}'s member(s) {} have no recorded status at {at} —",
+            unrecorded.join(" ")
+        );
+        wprintln!(
+            "                       their history does not reach the marker, so this is silence, not"
+        );
+        wprintln!("                       agreement.");
+        return 1;
+    }
     wprintln!(
-        "        ticket ledger: wave {n} has {known} ticket(s) in {} at {}",
-        ctx.plan,
-        short(&par)
+        "        ticket ledger: wave {n} has {} member(s) in {}, all shipped",
+        history.members.len(),
+        ctx.registry
     );
     wprintln!(
-        "                       (the boundary's parent, which it cannot have written), all shipped"
+        "                       at {} ({at}) by the ticket manager's event log — corroborated.",
+        short(sha)
     );
-    wprintln!("                       at {} — corroborated.", short(sha));
     0
 }
 

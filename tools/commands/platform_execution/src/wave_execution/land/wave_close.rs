@@ -1,14 +1,16 @@
 //! `wave --close`: validate a finished wave, then write its marker.
 //!
-//! **Role:** `cmd_wave_close` selects the close target (the oldest pending `[[emptied]]` entry of
-//! the lock), validates it (every ticket shipped, the full wave gate green on merged main, a
-//! verifier recorded at or after the last landing), and runs the close ceremony; parses `--summary`
-//! and `--dry-run`, sanitises the summary and builds the marker subject.
+//! **Role:** `cmd_wave_close` selects the close target (the oldest pending-close wave of the
+//! ticket manager's wave plan), validates it (every ticket shipped, the full wave gate green on
+//! merged main, a verifier recorded at or after the last landing), and runs the close ceremony;
+//! parses `--summary`, `--tickets` and `--dry-run`, sanitises the summary and builds the marker
+//! subject.
 //!
 //! **Position:** re-exported by the parent `land` module; the ceremony itself is the sibling
 //! `close_ceremony.rs`, and the marker it writes is what `base` derives the next gate's base from.
 //!
-//! **Signals & state:** none held; reads the lock, the registry and git, and runs the wave gate.
+//! **Signals & state:** none held; reads the wave plan and ticket statuses from the ticket
+//! manager and git, and runs the wave gate.
 //!
 //! **Invariants:** the target is the oldest pending entry, never `current_wave`, so a pending queue
 //! drains in ledger order; validations run against the entry's frozen ticket set (or the set
@@ -25,12 +27,12 @@ use super::*;
 /// than trusted.
 ///
 /// After the validations pass, this no longer PRINTS a marker for a human to type — it
-/// runs [`close_ceremony()`], which writes the marker commit itself, repacks the lock and commits
-/// the refresh. `--summary <text>` feeds the subject; `--dry-run` prints the exact would-be
+/// runs [`close_ceremony()`], which writes the marker commit itself and records the close in the
+/// ticket manager (`ttm wave close`). `--summary <text>` feeds the subject; `--dry-run` prints the exact would-be
 /// subject and writes nothing. There is no mode that prints without committing except
 /// `--dry-run`.
 ///
-/// The TARGET is the oldest pending `[[emptied]]` entry of the lock ([`close_target`]),
+/// The TARGET is the oldest pending-close wave of the plan ([`close_target`]),
 /// not `current_wave` — which names the first wave still holding UNSHIPPED work and therefore
 /// could never name a closable one. Every validation below runs against the entry's FROZEN
 /// ticket set; the ceremony itself is unchanged.
@@ -46,51 +48,52 @@ pub(crate) fn cmd_wave_close(ctx: &Ctx, args: &[String]) -> u8 {
         }
     };
 
-    let lock = lock_or_refuse!(ledger::load_lock(ctx));
+    let plan = lock_or_refuse!(ledger::load_plan(ctx));
     // `--tickets`: close a set the LOCK cannot name.
     //
-    // A pending `[[emptied]]` entry only forms when one repack sees a whole wave landed, and
-    // `ticket ship` repacks after every id. So a wave shipped one ticket at a time dissolves into
+    // A pending-close entry only forms when one repack sees a whole wave landed, and
+    // `ttm ship` repacks after every id. So a wave shipped one ticket at a time dissolves into
     // wave 0 an id at a time and the entry never forms (or forms holding the last id alone) —
     // measured 2026-09-05 on wave 248's three ids, which left no entry at all
     // while a one-ticket remnant from an earlier wave sat pending. The gate, meanwhile, gates the
-    // whole span since the previous marker, so the wave IS verified; only the lock's bookkeeping
+    // whole span since the previous marker, so the wave IS verified; only the plan's bookkeeping
     // lost the membership. `--tickets` lets the command center name that verified span, and every
     // id is still validated shipped below — the flag vouches for MEMBERSHIP, never for status.
     //
-    // The label is never taken from the caller: it stays the lock's own next label, which the
-    // repack seats on the marker ledger (`wave_lock::ledger_floor`), so the ceremony's oracle can
-    // accept it. `--no-repack` batch shipping (see `cmds::cmd_ship`) is the fix that stops the
-    // entries going missing in the first place; this is the repair for waves that already did.
+    // The label is never taken from the caller: it stays the plan's own next label, which the
+    // repack seats on the marker ledger (the plan's `ledger_floor`), so the ceremony's oracle can
+    // accept it. `ttm ship --no-repack` batch shipping is the fix that stops the entries going
+    // missing in the first place; this is the repair for waves that already did.
     let target = match &explicit {
         Some(ids) => {
-            let n = lock
+            let n = plan
                 .emptied
                 .first()
                 .map(|e| e.n)
-                .unwrap_or(lock.wave_base.saturating_add(1));
+                .unwrap_or(plan.wave_base.saturating_add(1));
             // THE LABEL MUST NOT BELONG TO A WAVE THAT IS STILL OPEN.
             //
             // Measured 2026-09-06 and it cost a marker: wave 236's three tickets shipped one at a
-            // time, so no `[[emptied]]` entry formed, the repack handed the freed label 236 to the
+            // time, so no pending-close entry formed, the repack handed the freed label 236 to the
             // NEXT batch, and `--close --tickets` then wrote `wave 236 CLOSED` naming the tickets
-            // that had actually been gated. Oracle 2 reads the lock at the marker's PARENT, saw
-            // wave 236 assigned to three unshipped tickets, and every later gate refused with
+            // that had actually been gated. Oracle 2 found wave 236 assigned to three unshipped
+            // tickets, and every later gate refused with
             // "A wave with open tickets did not close, so this commit is not a wave boundary".
             // The marker had to be disavowed. `--tickets` vouches for MEMBERSHIP, never for a
             // label, so the collision is refused here rather than discovered a wave later.
-            if let Some(open) = lock.waves.iter().find(|w| w.n == n && w.n > 0) {
+            if let Some(open) = plan.waves.iter().find(|w| w.n == n && w.n > 0) {
                 wprintln!(
-                    "REFUSED: wave {n} is still an OPEN wave in the lock, holding {:?}.",
+                    "REFUSED: wave {n} is still an OPEN wave in the plan, holding {:?}.",
                     open.tickets
+                        .iter()
+                        .map(|row| row.slug.as_str())
+                        .collect::<Vec<_>>()
                 );
                 wprintln!(
                     "         Closing that label would write a marker whose own plan calls it open,"
                 );
                 wprintln!("         and oracle 2 refuses every later gate over it. Ship the wave");
-                wprintln!(
-                    "         through `ticket ship --no-repack` + one repack so it freezes a"
-                );
+                wprintln!("         through `ttm ship --no-repack` + one repack so it freezes a");
                 wprintln!("         pending entry with its own reserved label, then close that.");
                 // The line above is the PREVENTION, and it is useless to the operator
                 // standing in front of a wave that already dissolved: by then no amount of
@@ -98,10 +101,9 @@ pub(crate) fn cmd_wave_close(ctx: &Ctx, args: &[String]) -> u8 {
                 // ago. The wave-241 verifier hit exactly that and had to be told the repair by
                 // hand. Name it here, with the ids already in hand.
                 wprintln!("         A wave that ALREADY dissolved is repaired instead:");
-                wprintln!(
-                    "           cargo xtask wave repack --reserve {:?}",
-                    ids.join(" ")
-                );
+                let mut repair = vec!["wave", "repack", "--reserve"];
+                repair.extend(ids.iter().map(String::as_str));
+                wprintln!("           {}", ctx.ticket_manager.display_command(&repair));
                 wprintln!(
                     "         freezes exactly that set at this label, renumbers the open waves"
                 );
@@ -112,12 +114,12 @@ pub(crate) fn cmd_wave_close(ctx: &Ctx, args: &[String]) -> u8 {
                 "close target: wave {n} — operator-vouched set of {} ticket(s) (--tickets)",
                 ids.len()
             );
-            for e in lock.emptied.iter().filter(|e| e.n <= n) {
+            for e in plan.emptied.iter().filter(|e| e.n <= n) {
                 let unnamed: Vec<&str> = e
                     .tickets
                     .iter()
-                    .map(ticket_model::TicketId::as_str)
-                    .filter(|t| !ids.iter().any(|id| id == t))
+                    .filter(|row| !ids.iter().any(|id| row.answers_to(id)))
+                    .map(|row| row.slug.as_str())
                     .collect();
                 if !unnamed.is_empty() {
                     wprintln!(
@@ -133,17 +135,14 @@ pub(crate) fn cmd_wave_close(ctx: &Ctx, args: &[String]) -> u8 {
             }
             Some((n.to_string(), ids.clone()))
         }
-        None => close_target(&lock),
+        None => close_target(&plan),
     };
     let Some((w, wave_ids)) = target else {
-        return 1; // refusal printed by close_target; nothing was read beyond the lock
+        return 1; // refusal printed by close_target; nothing was read beyond the plan
     };
     let open: Vec<String> = wave_ids
         .iter()
-        .filter(|t| {
-            !ctx.registry_view
-                .is_shipped(&ticket_model::TicketId::new(t.as_str()))
-        })
+        .filter(|t| !ledger::is_complete(ctx, t))
         .cloned()
         .collect();
     if !open.is_empty() {
@@ -213,7 +212,14 @@ pub(crate) fn cmd_wave_close(ctx: &Ctx, args: &[String]) -> u8 {
     // Every validation above passed — the ceremony replaces the print. The old behaviour
     // ended here with `WAVE {w} CLOSED` on stdout and a human typing the marker; the ledger
     // shows what that produced (231–235 prefixed non-markers, 218/233 disavowed).
-    close_ceremony(&ctx.root, &w, &wave_ids, summary.as_deref(), dry_run)
+    close_ceremony(
+        ctx,
+        &w,
+        &wave_ids,
+        explicit.is_some(),
+        summary.as_deref(),
+        dry_run,
+    )
 }
 
 pub(super) fn parse_close_args(args: &[String]) -> Result<CloseArgs, String> {
@@ -261,24 +267,26 @@ pub(super) fn parse_close_args(args: &[String]) -> Result<CloseArgs, String> {
     Ok((summary, dry_run, tickets))
 }
 
-/// The close TARGET: the oldest pending `[[emptied]]` entry of the committed lock,
-/// as `(label, frozen ticket set)`.
+/// The close TARGET: the oldest pending-close wave of the ticket manager's plan, as
+/// `(label, frozen ticket set)`.
 ///
 /// `current_wave` (the dispatch pointer, untouched) names the first open wave holding
 /// UNSHIPPED work — a wave that by definition can never pass the all-shipped validation, which
 /// is why close refused on every tree since the cutover: the moment a wave's last
 /// ticket shipped, the ship-hook repack dissolved its label into wave 0 and the pointer moved
-/// on. The repack now freezes that dissolving wave as a pending `[[emptied]]` entry (operator
+/// on. The repack now freezes that dissolving wave as a pending-close entry (operator
 /// decision 2026-08-16), and close targets the OLDEST one: the marker-ledger oracle accepts
 /// only base+1, so a pending queue drains in ledger order — and with one entry pending (the
 /// steady state) the oldest IS the most recently emptied wave.
 ///
-/// Entries are validated ascending by `wave check`, so `.first()` is the oldest. Nothing
+/// The plan lists pending entries oldest first, so `.first()` is the oldest. Nothing
 /// pending prints the honest refusal and returns `None` — the caller's rc-1 path, with zero
-/// writes by construction: this reads the lock struct and nothing else. Factored off
+/// writes by construction: this reads the plan value and nothing else. Factored off
 /// [`cmd_wave_close`] for the same testability cut as [`close_ceremony()`].
-pub(super) fn close_target(lock: &ticket_wave_lock::WaveLock) -> Option<(String, Vec<String>)> {
-    match lock.emptied.first() {
+pub(super) fn close_target(
+    plan: &ticket_manager_client::WavePlan,
+) -> Option<(String, Vec<String>)> {
+    match plan.emptied.first() {
         Some(e) => {
             wprintln!(
                 "close target: wave {} — emptied ({} ticket(s), set frozen at repack)",
@@ -287,7 +295,7 @@ pub(super) fn close_target(lock: &ticket_wave_lock::WaveLock) -> Option<(String,
             );
             Some((
                 e.n.to_string(),
-                e.tickets.iter().map(ToString::to_string).collect(),
+                e.tickets.iter().map(|row| row.slug.to_string()).collect(),
             ))
         }
         None => {

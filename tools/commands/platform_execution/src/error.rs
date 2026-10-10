@@ -1,6 +1,7 @@
 //! Why a platform command could not run.
 //!
-//! **Role:** the crate's [`Error`] and its [`Result`] alias.
+//! **Role:** the crate's [`Error`] and its [`Result`] alias, and `error_chain_text`, the one-line
+//! rendering of an error and its sources that the wave driver prints.
 //! **Position:** returned by [`crate::run`], [`crate::slice_execution::run_slice`] and
 //! [`crate::slice_worktree::run_at`]; the xtask binary prints it with `xtask: {error:#}` and exits
 //! with code 1. A gate's or a guard's verdict is its exit code, not an error: an error means the
@@ -54,24 +55,18 @@ pub enum Error {
     /// The checkout root could not be found.
     #[error(transparent)]
     RepositoryRoot(#[from] repository_root::Error),
-    /// The ticket registry could not be read.
+    /// The central ticket manager could not answer, or refused.
     #[error(transparent)]
-    TicketRegistry(#[from] ticket_registry::Error),
-    /// A run receipt could not be written.
-    #[error(transparent)]
-    TicketMetrics(#[from] ticket_metrics::Error),
-    /// A run reported no token usage, so no receipt was written.
+    TicketManager(#[from] ticket_manager_client::Error),
+    /// A run reported no token usage, so no receipt was recorded.
     #[error("{context}")]
     NoTokenUsage {
         /// The refusal naming the slice.
         context: String,
-        /// Why the agent's output carries no usage object.
+        /// Why the agent's output carries no usable usage object.
         #[source]
-        source: ticket_metrics::Error,
+        source: crate::slice_execution::token_usage::Error,
     },
-    /// The committed wave lock could not be read.
-    #[error(transparent)]
-    TicketWaveLock(#[from] ticket_wave_lock::Error),
 }
 
 impl Error {
@@ -87,6 +82,19 @@ impl Error {
             source,
         }
     }
+}
+
+/// An error and every source under it, joined as `outer: inner: …`, for the refusal lines the
+/// wave driver prints.
+pub(crate) fn error_chain_text(error: &(dyn std::error::Error + 'static)) -> String {
+    let mut text = error.to_string();
+    let mut cause = error.source();
+    while let Some(next) = cause {
+        text.push_str(": ");
+        text.push_str(&next.to_string());
+        cause = next.source();
+    }
+    text
 }
 
 /// The result of a fallible call of this crate.

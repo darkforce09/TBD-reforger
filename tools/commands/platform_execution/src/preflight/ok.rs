@@ -2,8 +2,8 @@
 //!
 //! **Role:** prints the three result shapes (`ok`, `nope` for a block, `soft` for a warning) and
 //! answers each machine question a check asks: container and host bridge detection, free disk,
-//! available memory and swap, git state, process counts, TCP and HTTP liveness, the wave lock's
-//! open-ticket count, stray worktree build folders, the run target's binaries and stamp, worktree
+//! available memory and swap, git state, process counts, TCP and HTTP liveness, whether the
+//! ticket manager's wave base agrees with the marker ledger, stray worktree build folders, the run target's binaries and stamp, worktree
 //! age and the API process's start time.
 //!
 //! **Position:** called by the sibling `execution.rs`; the run stamp format comes from
@@ -209,18 +209,22 @@ pub(super) fn curl_http_code(url: &str) -> String {
     }
 }
 
-/// Open-ticket count straight from the committed lock (waves 1+); `None` when the lock is
-/// missing or unreadable — the caller BLOCKs on that via `wave check` anyway.
-pub(super) fn wave_lock_open_count(root: &Path) -> Option<(usize, usize)> {
-    let lock = ticket_wave_lock::load(root).ok()?;
-    let open: usize = lock
-        .waves
-        .iter()
-        .filter(|w| w.n > 0)
-        .map(|w| w.tickets.len())
-        .sum();
-    let waves = lock.waves.iter().filter(|w| w.n > 0).count();
-    Some((open, waves))
+/// Whether the ticket manager's wave base names the same wave as the newest standing
+/// `wave N CLOSED` marker in git; `Err` carries the refusal line.
+pub(super) fn wave_ledgers_agree(root: &Path, plan: &WavePlan) -> Result<(), String> {
+    let git_base = crate::wave_execution::base::newest_close_base(root)?;
+    let stored = i64::from(plan.wave_base);
+    match git_base {
+        Some(base) if base == stored => Ok(()),
+        Some(base) => Err(format!(
+            "the ticket manager's wave base is {stored} but the newest wave-close marker in git \
+             claims {base} — record the missing close or repack"
+        )),
+        None if stored == 0 => Ok(()),
+        None => Err(format!(
+            "the ticket manager's wave base is {stored} but git holds no wave-close marker"
+        )),
+    }
 }
 
 pub(super) fn stray_worktree_targets(root: &Path) -> u64 {

@@ -78,8 +78,7 @@ boundaries on both sides, escape letters as boundaries, URLs other than `file:` 
 `mod.rs` merges both edit lists, a relative edit outranking a root edit over the same bytes, and
 keeps only the edits and unresolved items inside the spans the file's treatment opens (link
 destinations in a frozen record; those and the tree part of the Contents block's lines, found by
-`contents_block.rs`, in a frozen area's README index; the `spec`, `plan` and `owns` values of a
-closed ticket; nothing in this crate's own test sources, whose literals and comments are fixture
+`contents_block.rs`, in a frozen area's README index; nothing in this crate's own test sources, whose literals and comments are fixture
 text).
 
 ## Boundaries

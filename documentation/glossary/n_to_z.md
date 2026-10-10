@@ -109,7 +109,7 @@ See: [fleet command](/documentation/glossary/a_to_f.md#fleet-command), [console 
 
 Most often the item registry: one modpack's flat catalog of the engine items the
 [arsenal](/documentation/glossary/a_to_f.md#arsenal) offers, with a graph of what fits in or on what, exported from Workbench and
-imported into Postgres. Other registries are named in full (ticket, server, fleet scenario).
+imported into Postgres. Other registries are named in full (server, fleet scenario).
 
 In code: `RegistryItem` and `RegistryCompatEdge` in `crates/api/api_missions/src/models/registry.rs`; `contracts/catalogs/`.
 
@@ -277,23 +277,15 @@ See: [load workload](/documentation/glossary/g_to_m.md#load-workload), [staging 
 
 ### ticket
 
-One unit of planned work, stored as `.ai/tickets/T-<id>.toml` for parents and dotted children
-alike, with a status of `idea`, `queued`, `ready`, `running`, `review`, `shipped`, `deferred` or
-`cancelled`. Every ticket operation is a `cargo xtask ticket` command.
+One unit of planned work, held in the central ticket manager under the project `reforger` and
+keyed by a readable slug (`slot-identity.flatten-emit`); a ticket imported with a legacy number
+(`T-674.1`) still resolves by it. A ticket is a `program` with child slices or `work`, and its
+status runs from `idea` to `shipped` or `cancelled`. Every ticket operation is a
+`ttm --project reforger` command; the legacy files in `.ai/tickets/` are data awaiting import.
 
-In code: `load_registry` in `tools/tickets/ticket_registry/src/registry/mod.rs`; `StatusName` in `tools/tickets/ticket_model/src/model/status.rs`.
+In code: `TicketDocument` in `tools/foundation/ticket_manager_client/src/ticket_documents.rs`; `TicketSlug` and `LegacyTicketNumber` in `tools/foundation/ticket_manager_client/src/ticket_references.rs`.
 
-See: [wave](#wave), [ticketboard](#ticketboard), [Ticket registry](/.ai/tickets/README.md).
-
-### ticketboard
-
-The native desktop viewer of the ticket registry, built on egui: parent and child tickets, wave
-lanes, the program tree, run receipts and estimates, with specs and documents beside them. Every
-change it makes runs a `cargo xtask ticket` command.
-
-In code: the package and binary `ticketboard_desktop` in `tools/tickets/ticketboard_desktop/` (`cargo run -p ticketboard_desktop`), which reads the registry through `tools/tickets/ticket_model/`.
-
-See: [Ticketboard](/tools/tickets/ticketboard_desktop/README.md).
+See: [wave](#wave), [slice](#slice), [Ticket manager client](/tools/foundation/ticket_manager_client/README.md).
 
 ### time fuze
 
@@ -310,11 +302,13 @@ See: [charge ring](/documentation/glossary/a_to_f.md#charge-ring), [Game ballist
 
 ### wave
 
-A numbered group of [tickets](#ticket) in `.ai/tickets/wave.lock`, which `cargo xtask wave repack`
-alone writes. Tickets run in parallel only when the files they own do not overlap;
-`cargo xtask platform wave` and `cargo xtask mod wave` drive a wave for the platform and the mod.
+A numbered group of [tickets](#ticket) in the wave plan the central ticket manager holds
+(`ttm --project reforger wave show`), which `ttm --project reforger wave repack` alone rewrites.
+Tickets run in parallel only when the files they own do not overlap (`ttm --project reforger wave
+collisions`); `cargo xtask platform wave` and `cargo xtask mod wave` drive a wave for the platform
+and the mod, and a closed wave is recorded with `ttm --project reforger wave close`.
 
-In code: `tools/tickets/ticket_wave_lock/src/`; `tools/xtask/src/commands/wave/cli.rs`.
+In code: `WavePlan` and `WaveRow` in `tools/foundation/ticket_manager_client/src/wave_documents.rs`; `tools/commands/platform_execution/src/wave_execution/`; `tools/commands/mod_operations/src/wave_execution/`.
 
 See: [Factory waves](/documentation/runbooks/factory_waves/README.md).
 

@@ -9,7 +9,7 @@
 //! directory until it drops.
 //! **Invariants:** `cargo test` is multi-threaded and the working directory is process state, so
 //! every test that moves it holds this ONE lock; otherwise a concurrent `find_repository_root()`
-//! (the scratch checkouts carry `.ai/tickets/ROOT`, which is what that walk looks for) resolves
+//! (the scratch checkouts carry `.ai/ROOT`, which is what that walk looks for) resolves
 //! inside somebody's scratch tree, and a test fails an assertion about a checkout it was never
 //! meant to read. The mutex is not reentrant, and a poisoned lock is taken over because the
 //! panicked holder's guard restored its directory on drop.

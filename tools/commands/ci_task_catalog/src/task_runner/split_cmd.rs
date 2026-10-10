@@ -257,7 +257,7 @@ pub fn help() -> i32 {
         "cargo xtask db --help",
         database_operations::local_database::LANE_COMMANDS.join(" ")
     );
-    println!("\n`cargo xtask --help` lists the full CLI (ticket, mcp, mod, deploy, schema, …).");
+    println!("\n`cargo xtask --help` lists the full CLI (platform, mcp, mod, deploy, schema, …).");
     0
 }
 

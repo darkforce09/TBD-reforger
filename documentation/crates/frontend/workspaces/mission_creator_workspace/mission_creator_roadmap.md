@@ -5,29 +5,13 @@
 The planning view of the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator): what the
 editor ships today, area by area, the open work that changes it, grouped into tracks, the work
 deferred for now, and the questions no [ticket](/documentation/glossary/n_to_z.md#ticket) answers yet.
-Every status here is the ticket's `status` field in `.ai/tickets/`; the feature inventory and the
-code READMEs hold the detail.
+Every status here is the ticket's status in the central ticket manager (`ttm --project reforger
+show <ticket>`); the feature inventory and the code READMEs hold the detail.
 
 ## Recommended next work
 
-`cargo xtask ticket sync` writes the list between the two markers from the whole ticket registry,
-editor and platform tickets alike; `cargo xtask ticket check` fails when a marker is missing. The
-list is never edited by hand.
-
-<!-- ticket-sync:next:start -->
-### Recommended next work (auto-generated)
-
-- **T-940** — Website platform: events, telemetry, admin, content (queued)
-- **T-090** — Map visualization program (ready)
-- **T-935** — Map binary storage — hybrid rkyv + POD (queued)
-- **T-212** — Typed per-side objectives with attributes (ready)
-- **T-674** — T-216 follow-on: slot identity reaches the wire (queued)
-- **T-675** — Vehicle roster reaches game — T-076 compile half (queued)
-- **T-936** — Mission logic the audit found missing (queued)
-- **T-290** — Nine dead flatten fields mod never reads (ready)
-- **T-941** — Enfusion mod lifecycle: safestart, lobby, screens, HUD (queued)
-- **T-937** — Editor data layer: id arrays, undo, persist (queued)
-<!-- ticket-sync:next:end -->
+The central ticket manager orders the open work, editor and platform tickets alike:
+`ttm --project reforger next` prints the active tickets and the next ones to take.
 
 ## Where the Mission Creator stands
 

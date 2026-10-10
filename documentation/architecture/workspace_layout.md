@@ -24,15 +24,15 @@ TBD-reforger/
 ├── deploy/          the release Dockerfile, compose files, Caddy site (caddy/), deploy settings,
 │                    systemd units
 ├── tools/           the developer tools: xtask, developer_tools, the crates by category
-│                    (foundation/, tickets/, commands/, checks/, enfusion/, browser_testing/,
-│                    staging/, map_assets/; the ticketboard desktop viewer in tickets/), and the
-│                    pinned Enfusion MCP npm package
+│                    (foundation/, commands/, checks/, enfusion/, browser_testing/, staging/,
+│                    map_assets/), and the pinned Enfusion MCP npm package
 ├── mod/             the Enfusion mod suite: the addons tbd-framework/, tbd-export/ and tbd-emcp/
 │                    and the gitignored reference lanes (References/); no Rust crate
 ├── contracts/       JSON Schemas, rules, catalogs and fixtures of every shape that crosses a boundary
 ├── assets/          terrain datasets (Git LFS), the world-object glyph set, the storage specification
 ├── documentation/   every document: feature docs, runbooks, standards, glossary, tickets, archive
-├── .ai/             the ticket registry (tickets/) and agent artifacts of past waves
+├── .ai/             the checkout-root marker (ROOT), legacy ticket files awaiting import into the
+│                    central ticket manager (tickets/) and agent artifacts of past waves
 ├── .github/         the five GitHub Actions workflows
 ├── .cursor/         the Cursor agent rules
 ├── .claude/         the Claude Code project settings
@@ -48,12 +48,12 @@ folder are ignored.
 
 ## Workspace members
 
-One Cargo workspace (resolver 3) holds every Rust crate: 158 members, which are 115 crates under
+One Cargo workspace (resolver 3) holds every Rust crate: 153 members, which are 115 crates under
 `crates/` (111 library crates and four applications: the API server, the single-page app, the
-offline service worker and the game server host agent), 41 tool crates under `tools/<category>/`
-(the ticketboard desktop viewer among them) and the two tool binaries `tools/xtask` and
-`tools/developer_tools`. The crate-tier law judges the 156 crates and leaves out only the two
-binaries; no member depends on one of the five applications. Members inherit edition 2024 and
+offline service worker and the game server host agent), 36 tool crates under `tools/<category>/`
+and the two tool binaries `tools/xtask` and `tools/developer_tools`. The crate-tier law judges the
+151 crates and leaves out only the two binaries; no member depends on one of the four
+applications. Members inherit edition 2024 and
 rust-version 1.95 from `[workspace.package]`. The applications come first in the table.
 
 | Folder | Package | What it is |
@@ -62,7 +62,6 @@ rust-version 1.95 from `[workspace.package]`. The applications come first in the
 | [`crates/frontend/shell/frontend_application/`](/crates/frontend/shell/frontend_application/README.md) | `frontend_application` | the Leptos single-page app, compiled to WebAssembly and served by Trunk: the shell crate (entry point, route rendering, the platform frame in `shell/`, the stylesheet) the 22 crates of the lower frontend layers are assembled into |
 | [`crates/frontend/shell/offline_service_worker/`](/crates/frontend/shell/offline_service_worker/README.md) | `offline_service_worker` | the WebAssembly service worker behind offline packs, the app's peer in the shell layer |
 | [`crates/fleet/game_server_host_agent/`](/crates/fleet/game_server_host_agent/README.md) | `game_server_host_agent` | the game server host agent beside each game-server instance that carries out fleet commands |
-| [`tools/tickets/ticketboard_desktop/`](/tools/tickets/ticketboard_desktop/README.md) | `ticketboard_desktop` | the egui desktop viewer of the ticket registry; its headless models are `ticketboard_model` in `tools/tickets/` |
 | [`crates/foundation/http_url_guard/`](/crates/foundation/http_url_guard/README.md) | `http_url_guard` | the HTTP(S) URL check the API and the single-page app share |
 | [`crates/contracts/offline_cache_policy/`](/crates/contracts/offline_cache_policy/README.md) | `offline_cache_policy` | the offline cache names, request classes and fallback rules the service worker applies |
 | [`crates/foundation/newtype_ids/`](/crates/foundation/newtype_ids/README.md) | `newtype_ids` | macros declaring serde-transparent typed ids |
@@ -70,7 +69,7 @@ rust-version 1.95 from `[workspace.package]`. The applications come first in the
 | [`crates/foundation/deterministic_random/`](/crates/foundation/deterministic_random/README.md) | `deterministic_random` | the seeded SplitMix64 generator |
 | [`crates/foundation/content_digest/`](/crates/foundation/content_digest/README.md) | `content_digest` | SHA-256 and SHA-384 hex digests and framed hashing |
 | [`crates/foundation/browser_platform/`](/crates/foundation/browser_platform/README.md) | `browser_platform` | browser console macros and fetch helpers (wasm32 only) |
-| [`crates/foundation/repository_root/`](/crates/foundation/repository_root/README.md) | `repository_root` | the one checkout-root finder: the walk up to the `.ai/tickets/ROOT` marker the tools and the tests share |
+| [`crates/foundation/repository_root/`](/crates/foundation/repository_root/README.md) | `repository_root` | the one checkout-root finder: the walk up to the `.ai/ROOT` marker the tools and the tests share |
 | [`crates/foundation/orbat_slot_ids/`](/crates/foundation/orbat_slot_ids/README.md) | `orbat_slot_ids` | an ORBAT slot's two ids: `SlotUid`, the durable editor id, and `SlotId`, the derived wire id |
 | [`crates/geometry/geometry_primitives/`](/crates/geometry/geometry_primitives/README.md) | `geometry_primitives` | vector ops, segment geometry, rigid transforms, axis-aligned boxes |
 | [`crates/geometry/grid_rasterization/`](/crates/geometry/grid_rasterization/README.md) | `grid_rasterization` | half-up rounding, the uniform Catmull-Rom spline, polygon scanline spans and anti-aliased disc stamps over a sample grid |
@@ -174,18 +173,14 @@ rust-version 1.95 from `[workspace.package]`. The applications come first in the
 | [`crates/frontend/workspaces/mission_creator_arsenal/`](/crates/frontend/workspaces/mission_creator_arsenal/README.md) | `mission_creator_arsenal` | the Mission Creator's Arsenal: the loadout domain, gear catalog trees, the Arsenal tab and the 3D paper doll |
 | [`crates/frontend/workspaces/mission_creator_workspace/`](/crates/frontend/workspaces/mission_creator_workspace/README.md) | `mission_creator_workspace` | the Mission Creator page, the top-down 2D CAD workspace: docks, outliner, inspectors, modals, the canvas mount, the read-only review workspace |
 | [`crates/frontend/workspaces/debug_benches/`](/crates/frontend/workspaces/debug_benches/README.md) | `debug_benches` | the URL-only benches: building viewer, building interior, world line of sight, ballistics agreement, data viewer |
-| [`tools/xtask/`](/tools/xtask/README.md) | `xtask` | the `cargo xtask` command line and dispatch onto the tool crates, plus the `ai`, `fetch`, `map`, `refactor`, `schema`, `ticket`, `verify` and `wave` command groups |
+| [`tools/xtask/`](/tools/xtask/README.md) | `xtask` | the `cargo xtask` command line and dispatch onto the tool crates, plus the `ai`, `fetch`, `map`, `refactor`, `schema` and `verify` command groups |
 | [`tools/foundation/verification_core/`](/tools/foundation/verification_core/README.md) | `verification_core` | fail-closed verdicts, pattern scans, gates and the verification lock |
 | [`tools/foundation/process_runner/`](/tools/foundation/process_runner/README.md) | `process_runner` | process isolation, deadlines, host-bridge execution and the secure shell transport |
 | [`tools/foundation/repository_laws/`](/tools/foundation/repository_laws/README.md) | `repository_laws` | every repository law: the workspace laws (crate tiers, anatomy, test-file reachability, frontend layering, Tailwind sources), file length, test placement, test-only features |
 | [`tools/foundation/repository_layout/`](/tools/foundation/repository_layout/README.md) | `repository_layout` | the paths every tool shares, relative to the checkout root; its prelude re-exports `repository_root`'s finder |
 | [`tools/foundation/deploy_settings/`](/tools/foundation/deploy_settings/README.md) | `deploy_settings` | the one reader of `deploy/deploy.env` and its precedence rule over exported variables |
 | [`tools/foundation/tool_test_support/`](/tools/foundation/tool_test_support/README.md) | `tool_test_support` | the test locks (process variables, working directory) and the checkout root the tool crates' tests share (dev-only) |
-| [`tools/tickets/ticket_model/`](/tools/tickets/ticket_model/README.md) | `ticket_model` | the typed ticket, its canonical TOML encoding, the corpus store and the ticket-domain paths |
-| [`tools/tickets/ticket_metrics/`](/tools/tickets/ticket_metrics/README.md) | `ticket_metrics` | slice-run receipts and token estimates |
-| [`tools/tickets/ticket_wave_lock/`](/tools/tickets/ticket_wave_lock/README.md) | `ticket_wave_lock` | the wave lock compiler, reader and checker |
-| [`tools/tickets/ticket_registry/`](/tools/tickets/ticket_registry/README.md) | `ticket_registry` | ticket operations, validation, queue and roadmap sync, the `cargo xtask ticket` verbs |
-| [`tools/tickets/ticketboard_model/`](/tools/tickets/ticketboard_model/README.md) | `ticketboard_model` | the ticketboard's headless half: registry, wave lock and metrics models, events and the egui-free application state |
+| [`tools/foundation/ticket_manager_client/`](/tools/foundation/ticket_manager_client/README.md) | `ticket_manager_client` | the typed client of the central ticket manager's `ttm` command line and its JSON documents |
 | [`tools/commands/repository_relocation/`](/tools/commands/repository_relocation/README.md) | `repository_relocation` | manifest-driven moves of tracked paths and the retired-spelling verification behind `cargo xtask refactor relocate` |
 | [`tools/commands/agent_context_guards/`](/tools/commands/agent_context_guards/README.md) | `agent_context_guards` | the AI agent tool-call guard behind `cargo xtask ai` (Bash and Read rules, the session read set) and the filtered command runner that never hides a failure |
 | [`tools/commands/schema_tooling/`](/tools/commands/schema_tooling/README.md) | `schema_tooling` | the contract codegen, the contract schema gates, the ORBAT slot flattening and the font-table generator behind `cargo xtask schema` and `cargo xtask gen` |
@@ -249,11 +244,11 @@ data ─────────── assets/terrains/           built-in islan
                  assets/glyphs/             world-object glyph atlas and its SVG sources
 documents ────── documentation/<code path>/ feature docs mirroring the code
                  documentation/runbooks/    procedures; standards/, glossary/, archive/ beside it
-work tracking ── .ai/tickets/               one TOML per ticket, the queue and the templates
+work tracking ── central ticket manager      tickets, run receipts and the wave plan, through ttm
 ```
 
-- **Code.** A product's code and its README sit in its crate folder under `crates/` (the
-  ticketboard desktop viewer in `tools/tickets/`), and the game mod's addons in `mod/`; every
+- **Code.** A product's code and its README sit in its crate folder under `crates/`, and the game
+  mod's addons in `mod/`; every
   folder carries a README.md built to the [README standard](/documentation/standards/readme_standard.md), and
   the code trees hold no other Markdown. Engine and layer boundaries are in the
   [crate boundary rules](/documentation/standards/crate_boundary_rules.md).

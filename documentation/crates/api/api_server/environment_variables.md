@@ -77,7 +77,7 @@ behaves as production. Development:
 - drops `; Secure` from the `oauth_state` cookie, so Discord sign-in works over plain HTTP;
 - keeps blank Discord credentials legal and fills the `UPLOAD_DIR`, `EQUIPMENT_DATA_DIR`,
   `MAP_ASSETS_DIR` and `GLYPH_ASSETS_DIR` defaults, each a folder of the checkout joined onto the
-  checkout root that the walk up from the working directory to the `.ai/tickets/ROOT` marker
+  checkout root that the walk up from the working directory to the `.ai/ROOT` marker
   finds (`crates/api/api_configuration/src/configuration/development_directories.rs`), so the
   same folders resolve from any working directory inside the checkout;
 - registers the equipment data viewer's anonymous `/api/v1/debug/equipment-data/*` reads, which
@@ -108,7 +108,7 @@ behaves as production. Development:
 ## Data
 
 A path in a default is relative to the checkout root, the folder that holds the
-`.ai/tickets/ROOT` marker, and applies in development only; outside development each directory
+`.ai/ROOT` marker, and applies in development only; outside development each directory
 setting is the absolute path the operator sets. "Config" is `Config::load` in
 `crates/api/api_configuration/src/configuration/mod.rs`.
 

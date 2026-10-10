@@ -75,8 +75,8 @@ for its scope and the container markers
   `db` group, the playtest server and the platform wave driver through `host_execution`, and the
   staging deploy and the staging harness through `secure_shell_transport`, `debug direct-join`
   and the stub-program tests through `PathGuard`; `deploy_settings` (`SshBase`); the command and
-  check crates under `tools/commands/` and `tools/checks/`; `ticketboard_model` (the streamed and
-  detached children).
+  check crates under `tools/commands/` and `tools/checks/` (`mod_operations` streams the lines of
+  its dedicated server and world boot); `ticket_manager_client` (the `ttm` calls).
 - Rules: tier 1 of `tools/foundation`, depending only on `verification_core` among the workspace
   crates (`cargo xtask verify crate-tiers`); a
   signal is never an exit code and a timeout kills the process group (a terminal child's timeout

@@ -13,14 +13,14 @@ tools/foundation/repository_layout/src/
 ├── build_output.rs         `BUILD_OUTPUT_FOLDER`, the purpose subfolders inside it, `build_output_subfolder` and the retired root-level names
 ├── contracts.rs            `CONTRACTS_DIR` and the definition, rule, catalog and fixture locations inside it, joined onto a given root
 ├── deployment.rs           `DEPLOY_DIR` and the settings file, its example, the compose file, the Caddy site and the systemd units inside it
-├── documentation.rs        `DOCUMENTATION_ROOT`, `ROADMAP` and `GAP_ANALYSIS`
+├── documentation.rs        `DOCUMENTATION_ROOT`
 ├── documentation_locations.rs  the runbooks and the areas, roots and exemptions of the documentation gates
 ├── enfusion_mod_folders.rs  the folder name and checkout folder of each Enfusion mod addon (framework, export, MCP bridge) under the mod folder
 ├── enfusion_mcp_node_package.rs  the pinned `enfusion-mcp` npm package folder and the server module installed in it
 ├── map_assets.rs           the served terrain and glyph trees and the per-island export scratch, joined onto a given root
+├── legacy_ticket_data.rs   `LEGACY_TICKETS_DIR`: the file-based ticket records kept until they are imported into the central ticket manager
 ├── lib.rs                  the crate root: module header, `mod` lines and the re-exports
 ├── prelude.rs              the top-level trees the other locations lie under and the checkout-root finder's names, for glob import
-├── ticket_registry.rs      `TICKETS_DIR` and the schemas, vocabulary, wave lock, queue, receipts and estimates beside the tickets
 ├── tool_inputs.rs          the dedicated-server profiles, the recorded MCP transcripts and the staging load data the commands load
 ├── upstream_references.rs  `REFERENCES_DIR`, the Coalition Reforger Framework and vanilla lanes, and the PlayableSelector lane
 ├── vanilla_reference_lanes.rs  the extracted scripts, Script API pages, source pages and reconstructed sources inside the vanilla lane
@@ -44,8 +44,7 @@ tools/foundation/repository_layout/src/
 
 - Depends on: `repository_root`, whose finder names `prelude.rs` re-exports; the tests find this
   checkout with it.
-- Used by: the ticket crates in `tools/tickets/`, `xtask` (the checkout root, through the prelude),
-  the check and command crates and `ticketboard_desktop`.
+- Used by: `xtask` (the checkout root, through the prelude) and the check and command crates.
 - Rules: `tests/shared_locations_tests.rs` holds the tree containment of every location (the root
-  marker among the ticket registry's files) and the presence of every committed location in this
+  marker, the artifact tree and the legacy ticket data under `.ai/`) and the presence of every committed location in this
   checkout.

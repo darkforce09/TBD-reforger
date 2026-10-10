@@ -49,9 +49,14 @@ pub enum Error {
     /// `rustfmt` could not be run, or died without an exit code.
     #[error(transparent)]
     Process(#[from] process_runner::Error),
-    /// The ticket registry's empty-write refusal stopped a flattening write.
-    #[error(transparent)]
-    TicketRegistry(#[from] ticket_registry::Error),
+    /// A flattening write would replace committed content with structurally empty output.
+    #[error("refusing empty write ({context}): {detail}")]
+    EmptyWrite {
+        /// Which write was refused (the target file, or stdout).
+        context: String,
+        /// What the write would have emptied.
+        detail: String,
+    },
 }
 
 impl Error {

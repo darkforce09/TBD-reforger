@@ -65,7 +65,7 @@ from `PATH` in the checkout root.
 
 - Depends on: `repository_layout` (the contract folders; the framework addon folder the mission
   validation reads, from its `enfusion_mod_folders`), `process_runner` (rustfmt), `content_digest`,
-  `ticket_registry` (the empty-write refusal), `typify`, `schemars`, `syn`, `prettyplease`, `heck`,
+  `typify`, `schemars`, `syn`, `prettyplease`, `heck`,
   `jsonschema`, `regex`, `walkdir`, `serde_json`, `clap`, `thiserror`, and `prefab_catalog` (the
   census kind list, `instance_kinds::INSTANCE_KINDS`).
 - Used by: `tools/xtask/src/commands/schema/dispatch.rs`, `tools/xtask/src/cli/dispatch.rs`

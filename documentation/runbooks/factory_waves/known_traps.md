@@ -19,7 +19,7 @@ input it never examined.** Each instance looks like a green check.
 | a shared cargo target folder serves another worktree's binary | "126 passed" is not the slice's own code | private folders for tests (`platform wave test --slice`), gate steps and launched binaries |
 | a landing command ignores an argument | it lands slices whose agents have not reported | every `land` and `wave --close` argument parser is an allowlist |
 | a golden file under `#[serde(flatten)]` | a deleted field is re-emitted and the JSON stays byte-identical | read what the golden covers, not only that it matches |
-| the collision analysis | tickets with no plan row are never candidates | `slice-collisions` warns about dispatchable tickets missing from the lock |
+| the collision analysis | tickets with no plan row are never candidates | `ttm --project reforger wave collisions` warns about dispatchable tickets missing from the plan |
 | a health check that is a TCP connect | a six-hour-old API binary reports as up | preflight reads `/healthz` and compares the API process's age with the newest API commit |
 | `cargo check` under lock contention | it replays a cached verdict and prints `Finished`, exit 0, over code that does not compile | the gate checks into its own `target/gate-check` folder and invalidates fingerprints first |
 | a piped gate (`cargo check … \| tail -5`) | the pipeline returns `tail`'s exit status | never pipe a gate or test; the wave driver captures each step's status itself |
@@ -133,7 +133,7 @@ ends `SLICE GATE: PASS`. A report without the red output is asserted, not verifi
 - **Agent reports are evidence, not testimony.** Agents are reliable about the code they touched
   and unreliable about bookkeeping: several reported follow-up tickets that were never filed,
   one of them a P0. Check every "I filed", "a sibling fixed it" and "this already works" against
-  the registry and `git log`; it costs one command and has caught something every time.
+  the ticket manager and `git log`; it costs one command and has caught something every time.
 - **An agent's chat summary is not an artifact.** Quotations, statistics and ticket scope have
   entered the record from summaries that said things their files did not. Cite the file.
 - **A rate-limited agent can report `completed`.** A report carrying a rate-limit or reset message

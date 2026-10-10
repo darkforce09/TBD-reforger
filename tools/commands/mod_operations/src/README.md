@@ -252,8 +252,8 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
     `mcp_game_root`), `database_operations::milestone_announcement`,
     `enfusion_mcp::daemon` and `platform_execution::slice_worktree`;
   - `mod_script_checks` (`spawn_determinism`, `spawn_verification`);
-  - the `ticket_model`, `ticket_wave_lock`, `ticket_registry`, `process_runner` (every child
-    process) and `verification_core` crates;
+  - the `ticket_manager_client` (the mod wave plan), `process_runner` (every child process) and
+    `verification_core` crates;
   - the Arma Reforger dedicated server and Workbench under Steam, `curl`, `git`, `npm`, and the
     website API for the platform lanes.
 - Used by:

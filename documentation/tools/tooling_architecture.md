@@ -10,20 +10,19 @@ module to the tooling; each crate's README then says what its own folders hold.
 ## Where it lives
 
 - Code: [`tools/`](/tools/README.md) with
-  [`xtask/`](/tools/xtask/README.md), the [ticket crates](/tools/tickets/README.md),
-  the [foundation crates](/tools/foundation/README.md)
+  [`xtask/`](/tools/xtask/README.md), the [foundation crates](/tools/foundation/README.md)
   ([`verification_core/`](/tools/foundation/verification_core/README.md),
   [`process_runner/`](/tools/foundation/process_runner/README.md),
-  [`repository_laws/`](/tools/foundation/repository_laws/README.md)),
+  [`repository_laws/`](/tools/foundation/repository_laws/README.md),
+  [`ticket_manager_client/`](/tools/foundation/ticket_manager_client/README.md)),
   [`developer_tools/`](/tools/developer_tools/README.md) and
-  [`enfusion_mcp_node_package/`](/tools/enfusion_mcp_node_package/README.md); the
-  [ticketboard](/tools/tickets/ticketboard_desktop/README.md) in `tools/tickets/ticketboard_desktop/` links `ticket_model`.
+  [`enfusion_mcp_node_package/`](/tools/enfusion_mcp_node_package/README.md).
 - Entry: `cargo xtask`, the alias `run --package xtask --` in `.cargo/config.toml`; the eight
   `developer_tools` executables (`enf`, `gate`, `mcpd`, `world`, `map`, `capture`,
   `acknowledgement-dropping-relay`, `staging-load`).
-- Related features: the [ticket crates documentation](/documentation/tools/tickets/README.md),
-  the [developer tools documentation](/documentation/tools/developer_tools/README.md) and the
-  [ticketboard documentation](/documentation/tools/tickets/ticketboard_desktop/README.md).
+- Related features: the [developer tools documentation](/documentation/tools/developer_tools/README.md)
+  and the [factory waves](/documentation/runbooks/factory_waves/README.md), which run the
+  platform wave driver over the central ticket manager.
 
 ## Behaviour
 
@@ -32,16 +31,13 @@ module to the tooling; each crate's README then says what its own folders hold.
 | Unit | Kind | Owns |
 |---|---|---|
 | `xtask` | binary | the command router: database, deploys, mod servers, map helpers, the platform factory, and every repository verification and CI task |
-| `ticket_model` | library, `tools/tickets` tier 2 | the typed [ticket](/documentation/glossary/n_to_z.md#ticket), its canonical TOML encoding, the corpus store over `.ai/tickets/T-*.toml`, the scope vocabulary and the ticket-domain paths |
-| `ticket_metrics` | library, `tools/tickets` tier 3 | slice-run receipts under the registry's metrics folder (`METRICS_DIR`) and token estimates under `.ai/tickets/estimates/` |
-| `ticket_wave_lock` | library, `tools/tickets` tier 3 | the [wave](/documentation/glossary/n_to_z.md#wave) lock compiler, reader and checker, and its history |
-| `ticket_registry` | library, `tools/tickets` tier 4 | the registry view, typed operations, validation, `queue.json` and the roadmap and gap-analysis markers, the corpus pins and the bodies of the `cargo xtask ticket` verbs |
 | `verification_core` | library, `tools/foundation` tier 0 | the fail-closed primitives: verdicts, findings, pattern scans, the report and the shared verification lock |
 | `process_runner` | library, `tools/foundation` tier 1 | child processes in their own process group with deadlines and honest statuses, the container-to-host bridge, the ssh transport |
 | `repository_laws` | library, `tools/foundation` tier 1 | the structural engineering laws as pure checks: file length and the workspace laws (crate tiers, crate anatomy, test-file reachability, frontend layering, Tailwind sources) |
 | `repository_layout` | library, `tools/foundation` tier 0 | the repository locations more than one tool names |
 | `deploy_settings` | library, `tools/foundation` tier 2 | the `deploy/deploy.env` reader: the precedence of the file over the process environment, the deploy host, its remote folders and the ssh transport choice |
 | `tool_test_support` | library, `tools/foundation` tier 1, dev-dependency only | the environment and working-directory locks and the test checkout root the tool tests share |
+| `ticket_manager_client` | library, `tools/foundation` tier 2 | the typed client of the central ticket manager: it runs `ttm --json --project <project>` and parses the [ticket](/documentation/glossary/n_to_z.md#ticket), receipt and [wave](/documentation/glossary/n_to_z.md#wave) documents it prints; `platform_execution` and `mod_operations` reach tickets and waves through it alone |
 | `enfusion_pak` | library, `tools/enfusion` tier 0 | the [Enfusion](/documentation/glossary/a_to_f.md#enfusion) `.pak` archive reader: one parser and one decompressor under the blueprint and world policies, the loose and layered sources |
 | `blueprint_compiler` | library, `tools/map_assets` tier 6 | the building-blueprint compiler: voxel dumps and game models to blueprints, occlusion sidecars, the prefab occluder library and the blueprint archive, behind the `cargo xtask map` blueprint, BVH and model commands |
 | `map_asset_verification` | library, `tools/map_assets` tier 7 | the map asset gates: the terrain manifest, the prefab BLAS library, the labels, the elevation anchors and the map-object goldens behind `cargo xtask schema` and `verify blas-manifest`, and the world line-of-sight probe behind `cargo xtask map world-los` |
@@ -54,16 +50,18 @@ module to the tooling; each crate's README then says what its own folders hold.
 
 One word names one thing. A gate is a repository verification that reaches a verdict; the
 headless browser harness is `browser_gate_suites` over `chrome_devtools_protocol`; the assertion primitives are `verification_core`;
-the ticket rules are `ticket_registry::validation`.
+the ticket rules are the central ticket manager's (`ttm --project reforger check`).
 
 ### Dependency direction
 
 ```text
 verification_core ◀── process_runner, repository_laws        (tools/foundation, tiers 0 and 1)
         ▲                      ▲
-        │                      │          ticket crates ◀──── ticketboard (tools/tickets/ticketboard_desktop)
-        └──────── xtask ───────┴───────────────┘
-                    │
+        │                      │
+        └──────── xtask ───────┴──▶ platform_execution, mod_operations (tools/commands)
+                    │                          │
+                    │                          ▼
+                    │               ticket_manager_client (tools/foundation) ──runs──▶ ttm
                     ▼ runs as child processes
              developer_tools (binaries only)
                     │
@@ -74,18 +72,17 @@ verification_core ◀── process_runner, repository_laws        (tools/founda
 
 1. A `tools/foundation` crate depends only on lower `tools/foundation` crates (`process_runner`
    and `repository_laws` on `verification_core`, which depends on none) and on the checkout-root
-   finder `repository_root`, and a `tools/tickets` crate only on `tools/foundation` crates, on
-   `time_source`, `content_digest`, `newtype_ids` and `repository_root`, and on ticket crates of a
-   lower tier, so each is read, tested and reasoned about without the tools above it.
+   finder `repository_root` and the id macros `newtype_ids`, so each is read, tested and reasoned
+   about without the tools above it.
 2. `xtask` and `developer_tools` are binary-only packages whose workspace dependencies are tool
    crates alone (the checkout-root finder comes through `repository_layout`'s prelude); neither
    depends on the other, and no member depends on either.
 3. No tokio, axum, reqwest, resvg or image enters xtask's dependency closure (rule 6 of `cargo xtask verify crate-tiers`):
    the async servers and the raster crates run behind the `developer_tools` binaries, so neither
    a server nor an image codec rebuilds the command surface.
-4. Ticket logic has one owner: the xtask `ticket` group delegates to `ticket_registry` and the
-   `wave` group to `ticket_wave_lock`, and the ticketboard reads through the public model of
-   `ticket_model`.
+4. Ticket logic has one owner, the central ticket manager: the workspace reads and records
+   tickets, run receipts and the wave plan only through `ticket_manager_client`, which runs
+   `ttm`, and no crate reads or writes ticket files.
 
 ### One owner per path
 
@@ -95,18 +92,17 @@ literal. A tool's own layout module declares itself on its first line
 
 | Module | Owns |
 |---|---|
-| `tools/foundation/repository_layout` | the locations more than one tool names: the ticket registry files, the artifact tree, the reference lanes and their folders, the contract and map-asset trees, the enfusion-mcp npm package, the browser gate pins, the documentation root, the roadmap and gap analysis, the deploy tree, the server profiles, the MCP fixtures, the runbooks and documentation areas the commands name, and the build output folder with its purpose subfolders |
-| `tools/tickets/ticket_model/src/repository.rs` | the handoff document, the sparse-checkout sets, and in its `documentation` submodule the documents only the ticket domain names |
+| `tools/foundation/repository_layout` | the locations more than one tool names: the legacy ticket data folder, the artifact tree, the reference lanes and their folders, the contract and map-asset trees, the enfusion-mcp npm package, the browser gate pins, the documentation root, the roadmap and gap analysis, the deploy tree, the server profiles, the MCP fixtures, the runbooks and documentation areas the commands name, and the build output folder with its purpose subfolders |
 | `tools/map_assets/map_raster_pipeline/src/decision_record_locations.rs` | the decision records of the inland-water, aerial-orthophoto and cartographic lanes |
 | `tools/enfusion/enfusion_script_index/src/script_index_layout.rs` | the Enfusion symbol index and the capability verdict table |
 | `tools/browser_testing/browser_gate_suites/src/gate_layout.rs` | the map-asset mounts of the gates' server and the editor gate runbook |
 
 Every tool resolves the checkout root through `repository_root::find_repository_root`
 (`crates/foundation/repository_root`, the one root walk of the workspace, which the API's and the
-frontend crates' tests use as well; xtask reaches it through `repository_layout::prelude`), which walks up to `.ai/tickets/ROOT`, so a command run in a
+frontend crates' tests use as well; xtask reaches it through `repository_layout::prelude`), which walks up to `.ai/ROOT`, so a command run in a
 linked worktree reads that worktree's files; a working directory outside any checkout is an
 error, never a guessed folder. `tools/foundation/repository_layout` spells the locations more
-than one tool names: the ticket registry files, the artifact tree, the reference lanes, the documentation root
+than one tool names: the legacy ticket data folder, the artifact tree, the reference lanes, the documentation root
 and the build output folder.
 
 ### One outcome vocabulary
@@ -153,14 +149,6 @@ inside an installed `node_modules/` would be subject to both. The other data fol
 `map_assets/blueprint_compiler/test_fixtures/`) sit beside the code that reads them, and a layout
 module names each once.
 
-### Known discrepancies
-
-- The dependency rule says the ticketboard reads tickets through `ticket_model`'s public model
-  (`tools/tickets/ticketboard_desktop/README.md`, How it works) — the ticketboard loads tickets without
-  `Corpus::load`'s vocabulary and id-to-file checks and keeps its own copies of the wave-lock
-  types, the scope vocabulary parsing and the estimate validation
-  (`tools/tickets/ticketboard_model/src/execution_metrics/estimated/validation.rs`).
-
 ## Data
 
 - `.cargo/config.toml`: the `xtask` alias.
@@ -180,11 +168,9 @@ that cannot run says so, so a green run is proof.
 
 ## Open work
 
-- [T-1137 — Gate ticket_engine, verification_core, ticketboard and fleet agent tests and clippy](/.ai/tickets/T-1137.toml)
-  (idea, no plan): CI, `ci-local` and the wave gate run `cargo test` and clippy for the two
-  foundational crates, the ticketboard and the game server host agent.
-- [T-1142 — Decide whether the ticketboard imports the ticket_engine logic it copies](/.ai/tickets/T-1142.toml)
-  (idea, no plan): the ticketboard stops copying ticket crate logic, or the copy is recorded as intended.
+- [T-1137 — Gate the foundational crates' and the fleet agent's tests and clippy](/.ai/tickets/T-1137.toml)
+  (idea, no plan): CI, `ci-local` and the wave gate run `cargo test` and clippy for the
+  foundational crates and the game server host agent.
 - [T-1133 — Consolidate developer_tools duplicate helpers, repo-root lookup and fixture paths](/.ai/tickets/T-1133.toml)
   (idea, no plan): one root lookup in `developer_tools`, fixture paths through the layout module,
   and no `cargo run -p xtask` child from inside the crate.

@@ -73,8 +73,8 @@ pub(crate) enum VerifyCmd {
     /// stylesheet covering its src/**/*.rs
     #[command(name = "tailwind-sources")]
     TailwindSources,
-    /// Every link in the documentation root, the READMEs, the project instructions, the ticket
-    /// folder's documents and the Cursor rules reaches a tracked file or folder, a heading or
+    /// Every link in the documentation root, the READMEs, the project instructions and the
+    /// Cursor rules reaches a tracked file or folder, a heading or
     /// line anchor, a defined reference, or a sha permalink of this repository; every repository
     /// path a live document writes in backticks names a tracked or ignored file or folder; and
     /// every `cargo xtask` command a live document cites exists, with the value of its first

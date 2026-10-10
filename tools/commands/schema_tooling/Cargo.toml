@@ -34,8 +34,6 @@ schemars = { workspace = true }
 serde_json = { workspace = true, features = ["preserve_order"] }
 syn = { workspace = true, features = ["full", "visit"] }
 thiserror = { workspace = true }
-# The empty-write refusal the ORBAT slot flattening shares with the ticket sync.
-ticket_registry = { workspace = true }
 typify = { workspace = true }
 walkdir = { workspace = true }
 

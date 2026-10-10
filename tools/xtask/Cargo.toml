@@ -55,10 +55,6 @@ platform_execution = { workspace = true }
 # The `mod` group: the compile gate, the world boot, the playtest server, the equipment export
 # publication and the mod wave driver.
 mod_operations = { workspace = true }
-ticket_metrics = { workspace = true }
-ticket_model = { workspace = true }
-ticket_registry = { workspace = true }
-ticket_wave_lock = { workspace = true }
 # The contract codegen, the font-table generator, the schema gates and the ORBAT slot flattening.
 schema_tooling = { workspace = true }
 # The ballistics catalog trim behind `ballistics trim-export`.

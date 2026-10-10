@@ -58,8 +58,8 @@ note.
 ### WS-1 crate tiers
 
 `cargo xtask verify crate-tiers` enforces two things: no member depends on an application package
-(`api_server`, `frontend_application`, `offline_service_worker`, `game_server_host_agent`,
-`ticketboard_desktop`), in any table; and the external-crate firewalls hold (`wgpu`, `sqlx`,
+(`api_server`, `frontend_application`, `offline_service_worker`, `game_server_host_agent`), in
+any table; and the external-crate firewalls hold (`wgpu`, `sqlx`,
 `axum`, `leptos` and the browser crates stay in the crates the
 [crate boundary rules](/documentation/standards/crate_boundary_rules.md#54-the-firewalls) name,
 and the dependency closure of xtask holds no tokio, axum, reqwest, resvg or image). The tier

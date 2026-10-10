@@ -35,6 +35,6 @@ documentation/archive/handoffs_and_kickoffs/
 
 - [Mission Creator decisions](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md) — the
   decisions the execution contract recorded, as live entries.
-- [Ticket run pipeline](/documentation/runbooks/ticket_run_pipeline.md) and
+- [Running a wave](/documentation/runbooks/factory_waves/running_a_wave.md) and
   [mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — how agent work starts
   now.

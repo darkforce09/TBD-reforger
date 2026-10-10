@@ -13,25 +13,31 @@
 //! print macros, the run-lane stamp types and the command table; the submodules hold the commands.
 //!
 //! **Signals & state:** `Ctx` is resolved once at entry and `chdir`s the process to the repository
-//! root, so the relative paths it carries (`Cargo.toml`, `.ai/tickets`, `.ai/artifacts/worktrees`)
-//! mean the same thing at every call site; the step capture stack (`SINK`) is thread-local.
+//! root, so the relative paths it carries (`Cargo.toml`, `.ai/artifacts/worktrees`) mean the same
+//! thing at every call site; it holds the wave plan snapshot read from the central ticket manager
+//! (`ttm wave show`), loaded on first use and dropped after every command that changes the plan;
+//! the step capture stack (`SINK`) is thread-local.
 //!
 //! **Invariants:** a failing command inside a function does not abort it, and each site where that
-//! matters says so; an unreadable ticket registry reads as "not shipped" except where a caller must
-//! tell "not shipped" from "cannot speak" (`base::wave_ledger_unshipped_at`, rc 3); `current_wave`
+//! matters says so; a wave plan the ticket manager cannot give reads as "not shipped" except where
+//! a caller must tell "not shipped" from "cannot speak" (`base::wave_close_ledger_says`, rc 1), and
+//! every command that needs the plan refuses with rc 2 (`lock_or_refuse!`); `current_wave`
 //! skips wave `0`, which holds landed generations; `status` exits 0 whether or not anything is
 //! ready; an unknown command prints the usage header and exits 1; stdout is flushed before every
 //! stderr write and before every child that inherits stdout, so a `2>&1` capture keeps the emitted
 //! order.
 
+use std::cell::RefCell;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
+
+use ticket_manager_client::{TicketManager, WavePlan};
 
 use crate::Result;
 
 use repository_layout::build_output::{self, RUN_TARGET_SUBDIR};
 
-pub(crate) mod archived_wave_plans;
 pub(crate) mod base;
 pub(crate) mod changed;
 pub(crate) mod db;
@@ -102,8 +108,8 @@ const UNKNOWN_HELP_BODY: &str = r##"#
 #   cargo xtask platform wave land        # merge every ready slice (no barrier)"##;
 
 /// The disjoint-set command `status` and `prep` both name in their output, so an operator can
-/// re-run the collision analysis by itself.
-pub(crate) const COLLIDE: &str = "cargo run -q -p xtask -- slice-collisions";
+/// re-run the collision analysis by itself: `ttm --project <project> wave collisions`.
+pub(crate) const COLLIDE_ARGS: [&str; 2] = ["wave", "collisions"];
 
 // ── THE STEP CAPTURE, AND WHY IT HAS TO EXIST ───────────────────────────────────────────────────
 //
@@ -141,17 +147,18 @@ pub(crate) use {werr, wprint, wprintln};
 /// Everything the driver resolves once, at entry.
 ///
 /// [`Ctx::enter`] `set_current_dir`s to the repository root, which is what lets the relative
-/// paths below (`Cargo.toml`, `.ai/tickets`, `.ai/artifacts/worktrees`) mean the same thing at every
-/// call site without each one re-deriving a join.
+/// paths below (`Cargo.toml`, `.ai/artifacts/worktrees`) mean the same thing at every call site
+/// without each one re-deriving a join.
 pub(crate) struct Ctx {
     /// `ROOT` — this checkout, which inside a worktree IS the worktree.
     pub root: PathBuf,
-    /// The wave plan — `.ai/tickets/wave.lock`. Kept as a string because `status` prints it and
-    /// `wave_plan_tickets_at` feeds it to `git show`; there is deliberately no env override —
-    /// one committed lock, one writer.
+    /// The wave plan's display label — the `ttm … wave show` command that prints it. The plan
+    /// itself lives in the central ticket manager; `status` and the base oracles print this label.
     pub plan: String,
-    /// The ticket ledger directory — `.ai/tickets`.
+    /// The ticket ledger's display label — the ticket manager project the statuses come from.
     pub registry: String,
+    /// The central ticket manager's command line, bound to this repository's project.
+    pub ticket_manager: TicketManager,
     /// `WORKTREES` — `.ai/artifacts/worktrees`.
     pub worktrees: String,
     /// `MAIN_ROOT` — the PRIMARY checkout, from `git rev-parse --git-common-dir`.
@@ -190,8 +197,9 @@ pub(crate) struct Ctx {
     pub verify_debt_nag: i64,
     /// The host bridge, detected once.
     pub host: host::Host,
-    /// The ticket ledger, parsed once with `is_shipped`'s exact failure semantics.
-    pub registry_view: ledger::Registry,
+    /// The wave plan snapshot (`ttm wave show`), loaded on first use; [`Ctx::forget_wave_plan`]
+    /// drops it after a command that changes the plan.
+    wave_plan: RefCell<Option<Rc<WavePlan>>>,
 }
 
 impl Ctx {
@@ -199,16 +207,17 @@ impl Ctx {
     ///
     /// REFUSE RATHER THAN GUESS A ROOT. A driver that guesses describes a directory that is not
     /// the repository and reports `open: 0 / 0 tickets` about it —
-    /// [`repository_root::find_repository_root`] walks up for the ticket ledger and errors
+    /// [`repository_root::find_repository_root`] walks up for the checkout-root marker and errors
     /// instead.
     pub(crate) fn enter() -> Result<Ctx> {
         let root = repository_root::find_repository_root()?;
         std::env::set_current_dir(&root)?;
 
-        // The committed lock IS the plan: one file, one writer. There is no env override, and
-        // with the TSVs; the generation floor died with them — landed generations live in the
-        // lock's wave 0, so waves 1+ are open work only.
-        let plan = repository_layout::WAVE_LOCK.to_string();
+        // The ticket manager holds the plan: one store, one writer (`ttm wave repack`). Parked
+        // tickets live in its wave 0, so waves 1+ are open work only.
+        let ticket_manager = TicketManager::from_env();
+        let plan = ticket_manager.display_command(&["wave", "show"]);
+        let registry = format!("the ticket manager project {}", ticket_manager.project());
 
         // `git rev-parse --path-format=absolute --git-common-dir`, falling back to
         // `<root>/.git` when git cannot answer.
@@ -260,7 +269,8 @@ impl Ctx {
 
         Ok(Ctx {
             plan,
-            registry: repository_layout::TICKETS_DIR.into(),
+            registry,
+            ticket_manager,
             worktrees: repository_layout::WORKTREES_DIR.into(),
             gate_timeout: host.timeout_secs,
             gate_trunk_target: envd(
@@ -289,13 +299,36 @@ impl Ctx {
             gate_lock_poll: envn("TBD_GATE_LOCK_POLL", 30).max(1) as u64,
             gate_lock_max: envn("TBD_GATE_LOCK_MAX", 3600).max(0) as u64,
             verify_debt_nag: envn("TBD_VERIFY_DEBT_NAG", 8),
-            registry_view: ledger::Registry::load_repo(Path::new(".")),
+            wave_plan: RefCell::new(None),
             host,
             cargo_target_dir,
             run_target_dir,
             main_root,
             root,
         })
+    }
+}
+
+impl Ctx {
+    /// The wave plan snapshot, read from the ticket manager on first use.
+    pub(crate) fn wave_plan(&self) -> Result<Rc<WavePlan>> {
+        if let Some(plan) = self.wave_plan.borrow().as_ref() {
+            return Ok(Rc::clone(plan));
+        }
+        let plan = Rc::new(self.ticket_manager.wave_show()?);
+        *self.wave_plan.borrow_mut() = Some(Rc::clone(&plan));
+        Ok(plan)
+    }
+
+    /// Drops the snapshot, so the next read asks the ticket manager again: called after every
+    /// command that changes the plan (a land, a repack, a close).
+    pub(crate) fn forget_wave_plan(&self) {
+        *self.wave_plan.borrow_mut() = None;
+    }
+
+    /// The command line that prints the next disjoint dispatch set.
+    pub(crate) fn collide_command(&self) -> String {
+        self.ticket_manager.display_command(&COLLIDE_ARGS)
     }
 }
 

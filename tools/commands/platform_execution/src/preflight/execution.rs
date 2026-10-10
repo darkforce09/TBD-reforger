@@ -213,45 +213,75 @@ pub(crate) fn run(warn_only: bool) -> Result<u8> {
         );
     }
 
-    // 8. ticket check
-    {
-        let cmd = Run::new("cargo")
-            .args(["run", "-q", "-p", "xtask", "--", "ticket", "check"])
-            .cwd(&root);
-        if status_ok(cmd) {
-            ok("ticket check", "registry valid");
-        } else {
-            nope(
-                &mut c,
-                "ticket check",
-                "registry INVALID — every wave gate will fail",
-            );
-        }
-    }
-
-    // 9. Wave lock.
-    // `wave check` recomputes from the tickets and structurally compares; a missing lock is a
-    // DidNotRun refusal inside it, so an absent plan can never read as green here.
-    {
-        let cmd = Run::new("cargo")
-            .args(["run", "-q", "-p", "xtask", "--", "wave", "check"])
-            .cwd(&root);
-        if status_ok(cmd) {
-            let (n, w) = wave_lock_open_count(&root).unwrap_or((0, 0));
+    // 8. The central ticket manager answers, and the project's tickets validate.
+    let ticket_manager = TicketManager::from_env();
+    match ticket_manager.version() {
+        Ok(version) => {
             ok(
-                "wave lock",
-                &format!("{n} open tickets in {w} waves, matches the ticket files"),
-            );
-        } else {
-            nope(
-                &mut c,
-                "wave lock",
+                "ticket manager",
                 &format!(
-                    "cargo xtask wave check failed — stale or missing {}",
-                    repository_layout::WAVE_LOCK
+                    "ttm {} (contract v{})",
+                    version.version, version.json_version
                 ),
             );
+            match ticket_manager.check() {
+                Ok(check) if check.ok => ok(
+                    "ticket check",
+                    &format!("project {} valid", ticket_manager.project()),
+                ),
+                Ok(check) => nope(
+                    &mut c,
+                    "ticket check",
+                    &format!(
+                        "{} error(s) in project {} — `{}` lists them",
+                        check.errors,
+                        ticket_manager.project(),
+                        ticket_manager.display_command(&["check"])
+                    ),
+                ),
+                Err(e) => nope(&mut c, "ticket check", &crate::error::error_chain_text(&e)),
+            }
         }
+        Err(e) => nope(
+            &mut c,
+            "ticket manager",
+            &format!(
+                "{} — every wave and slice command will refuse",
+                crate::error::error_chain_text(&e)
+            ),
+        ),
+    }
+
+    // 9. Wave plan: `ttm wave check` compares the stored plan with the tickets and the close
+    // ledger; a project without a plan is a refusal, so an absent plan never reads as green. The
+    // stored wave base must also agree with the newest standing marker in git.
+    match ticket_manager.wave_check() {
+        Ok(check) if check.ok => match ticket_manager.wave_show() {
+            Ok(plan) => {
+                let (n, w) = plan.open_counts();
+                match wave_ledgers_agree(&root, &plan) {
+                    Ok(()) => ok(
+                        "wave plan",
+                        &format!(
+                            "{n} open tickets in {w} waves, matches the tickets and the marker ledger"
+                        ),
+                    ),
+                    Err(why) => nope(&mut c, "wave plan", &why),
+                }
+            }
+            Err(e) => nope(&mut c, "wave plan", &crate::error::error_chain_text(&e)),
+        },
+        Ok(check) => nope(
+            &mut c,
+            "wave plan",
+            &format!(
+                "`{}` found {} problem(s): {}",
+                ticket_manager.display_command(&["wave", "check"]),
+                check.findings.len(),
+                check.findings.join("; ")
+            ),
+        ),
+        Err(e) => nope(&mut c, "wave plan", &crate::error::error_chain_text(&e)),
     }
 
     // 10. Optional env — postgres + API freshness

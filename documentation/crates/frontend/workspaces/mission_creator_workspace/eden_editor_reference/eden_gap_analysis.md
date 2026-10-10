@@ -55,12 +55,11 @@ compiler emit; their notes say so.
 
 ### Ticket column
 
-A ticket ID is the registry ticket that delivers or owns the row, checked in `.ai/tickets/`; `✅`
-marks a shipped one, and an open one carries no mark. `—` means no ticket. `wb` marks a row whose
-remaining work is `executor: workbench`. The column is written by hand: `cargo xtask ticket sync`
-rewrites only tables whose header carries a `priority` column
-(`tools/tickets/ticket_registry/src/sync/gap_analysis.rs`), and these tables have none, so the sync
-leaves them untouched.
+A ticket ID is the ticket that delivers or owns the row, checked in the central ticket manager
+(`ttm --project reforger show <id>`); `✅` marks a shipped one, and an open one carries no mark.
+`—` means no ticket. `wb` marks a row whose remaining work is `executor: workbench`. The column
+is kept by hand: no tool reads or rewrites it, so a ticket that ships or changes owner reaches
+the column only through an edit here.
 
 ## Part 1 — Interaction parity (83 IDs)
 

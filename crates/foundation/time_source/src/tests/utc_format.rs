@@ -12,7 +12,7 @@ use super::*;
 /// 2026-07-04T23:43:38Z, the example in the millisecond formatter's documentation.
 const DOCUMENTED_SECONDS: u64 = 1_783_208_618;
 
-/// The whole-second stamp the ticket registry writes for `unix_seconds`, through `time`.
+/// The whole-second stamp for `unix_seconds`, written through `time`.
 fn time_crate_seconds(unix_seconds: u64) -> String {
     OffsetDateTime::from_unix_timestamp(i64::try_from(unix_seconds).unwrap())
         .unwrap()

@@ -100,7 +100,7 @@ and the [agent continuation handoff](/documentation/archive/handoffs_and_kickoff
   [workspace layout](/documentation/architecture/workspace_layout.md) describes the tree as it is.
 - [Library crate documentation](/documentation/crates/README.md) — the API server, the single-page
   app, the game server host agent and the other library crates.
-- [Tool documentation](/documentation/tools/README.md) — the developer tools, the ticketboard
-  among them.
+- [Tool documentation](/documentation/tools/README.md) — the developer tools, the Enfusion script
+  oracle and the MCP broker among them.
 - [Glossary](/documentation/glossary/README.md) — mod, Enfusion, Workbench, EnfScript and mission
   header.

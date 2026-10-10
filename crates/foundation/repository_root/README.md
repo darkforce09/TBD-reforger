@@ -16,10 +16,10 @@ crates/foundation/repository_root/
 
 ```text
 find_repository_root()            working directory ──┐
-find_repository_root_from(start)  any folder ─────────┴─► walk up to the nearest folder holding .ai/tickets/ROOT
+find_repository_root_from(start)  any folder ─────────┴─► walk up to the nearest folder holding .ai/ROOT
 ```
 
-A folder is the checkout root when it holds the file `.ai/tickets/ROOT` (`ROOT_MARKER`); the walk
+A folder is the checkout root when it holds the file `.ai/ROOT` (`ROOT_MARKER`); the walk
 stops at the nearest one, so a slice worktree nested under another checkout resolves to itself,
 and a walk that reaches the filesystem root is an `Error` naming the folder it started from and
 the marker. A folder named like the marker does not count. `find_repository_root` starts from the
@@ -27,7 +27,7 @@ working directory, so a command run in a worktree reads that worktree's files ev
 was linked from a sibling checkout sharing the build folder; a test that must find the checkout it
 was compiled in starts from its own `env!("CARGO_MANIFEST_DIR")` with `find_repository_root_from`.
 
-Why the marker is `.ai/tickets/ROOT` and not the Cargo workspace root (a `Cargo.lock` beside a
+Why the marker is `.ai/ROOT` and not the Cargo workspace root (a `Cargo.lock` beside a
 `Cargo.toml` declaring `[workspace]`):
 
 - **Every checkout carries it.** It is a tracked file, so every clone, every CI checkout (the
@@ -38,7 +38,7 @@ Why the marker is `.ai/tickets/ROOT` and not the Cargo workspace root (a `Cargo.
 - **Nothing fakes it by accident.** Tests across the tools build throwaway Cargo workspaces (the
   repository-law tests write a `[workspace]` manifest into a temporary checkout), and a Cargo
   marker would take any of them for a root. A throwaway folder is a root here only when a test
-  plants the marker on purpose, as the ticket registry tests do.
+  plants the marker on purpose, as the tool crates' scratch-checkout tests do.
 - **One stat, no parse.** The probe asks whether one file exists; the Cargo marker has to read the
   root manifest and match a `[workspace]` line, which a comment or a reformatted header breaks.
 - **One answer.** In this repository both markers name the same folder, so the frontend tests
@@ -66,7 +66,7 @@ None: no feature, no environment variable. The working directory is the walk's s
 - `find_repository_root() -> Result<PathBuf>`: the root above the working directory.
 - `find_repository_root_from(start: &Path) -> Result<PathBuf>`: the root at or above `start`.
 - `is_repository_root(candidate: &Path) -> bool`: whether `candidate` holds the marker file.
-- `ROOT_MARKER`: `.ai/tickets/ROOT`, relative to the root.
+- `ROOT_MARKER`: `.ai/ROOT`, relative to the root.
 - `Error` (`CurrentDirectory`, `RootMarkerNotFound { start }`) and `Result`.
 - `prelude`: the three functions and `ROOT_MARKER`.
 
@@ -85,4 +85,3 @@ None: no feature, no environment variable. The working directory is the walk's s
 
 - [Tooling architecture](/documentation/tools/tooling_architecture.md) — how the tools find the
   checkout and the locations they share.
-- [Ticket registry](/.ai/tickets/README.md) — the folder that holds the marker file.

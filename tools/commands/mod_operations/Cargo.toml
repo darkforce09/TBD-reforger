@@ -43,9 +43,8 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["preserve_order", "raw_value"] }
 tar = { workspace = true }
 thiserror = { workspace = true }
-ticket_model = { workspace = true }
-ticket_registry = { workspace = true }
-ticket_wave_lock = { workspace = true }
+# The mod wave driver's plan and programme, from the central ticket manager's `ttm` command line.
+ticket_manager_client = { workspace = true }
 verification_core = { workspace = true }
 walkdir = { workspace = true }
 # The staging host check of `mod bootstrap-staging` and the MCP game root.

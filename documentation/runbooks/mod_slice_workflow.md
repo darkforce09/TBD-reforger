@@ -36,9 +36,10 @@ reason in.
   `host-spawn`), which `mod compile` and the world boot need; the
   [mod commands](/tools/commands/mod_operations/src/README.md) list the exit codes.
 - The wave plan: the program's dotted child [tickets](/documentation/glossary/n_to_z.md#ticket) in
-  `.ai/tickets/wave.lock`, each with an `owns` list. `cargo xtask wave repack` is the only writer
-  of the lock; the corpus pin `game_mod_programme_ticket` in `.ai/tickets/corpus-pins.toml` names
-  the program.
+  the central ticket manager's wave plan (`ttm --project reforger wave show`), each with an `owns`
+  list. `ttm --project reforger wave repack` is the only writer of the plan; the driver resolves
+  the program, `T-181`, with `ttm show` and takes its children as the mod slices. `ttm` is on
+  `PATH` (or named by `TBD_TTM_BIN`).
 - [Workbench](/documentation/glossary/n_to_z.md#workbench) only for world, prefab and play-in-editor
   work: `cargo xtask mod dev-bootstrap` brings it and the MCP bridge up, as the
   [Workbench MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md#bringing-the-bridge-up)
@@ -56,15 +57,16 @@ output trying to fix it.
 
 ## Rules
 
-1. **One worktree per slice.** A sub-slice (a two-dot id such as `T-<n>.<m>.<k>`) is the same
-   slice's work and stays in its parent's worktree. `slice-worktree new` maps a sub-slice id to its
-   parent and says so; `merge` does the same silently.
+1. **One worktree per slice.** A sub-slice (three dot segments, such as `T-<n>.<m>.<k>` or a slug
+   of the same shape) is the same slice's work and stays in its two-segment parent's worktree.
+   `slice-worktree new` maps a sub-slice id to its parent and says so; `merge` does the same
+   silently.
 2. **Run as many slices at once as are file-disjoint, computed rather than guessed.** Worktrees
    make concurrent edits safe but do not prevent merge conflicts, so two concurrent agents never
-   own overlapping paths. `cargo xtask slice-collisions` computes the largest disjoint set from
-   the `owns` lists in the wave lock (prefix containment, which errs toward reporting a
-   collision), capped at `TBD_MAX_CONCURRENT` (default 8). Disk is not the limit: a worktree costs
-   about 81 MB fresh and about 500 MB warm. Two costs grow with width: shared-file merges (each
+   own overlapping paths. `ttm --project reforger wave collisions` computes the largest disjoint
+   set from the `owns` lists in the wave plan (prefix containment, which errs toward reporting a
+   collision), capped at the plan's width (`--cap`, default 8). Disk is not the limit: a worktree
+   costs about 81 MB fresh and about 500 MB warm. Two costs grow with width: shared-file merges (each
    slice that adds a component touches `Prefabs/Systems/TBD_GameMode.et` and the roll-call in
    `TBD_FrameworkRollCall.c`; the conflicts are additive and easy, but one per slice), and the
    orchestrator's attention, since every agent returns a report that must be read and acted on.
@@ -83,7 +85,7 @@ output trying to fix it.
    `mod/tbd-framework/Scripts/Game/TBD/`) are the usual ones. The limit is file collisions,
    not Workbench.
 8. **Agents never ship.** They implement, compile, gate their slice and report. The orchestrator
-   owns every ticket status change, through `cargo xtask ticket`.
+   owns every ticket status change, through `ttm --project reforger`.
 9. **Agents leave their tree compiling green**, and put throwaway API probes under `/tmp`, never in
    the mod tree: a stray probe file in `Scripts/` breaks the compile for every agent.
 10. **Every agent in the workflow runs on the operator's chosen model tier** — slice agents,
@@ -104,8 +106,8 @@ there are no long-lived branches and no pull requests.
 
 Run every step from the repository root of the main checkout unless it says the worktree.
 
-1. Find where the program stands. The driver reads the wave lock, the program's slice plan and
-   the live worktrees, so a fresh or resumed session needs nothing else.
+1. Find where the program stands. The driver reads the wave plan and the program's children from
+   the ticket manager, and the live worktrees, so a fresh or resumed session needs nothing else.
 
    ```bash
    cargo xtask mod wave status
@@ -116,17 +118,17 @@ Run every step from the repository root of the main checkout unless it says the 
    `empty (no commits yet)`, `DIRTY — agent must commit in its worktree` or
    `no worktree — run: …`), its title, `ready to merge: <r>/<t>` and an `ACTION:` line. With every
    planned wave shipped it prints only ``ALL PLANNED WAVES SHIPPED. Next: queue mod tickets and
-   `cargo xtask wave repack`, or close the program.`` and exits 0. A missing lock or pin file
-   exits 2.
+   `ttm --project reforger wave repack`, or close the program.`` and exits 0. A wave plan or
+   program the ticket manager cannot give exits 2.
 
 2. Check that the wave's slices are disjoint from each other and from anything else in flight.
 
    ```bash
-   cargo xtask slice-collisions
+   ttm --project reforger wave collisions
    ```
 
-   Expected: `next wave is <N>. Max disjoint dispatch set (<k>, cap 8):`, then each ticket with its
-   `owns:` line. Naming running tickets as arguments prints `already in flight` and
+   Expected: `next wave is <N>. Max disjoint dispatch set (<k>, cap <width>):`, then each ticket
+   with its `owns:` line. Naming running tickets as arguments prints `already in flight` and
    `may join them` instead; `--check <id>` prints one ticket's `owns` and what it collides with.
 
 3. Create the wave's worktrees.
@@ -187,41 +189,36 @@ Run every step from the repository root of the main checkout unless it says the 
    reports before going on.
 
 9. Ship each landed slice, as the orchestrator. `mod wave status` reads shipped slices from the
-   program's slice plan, which the child ticket files feed.
+   program's children in the ticket manager.
 
    ```bash
-   cargo xtask ticket ship <slice id>
+   ttm --project reforger ship <slice>
    ```
 
-   Expected: the ticket file's status becomes `shipped` and the wave lock is refreshed
-   (`--no-repack` skips that, for one `cargo xtask wave repack` after the last slice). Once every
-   slice of wave N is shipped, step 1 reports wave N+1; go back to step 2.
+   Expected: `<slice> shipped`, and the wave plan is repacked (`--no-repack` skips that, for one
+   `ttm --project reforger wave repack` after the last slice). Once every slice of wave N is
+   shipped, step 1 reports wave N+1; go back to step 2.
 
 ### The mod wave gate
 
-`cargo xtask mod wave gate` runs the gate that `land` runs, on its own. It runs twelve steps,
+`cargo xtask mod wave gate` runs the gate that `land` runs, on its own. It runs seven steps,
 prints `PASS` or `FAIL` for each with the last 12 lines of a failure, and ends `GATE: PASS` (exit
 0) or `GATE: FAIL` (exit 1):
 
 | Step | Command it runs |
 |---|---|
-| compile, compile-selftest | `cargo run -q -p xtask -- mod compile`, then `mod compile-selftest` |
-| world boot, world-boot selftest, world boot +mission | `mod world-boot`, `mod world-boot --selftest`, `mod world-boot --mission=bridgehead-at-levie` |
-| ui layouts | `cargo run -q -p xtask -- verify ui-layouts` |
+| compile | `cargo run -q -p xtask -- mod compile` |
+| world boot, world boot +mission | `mod world-boot`, `mod world-boot --mission=bridgehead-at-levie` |
 | schema validate | `cargo run -q -p xtask -- ci schema-validate` |
 | capability | `cargo run -q -p developer_tools --bin enf -- capability` |
 | oracle citations | `cargo run -q -p developer_tools --bin enf -- citations` |
-| no-crf-leak | `cargo run -q -p xtask -- verify no-crf-leak` |
-| ticket registry | `cargo run -q -p xtask -- ticket check`, through `distrobox-host-exec` |
 | enf unit tests | `cargo test -q -p enfusion_script_index --lib`, through `distrobox-host-exec` |
 
 `enf capability` exits 1 when a framework file matches no verdict rule (UNTRIAGED); `enf citations`
-exits 1 on any `@idx` citation that does not resolve. `verify no-crf-leak` exits 1 on a leak and 2
-(did not run) when the CRF or PlayableSelector lane is missing; the gate counts both as `FAIL`, and
-the check's [README](/tools/checks/repository_checks/src/licensing/README.md) describes what it scans.
-
-On the current tree the gate cannot pass: `verify ui-layouts` finds no layout because it does not
-walk the subfolders of `mod/tbd-framework/UI/layouts/`.
+exits 1 on any `@idx` citation that does not resolve. `cargo xtask verify no-crf-leak` is not a
+gate step: run it by hand on a slice that touches the oracles; it exits 1 on a leak and 2 (did not
+run) when the CRF or PlayableSelector lane is missing, and the check's
+[README](/tools/checks/repository_checks/src/licensing/README.md) describes what it scans.
 
 ## Verify
 
@@ -334,9 +331,9 @@ beside a TBD file is already the mistake.
 
 **Why every lane refuses.** The vanilla and CRF lanes answer Enfusion API questions, so an agent
 without them invents API facts. PlayableSelector answers design questions only, but it sits in the
-same folder, is filled the same way, and the slice's own `verify no-crf-leak` gate exits 2 (did
+same folder, is filled the same way, and the slice's `verify no-crf-leak` check exits 2 (did
 not run) without it, as it does without the CRF lane. A tree missing any lane therefore cannot
-pass its gate, and `new` refuses at the step that can fix the cause rather than handing over a
+pass that check, and `new` refuses at the step that can fix the cause rather than handing over a
 tree that fails later. `TBD_PS_ORACLE`, when set and not empty, names another PlayableSelector
 checkout in place of the `playable_selector` lane, for `new` and the leak gate alike.
 
@@ -411,7 +408,7 @@ WHAT TO ATTACK, in priority order
 
 DO NOT
 - Fix anything. Report only; the orchestrator decides what to fix and in which slice.
-- Edit anything under .ai/tickets/ or change a ticket status.
+- Change a ticket or its status in the ticket manager, or edit anything under .ai/tickets/.
 - Leave probe files outside /tmp.
 
 RETURN
@@ -434,12 +431,12 @@ UI slice as done when it only compiles.
 | Symptom | Cause | Fix |
 |---|---|---|
 | `mod wave land` prints `MERGE FAILED for <slice>` | `merge` refused: dirty tree, or `land: no gate verdict for <slice>`, a red verdict, or a verdict `STALE` against the branch tip | commit in the worktree, then run `cargo xtask platform wave gate --slice <slice id>` from the worktree and land again |
-| `Gate FAILED after merge. Worktrees kept for inspection.` | a gate step failed on merged `main`; `ui layouts` fails on every run today ([The mod wave gate](#the-mod-wave-gate)) | read each `FAIL` block and run the failing step's command on its own; after a real fix on `main`, run `cargo xtask mod wave gate`, then `platform slice-worktree -- reap` and `mod wave push` by hand |
+| `Gate FAILED after merge. Worktrees kept for inspection.` | a gate step failed on merged `main` ([The mod wave gate](#the-mod-wave-gate)) | read each `FAIL` block and run the failing step's command on its own; after a real fix on `main`, run `cargo xtask mod wave gate`, then `platform slice-worktree -- reap` and `mod wave push` by hand |
 | `new` prints `ERROR: <path> missing — cannot link the <lane> oracle lane` and `REFUSING` | a lane is absent from the main checkout's `mod/References/` (or `TBD_PS_ORACLE` names a missing folder) | fill the lane as the [reference lanes README](/mod/References/README.md) describes, or point `TBD_PS_ORACLE` at a PlayableSelector checkout, then re-run `slice-worktree -- new <slice id>` |
 | `verify no-crf-leak` exits 2 naming a missing lane | the CRF or PlayableSelector lane is absent, so the leak check did not run | fill the lane as above and re-run the check |
 | `REFUSING to bypass the LFS hook: <n> file(s) under assets/terrains/` | the push range carries LFS-tracked files | with git-lfs installed, `git push origin main` |
 | `enf lookup <Class> --index …/vanilla_api_classes.tsv` prints `NOT FOUND` for a listed class | `lookup` reads four-column symbol indexes; the API class index has two columns | `rg '^<Class>\t'` over the TSV instead |
-| `mod wave status` exits 2 | the wave lock or `.ai/tickets/corpus-pins.toml` is missing or unreadable | `cargo xtask wave repack`, or restore the pin file |
+| `mod wave status` exits 2 | the ticket manager cannot give the wave plan or the program `T-181`: `ttm` is missing, the ticket data awaits `ttm import`, or the project has no plan | install `ttm` or set `TBD_TTM_BIN`; once the tickets are imported, `ttm --project reforger wave repack` writes the plan |
 | in-container `linker cc not found` or `GLIBC_2.39 not found` | a build or binary ran on the wrong side of the host bridge | run it through `cargo xtask` or `distrobox-host-exec` |
 
 ## Related

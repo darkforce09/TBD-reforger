@@ -17,7 +17,7 @@ documentation/standards/
 ├── documentation_standards.md  comment rules, cross-boundary tags, the documentation tree and lifecycle
 ├── readme_standard.md          README sections, kinds and the Contents block
 ├── templates/                  copyable skeletons for every README kind and document type
-├── ticket_identifiers.md       ticket id grammar, ticket, spec and plan paths, ids in commits and docs
+├── ticket_identifiers.md       ticket slugs and legacy ids, spec and plan paths, ids in commits and docs
 └── where_does_x_go.md          the home of each kind of file
 ```
 
@@ -33,7 +33,7 @@ Each standard owns one question, and the others link it rather than restate it:
 | Which crate may depend on or name which? | [crate boundary rules](/documentation/standards/crate_boundary_rules.md) |
 | Where does a new file go? | [where does X go?](/documentation/standards/where_does_x_go.md) |
 | What does a commit carry? | [commit checklist](/documentation/standards/commit_checklist.md) |
-| How is a ticket id formed and cited? | [ticket identifiers](/documentation/standards/ticket_identifiers.md) |
+| How is a ticket named and cited? | [ticket identifiers](/documentation/standards/ticket_identifiers.md) |
 | How does an agent session run a multi-file or multi-crate task with sub-agents? | the standard working method, the [sub-agent orchestration](/documentation/runbooks/sub_agent_orchestration.md) runbook |
 
 `CLAUDE.md` states the repository-wide laws in brief; a standard holds the detail. Most rules are
@@ -50,8 +50,8 @@ these answers; a rule that fits an existing standard goes into it.
 - [Graphics crates](/crates/graphics/), [streaming crates](/crates/streaming/),
   [map rendering crates](/crates/map_rendering/) and [frontend](/crates/frontend/shell/frontend_application/) — the crates the
   crate boundary rules govern.
-- [Ticket model](/tools/tickets/ticket_model/) — the id, spec and plan paths the ticket
-  identifiers standard describes.
+- [Ticket manager client](/tools/foundation/ticket_manager_client/) — the slug and legacy-number
+  reference shapes the ticket identifiers standard describes.
 
 ## Boundaries
 

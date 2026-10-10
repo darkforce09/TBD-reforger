@@ -58,20 +58,18 @@ The sign-off form is the template in
 On a full PASS:
 
 ```bash
-cargo xtask ticket advance-slice T-068
+ttm --project reforger advance-slice T-068
 ```
 
 ```bash
-cargo xtask ticket ship T-068
+ttm --project reforger ship T-068
 ```
 
 ```bash
-cargo xtask ticket ship T-181
+ttm --project reforger ship T-181
 ```
 
-```bash
-cargo xtask ticket sync
-```
+Then `ttm --project reforger next` lists the running tickets and the next work.
 
 ## Capture the evidence
 
@@ -115,15 +113,15 @@ anything restarts, and capture once: a bug should never need reproducing.
 5. Add the screenshots: every screen that was wrong, one that was right for contrast, and the
    `#tbd audit` output (it is chat, not a file).
 
-To file a finding, add a ticket with the evidence folder in its summary; `ticket add` creates it
-with status `idea`. Copy the folder under `.ai/artifacts/` when the ticket should cite it by
-repository path.
+To file a finding, add a ticket with the evidence folder in its summary; `ttm add` creates it in the
+central ticket manager with status `idea`. Copy the folder under `.ai/artifacts/` when the ticket
+should cite it by repository path.
 
 ```bash
-cargo xtask ticket add "<what failed>" --summary "<evidence folder and the failing line>"
+ttm --project reforger add --title "<what failed>" --summary "<evidence folder and the failing line>"
 ```
 
-Expected: the new ticket id; then `cargo xtask ticket sync`.
+Expected: `Created work ticket <slug>`.
 
 ## Verify
 

@@ -62,9 +62,6 @@ The applications and where they sit:
 | Offline service worker: the offline pack caches and ranged reads from the cache | [`crates/frontend/shell/offline_service_worker`](/crates/frontend/shell/offline_service_worker/README.md) | `offline_service_worker` (built by Trunk) |
 | Game server host agent: process control, RCON reads and mission header switches on a game host | [`crates/fleet/game_server_host_agent`](/crates/fleet/game_server_host_agent/README.md) | `game_server_host_agent` |
 
-The ticketboard desktop viewer is a tool crate,
-[`tools/tickets/ticketboard_desktop`](/tools/tickets/ticketboard_desktop/README.md).
-
 Every manifest under `crates/` is a workspace member through the root `Cargo.toml`, which lists
 one glob per category: `crates/<category>/*` for each category folder above (`crates/fleet/*`
 among them) and `crates/frontend/*/*` for the frontend's layer folders (`foundation`, `features`,

@@ -28,7 +28,7 @@ use crate::repository_files::{FileContent, TrackedTree};
 use crate::text_edits::AllowedSpans;
 
 /// How many treatments a file can have, one allowed-span cell each.
-const TREATMENT_COUNT: usize = 6;
+const TREATMENT_COUNT: usize = 5;
 
 /// One text file of the judged tree.
 pub(super) struct TextFile {
@@ -106,7 +106,7 @@ impl TreeText {
         let treatments = self
             .files
             .iter()
-            .map(|file| areas.treatment_of(&file.path, &file.text))
+            .map(|file| areas.treatment_of(&file.path))
             .collect();
         self.treatments.push((areas, treatments));
         self.treatments.len() - 1
@@ -131,8 +131,7 @@ fn treatment_slot(treatment: FileTreatment) -> usize {
         FileTreatment::Live => 0,
         FileTreatment::FrozenDocument => 1,
         FileTreatment::FrozenIndex => 2,
-        FileTreatment::ClosedTicket => 3,
-        FileTreatment::FixtureSource => 4,
-        FileTreatment::Excluded => 5,
+        FileTreatment::FixtureSource => 3,
+        FileTreatment::Excluded => 4,
     }
 }

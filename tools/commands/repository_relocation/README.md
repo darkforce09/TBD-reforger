@@ -9,7 +9,7 @@ no live file still spells a path or Rust prefix a manifest retired. It is the wo
 
 ```text
 tools/commands/repository_relocation/
-├── Cargo.toml  the `repository_relocation` library package: aho-corasick, verification_core, process_runner, repository_layout, ticket_model; layout tier 3
+├── Cargo.toml  the `repository_relocation` library package: aho-corasick, verification_core, process_runner, repository_layout; layout tier 3
 └── src/        the manifest parser, the plan, the rewrite passes, the moves and the verification
 ```
 
@@ -76,8 +76,8 @@ No feature and no environment variable; `git` must be on the path.
 - Depends on: `aho-corasick` (the verification's combined matcher), `verification_core`
   (verdicts, the run report, `NotRun`), `process_runner` (git,
   including the history of the manifests folder),
-  `repository_layout` (the frozen areas and the manifests folder), `ticket_model` (the closed
-  ticket statuses).
+  `repository_layout` (the frozen areas, the legacy ticket data folder and the manifests
+  folder).
 - Used by: the `refactor` command group of the xtask binary
   (`tools/xtask/src/commands/refactor/dispatch.rs`).
 - Rules: tier 3 of `tools/commands` (`cargo xtask verify crate-tiers`); nothing is written before

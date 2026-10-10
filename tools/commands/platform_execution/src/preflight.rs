@@ -2,8 +2,9 @@
 //!
 //! **Role:** runs the factory's machine assertions (host bridge, cargo, disk, memory, swap, the
 //! shared `CARGO_TARGET_DIR`, stray per-worktree build folders, the run target's provenance stamp,
-//! working tree, branch, remote, stale worktrees, the wave lock, the ticket registry, Postgres, the
-//! API, `trunk serve` and stray Chrome) and prints one `✓` / `✗ BLOCK` / `! WARN` line per check
+//! working tree, branch, remote, stale worktrees, the central ticket manager and its ticket check,
+//! the wave plan and its agreement with the marker ledger, Postgres, the API, `trunk serve` and
+//! stray Chrome) and prints one `✓` / `✗ BLOCK` / `! WARN` line per check
 //! plus a summary.
 //!
 //! **Position:** reached through `platform_dispatch` from `cargo xtask platform preflight
@@ -29,6 +30,7 @@ use crate::{Error, Result};
 
 use process_runner::Run;
 use repository_root::find_repository_root;
+use ticket_manager_client::{TicketManager, WavePlan};
 
 struct Counters {
     block: u32,
@@ -94,7 +96,7 @@ use ok::status_ok;
 use ok::stray_worktree_targets;
 use ok::swap_used_pct;
 use ok::tcp_up;
-use ok::wave_lock_open_count;
+use ok::wave_ledgers_agree;
 use ok::worktree_paths;
 
 mod execution;

@@ -88,7 +88,7 @@ pub(crate) fn gate_wave_number(ctx: &Ctx) -> Option<String> {
             let cw = match ledger::current_wave(ctx) {
                 Ok(cw) => cw,
                 Err(e) => {
-                    werr!("gate: {}", ticket_model::error_chain_text(&e));
+                    werr!("gate: {}", crate::error::error_chain_text(&e));
                     return None;
                 }
             };
@@ -97,7 +97,7 @@ pub(crate) fn gate_wave_number(ctx: &Ctx) -> Option<String> {
                 let rows = match ledger::plan_rows(ctx) {
                     Ok(r) => r,
                     Err(e) => {
-                        werr!("gate: {}", ticket_model::error_chain_text(&e));
+                        werr!("gate: {}", crate::error::error_chain_text(&e));
                         return None;
                     }
                 };
@@ -187,7 +187,7 @@ pub(crate) fn prune_old_gate_wave_dbs(ctx: &Ctx, wave: i64) {
 ///
 /// Verified repo-wide before deleting, not assumed: the only surviving mentions of
 /// `MIGRATE_TEST_DATABASE_URL` are the two `//!` doc comments in those same two test files
-/// recording that they no longer share it, plus ticket registry prose. `std::env::var` for it: zero
+/// recording that they no longer share it, plus ticket prose. `std::env::var` for it: zero
 /// hits. So the export named a variable nothing read, pointed at a database nothing opened, and the
 /// `DROP … WITH (FORCE)` that preceded it could only ever have terminated sessions on a database
 /// with no legitimate user. Deleted rather than left as harmless: a live-looking destructive

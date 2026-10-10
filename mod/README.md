@@ -151,5 +151,5 @@ Other mod commands:
 - [Enfusion MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — the two ways to reach
   Workbench, the bootstrap and the handler loading rules.
 - [Crates](/crates/README.md) — the applications and library crates of the website and the fleet.
-- [Tools](/tools/README.md) — the developer tools, the ticketboard desktop viewer among them.
+- [Tools](/tools/README.md) — the developer tools, the `cargo xtask mod` command crate among them.
 - [Documentation](/documentation/README.md) — the map of every deeper document.

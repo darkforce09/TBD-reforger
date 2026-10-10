@@ -1,10 +1,11 @@
 //! The mod wave driver's dispatch, readers, `status`, `prep` and `gate`.
 //!
-//! **Role:** reads the wave lock and the registry, reports the current wave, prepares its worktrees
-//! and runs the wave gate.
-//! **Position:** under [`crate::wave_execution`]; uses `platform_execution::slice_worktree` and the
-//! ticket crates.
-//! **Signals & state:** none; each run reads the live lock, git and worktree state.
+//! **Role:** reads the mod programme's share of the wave plan from the central ticket manager,
+//! reports the current wave, prepares its worktrees and runs the wave gate.
+//! **Position:** under [`crate::wave_execution`]; uses `platform_execution::slice_worktree` and
+//! `ticket_manager_client`.
+//! **Signals & state:** the mod plan, read once per process (`ttm show T-181`, `ttm wave show`);
+//! each run reads the live git and worktree state.
 //! **Invariants:** a gate step that could not run is a failure, never a pass.
 
 use super::*;
@@ -35,122 +36,115 @@ pub(super) fn run_with_root(root: &Path, args: &[String]) -> u8 {
     }
 }
 
-/// The programme whose dotted children this driver owns, from the corpus pins. A missing or
-/// malformed pin file is a refusal: filtering the shared lock against an empty programme id
-/// would silently claim every other programme's rows.
-pub(super) fn mod_programme(root: &Path) -> Option<String> {
-    match ticket_registry::corpus_pins::load(root) {
-        Ok(pins) => Some(pins.game_mod_programme_ticket.into()),
+/// The programme ticket whose children are the game-mod slices, by its legacy number; the
+/// central ticket manager resolves it to the programme's slug.
+pub(super) const MOD_PROGRAMME: &str = "T-181";
+
+/// One mod slice of an open wave.
+struct ModSliceRow {
+    wave: u32,
+    slug: String,
+    title: String,
+}
+
+/// The mod programme's share of the wave plan: the open-wave rows of its children and which
+/// children have shipped, read once per process from the central ticket manager.
+struct ModPlan {
+    rows: Vec<ModSliceRow>,
+    shipped: Vec<String>,
+}
+
+/// The mod plan, or `None` when the ticket manager cannot name the programme or give the wave
+/// plan (reported on stderr) — callers refuse loudly instead of shrugging into "ALL PLANNED WAVES
+/// SHIPPED".
+fn mod_plan() -> Option<&'static ModPlan> {
+    static PLAN: OnceLock<Option<ModPlan>> = OnceLock::new();
+    PLAN.get_or_init(load_mod_plan).as_ref()
+}
+
+fn load_mod_plan() -> Option<ModPlan> {
+    let ticket_manager = TicketManager::from_env();
+    let programme = match ticket_manager.show(MOD_PROGRAMME) {
+        Ok(programme) => programme,
         Err(error) => {
-            eprintln!("mod wave: {}", ticket_model::error_chain_text(&error));
-            None
-        }
-    }
-}
-
-/// Is this id one of the mod programme's? Its dotted children are its slices, and
-/// `shipped_slices` reads that programme's slice plan exclusively, so any other id in the
-/// shared lock is another programme's row.
-pub(super) fn mod_slice_id(programme: &str, id: &str) -> bool {
-    id.starts_with(&format!("{programme}."))
-}
-
-/// The lock's `(wave, slice)` pairs for this programme. A missing/unreadable lock or pin file
-/// is `None` — callers refuse loudly instead of shrugging into "ALL PLANNED WAVES SHIPPED".
-pub(super) fn lock_mod_rows(root: &Path) -> Option<Vec<(u32, String)>> {
-    let programme = mod_programme(root)?;
-    let lock = match ticket_wave_lock::load(root) {
-        Ok(l) => l,
-        Err(e) => {
-            eprintln!("mod wave: {}", ticket_model::error_chain_text(&e));
+            eprintln!("mod wave: {error}");
             return None;
         }
     };
-    Some(
-        lock.waves
-            .iter()
-            .flat_map(|w| {
-                w.tickets
-                    .iter()
-                    .filter(|t| mod_slice_id(&programme, t.as_str()))
-                    .map(move |t| (w.n, t.to_string()))
-            })
-            .collect(),
-    )
+    let plan = match ticket_manager.wave_show() {
+        Ok(plan) => plan,
+        Err(error) => {
+            eprintln!("mod wave: {error}");
+            return None;
+        }
+    };
+    let is_member = |slug: &str| programme.children.iter().any(|child| child.slug == slug);
+    let rows = plan
+        .waves
+        .iter()
+        .flat_map(|wave| {
+            wave.tickets
+                .iter()
+                .filter(|row| is_member(row.slug.as_str()))
+                .map(move |row| ModSliceRow {
+                    wave: wave.n,
+                    slug: row.slug.to_string(),
+                    title: row.title.clone(),
+                })
+        })
+        .collect();
+    // The programme's children carry their statuses; a slice counts once it has shipped.
+    let shipped = programme
+        .children
+        .iter()
+        .filter(|child| child.status == "shipped")
+        .map(|child| child.slug.to_string())
+        .collect();
+    Some(ModPlan { rows, shipped })
 }
 
-pub(super) fn wave_slices(root: &Path, w: &str) -> Vec<String> {
-    let Some(rows) = lock_mod_rows(root) else {
+pub(super) fn wave_slices(_root: &Path, w: &str) -> Vec<String> {
+    let (Some(plan), Ok(n)) = (mod_plan(), w.parse::<u32>()) else {
         return Vec::new();
     };
-    let Ok(n) = w.parse::<u32>() else {
-        return Vec::new();
-    };
-    rows.into_iter()
-        .filter(|(wn, _)| *wn == n)
-        .map(|(_, s)| s)
+    plan.rows
+        .iter()
+        .filter(|row| row.wave == n)
+        .map(|row| row.slug.clone())
         .collect()
 }
 
-pub(super) fn slice_title(root: &Path, s: &str) -> String {
-    ticket_registry::registry::ticket_titles::read_ticket_title(root, s)
+pub(super) fn slice_title(_root: &Path, s: &str) -> String {
+    mod_plan()
+        .and_then(|plan| plan.rows.iter().find(|row| row.slug == s))
+        .map(|row| row.title.clone())
+        .unwrap_or_default()
 }
 
-/// Open lock waves (n > 0) that hold at least one mod slice, ascending.
-pub(super) fn unique_sorted_waves(root: &Path) -> Vec<String> {
-    let Some(rows) = lock_mod_rows(root) else {
+/// Open waves (n > 0) that hold at least one mod slice, ascending.
+pub(super) fn unique_sorted_waves(_root: &Path) -> Vec<String> {
+    let Some(plan) = mod_plan() else {
         return Vec::new();
     };
-    let mut waves: Vec<u32> = rows
-        .into_iter()
-        .filter(|(n, _)| *n > 0)
-        .map(|(n, _)| n)
+    let mut waves: Vec<u32> = plan
+        .rows
+        .iter()
+        .filter(|row| row.wave > 0)
+        .map(|row| row.wave)
         .collect();
     waves.sort_unstable();
     waves.dedup();
     waves.into_iter().map(|n| n.to_string()).collect()
 }
 
-/// Shipped slice ids for the mod programme. On any error → empty.
-pub(super) fn shipped_slices(root: &Path, programme: &str) -> Vec<String> {
-    let v: Value = match ticket_registry::registry::load_registry(root) {
-        Ok(v) => v,
-        Err(_) => return Vec::new(),
-    };
-    let tickets = match v.get("tickets").and_then(|t| t.as_array()) {
-        Some(a) => a,
-        None => return Vec::new(),
-    };
-    let t181 = match tickets
-        .iter()
-        .find(|t| t.get("id").and_then(|i| i.as_str()) == Some(programme))
-    {
-        Some(t) => t,
-        None => return Vec::new(),
-    };
-    let plan = match t181.get("slice_plan").and_then(|p| p.as_object()) {
-        Some(p) => p,
-        None => return Vec::new(),
-    };
-    plan.iter()
-        .filter(|(_, v)| v.get("status").and_then(|s| s.as_str()) == Some("shipped"))
-        .map(|(k, _)| k.clone())
-        .collect()
-}
-
-/// The first open lock wave whose mod slices are not all shipped. `None` = the lock itself is
-/// missing or unreadable (already reported by [`lock_mod_rows`]) — a refusal, not "done".
+/// The first open wave whose mod slices are not all shipped. `None` = the plan itself could not
+/// be read (already reported) — a refusal, not "done".
 pub(super) fn current_wave(root: &Path) -> Option<String> {
-    lock_mod_rows(root)?;
-    let shipped = shipped_slices(root, &mod_programme(root)?);
+    let plan = mod_plan()?;
     for w in unique_sorted_waves(root) {
-        let mut done_all = true;
-        for s in wave_slices(root, &w) {
-            if !shipped.iter().any(|x| x == &s) {
-                done_all = false;
-                break;
-            }
-        }
+        let done_all = wave_slices(root, &w)
+            .iter()
+            .all(|s| plan.shipped.iter().any(|x| x == s));
         if !done_all {
             return Some(w);
         }
@@ -158,13 +152,10 @@ pub(super) fn current_wave(root: &Path) -> Option<String> {
     Some("done".to_string())
 }
 
-/// `sed -E 's/^(T-[0-9]+\.[0-9]+).*/\1/'` — sub-slices share the parent's worktree.
+/// Sub-slices share the parent's worktree: a reference of three or more dot segments resolves
+/// to its first two ([`ticket_manager_client::parent_slice`]).
 pub(super) fn parent_slice(s: &str) -> String {
-    let re = Regex::new(r"^(T-[0-9]+\.[0-9]+)").expect("parent_slice regex");
-    match re.find(s) {
-        Some(m) => m.as_str().to_string(),
-        None => s.to_string(),
-    }
+    ticket_manager_client::parent_slice(s).to_string()
 }
 
 pub(super) fn tree_state(root: &Path, slice: &str) -> TreeState {
@@ -214,7 +205,7 @@ pub(super) fn cmd_status(root: &Path) -> u8 {
     println!("═══ mod wave status ═══");
     if w == "done" {
         println!(
-            "ALL PLANNED WAVES SHIPPED. Next: queue mod tickets and `cargo xtask wave repack`, or close the program."
+            "ALL PLANNED WAVES SHIPPED. Next: queue mod tickets and `ttm --project reforger wave repack`, or close the program."
         );
         return 0;
     }
@@ -337,11 +328,6 @@ pub(super) const GATE_STEPS: &[GateStep] = &[
             "--",
             "citations",
         ],
-    },
-    GateStep {
-        label: "ticket registry",
-        program: "distrobox-host-exec",
-        args: &["cargo", "run", "-q", "-p", "xtask", "--", "ticket", "check"],
     },
     GateStep {
         label: "enf unit tests",

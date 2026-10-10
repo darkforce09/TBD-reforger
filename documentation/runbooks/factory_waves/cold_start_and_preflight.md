@@ -22,6 +22,11 @@ comment, and one that is in neither was not recorded and is re-derived from the 
   `cargo xtask platform wave`.
 - A container runtime for the local Postgres, as
   [Local development](/documentation/runbooks/local_development.md) describes.
+- The central ticket manager's command line, `ttm`, on `PATH` (or named by `TBD_TTM_BIN`), with
+  the `reforger` project imported; the
+  [ticket manager client](/tools/foundation/ticket_manager_client/README.md) lists its settings.
+  Until the operator runs `ttm import`, every wave and slice command refuses: the ticket is not
+  found, or the project has no wave plan.
 - The three oracle lanes (`crf_framework`, `vanilla_reference` and `playable_selector`) filled in
   the main checkout's `mod/References/`, as its [README](/mod/References/README.md)
   describes (all gitignored); `slice-worktree new` refuses to create a worktree without any of
@@ -31,12 +36,12 @@ comment, and one that is in neither was not recorded and is re-derived from the 
 
 | Source | What it holds |
 |---|---|
-| `.ai/tickets/wave.lock` | which tickets run together, compiled by `cargo xtask wave repack` |
-| `.ai/tickets/T-<id>.toml` | every ticket's full record; the summary and acceptance fields are the slice brief, written to be pasted |
+| the wave plan in the ticket manager (`ttm --project reforger wave show`) | which tickets run together, compiled by `ttm --project reforger wave repack` |
+| the tickets in the ticket manager (`ttm --project reforger show <ticket>`) | every ticket's full record; the summary and acceptance fields are the slice brief, written to be pasted |
 | `.ai/artifacts/worktrees/` | one worktree per slice in flight (`platform slice-worktree -- list`) |
 | `.ai/artifacts/verdicts/` | the slice gate verdict receipts `land` reads |
 | `.ai/artifacts/last-verified` | the commit the last adversarial verifier examined (gitignored) |
-| the `metrics` folder of `.ai/tickets/` | the run receipts `platform slice-run` writes and `land` stamps; absent until the first receipt |
+| the run receipts in the ticket manager (`ttm --project reforger metrics <ticket>`) | the receipts `platform slice-run` records and `land` stamps `landed` |
 | this runbook folder | the process |
 | [frontend data provenance](/documentation/archive/audits/frontend_data_provenance.md) | an archived audit of which render sites show real data and which show mock data |
 
@@ -88,9 +93,11 @@ comment, and one that is in neither was not recorded and is re-derived from the 
    cargo xtask platform preflight
    ```
 
-   Expected: one line per check and `PREFLIGHT: PASS (<n> warn)`, exit 0. Two warnings are
-   normal: `CARGO_TARGET_DIR` unset in this shell, and worktrees of parked slices. Fix every
-   `✗ BLOCK` line before anything else; the
+   Expected: one line per check and `PREFLIGHT: PASS (<n> warn)`, exit 0; among them
+   `ticket manager` (`ttm <version> (contract v<n>)`), `ticket check` (`project reforger valid`) and
+   `wave plan` (`ttm wave check` green, and the plan's wave base equal to the newest wave-close
+   marker in git). Two warnings are normal: `CARGO_TARGET_DIR` unset in this shell, and worktrees of
+   parked slices. Fix every `✗ BLOCK` line before anything else; the
    [preflight README](/tools/commands/platform_execution/src/preflight/README.md) gives each check's
    BLOCK and WARN conditions.
 
@@ -100,11 +107,11 @@ comment, and one that is in neither was not recorded and is re-derived from the 
    cargo xtask platform wave status
    ```
 
-   Expected: `═══ platform program ═══`, `plan:  .ai/tickets/wave.lock`, the verify debt,
+   Expected: `═══ platform program ═══`, `plan:  ttm --project reforger wave show`, the verify debt,
    `open:  <open> / <total> tickets`, `wave:  <n>`, then one line per ticket of the current wave
    (`SHIPPED`, `READY TO LAND`, `IN PROGRESS (uncommitted)`, `tree clean, no commits yet` or
-   `not started`) and the collision command to run next. `verify: … <- OVERDUE` means eight or
-   more landings have no verifier after them.
+   `not started`) and the collision command to run next (`ttm --project reforger wave collisions`).
+   `verify: … <- OVERDUE` means eight or more landings have no verifier after them.
 
 7. Check whether the current wave may be closed or the next one opened.
 
@@ -136,8 +143,10 @@ clean ones.
 | `✗ BLOCK disk  <n>G free — below the 20G floor` | build caches filled the disk | step 4; `cargo xtask platform wave reclaim --gate-dirs` also removes the gate folders, which the next gate rebuilds cold |
 | `✗ BLOCK run target …` | a binary under the shared cache's `run-main` has no `tbd-built-from` stamp, or one naming another commit or checkout | rebuild it from the main checkout with `cargo xtask platform wave run <cargo arguments>` |
 | `! WARN api :8080  healthy but STALE — running since …, API code changed …` | the running API kept its old binary after cargo relinked | stop it and repeat step 2; a stale API answers confidently with old behaviour, which reads like a real defect |
-| `✗ BLOCK ticket check  registry INVALID — every wave gate will fail` right after a `ticket ship` | the shipped ticket has no `shipped_at` yet | `cargo xtask ticket stamp-sha <ticket id> <landing sha>` |
-| `✗ BLOCK wave lock  cargo xtask wave check failed — stale or missing …` | the lock no longer matches the tickets | `cargo xtask wave repack`, then commit the lock |
+| `✗ BLOCK ticket manager  … — every wave and slice command will refuse` | no `ttm` on `PATH`, or `TBD_TTM_BIN` names a missing binary | install `ttm`, or point `TBD_TTM_BIN` at it |
+| `✗ BLOCK ticket check  <n> error(s) in project reforger — …` | a ticket in the ticket manager fails its check | `ttm --project reforger check` lists them; fix each ticket |
+| `✗ BLOCK wave plan  … found <n> problem(s): …` | the stored plan no longer matches the tickets or the close records | `ttm --project reforger wave repack`; nothing is committed |
+| `✗ BLOCK wave plan  the ticket manager's wave base is <n> but the newest wave-close marker in git …` | a wave-close marker was committed but its close was never recorded | re-run the `ttm --project reforger wave close <n> --sha <marker>` that the close printed; it is idempotent |
 | `wave: NOTE — this is the HOST shell, not the dev container.` | the driver runs on the host | nothing: it runs cargo, rustfmt and trunk directly |
 
 ## Related

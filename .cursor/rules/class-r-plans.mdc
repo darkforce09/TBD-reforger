@@ -40,7 +40,7 @@ Run in parallel where possible. Do not draft first and "fill evidence later".
 |--------|---------|
 | Operator message | Complete-outcome ask; any explicit "defer/skip X" |
 | `.ai/artifacts/*_handoff.md` | Fold locations (file:line), entry points, gate notes |
-| `cargo xtask ticket brief <id>` + the ticket's `.ai/tickets/T-<id>.toml` | summary, body fields, `depends_on`, `unblocks`, status, active slice |
+| `ttm --project reforger brief <id>` + `ttm --project reforger show <id>` | summary, body fields, `depends_on`, `unblocks`, status, active slice |
 | Cited specs | Draw-order, L-requirements, acceptance tables |
 | Fold comments in live code | `fold` / `Deferred` / `later slice` / `follow-on` — these are **must-close** unless operator deferred |
 
@@ -144,7 +144,7 @@ Omit only if the artifact is Mode A critique-only (still include evidence for ev
 4. **Must-ship matrix** — every fold/spec lane; close conditions
 5. **Headless CDP matrix** — only for a risky Mission Creator runtime change: smoke name, path/query, exact asserts, suite membership, false-green notes (else N/A one-liner)
 6. **Infra prerequisites** — e.g. Range/206 on gate serve before sat preview CI
-7. **Ship checklist** — the [commit checklist](/documentation/standards/commit_checklist.md) checks: `cargo xtask mk rust-fmt`, `cargo xtask mk rust-clippy` and the tests of the touched crates; `cargo xtask mk leptos-gates` only for a risky Mission Creator runtime change; then the commit and push. Tests follow the pre-alpha test policy (`CLAUDE.md` law 11). `cargo xtask ticket ship <id>` and `ticket stamp-sha` are optional
+7. **Ship checklist** — the [commit checklist](/documentation/standards/commit_checklist.md) checks: `cargo xtask mk rust-fmt`, `cargo xtask mk rust-clippy` and the tests of the touched crates; `cargo xtask mk leptos-gates` only for a risky Mission Creator runtime change; then the commit and push. Tests follow the pre-alpha test policy (`CLAUDE.md` law 11). `ttm --project reforger ship <id>` and `ttm --project reforger stamp-sha` are optional
 8. **Explicit not-in-plan** — only legal outs (ticket IDs / quoted deferrals)
 9. **WIP / dirty tree** — if checkout already half-done, first execute step restores buildability
 

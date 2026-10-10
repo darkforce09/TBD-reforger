@@ -105,16 +105,18 @@ fn landed(root: &Path, slice: &str) {
 }
 
 #[test]
-fn pins_the_sed_regex_oddities() {
+fn a_sub_slice_shares_its_parents_worktree() {
     assert_eq!(parent_slice("T-181.7.1"), "T-181.7");
-    assert_eq!(parent_slice("T-181.7"), "T-181.7");
-    // Flat factory ids have no dot and must survive untouched — every live worktree in the real
-    // repo is this shape.
+    // Flat ids and one-dot slices keep their own tree.
     assert_eq!(parent_slice("T-181"), "T-181");
-    assert_eq!(parent_slice("T-181.7junk"), "T-181.7"); // greedy `.*` tail
-    assert_eq!(parent_slice("xT-181.7.1"), "xT-181.7.1"); // `^`-anchored
-    assert_eq!(parent_slice("T-181."), "T-181."); // needs a digit after the dot
-    assert_eq!(parent_slice(""), "");
+    assert_eq!(
+        parent_slice("game-mod.briefing-map"),
+        "game-mod.briefing-map"
+    );
+    assert_eq!(
+        parent_slice("game-mod.briefing-map.legend"),
+        "game-mod.briefing-map"
+    );
 }
 
 /// The usage text every operator reads on a mistyped subcommand must be runnable as printed:

@@ -24,7 +24,7 @@ reaffirm), words like:
 
 **Quote that authorization** in the verify log or the commit body. No quote → **not deferred**.
 Work the operator deferred is recorded as a ticket with status `deferred`
-(`cargo xtask ticket set-status <id> deferred`), never as `shipped`.
+(`ttm --project reforger set-status <id> deferred`), never as `shipped`.
 
 Soft plan prose ("if feasible", "optional", "P1 later", "fold forward", "record as follow-up") is
 **not** authorization — including when **you** wrote that prose into the plan.

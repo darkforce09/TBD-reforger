@@ -6,21 +6,20 @@ each. A tool joins these relative paths onto the checkout root that
 names stays in that tool's own layout module
 (`tools/map_assets/map_raster_pipeline/src/decision_record_locations.rs`,
 `tools/enfusion/enfusion_script_index/src/script_index_layout.rs`,
-`tools/browser_testing/browser_gate_suites/src/gate_layout.rs`,
-`tools/tickets/ticket_model/src/repository.rs`).
+`tools/browser_testing/browser_gate_suites/src/gate_layout.rs`).
 
 ## Contents
 
 ```text
 tools/foundation/repository_layout/
 ├── Cargo.toml  the `repository_layout` library package: `repository_root` (the finder its prelude re-exports), layout tier 1
-└── src/        the ticket registry, artifact, documentation, reference-lane, build-output, contract, map-asset, npm package, browser gate pin, workspace folder and Enfusion mod addon folder locations
+└── src/        the legacy ticket data, artifact, documentation, reference-lane, build-output, contract, map-asset, npm package, browser gate pin, workspace folder and Enfusion mod addon folder locations
 ```
 
 ## How it works
 
 ```text
-prelude::find_repository_root()?  ──► root ──► root.join(TICKETS_DIR | ARTIFACTS_DIR | …)
+prelude::find_repository_root()?  ──► root ──► root.join(ARTIFACTS_DIR | REFERENCES_DIR | …)
 (re-exported from repository_root)          └──► contracts_dir(&root), terrain_dir(&root, "everon"), …
 ```
 
@@ -46,9 +45,9 @@ No feature and no environment variable; the crate holds constants and pure path 
 
 ## Public surface
 
-- At the crate root: the ticket registry paths (`TICKETS_DIR`, `SCHEMA`,
-  `SCOPE_VOCAB`, `CORPUS_PINS`, `WAVE_LOCK`, `QUEUE_JSON`, `METRICS_DIR`, `METRICS_SCHEMA`,
-  `ESTIMATES_DIR`, `ESTIMATES_SCHEMA`); the artifact tree (`ARTIFACTS_DIR`, `WORKTREES_DIR`,
+- At the crate root: the legacy ticket data folder `LEGACY_TICKETS_DIR` (`.ai/tickets`, records
+  awaiting import into the central ticket manager, which the link check and the relocation tool
+  leave alone); the artifact tree (`ARTIFACTS_DIR`, `WORKTREES_DIR`,
   `LAST_VERIFIED_MARKER`, `VERDICTS_DIR`); the reference lanes (`REFERENCES_DIR`,
   `CRF_FRAMEWORK_REFERENCE`, `VANILLA_REFERENCE`) and the vanilla lane's folders
   (`VANILLA_EXTRACTED_SCRIPTS`, `VANILLA_SCRIPT_API_PAGES`, `VANILLA_SOURCE_PAGES`,
@@ -78,7 +77,7 @@ No feature and no environment variable; the crate holds constants and pure path 
   `DATABASE_SELFTEST_SUBFOLDER`, `RUN_TARGET_SUBDIR`, `PURPOSE_SUBFOLDERS`),
   `build_output_subfolder`, and the retired root-level names with
   `is_retired_root_level_build_folder`.
-- `documentation`: `DOCUMENTATION_ROOT`, `ROADMAP` and `GAP_ANALYSIS`.
+- `documentation`: `DOCUMENTATION_ROOT`.
 - `workspace_folders`: the workspace's top-level folders (`ENFUSION_MOD_DIR`, `LIBRARY_CRATES_DIR`,
   `TOOLS_DIR`), the API server crate and the `.env` its binaries read (`API_SERVER_CRATE_DIR`,
   `API_SERVER_ENVIRONMENT_FILE`), and the API database crate with its SQL folders
@@ -89,7 +88,7 @@ No feature and no environment variable; the crate holds constants and pure path 
   is also the name a dedicated server's `addons/` folder links it under, and as its folder under
   `ENFUSION_MOD_DIR` (`FRAMEWORK_ADDON_DIR`, `EXPORT_ADDON_DIR`, `MCP_BRIDGE_ADDON_DIR`); read by the
   mod commands, the deploys, the workstation setup and the schema checks' mission validation.
-- `prelude`: the top-level trees (`TICKETS_DIR`, `ARTIFACTS_DIR`, `CONTRACTS_DIR`, `DEPLOY_DIR`,
+- `prelude`: the top-level trees (`ARTIFACTS_DIR`, `CONTRACTS_DIR`, `DEPLOY_DIR`,
   `REFERENCES_DIR`, `TERRAIN_ASSETS_DIR`, `BUILD_OUTPUT_FOLDER`) and the checkout-root finder's
   names re-exported from `repository_root` (`find_repository_root`, `find_repository_root_from`,
   `is_repository_root`, `ROOT_MARKER`).
@@ -98,8 +97,7 @@ No feature and no environment variable; the crate holds constants and pure path 
 
 - Depends on: `repository_root`, whose finder the prelude re-exports and whose root the tests
   check the committed locations against.
-- Used by: the ticket crates in `tools/tickets/`, the check and command crates and `ticketboard_desktop`,
-  for every location listed above; `deploy_settings` (the settings file and its example); `xtask`,
+- Used by: the check and command crates, for every location listed above; `deploy_settings` (the settings file and its example); `xtask`,
   for the checkout root through the prelude.
 - Rules: tier 1 of `tools/foundation`, over `repository_root` alone (`cargo xtask verify
   crate-tiers`); the root walk is `repository_root`'s alone, and the tool binaries reach it only

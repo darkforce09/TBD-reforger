@@ -39,9 +39,8 @@ shared with the Mission Creator's [feature inventory](/documentation/crates/fron
 The catalogs state Eden's behaviour only; where one says how the Mission Creator does something,
 it is in a section headed Mission Creator counterpart, read from the code and linked to the
 inventory area. Parity itself lives in the gap analysis, one row per ID, whose ticket column is
-kept by hand: `cargo xtask ticket sync` rewrites only a table whose header holds `priority |`
-(`parse_gap_analysis` in `tools/tickets/ticket_registry/src/sync/gap_analysis.rs`), and these tables
-head that column `ticket`, so the sync writes the file back unchanged.
+kept by hand: no tool reads or rewrites the file, so a ticket's status change in the central
+ticket manager reaches the column only through an edit here.
 
 Eden calls the document it edits a scenario and works in a 3D scene as well as on a 2D map. The
 Mission Creator's document is the [mission](/documentation/glossary/g_to_m.md#mission), and its map
@@ -55,22 +54,19 @@ domain's pattern, and the gap analysis gets its row; a new wiki page gets a mani
 
 - [Mission Creator](/crates/frontend/workspaces/mission_creator_workspace/src/) — the workspace the catalogs'
   Mission Creator counterpart sections and the gap analysis describe.
-- [Repository layout](/tools/foundation/repository_layout/src/) — `GAP_ANALYSIS` in
-  `documentation.rs` names the gap analysis that `ticket sync` and `ticket check` read.
 
 ## Boundaries
 
 - Depends on: the Eden pages of the Bohemia wiki and their scrape in `.ai/artifacts/eden-wiki/`;
   the [feature entry schema](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/feds_schema.md)
-  for IDs and entry format; the Mission Creator code for the counterpart sections; the ticket
-  registry in `.ai/tickets/`, which the gap analysis's hand-kept ticket column cites.
+  for IDs and entry format; the Mission Creator code for the counterpart sections; the tickets in
+  the central ticket manager (`ttm --project reforger show <id>`), which the gap analysis's
+  hand-kept ticket column cites.
 - Used by: the in-code READMEs under `crates/frontend/workspaces/mission_creator_workspace/src/ui/` (the ui, docks,
   right dock, context menu, inspector, Attributes dialog and outliner READMEs), which link the
   catalog their folder follows; the feature inventory's README and entry schema; the
-  [roadmap](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md); the ticket
-  model's `tools/tickets/ticket_model/src/repository.rs`, `ticket sync`, which reads the gap
-  analysis and writes it back unchanged, and `ticket check`, which reads it; and the ticket
-  registry, whose tickets cite the IDs.
+  [roadmap](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md); and the
+  tickets in the central ticket manager, which cite the IDs.
 - Rules: an ID is never renumbered or reused, because the gap analysis, the roadmap and the
   tickets cite it verbatim; each `| eden_id | … |` table stays whole in one file; the gap analysis has exactly one row per catalog ID; every Eden fact
   cites its wiki URL; each document stays within 500 lines; every child has a Contents line.

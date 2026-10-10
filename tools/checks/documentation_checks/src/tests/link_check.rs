@@ -3,7 +3,7 @@ use super::*;
 use crate::UntrackedFiles;
 use crate::fixture_checkout::{FixtureCheckout, failures, outcome_counts, request};
 use repository_layout::ARTIFACTS_DIR;
-use repository_layout::TICKETS_DIR;
+use repository_layout::LEGACY_TICKETS_DIR;
 use repository_layout::{ARCHIVE_DIR, CURSOR_RULE_DIRS, PROJECT_INSTRUCTIONS};
 
 /// A history that holds no object at all: every permalink is unknown.
@@ -42,13 +42,14 @@ fn every_area(tag: &str) -> FixtureCheckout {
     fixture
         .tracked("documentation/runbooks/deploy.md", broken)
         .tracked(&format!("{ARCHIVE_DIR}/topic/old.md"), broken)
-        .tracked(&format!("{TICKETS_DIR}/spec_template.md"), broken)
+        .tracked(&format!("{LEGACY_TICKETS_DIR}/spec_template.md"), broken)
+        .tracked(&format!("{LEGACY_TICKETS_DIR}/README.md"), broken)
         .tracked(&format!("{}/workflow.mdc", CURSOR_RULE_DIRS[0]), broken)
         .tracked(PROJECT_INSTRUCTIONS, broken)
         .tracked("apps/tool/README.md", broken)
         .tracked(&format!("{ARTIFACTS_DIR}/README.md"), broken)
         .tracked("apps/tool/NOTES.md", broken)
-        .tracked(&format!("{TICKETS_DIR}/nested/deep.md"), broken)
+        .tracked(&format!("{LEGACY_TICKETS_DIR}/nested/deep.md"), broken)
         .tracked("apps/tool/main.rs", "fn main() {}\n");
     fixture
 }
@@ -64,7 +65,6 @@ fn every_judged_area_is_judged_and_nothing_else() {
     assert_eq!(
         headlines,
         [
-            format!("FAIL: {TICKETS_DIR}/spec_template.md: 1 break(s)"),
             format!("FAIL: {}/workflow.mdc: 1 break(s)", CURSOR_RULE_DIRS[0]),
             format!("FAIL: {PROJECT_INSTRUCTIONS}: 1 break(s)"),
             "FAIL: apps/tool/README.md: 1 break(s)".to_string(),
@@ -72,7 +72,7 @@ fn every_judged_area_is_judged_and_nothing_else() {
             "FAIL: documentation/runbooks/deploy.md: 1 break(s)".to_string(),
         ]
     );
-    assert_eq!(outcome_counts(&run), (0, 6, 0));
+    assert_eq!(outcome_counts(&run), (0, 5, 0));
     assert_eq!(run.print(), 1);
 }
 
@@ -120,7 +120,7 @@ fn the_scope_narrows_the_judged_documents_and_an_empty_one_did_not_run() {
     assert!(failures(&refused)[0].contains("names no tracked folder"));
     let unjudged = run(
         &fixture,
-        &[&format!("{TICKETS_DIR}/nested")],
+        &[&format!("{LEGACY_TICKETS_DIR}/nested")],
         BreakListing::Every,
     );
     assert_eq!(outcome_counts(&unjudged), (0, 0, 1));

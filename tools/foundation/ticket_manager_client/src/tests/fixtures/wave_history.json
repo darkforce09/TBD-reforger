@@ -1,0 +1,4 @@
+{"format":"ttm.wave-history/1","project":"reforger","n":248,"state":"closed","closed_at":"2026-10-02T08:00:00Z","closed_sha":"52a038a77c1e0b8f2d6a9e4b7c3d1f0a9b8c7d6e","members":[
+  {"slug":"orbat-export","legacy_id":"T-640","status_now":"cancelled","status_as_of":"cancelled","landing_sha":null},
+  {"slug":"slot-identity.root","legacy_id":null,"status_now":"shipped","status_as_of":null,"landing_sha":"edb4e4e4d0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5"}
+]}

@@ -3,9 +3,7 @@ use crate::commands::fetch::cli::FetchCmd;
 use crate::commands::map::cli::MapCmd;
 use crate::commands::refactor::cli::RefactorCmd;
 use crate::commands::schema::cli::SchemaCmd;
-use crate::commands::ticket::cli::TicketCmd;
 use crate::commands::verify::cli::VerifyCmd;
-use crate::commands::wave::cli::WaveLockCmd;
 use ballistics_oracle_tooling::BallisticsCmd;
 use clap::{Parser, Subcommand};
 use deployment::DeployCmd;
@@ -34,11 +32,6 @@ pub(crate) struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum TopCmd {
-    /// Ticket registry CLI (sync/check/brief/…)
-    Ticket {
-        #[command(subcommand)]
-        cmd: TicketCmd,
-    },
     /// MCP JSON-RPC helpers for the Enfusion Workbench bridge
     Mcp {
         #[command(subcommand)]
@@ -98,9 +91,6 @@ pub(crate) enum TopCmd {
         #[command(subcommand)]
         cmd: MapCmd,
     },
-    /// Print a top-level ticket-ledger field (e.g. next_id)
-    #[command(name = "registry-get")]
-    RegistryGet { field: String },
     /// Contract codegen, contract and map-asset gates, mission-file tools
     Schema {
         #[command(subcommand)]
@@ -120,22 +110,6 @@ pub(crate) enum TopCmd {
     Refactor {
         #[command(subcommand)]
         cmd: RefactorCmd,
-    },
-    /// Max file-disjoint dispatch set: [--repack] [--check] [TICKET...]
-    #[command(name = "slice-collisions")]
-    SliceCollisions {
-        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
-        args: Vec<String>,
-    },
-    /// The wave lockfile — `.ai/tickets/wave.lock`, compiled from the tickets.
-    ///
-    /// NOT the lifecycle drivers: `platform wave` runs the platform factory and `mod wave` the
-    /// mod program; this group owns the PLAN those drivers read. `repack` is the only legal
-    /// writer of the lock; `check` recomputes and refuses on any drift (a missing lock is a
-    /// DidNotRun refusal, never an empty plan).
-    Wave {
-        #[command(subcommand)]
-        cmd: WaveLockCmd,
     },
     /// Platform factory helpers
     Platform {
